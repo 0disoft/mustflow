@@ -155,14 +155,17 @@ export const zhMessages = {
 
   "workspace.help.summary":
     "检查已配置的 workspace 根目录和嵌套仓库合同状态，但不授予命令权限。",
+  "workspace.help.action.scan": "无需 workspace 配置即可扫描 projects 目录中的嵌套仓库",
   "workspace.help.action.status": "输出发现的嵌套仓库及其本地 mustflow 合同状态",
   "workspace.help.action.commandCatalog": "输出各仓库的命令 intent 可用性，不包含原始命令字符串",
   "workspace.help.action.verify": "输出各仓库的变更文件验证计划，但不运行命令",
+  "workspace.help.option.projectsDir": "选择要扫描的子目录；默认值：projects",
   "workspace.help.exit.ok": "已检查 workspace 状态",
-  "workspace.error.missingAction": "请指定 workspace 操作：status、command-catalog 或 verify",
+  "workspace.error.missingAction": "请指定 workspace 操作：scan、status、command-catalog 或 verify",
   "workspace.error.unknownAction": "未知 workspace 操作：{action}",
   "workspace.error.verifyRequiresChanged": "workspace verify 需要 --changed",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify 需要 --plan-only",
+  "workspace.scan.issue.noneDiscovered": "未在 {projectsDir} 下发现嵌套 git 仓库。",
 
   "context.help.summary":
     "输出当前 mustflow 根目录的代理上下文。",
@@ -763,6 +766,10 @@ export const zhMessages = {
     "交互式 init 的标准输入过大；最多允许 {maxBytes} 字节。",
   "init.error.promptInputTooManyResponses":
     "交互式 init 的标准输入响应过多；最多允许 {maxResponses} 行。",
+  "init.error.workspaceRootDetected":
+    "此目录看起来是多仓库 workspace，而不是单个仓库：在 {projectsDir} 下发现了 {count} 个 git 仓库。",
+  "init.error.workspaceRootGuidance":
+    "请在此处运行 mf workspace scan --json，或进入目标仓库后运行 mf init。",
   "init.prompt.locale": "mustflow 文档应使用哪种语言？",
   "init.prompt.profile": "mustflow 应使用哪个项目配置？",
   "init.prompt.agentLang":

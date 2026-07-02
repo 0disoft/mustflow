@@ -228,6 +228,13 @@ function addEntryToBatches(
 	});
 }
 
+/**
+ * mf:anchor core.verification.schedule-locks
+ * purpose: Order selected verification intents by command-effect locks and undeclared-write risk.
+ * search: verification schedule, command effects, locks, parallel eligible, undeclared writes
+ * invariant: Intents without explicit compatible effects or with recent undeclared writes stay serial-only.
+ * risk: config, state
+ */
 export function createVerificationSchedule(
 	projectRoot: string,
 	commandContract: CommandContract,

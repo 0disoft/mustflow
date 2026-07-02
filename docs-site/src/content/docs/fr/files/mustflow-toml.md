@@ -75,7 +75,7 @@ Ce fichier réduit les suppositions des agents et aide à éviter les modificati
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -105,7 +105,7 @@ anchor_files = [
 
 `map.privacy = "minimal"` signifie que la sortie générée omet par défaut les URL distantes, noms de branche, états de changement récents, listes de commandes et résumés automatiques.
 
-`map.include_nested = false` signifie que les dépôts indépendants imbriqués ne sont pas indexés par défaut. La prise en charge des espaces de travail doit être activée explicitement avec les champs `workspace`.
+`map.include_nested = true` signifie que les dépôts indépendants imbriqués sous les racines de workspace configurées sont indexés par défaut. La racine par défaut est `projects/`, et la découverte reste limitée par les champs `workspace`.
 
 `mf check` vérifie que `output` et `anchor_files` sont des chemins relatifs à l’intérieur de la racine actuelle. Il autorise actuellement seulement `anchors_only` pour `mode` et `minimal` pour `privacy`.
 
@@ -146,17 +146,17 @@ external_anchors = [
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false` traite la racine actuelle comme une racine mustflow normale.
+`workspace.enabled = true` permet à la racine actuelle de découvrir par défaut les dépôts indépendants sous `projects/`.
 
-Pour une racine d’espace de travail, définissez des chemins comme `roots = ["projects", "repos"]`. mustflow ne doit pas analyser automatiquement des répertoires `projects/` ou `repos/` non configurés.
+Pour une racine d’espace de travail, ajustez des chemins comme `roots = ["projects", "repos"]`. mustflow analyse seulement les racines configurées et n’accorde pas l’autorité de commande d’un dépôt enfant depuis le workspace parent.
 
 `max_depth` et `max_repositories` évitent les grandes analyses accidentelles. `follow_symlinks = false` empêche par défaut la traversée hors de l’espace de travail ou vers un autre lecteur.
 

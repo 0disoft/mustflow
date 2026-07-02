@@ -61,10 +61,10 @@ test('fails when map and workspace configuration fields are invalid', () => {
 			.replace('output = "REPO_MAP.md"', 'output = ""')
 			.replace('mode = "anchors_only"', 'mode = "full_tree"')
 			.replace('privacy = "minimal"', 'privacy = "verbose"')
-			.replace('include_nested = false', 'include_nested = "yes"')
+			.replace('include_nested = true', 'include_nested = "yes"')
 			.replace('"Taskfile.yml",', '"Taskfile.yml",\n  "",')
-			.replace('enabled = false', 'enabled = true')
-			.replace('roots = []', 'roots = [".."]')
+			.replace('enabled = true', 'enabled = "yes"')
+			.replace('roots = ["projects"]', 'roots = [".."]')
 			.replace('max_depth = 4', 'max_depth = 0')
 			.replace('max_repositories = 50', 'max_repositories = -1')
 			.replace('follow_symlinks = false', 'follow_symlinks = "no"')
@@ -79,6 +79,7 @@ test('fails when map and workspace configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[map\]\.privacy must be "minimal"/);
 		assert.match(result.stderr, /\[map\]\.include_nested must be a boolean/);
 		assert.match(result.stderr, /\[map\]\.anchor_files entries must be non-empty relative paths/);
+		assert.match(result.stderr, /\[workspace\]\.enabled must be a boolean/);
 		assert.match(result.stderr, /\[workspace\]\.roots entries must be relative paths inside the current root/);
 		assert.match(result.stderr, /\[workspace\]\.max_depth must be a positive integer/);
 		assert.match(result.stderr, /\[workspace\]\.max_repositories must be a positive integer/);

@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 231
+anchor_count: 234
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:4e447d0700e1aad3e2b95f80d4015177e4da9688f2c1bc6451d64f3ad2998089"
+source_fingerprint: "sha256:f748efe39a1ee3f52d748026694018bc61d0567667edd1429e64f4e40c607767"
 ---
 
 # REPO_MAP.md
@@ -164,6 +164,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/clarifying-question-gate/
 
 - `.mustflow/skills/clarifying-question-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cli-option-contract-review/
+
+- `.mustflow/skills/cli-option-contract-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/cli-output-contract-review/
 
@@ -757,6 +761,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/testability-boundary-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/third-party-api-integration-review/
+
+- `.mustflow/skills/third-party-api-integration-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/transaction-boundary-integrity-review/
 
 - `.mustflow/skills/transaction-boundary-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -812,6 +820,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/web-render-performance-review/
 
 - `.mustflow/skills/web-render-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/website-task-friction-review/
+
+- `.mustflow/skills/website-task-friction-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### docs-site/
 

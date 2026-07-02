@@ -18,14 +18,20 @@ import {
 	type CliOptionSpec,
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
-import { getRepoMapConfig, discoverNestedRepositories, type NestedRepository } from '../lib/repo-map.js';
+import { getRepoMapConfig, discoverNestedRepositories, type NestedRepository, type WorkspaceConfig } from '../lib/repo-map.js';
 import { createRunPlan } from '../lib/run-plan.js';
 import type { Reporter } from '../lib/reporter.js';
 import { readCommandContract, readString, readStringArray, type CommandContract } from '../../core/config-loading.js';
 
+const DEFAULT_WORKSPACE_SCAN_ROOT = 'projects';
+const WORKSPACE_SCAN_SCHEMA_VERSION = '1';
 const WORKSPACE_STATUS_SCHEMA_VERSION = '1';
 const WORKSPACE_COMMAND_CATALOG_SCHEMA_VERSION = '1';
 const WORKSPACE_VERIFICATION_PLAN_SCHEMA_VERSION = '1';
+const WORKSPACE_SCAN_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--projects-dir', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_STATUS_OPTIONS = [{ name: '--json', kind: 'boolean' }] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_COMMAND_CATALOG_OPTIONS = [{ name: '--json', kind: 'boolean' }] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_VERIFY_OPTIONS = [
@@ -96,6 +102,19 @@ interface WorkspaceStatusOutput {
 	readonly repository_count: number;
 	readonly repositories: readonly WorkspaceStatusRepository[];
 	readonly issues: readonly string[];
+}
+
+interface WorkspaceScanOutput {
+	readonly schema_version: typeof WORKSPACE_SCAN_SCHEMA_VERSION;
+	readonly command: 'workspace scan';
+	readonly mustflow_root: string;
+	readonly workspace: WorkspaceStatusConfig;
+	readonly policy: WorkspaceStatusPolicy;
+	readonly repository_count: number;
+	readonly repositories: readonly WorkspaceStatusRepository[];
+	readonly issues: readonly string[];
+	readonly projects_dir: string;
+	readonly next_actions: readonly string[];
 }
 
 interface WorkspaceCommandCatalogIntent {
@@ -198,6 +217,7 @@ function getWorkspaceHelp(lang: CliLang = 'en'): string {
 			usage: 'mf workspace <action> [options]',
 			summary: t(lang, 'workspace.help.summary'),
 			commands: [
+				{ label: 'scan', description: t(lang, 'workspace.help.action.scan') },
 				{ label: 'status', description: t(lang, 'workspace.help.action.status') },
 				{ label: 'command-catalog', description: t(lang, 'workspace.help.action.commandCatalog') },
 				{ label: 'verify', description: t(lang, 'workspace.help.action.verify') },
@@ -205,10 +225,13 @@ function getWorkspaceHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: '--changed', description: t(lang, 'classify.help.option.changed') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
+				{ label: '--projects-dir <path>', description: t(lang, 'workspace.help.option.projectsDir') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
+				'mf workspace scan --json',
+				'mf workspace scan --projects-dir projects --json',
 				'mf workspace status --json',
 				'mf workspace command-catalog --json',
 				'mf workspace verify --changed --plan-only --json',
@@ -239,6 +262,14 @@ function createWorkspaceVerificationPlanPolicy(): WorkspaceVerificationPlanPolic
 		...createWorkspaceStatusPolicy(),
 		plan_command_per_root: 'mf verify --changed --plan-only --json',
 		selected_intents_run_via: 'mf run <intent>',
+	};
+}
+
+function createAdHocWorkspaceConfig(base: WorkspaceConfig, projectsDir: string): WorkspaceConfig {
+	return {
+		...base,
+		enabled: true,
+		roots: [projectsDir],
 	};
 }
 
@@ -323,6 +354,13 @@ function summarizeRepository(projectRoot: string, repository: NestedRepository):
 	};
 }
 
+/**
+ * mf:anchor cli.workspace.status-read-model
+ * purpose: Summarize nested repositories and command contracts without granting parent-root command authority.
+ * search: workspace status, nested repositories, command contract, read only, runnable intents
+ * invariant: Workspace status reports observable repo facts and never executes or authorizes child-repository commands.
+ * risk: config, state
+ */
 function createWorkspaceStatusOutput(): WorkspaceStatusOutput {
 	const projectRoot = resolveMustflowRoot();
 	const config = getRepoMapConfig(projectRoot);
@@ -340,18 +378,41 @@ function createWorkspaceStatusOutput(): WorkspaceStatusOutput {
 		schema_version: WORKSPACE_STATUS_SCHEMA_VERSION,
 		command: 'workspace status',
 		mustflow_root: projectRoot,
-		workspace: {
-			enabled: config.workspace.enabled,
-			roots: config.workspace.roots,
-			max_depth: config.workspace.maxDepth,
-			max_repositories: config.workspace.maxRepositories,
-			follow_symlinks: config.workspace.followSymlinks,
-			stop_at_repository_root: config.workspace.stopAtRepositoryRoot,
-		},
+		workspace: workspaceConfigOutput(config.workspace),
 		policy: createWorkspaceStatusPolicy(),
 		repository_count: repositories.length,
 		repositories,
 		issues,
+	};
+}
+
+function createWorkspaceScanOutput(projectsDir: string): WorkspaceScanOutput {
+	const projectRoot = resolveMustflowRoot();
+	const config = getRepoMapConfig(projectRoot);
+	const workspace = createAdHocWorkspaceConfig(config.workspace, projectsDir);
+	const repositories = discoverNestedRepositories(
+		projectRoot,
+		{ ...config.map, includeNested: true },
+		workspace,
+	).map((repository) => summarizeRepository(projectRoot, repository));
+	const issues = repositories.length === 0
+		? [t('en', 'workspace.scan.issue.noneDiscovered', { projectsDir })]
+		: [];
+
+	return {
+		schema_version: WORKSPACE_SCAN_SCHEMA_VERSION,
+		command: 'workspace scan',
+		mustflow_root: projectRoot,
+		workspace: workspaceConfigOutput(workspace),
+		policy: createWorkspaceStatusPolicy(),
+		repository_count: repositories.length,
+		repositories,
+		issues,
+		projects_dir: projectsDir,
+		next_actions: [
+			'mf init inside one target repository',
+			'mf workspace status --json after configuring workspace roots',
+		],
 	};
 }
 
@@ -370,14 +431,14 @@ function readWorkspaceRepositories(projectRoot: string): {
 	};
 }
 
-function workspaceConfigOutput(config: ReturnType<typeof getRepoMapConfig>): WorkspaceStatusConfig {
+function workspaceConfigOutput(config: WorkspaceConfig): WorkspaceStatusConfig {
 	return {
-		enabled: config.workspace.enabled,
-		roots: config.workspace.roots,
-		max_depth: config.workspace.maxDepth,
-		max_repositories: config.workspace.maxRepositories,
-		follow_symlinks: config.workspace.followSymlinks,
-		stop_at_repository_root: config.workspace.stopAtRepositoryRoot,
+		enabled: config.enabled,
+		roots: config.roots,
+		max_depth: config.maxDepth,
+		max_repositories: config.maxRepositories,
+		follow_symlinks: config.followSymlinks,
+		stop_at_repository_root: config.stopAtRepositoryRoot,
 	};
 }
 
@@ -514,7 +575,7 @@ function createWorkspaceCommandCatalogOutput(): WorkspaceCommandCatalogOutput {
 		schema_version: WORKSPACE_COMMAND_CATALOG_SCHEMA_VERSION,
 		command: 'workspace command-catalog',
 		mustflow_root: projectRoot,
-		workspace: workspaceConfigOutput(config),
+		workspace: workspaceConfigOutput(config.workspace),
 		policy: createWorkspaceStatusPolicy(),
 		repository_count: repositories.length,
 		total_intent_count: repositories.reduce((total, repository) => total + repository.intent_count, 0),
@@ -562,6 +623,13 @@ function selectedIntentsForVerificationReport(
 	}));
 }
 
+/**
+ * mf:anchor cli.workspace.verify-plan
+ * purpose: Build per-repository verification plans from each child repository's own command contract.
+ * search: workspace verify, changed files, plan only, command contract, child repository
+ * invariant: Workspace verification output selects intents per repository and does not run raw commands from the parent root.
+ * risk: config, state
+ */
 function createVerificationRepository(projectRoot: string, repository: NestedRepository): WorkspaceVerificationPlanRepository {
 	const repositoryRoot = path.resolve(projectRoot, repository.relativePath);
 	const commandSurface = summarizeCommandSurface(repositoryRoot, repository);
@@ -632,7 +700,7 @@ function createWorkspaceVerificationPlanOutput(): WorkspaceVerificationPlanOutpu
 		schema_version: WORKSPACE_VERIFICATION_PLAN_SCHEMA_VERSION,
 		command: 'workspace verify',
 		mustflow_root: projectRoot,
-		workspace: workspaceConfigOutput(config),
+		workspace: workspaceConfigOutput(config.workspace),
 		policy: createWorkspaceVerificationPlanPolicy(),
 		repository_count: repositories.length,
 		total_changed_file_count: repositories.reduce((total, repository) => total + (repository.changed_file_count ?? 0), 0),
@@ -642,6 +710,34 @@ function createWorkspaceVerificationPlanOutput(): WorkspaceVerificationPlanOutpu
 		repositories,
 		issues: createWorkspaceIssues(config, repositories.length),
 	};
+}
+
+function renderWorkspaceScan(output: WorkspaceScanOutput): string {
+	const lines = [
+		'mustflow workspace scan',
+		`mustflow root: ${output.mustflow_root}`,
+		`projects dir: ${output.projects_dir}`,
+		`repositories: ${output.repository_count}`,
+		'',
+	];
+
+	if (output.repositories.length === 0) {
+		lines.push(`No nested repositories discovered under ${output.projects_dir}.`);
+		return lines.join('\n');
+	}
+
+	for (const repository of output.repositories) {
+		lines.push(`- ${repository.relative_path} (${repository.status})`);
+		lines.push(`  mustflow: ${repository.mustflow ? 'yes' : 'no'}`);
+		lines.push(`  command contract: ${repository.command_contract.path ?? 'missing'}`);
+	}
+
+	lines.push('', 'Next actions:');
+	for (const action of output.next_actions) {
+		lines.push(`- ${action}`);
+	}
+
+	return lines.join('\n');
 }
 
 function renderWorkspaceStatus(output: WorkspaceStatusOutput): string {
@@ -742,6 +838,25 @@ function renderWorkspaceVerificationPlan(output: WorkspaceVerificationPlanOutput
 	return lines.join('\n');
 }
 
+function runWorkspaceScan(args: readonly string[], reporter: Reporter, lang: CliLang): number {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
+		reporter.stdout(getWorkspaceHelp(lang));
+		return 0;
+	}
+
+	const parsed = parseCliOptions(args, WORKSPACE_SCAN_OPTIONS);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf workspace --help', getWorkspaceHelp(lang), lang);
+		return 1;
+	}
+
+	const projectsDirValue = parsed.values.get('--projects-dir');
+	const projectsDir = typeof projectsDirValue === 'string' ? projectsDirValue : DEFAULT_WORKSPACE_SCAN_ROOT;
+	const output = createWorkspaceScanOutput(projectsDir);
+	reporter.stdout(hasParsedCliOption(parsed, '--json') ? JSON.stringify(output, null, 2) : renderWorkspaceScan(output));
+	return 0;
+}
+
 function runWorkspaceStatus(args: readonly string[], reporter: Reporter, lang: CliLang): number {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getWorkspaceHelp(lang));
@@ -819,6 +934,10 @@ export function runWorkspace(args: string[], reporter: Reporter, lang: CliLang =
 	if (action.startsWith('-')) {
 		printUsageError(reporter, t(lang, 'cli.error.unknownOption', { option: action }), 'mf workspace --help', getWorkspaceHelp(lang), lang);
 		return 1;
+	}
+
+	if (action === 'scan') {
+		return runWorkspaceScan(rest, reporter, lang);
 	}
 
 	if (action === 'status') {

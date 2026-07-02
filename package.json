@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.107.4",
+  "version": "2.107.7",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",

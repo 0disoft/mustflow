@@ -679,6 +679,20 @@ test('workspace status json output matches the published schema', () => {
 	}
 });
 
+test('workspace scan json output matches the published workspace status schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		mkdirSync(path.join(projectPath, 'projects', 'app', '.git'), { recursive: true });
+		const result = runCli(projectPath, ['workspace', 'scan', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-status.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('workspace command-catalog json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

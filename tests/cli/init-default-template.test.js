@@ -63,6 +63,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'payment-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'credit-ledger-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-misuse-resistance-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'third-party-api-integration-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'http-api-semantics-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-access-control-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'file-upload-security-review', 'SKILL.md')));
@@ -87,6 +88,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-stress-layout-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-accessibility-tree-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-localization-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'website-task-friction-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'cache-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'quadratic-scan-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'type-state-modeling-review', 'SKILL.md')));
@@ -231,6 +233,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/payment-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/third-party-api-integration-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/api-access-control-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/file-upload-security-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md/);
@@ -262,6 +265,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-localization-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/website-task-friction-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/vertical-slice-tdd\/SKILL\.md/);
 
 		const skillRoutes = readText(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'));
@@ -281,6 +285,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillRoutes, /\[routes\."frontend-stress-layout-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);
+		assert.match(skillRoutes, /\[routes\."website-task-friction-review"\]/);
 		assert.match(skillRoutes, /\[routes\."idempotency-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."backend-log-evidence-review"\]/);
 		assert.match(skillRoutes, /\[routes\."observability-debuggability-review"\]/);
@@ -298,6 +303,9 @@ test('copies the default agent workflow into an empty project', () => {
 		const mustflowConfig = readText(path.join(projectPath, '.mustflow', 'config', 'mustflow.toml'));
 		assert.match(mustflowConfig, /optional_read_order = \[\n  "\.mustflow\/context\/INDEX\.md",/);
 		assert.match(mustflowConfig, /"\.mustflow\/config\/technology\.toml"/);
+		assert.match(mustflowConfig, /\[map\]\n(?:.*\n)*?include_nested = true/);
+		assert.match(mustflowConfig, /\[workspace\]\n(?:.*\n)*?enabled = true/);
+		assert.match(mustflowConfig, /\[workspace\]\n(?:.*\n)*?roots = \["projects"\]/);
 		assert.match(mustflowConfig, /\[context\]/);
 		assert.match(mustflowConfig, /root = "\.mustflow\/context"/);
 		assert.match(mustflowConfig, /read_policy = "task_relevant_only"/);

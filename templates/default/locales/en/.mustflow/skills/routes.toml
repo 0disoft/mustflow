@@ -222,6 +222,12 @@ route_type = "adjunct"
 priority = 69
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change"]
 
+[routes."third-party-api-integration-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."http-api-semantics-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -971,6 +977,12 @@ category = "ui_assets"
 route_type = "adjunct"
 priority = 84
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "i18n_change", "web_asset_change"]
+
+[routes."website-task-friction-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "public_api_change", "web_asset_change", "release_risk"]
 
 [routes."frontend-render-stability"]
 category = "ui_assets"

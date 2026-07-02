@@ -29,7 +29,7 @@ installed-package JSON command output.
   read-only script-pack helper suggestions
 - `evidence-report.schema.json`: `mf evidence --changed --json`
 - `api-serve-response.schema.json`: each newline-delimited response from `mf api serve --stdio`
-- `workspace-status.schema.json`: `mf workspace status --json`
+- `workspace-status.schema.json`: `mf workspace status --json` and `mf workspace scan --json`
 - `workspace-command-catalog.schema.json`: `mf workspace command-catalog --json`
 - `workspace-verification-plan.schema.json`: `mf workspace verify --changed --plan-only --json`
 - `classify-report.schema.json`: `mf classify <path...> --json`

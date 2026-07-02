@@ -115,6 +115,25 @@ test('refuses template creates outside the mustflow install surface during init'
 	}
 });
 
+test('refuses init from a multi-repository workspace root', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		mkdirSync(path.join(projectPath, 'projects', 'products', 'app', '.git'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'projects', 'experiments', 'tool', '.git'), { recursive: true });
+
+		const result = await runInit(projectPath, ['--yes']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /multi-repository workspace/u);
+		assert.match(result.stderr, /mf workspace scan --json/u);
+		assert.equal(existsSync(path.join(projectPath, 'AGENTS.md')), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('ignores development template root overrides without explicit opt-in', async () => {
 	const projectPath = createTempProject();
 	const templatePath = mkdtempSync(path.join(tmpdir(), 'mustflow-template-'));

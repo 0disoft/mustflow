@@ -75,7 +75,7 @@ Este archivo reduce las adivinanzas del agente y ayuda a evitar ediciones accide
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -105,7 +105,7 @@ anchor_files = [
 
 `map.privacy = "minimal"` significa que la salida generada omite de forma predeterminada URL remotas, nombres de ramas, estado de cambios recientes, listas de comandos y resúmenes automáticos.
 
-`map.include_nested = false` significa que los repositorios independientes anidados no se indexan de forma predeterminada. La compatibilidad con espacios de trabajo debe habilitarse explícitamente con los campos de `workspace`.
+`map.include_nested = true` significa que los repositorios independientes anidados bajo las raíces de workspace configuradas se indexan de forma predeterminada. La raíz predeterminada es `projects/`, y el descubrimiento sigue limitado por los campos de `workspace`.
 
 `mf check` verifica que `output` y `anchor_files` sean rutas relativas dentro de la raíz actual. Actualmente solo permite `anchors_only` para `mode` y `minimal` para `privacy`.
 
@@ -146,17 +146,17 @@ external_anchors = [
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false` trata la raíz actual como una raíz mustflow normal.
+`workspace.enabled = true` permite que la raíz actual descubra repositorios independientes bajo `projects/` de forma predeterminada.
 
-Para una raíz de espacio de trabajo, establece rutas como `roots = ["projects", "repos"]`. mustflow no debe escanear automáticamente directorios `projects/` o `repos/` no configurados.
+Para una raíz de espacio de trabajo, ajusta rutas como `roots = ["projects", "repos"]`. mustflow escanea solo las raíces configuradas y no otorga autoridad de comandos del repositorio hijo desde el workspace padre.
 
 `max_depth` y `max_repositories` evitan escaneos grandes accidentales. `follow_symlinks = false` impide de forma predeterminada atravesar fuera del espacio de trabajo o hacia otra unidad.
 

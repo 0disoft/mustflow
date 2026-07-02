@@ -543,6 +543,13 @@ function gapForRequirement(
 	};
 }
 
+/**
+ * mf:anchor core.verification.change-report
+ * purpose: Turn changed-file classification into verification requirements, candidates, gaps, and a scheduled intent plan.
+ * search: verification report, required_after, selected intents, gaps, test selection
+ * invariant: Selected verification intents must come from configured command-contract coverage and declared test selection.
+ * risk: config, data_consistency
+ */
 export function createChangeVerificationReport(
 	classificationReport: ChangeClassificationReport,
 	commandContract: CommandContract,

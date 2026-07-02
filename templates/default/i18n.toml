@@ -323,6 +323,12 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.website-task-friction-review"]
+source = "locales/en/.mustflow/skills/website-task-friction-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.cache-integrity-review"]
 source = "locales/en/.mustflow/skills/cache-integrity-review/SKILL.md"
 source_locale = "en"

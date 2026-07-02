@@ -117,6 +117,34 @@ test('skill route metadata covers declared trigger axes for integration and fram
 			'security_change',
 			'privacy_change',
 		],
+		'third-party-api-integration-review': [
+			'unknown_change',
+			'code_change',
+			'behavior_change',
+			'test_change',
+			'public_api_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'migration_change',
+			'docs_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'website-task-friction-review': [
+			'ui_change',
+			'behavior_change',
+			'code_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'public_api_change',
+			'web_asset_change',
+			'release_risk',
+		],
 		'bun-code-change': [
 			'code_change',
 			'behavior_change',
@@ -5521,6 +5549,54 @@ test('frontend localization review catches hidden strings, locale formatting, an
 	assert.match(manifest, /"frontend-localization-review"/u);
 	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 200/u);
 	assert.match(i18n, /\[documents\."skill\.frontend-localization-review"\][\s\S]*?revision = 1/u);
+});
+
+test('website task friction review catches common public website complaint traps', () => {
+	const localSkill = readText('.mustflow/skills/website-task-friction-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/website-task-friction-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /primary visitor task/u);
+	assert.match(localSkill, /public website/u);
+	assert.match(localSkill, /landing page/u);
+	assert.match(localSkill, /checkout flow/u);
+	assert.match(localSkill, /support page/u);
+	assert.match(localSkill, /cookie or consent surface/u);
+	assert.match(localSkill, /first-task-blocking newsletter modals/u);
+	assert.match(localSkill, /force account creation/u);
+	assert.match(localSkill, /total price, taxes, shipping, fees/u);
+	assert.match(localSkill, /Labels should match user vocabulary/u);
+	assert.match(localSkill, /no-results/u);
+	assert.match(localSkill, /small screens without zooming, hover, tiny targets/u);
+	assert.match(localSkill, /Every field must earn its place/u);
+	assert.match(localSkill, /preserved entered data/u);
+	assert.match(localSkill, /developer-centered messages/u);
+	assert.match(localSkill, /operator identity, contact, support/u);
+	assert.match(localSkill, /Keyboard-only users/u);
+	assert.match(localSkill, /Core Web Vitals/u);
+	assert.match(localSkill, /dark patterns/u);
+	assert.match(localSkill, /hidden opt-outs, fake urgency/u);
+	assert.match(localSkill, /narrower skill/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/website-task-friction-review\/SKILL\.md/u);
+	assert.match(skillIndex, /hidden costs, vague errors, dark patterns/u);
+	assert.match(routes, /\[routes\."website-task-friction-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 83/u);
+	assert.match(
+		routes,
+		/applies_to_reasons = \["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "public_api_change", "web_asset_change", "release_risk"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/website-task-friction-review\/SKILL\.md"/u);
+	assert.match(manifest, /"website-task-friction-review"/u);
+	assert.match(i18n, /\[documents\."skills\.index"\][\s\S]*?revision = 200/u);
+	assert.match(i18n, /\[documents\."skill\.website-task-friction-review"\][\s\S]*?revision = 1/u);
 });
 
 test('utility and browser-native styling skills cover modern extraction and platform traps', () => {

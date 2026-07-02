@@ -155,14 +155,17 @@ export const hiMessages = {
 
   "workspace.help.summary":
     "command authority दिए बिना configured workspace roots और nested repository contract readiness inspect करें.",
+  "workspace.help.action.scan": "workspace configuration के बिना projects directory में nested repositories scan करें",
   "workspace.help.action.status": "discovered nested repositories और उनके local mustflow contract status प्रिंट करें",
   "workspace.help.action.commandCatalog": "raw command strings के बिना per-repository command intent availability प्रिंट करें",
   "workspace.help.action.verify": "commands चलाए बिना per-repository changed-file verification plans प्रिंट करें",
+  "workspace.help.option.projectsDir": "scan की जाने वाली child directory चुनें; default: projects",
   "workspace.help.exit.ok": "Workspace status inspect हुआ",
-  "workspace.error.missingAction": "workspace action बताएँ: status, command-catalog या verify",
+  "workspace.error.missingAction": "workspace action बताएँ: scan, status, command-catalog या verify",
   "workspace.error.unknownAction": "अज्ञात workspace action: {action}",
   "workspace.error.verifyRequiresChanged": "workspace verify के लिए --changed चाहिए",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify के लिए --plan-only चाहिए",
+  "workspace.scan.issue.noneDiscovered": "{projectsDir} के नीचे कोई nested git repository नहीं मिला.",
 
   "context.help.summary":
     "वर्तमान mustflow रूट के लिए एजेंट संदर्भ प्रिंट करें।",
@@ -773,6 +776,10 @@ export const hiMessages = {
     "Interactive init stdin input बहुत बड़ा है; अधिकतम {maxBytes} bytes अपेक्षित हैं।",
   "init.error.promptInputTooManyResponses":
     "Interactive init stdin input में बहुत अधिक responses हैं; अधिकतम {maxResponses} lines अपेक्षित हैं।",
+  "init.error.workspaceRootDetected":
+    "यह directory single repository नहीं बल्कि multi-repository workspace जैसी दिखती है: {projectsDir} के नीचे {count} git repositories मिले.",
+  "init.error.workspaceRootGuidance":
+    "यहाँ mf workspace scan --json चलाएँ, या target repository के अंदर mf init चलाएँ.",
   "init.prompt.locale": "mustflow दस्तावेज़ कौन सी भाषा उपयोग करें?",
   "init.prompt.profile": "mustflow कौन सा project profile उपयोग करे?",
   "init.prompt.agentLang":

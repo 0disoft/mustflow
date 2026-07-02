@@ -80,7 +80,7 @@ optional_read_order = [
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -112,7 +112,7 @@ anchor_files = [
 
 `map.privacy = "minimal"`은 원격 주소, 브랜치명, 최근 변경 상태, 명령어 목록, 자동 요약처럼 작업 맥락이나 비밀정보를 노출할 수 있는 값을 기본 출력하지 않는다는 뜻입니다.
 
-`map.include_nested = false`는 작업대 안의 하위 독립 저장소를 기본으로 색인하지 않는다는 뜻입니다. 작업대 지원을 켤 때는 `workspace.enabled`와 함께 명시적으로 바꿔야 합니다.
+`map.include_nested = true`는 설정된 작업대 루트 아래의 하위 독립 저장소를 기본으로 색인한다는 뜻입니다. 기본 루트는 `projects/`이며, 탐색 범위는 작업대 필드로 제한됩니다.
 
 `mf check`는 `output`과 `anchor_files`가 현재 루트 안쪽을 가리키는 상대 경로인지 확인합니다. `mode`는 현재 `anchors_only`, `privacy`는 현재 `minimal`만 허용합니다.
 
@@ -221,17 +221,17 @@ stable 계층은 compact routing kernel로 제한합니다. stable `read` 항목
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false`는 현재 루트를 일반 mustflow 루트로 다룬다는 뜻입니다.
+`workspace.enabled = true`는 현재 루트가 기본적으로 `projects/` 아래의 독립 저장소를 발견할 수 있게 합니다.
 
-작업대 루트로 사용할 때는 `roots = ["projects", "repos"]`처럼 하위 저장소가 모이는 경로를 명시합니다. 설정되지 않은 `projects/`, `repos/`를 자동으로 훑지 않습니다.
+작업대 루트로 사용할 때는 `roots = ["projects", "repos"]`처럼 하위 저장소가 모이는 경로를 조정합니다. mustflow는 설정된 루트만 스캔하며, 부모 작업대가 하위 저장소 명령 권한을 부여하지 않습니다.
 
 `max_depth`와 `max_repositories`는 우발적인 대규모 탐색을 막기 위한 한계입니다. `follow_symlinks = false`는 작업대 바깥이나 다른 드라이브로 탐색이 새는 일을 막기 위한 기본 안전장치입니다.
 

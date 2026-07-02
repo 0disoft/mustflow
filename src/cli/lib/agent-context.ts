@@ -1158,6 +1158,13 @@ function readTaskPromptCacheRepoMapReadPlan(): TaskPromptCacheRepoMapReadPlanCon
 	};
 }
 
+/**
+ * mf:anchor cli.context.prompt-cache-task-layer
+ * purpose: Build the task-layer context plan that prefers selected routes, local-index anchors, and bounded repo-map spans.
+ * search: mf context, prompt cache, task context, route read plan, repo map, local index
+ * invariant: Task context may recommend what to read next but cannot replace AGENTS.md or command contract authority.
+ * risk: config, cache
+ */
 async function readTaskPromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): Promise<TaskPromptCacheLayerContext> {
 	const layer = readPromptCacheLayer(mustflow, 'task');
 	const localIndex = await readLocalIndexPromptContext(projectRoot);

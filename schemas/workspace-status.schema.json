@@ -16,7 +16,7 @@
   ],
   "properties": {
     "schema_version": { "const": "1" },
-    "command": { "const": "workspace status" },
+    "command": { "enum": ["workspace status", "workspace scan"] },
     "mustflow_root": { "type": "string" },
     "workspace": {
       "type": "object",
@@ -65,7 +65,9 @@
       "type": "array",
       "items": { "$ref": "#/$defs/repository" }
     },
-    "issues": { "$ref": "#/$defs/stringArray" }
+    "issues": { "$ref": "#/$defs/stringArray" },
+    "projects_dir": { "type": "string" },
+    "next_actions": { "$ref": "#/$defs/stringArray" }
   },
   "$defs": {
     "stringArray": {

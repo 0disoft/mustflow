@@ -34,7 +34,7 @@ project_context = ".mustflow/context/PROJECT.md"
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -94,8 +94,8 @@ anchor_files = [
 ]
 
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false

@@ -1066,6 +1066,13 @@ function toParallelismReport(settings: VerifyParallelismSettings): VerificationP
 	};
 }
 
+/**
+ * mf:anchor cli.verify.receipt-manifest
+ * purpose: Persist verify receipts, latest summary, failure evidence, and completion verdict in one state update boundary.
+ * search: mf verify, receipt manifest, latest run, completion verdict, failure fingerprint
+ * invariant: Receipt paths and verdict evidence must share the same verification_plan_id.
+ * risk: state, data_consistency
+ */
 function writeVerifyRunReceipts(
 	projectRoot: string,
 	output: VerificationOutput,
@@ -1254,6 +1261,13 @@ function writeVerifyRunReceipts(
 	return outputWithReceiptPaths;
 }
 
+/**
+ * mf:anchor cli.verify.output-model
+ * purpose: Create the verification output from classification, command contract, selected intents, and evidence risk models.
+ * search: verification output, risk assessment, source anchors, validation ratchet, external evidence
+ * invariant: Completion verdict risk counts must be derived from the same report and results that produce receipts.
+ * risk: state, data_consistency
+ */
 async function createVerifyOutput(
 	input: VerifyInput,
 	planSource: string | null,

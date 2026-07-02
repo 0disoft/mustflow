@@ -155,14 +155,17 @@ export const esMessages = {
 
   "workspace.help.summary":
     "Inspecciona raíces workspace configuradas y preparación de contratos anidados sin conceder autoridad de comandos.",
+  "workspace.help.action.scan": "Escanea un directorio projects en busca de repositorios anidados sin requerir configuración de workspace",
   "workspace.help.action.status": "Imprime repositorios anidados descubiertos y su estado de contrato mustflow local",
   "workspace.help.action.commandCatalog": "Imprime disponibilidad de intents por repositorio sin cadenas de comando sin procesar",
   "workspace.help.action.verify": "Imprime planes de verificación de cambios por repositorio sin ejecutar comandos",
+  "workspace.help.option.projectsDir": "Selecciona el directorio hijo que se escaneará; predeterminado: projects",
   "workspace.help.exit.ok": "Se inspeccionó el estado del workspace",
-  "workspace.error.missingAction": "Especifica una acción workspace: status, command-catalog o verify",
+  "workspace.error.missingAction": "Especifica una acción workspace: scan, status, command-catalog o verify",
   "workspace.error.unknownAction": "Acción workspace desconocida: {action}",
   "workspace.error.verifyRequiresChanged": "workspace verify requiere --changed",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify requiere --plan-only",
+  "workspace.scan.issue.noneDiscovered": "No se descubrieron repositorios git anidados bajo {projectsDir}.",
 
   "context.help.summary":
     "Imprime el contexto de agente para la raíz mustflow actual.",
@@ -773,6 +776,10 @@ Lee estos archivos antes de trabajar:
     "La entrada estándar de init interactivo es demasiado grande; se esperaban como máximo {maxBytes} bytes.",
   "init.error.promptInputTooManyResponses":
     "La entrada estándar de init interactivo tiene demasiadas respuestas; se esperaban como máximo {maxResponses} líneas.",
+  "init.error.workspaceRootDetected":
+    "Este directorio parece un workspace de varios repositorios, no un solo repositorio: se encontraron {count} repositorios git bajo {projectsDir}.",
+  "init.error.workspaceRootGuidance":
+    "Ejecuta mf workspace scan --json aquí, o ejecuta mf init dentro de un repositorio de destino.",
   "init.prompt.locale": "¿Qué idioma deben usar los documentos mustflow?",
   "init.prompt.profile": "¿Qué perfil de proyecto debe usar mustflow?",
   "init.prompt.agentLang":

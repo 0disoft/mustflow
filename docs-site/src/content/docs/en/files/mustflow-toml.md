@@ -82,7 +82,7 @@ This file reduces agent guesswork and helps prevent accidental edits to generate
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -114,7 +114,7 @@ anchor_files = [
 
 `map.privacy = "minimal"` means the generated output omits remote URLs, branch names, recent change state, command lists, and automatic summaries by default.
 
-`map.include_nested = false` means nested independent repositories are not indexed by default. Workspace support must be enabled explicitly with the workspace fields.
+`map.include_nested = true` means nested independent repositories under configured workspace roots are indexed by default. The default root is `projects/`, and discovery remains bounded by the workspace fields.
 
 `mf check` verifies that `output` and `anchor_files` are relative paths inside the current root. It currently allows only `anchors_only` for `mode` and `minimal` for `privacy`.
 
@@ -240,17 +240,17 @@ procedure content.
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false` treats the current root as a normal mustflow root.
+`workspace.enabled = true` lets the current root discover independent repositories under `projects/` by default.
 
-For a workspace root, set paths such as `roots = ["projects", "repos"]`. mustflow should not automatically scan unconfigured `projects/` or `repos/` directories.
+For a workspace root, adjust paths such as `roots = ["projects", "repos"]`. mustflow scans only configured roots and does not grant child repository command authority from the parent workspace.
 
 `max_depth` and `max_repositories` prevent accidental large scans. `follow_symlinks = false` prevents traversal outside the workspace or into another drive by default.
 

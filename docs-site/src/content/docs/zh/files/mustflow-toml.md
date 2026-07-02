@@ -75,7 +75,7 @@ optional_read_order = [
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -105,7 +105,7 @@ anchor_files = [
 
 `map.privacy = "minimal"` 表示生成输出默认省略远程 URL、分支名、近期变更状态、命令列表和自动摘要。
 
-`map.include_nested = false` 表示默认不索引嵌套独立仓库。必须通过 workspace 字段显式启用工作区支持。
+`map.include_nested = true` 表示默认索引已配置工作区根目录下的嵌套独立仓库。默认根目录是 `projects/`，发现范围仍受 workspace 字段限制。
 
 `mf check` 会验证 `output` 和 `anchor_files` 是否为当前根目录内的相对路径。目前 `mode` 只允许 `anchors_only`，`privacy` 只允许 `minimal`。
 
@@ -146,17 +146,17 @@ external_anchors = [
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false` 会把当前根目录视为普通 mustflow 根目录。
+`workspace.enabled = true` 允许当前根目录默认发现 `projects/` 下的独立仓库。
 
-对于工作区根目录，可以设置 `roots = ["projects", "repos"]` 等路径。mustflow 不应自动扫描未配置的 `projects/` 或 `repos/` 目录。
+对于工作区根目录，可以调整 `roots = ["projects", "repos"]` 等路径。mustflow 只扫描已配置的根目录，并且父工作区不会授予子仓库命令权限。
 
 `max_depth` 和 `max_repositories` 防止意外的大范围扫描。`follow_symlinks = false` 默认防止遍历到工作区之外或另一块磁盘。
 

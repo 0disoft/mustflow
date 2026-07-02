@@ -39,9 +39,9 @@ Current schemas:
 - `evidence-report.schema.json`: output of `mf evidence --changed --json`, containing verification
   requirements, risk-priced evidence assessment, latest bounded evidence, failure replay capsules,
   conflict ledgers, receipts, remaining risks, and gaps without running commands
-- `workspace-status.schema.json`: output of `mf workspace status --json`, containing configured
-  workspace roots, discovered nested repositories, and per-root command-contract readiness without
-  granting command authority
+- `workspace-status.schema.json`: output of `mf workspace status --json` and
+  `mf workspace scan --json`, containing configured or ad hoc workspace roots, discovered nested
+  repositories, and per-root command-contract readiness without granting command authority
 - `workspace-command-catalog.schema.json`: output of `mf workspace command-catalog --json`,
   containing per-root command intent availability, safe `mf run` entrypoints, and no raw command
   strings

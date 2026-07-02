@@ -154,14 +154,17 @@ export const koMessages = {
 
   "workspace.help.summary":
     "명령 권한을 부여하지 않고 설정된 workspace root와 nested repository 계약 준비 상태를 확인합니다.",
+  "workspace.help.action.scan": "workspace 설정 없이 projects 디렉터리의 nested repository를 스캔합니다",
   "workspace.help.action.status": "발견된 nested repository와 각 로컬 mustflow 계약 상태를 출력합니다",
   "workspace.help.action.commandCatalog": "raw command string 없이 repository별 command intent 사용 가능 상태를 출력합니다",
   "workspace.help.action.verify": "명령을 실행하지 않고 repository별 changed-file verification plan을 출력합니다",
+  "workspace.help.option.projectsDir": "스캔할 하위 디렉터리를 지정합니다. 기본값: projects",
   "workspace.help.exit.ok": "workspace 상태를 확인했습니다",
-  "workspace.error.missingAction": "workspace 작업을 지정하세요: status, command-catalog 또는 verify",
+  "workspace.error.missingAction": "workspace 작업을 지정하세요: scan, status, command-catalog 또는 verify",
   "workspace.error.unknownAction": "알 수 없는 workspace 작업: {action}",
   "workspace.error.verifyRequiresChanged": "workspace verify에는 --changed가 필요합니다",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify에는 --plan-only가 필요합니다",
+  "workspace.scan.issue.noneDiscovered": "{projectsDir} 아래에서 nested git repository를 찾지 못했습니다.",
 
   "context.help.summary":
     "현재 mustflow 루트의 에이전트 작업 맥락을 출력합니다.",
@@ -773,6 +776,10 @@ export const koMessages = {
     "대화형 init 표준입력이 너무 큽니다. 최대 {maxBytes}바이트까지만 허용됩니다.",
   "init.error.promptInputTooManyResponses":
     "대화형 init 표준입력 응답이 너무 많습니다. 최대 {maxResponses}줄까지만 허용됩니다.",
+  "init.error.workspaceRootDetected":
+    "이 디렉터리는 단일 저장소가 아니라 여러 저장소를 담은 workspace처럼 보입니다: {projectsDir} 아래에서 git repository {count}개를 찾았습니다.",
+  "init.error.workspaceRootGuidance":
+    "여기서는 mf workspace scan --json을 실행하거나, 대상 저장소 안으로 이동해서 mf init을 실행하세요.",
   "init.prompt.locale": "mustflow 문서는 어떤 언어로 설치할까요?",
   "init.prompt.profile": "이 저장소에는 어떤 프로젝트 유형을 사용할까요?",
   "init.prompt.agentLang": "에이전트 최종 응답은 어떤 언어로 받을까요?",

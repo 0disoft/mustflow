@@ -75,7 +75,7 @@ optional_read_order = [
 output = "REPO_MAP.md"
 mode = "anchors_only"
 privacy = "minimal"
-include_nested = false
+include_nested = true
 anchor_files = [
   "AGENTS.md",
   "REPO_MAP.md",
@@ -105,7 +105,7 @@ anchor_files = [
 
 `map.privacy = "minimal"` का अर्थ है कि generated output default रूप से remote URLs, branch names, recent change state, command lists, और automatic summaries छोड़ देता है।
 
-`map.include_nested = false` का अर्थ है कि nested independent repositories default रूप से index नहीं होतीं। Workspace support को workspace fields से explicit रूप से enable करना होगा।
+`map.include_nested = true` का अर्थ है कि configured workspace roots के नीचे nested independent repositories default रूप से index होती हैं। Default root `projects/` है, और discovery workspace fields से bounded रहती है।
 
 `mf check` verify करता है कि `output` और `anchor_files` current root के भीतर relative paths हैं। यह अभी `mode` के लिए केवल `anchors_only` और `privacy` के लिए `minimal` allow करता है।
 
@@ -146,17 +146,17 @@ external_anchors = [
 
 ```toml
 [workspace]
-enabled = false
-roots = []
+enabled = true
+roots = ["projects"]
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
 stop_at_repository_root = true
 ```
 
-`workspace.enabled = false` current root को normal mustflow root मानता है।
+`workspace.enabled = true` current root को default रूप से `projects/` के नीचे independent repositories discover करने देता है।
 
-Workspace root के लिए `roots = ["projects", "repos"]` जैसे paths set करें। mustflow को unconfigured `projects/` या `repos/` directories automatically scan नहीं करनी चाहिए।
+Workspace root के लिए `roots = ["projects", "repos"]` जैसे paths adjust करें। mustflow केवल configured roots scan करता है और parent workspace से child repository command authority grant नहीं करता।
 
 `max_depth` और `max_repositories` accidental large scans रोकते हैं। `follow_symlinks = false` default रूप से workspace के बाहर या दूसरे drive में traversal रोकता है।
 

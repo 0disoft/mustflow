@@ -403,6 +403,13 @@ function createBlockedRunPlan(
 	};
 }
 
+/**
+ * mf:anchor cli.run-plan.eligibility
+ * purpose: Convert a command intent contract into a runnable or blocked execution plan.
+ * search: run plan, command intent, agent_allowed, cwd safety, output limits, approval gate
+ * invariant: A runnable plan exists only after intent eligibility, approvals, cwd, timeout, and command source checks pass.
+ * risk: config, security, state
+ */
 export function createRunPlan(
 	projectRoot: string,
 	contract: CommandContract,

@@ -249,6 +249,13 @@ function createRunProgressReporter(input: {
 	};
 }
 
+/**
+ * mf:anchor cli.run.execute
+ * purpose: Coordinate approved run-plan execution with active locks, environment policy, output limits, and write drift.
+ * search: run plan execution, active lock, environment policy, write drift, receipt
+ * invariant: Trusted root, runnable plan, active lock, and receipt tracking remain one preflight chain.
+ * risk: config, security, state
+ */
 export async function executeRunCommand(
 	request: RunCommandExecutionRequest,
 	reporter: Reporter,

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readSync } from 'node:fs';
 import path from 'node:path';
 import { stdin as processStdin, stdout as processStdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
@@ -16,6 +16,7 @@ import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
 import { formatCliOptionParseError, hasCliOptionToken, parseCliOptions, type CliOptionSpec } from '../lib/option-parser.js';
 import { isCommitMessageStyle, isTestAuthoringPolicy } from '../lib/preferences-options.js';
+import { discoverNestedRepositories, getRepoMapConfig } from '../lib/repo-map.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
 
@@ -53,6 +54,8 @@ const GITIGNORE_FRAGMENT_RELATIVE_PATH = 'gitignore.mustflow';
 const NON_INTERACTIVE_PROMPT_MAX_BYTES = 16 * 1024;
 const NON_INTERACTIVE_PROMPT_MAX_RESPONSES = 64;
 const NON_INTERACTIVE_PROMPT_READ_CHUNK_BYTES = 4096;
+const WORKSPACE_INIT_REPOSITORY_THRESHOLD = 2;
+const DEFAULT_WORKSPACE_SCAN_ROOT = 'projects';
 const LOCALE_LABELS: Record<string, string> = {
 	en: 'English',
 	ko: 'Korean',
@@ -705,6 +708,59 @@ function shouldPromptForInit(args: readonly string[], options: InitOptions): boo
 	return Boolean(processStdin.isTTY && processStdout.isTTY);
 }
 
+function hasGitMarker(directoryPath: string): boolean {
+	try {
+		const marker = lstatSync(path.join(directoryPath, '.git'));
+		return marker.isDirectory() || marker.isFile();
+	} catch {
+		return false;
+	}
+}
+
+function hasInstalledMustflowMarker(directoryPath: string): boolean {
+	return existsSync(path.join(directoryPath, 'AGENTS.md')) || existsSync(path.join(directoryPath, '.mustflow'));
+}
+
+function countDefaultWorkspaceRepositories(targetRoot: string): number {
+	const config = getRepoMapConfig(targetRoot);
+	const repositories = discoverNestedRepositories(
+		targetRoot,
+		{ ...config.map, includeNested: true },
+		{
+			...config.workspace,
+			enabled: true,
+			roots: [DEFAULT_WORKSPACE_SCAN_ROOT],
+		},
+	);
+
+	return repositories.length;
+}
+
+/**
+ * mf:anchor cli.init.workspace-root-guard
+ * purpose: Detect multi-repository workspace roots before installing repository-scoped mustflow files.
+ * search: mf init, workspace root, projects directory, nested repositories, install guard
+ * invariant: Non-git workspace folders with multiple nested repositories should not receive repo-scoped AGENTS.md by default.
+ * risk: config, state
+ */
+function shouldRefuseWorkspaceRootInit(targetRoot: string): boolean {
+	if (hasGitMarker(targetRoot) || hasInstalledMustflowMarker(targetRoot)) {
+		return false;
+	}
+
+	return countDefaultWorkspaceRepositories(targetRoot) >= WORKSPACE_INIT_REPOSITORY_THRESHOLD;
+}
+
+function printWorkspaceRootInitRefusal(targetRoot: string, reporter: Reporter, lang: CliLang): void {
+	reporter.stderr(
+		t(lang, 'init.error.workspaceRootDetected', {
+			count: countDefaultWorkspaceRepositories(targetRoot),
+			projectsDir: DEFAULT_WORKSPACE_SCAN_ROOT,
+		}),
+	);
+	reporter.stderr(t(lang, 'init.error.workspaceRootGuidance'));
+}
+
 async function promptChoice(
 	reader: PromptReader,
 	reporter: Reporter,
@@ -1339,6 +1395,11 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 
 	const targetRoot = process.cwd();
 	let template: ReturnType<typeof getDefaultTemplate>;
+
+	if (shouldRefuseWorkspaceRootInit(targetRoot)) {
+		printWorkspaceRootInitRefusal(targetRoot, reporter, lang);
+		return 1;
+	}
 
 	try {
 		template = getDefaultTemplate();

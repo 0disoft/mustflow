@@ -149,6 +149,45 @@ function createNestedRepository(projectPath) {
 	return childRoot;
 }
 
+function createBareNestedRepository(projectPath, relativePath) {
+	const childRoot = path.join(projectPath, ...relativePath.split('/'));
+	mkdirSync(path.join(childRoot, '.git'), { recursive: true });
+	writeFileSync(path.join(childRoot, 'README.md'), `# ${relativePath}\n`);
+	return childRoot;
+}
+
+test('workspace scan discovers projects repositories without workspace configuration', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createBareNestedRepository(projectPath, 'projects/products/app');
+		createBareNestedRepository(projectPath, 'projects/experiments/tool');
+
+		const result = await runCli(projectPath, ['workspace', 'scan', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(result.stderr, '');
+		assert.equal(output.schema_version, '1');
+		assert.equal(output.command, 'workspace scan');
+		assert.equal(output.workspace.enabled, true);
+		assert.deepEqual(output.workspace.roots, ['projects']);
+		assert.equal(output.repository_count, 2);
+		assert.deepEqual(
+			output.repositories.map((repository) => repository.relative_path),
+			['projects/experiments/tool/', 'projects/products/app/'],
+		);
+		assert.equal(output.policy.grants_command_authority, false);
+		assert.equal(output.policy.executes_commands, false);
+		assert.deepEqual(output.next_actions, [
+			'mf init inside one target repository',
+			'mf workspace status --json after configuring workspace roots',
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('workspace status reports disabled workspace without granting authority', async () => {
 	const projectPath = createTempProject();
 
@@ -296,6 +335,20 @@ test('workspace status rejects unknown options', async () => {
 	try {
 		initProject(projectPath);
 		const result = await runCli(projectPath, ['workspace', 'status', '--bad']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unknown option: --bad/u);
+		assert.match(result.stderr, /mf workspace --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace scan rejects unknown options', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = await runCli(projectPath, ['workspace', 'scan', '--bad']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unknown option: --bad/u);

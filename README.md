@@ -269,6 +269,7 @@ mf run mustflow_update_apply
 | `mf onboard commands` | Suggest review-only command-intent snippets from package.json, Makefile, or justfile without writing files or granting command authority. |
 | `mf next` | Inspect install state, changed files, verification coverage, and command-contract gaps, then print the next safe mustflow action without running commands. |
 | `mf evidence` | Summarize changed-file verification requirements, risk-priced evidence assessment, latest failure replay capsule, conflict ledger, receipts, remaining risks, and gaps without running commands. |
+| `mf workspace scan` | Scan a `projects/` directory for nested repositories without requiring workspace configuration or granting command authority. |
 | `mf workspace status` | Inspect configured workspace roots and nested repository contract readiness without granting parent-to-child command authority. |
 | `mf workspace command-catalog` | Aggregate per-repository command intent availability with safe `mf run` entrypoints and no raw command strings. |
 | `mf workspace verify --changed --plan-only` | Aggregate per-repository changed-file verification plans without running commands or granting parent-to-child command authority. |

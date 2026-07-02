@@ -73,6 +73,13 @@ function normalizeSpawnedCommandInput(command: SpawnedCommandInput): NormalizedS
 	};
 }
 
+/**
+ * mf:anchor cli.run.process-lifecycle
+ * purpose: Spawn configured commands with bounded output and deterministic timeout termination.
+ * search: child process, timeout, process tree, output limit, kill after
+ * invariant: Timed-out or output-limited commands must stop the process tree and return bounded stdout and stderr snapshots.
+ * risk: state, security
+ */
 function runSpawnedCommandStreaming(
 	command: SpawnedCommandInput,
 	cwd: string,

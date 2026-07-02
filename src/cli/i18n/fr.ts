@@ -155,14 +155,17 @@ export const frMessages = {
 
   "workspace.help.summary":
     "Inspecte les racines workspace configurées et l'état des contrats imbriqués sans accorder d'autorité de commande.",
+  "workspace.help.action.scan": "Scanne un répertoire projects pour trouver des dépôts imbriqués sans exiger de configuration workspace",
   "workspace.help.action.status": "Affiche les dépôts imbriqués découverts et leur état de contrat mustflow local",
   "workspace.help.action.commandCatalog": "Affiche la disponibilité des intents par dépôt sans chaînes de commande brutes",
   "workspace.help.action.verify": "Affiche les plans de vérification des changements par dépôt sans exécuter de commandes",
+  "workspace.help.option.projectsDir": "Sélectionne le répertoire enfant à scanner ; par défaut : projects",
   "workspace.help.exit.ok": "L'état du workspace a été inspecté",
-  "workspace.error.missingAction": "Indiquez une action workspace : status, command-catalog ou verify",
+  "workspace.error.missingAction": "Indiquez une action workspace : scan, status, command-catalog ou verify",
   "workspace.error.unknownAction": "Action workspace inconnue : {action}",
   "workspace.error.verifyRequiresChanged": "workspace verify nécessite --changed",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify nécessite --plan-only",
+  "workspace.scan.issue.noneDiscovered": "Aucun dépôt git imbriqué n'a été découvert sous {projectsDir}.",
 
   "context.help.summary":
     "Imprime le contexte d'agent pour la racine mustflow actuelle.",
@@ -773,6 +776,10 @@ Lisez ces fichiers avant de travailler :
     "L'entrée standard de l'init interactif est trop volumineuse ; {maxBytes} octets maximum sont attendus.",
   "init.error.promptInputTooManyResponses":
     "L'entrée standard de l'init interactif contient trop de réponses ; {maxResponses} lignes maximum sont attendues.",
+  "init.error.workspaceRootDetected":
+    "Ce répertoire ressemble à un workspace multi-dépôts, pas à un dépôt unique : {count} dépôts git ont été trouvés sous {projectsDir}.",
+  "init.error.workspaceRootGuidance":
+    "Exécutez mf workspace scan --json ici, ou exécutez mf init dans un dépôt cible.",
   "init.prompt.locale": "Quelle langue les documents mustflow doivent-ils utiliser ?",
   "init.prompt.profile": "Quel profil de projet mustflow doit-il utiliser ?",
   "init.prompt.agentLang":

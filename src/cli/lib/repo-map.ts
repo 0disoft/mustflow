@@ -364,6 +364,13 @@ function readMustflowConfig(projectRoot: string): MustflowConfig {
 	}
 }
 
+/**
+ * mf:anchor cli.repo-map.config
+ * purpose: Resolve repository-map and workspace discovery settings from mustflow configuration.
+ * search: repo map config, priority paths, anchor files, workspace roots, include nested
+ * invariant: Map and workspace settings shape navigation only and do not create command authority.
+ * risk: config
+ */
 export function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	const parsed = readMustflowConfig(projectRoot);
 	const configuredPriorityPaths = [...getStringArray(parsed.read_order), ...getStringArray(parsed.optional_read_order)];
@@ -404,6 +411,13 @@ function classifyGitLsFilesFailure(result: GitLsFilesResult): GitLsFilesStatus {
 	return 'error';
 }
 
+/**
+ * mf:anchor cli.repo-map.git-file-discovery
+ * purpose: Read tracked files for repository-map fingerprints and anchor discovery with bounded git execution.
+ * search: git ls-files, repo map fingerprint, tracked files, timeout, max buffer
+ * invariant: Git discovery failures produce status metadata instead of falling back to unbounded filesystem scans.
+ * risk: config, state
+ */
 export function discoverGitFilesForRepoMap(projectRoot: string, options: GitLsFilesOptions = {}): GitFileDiscovery {
 	const spawnGit = options.spawnGit ?? spawnGitLsFiles;
 	const result = spawnGit('git', ['ls-files', '-z'], {

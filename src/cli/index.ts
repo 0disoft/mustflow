@@ -51,6 +51,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf onboard commands --json',
 				'mf next --json',
 				'mf evidence --changed --json',
+				'mf workspace scan --json',
 				'mf workspace status --json',
 				'mf workspace verify --changed --plan-only --json',
 				'mf context --json',
@@ -120,6 +121,13 @@ function parseGlobalOptions(argv: string[]): ParsedGlobalOptions {
 	return { lang, args: parsed.positionals };
 }
 
+/**
+ * mf:anchor cli.entrypoint.dispatch
+ * purpose: Resolve top-level CLI options and dispatch commands without bypassing per-command validation.
+ * search: CLI dispatch, global options, command registry, version alias, help
+ * invariant: Unknown commands and global option errors must stop before any command runner is loaded.
+ * risk: config
+ */
 export async function runCli(argv: string[], reporter: Reporter = consoleReporter): Promise<number> {
 	const parsed = parseGlobalOptions(argv);
 	const [command, ...args] = parsed.args;

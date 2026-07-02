@@ -153,14 +153,17 @@ export const enMessages = {
 
   "workspace.help.summary":
     "Inspect configured workspace roots and nested repository contract readiness without granting command authority.",
+  "workspace.help.action.scan": "Scan a projects directory for nested repositories without requiring workspace configuration",
   "workspace.help.action.status": "Print discovered nested repositories and their local mustflow contract status",
   "workspace.help.action.commandCatalog": "Print per-repository command intent availability without raw command strings",
   "workspace.help.action.verify": "Print per-repository changed-file verification plans without running commands",
+  "workspace.help.option.projectsDir": "Select the child directory to scan; default: projects",
   "workspace.help.exit.ok": "Workspace status was inspected",
-  "workspace.error.missingAction": "Specify a workspace action: status, command-catalog, or verify",
+  "workspace.error.missingAction": "Specify a workspace action: scan, status, command-catalog, or verify",
   "workspace.error.unknownAction": "Unknown workspace action: {action}",
   "workspace.error.verifyRequiresChanged": "workspace verify requires --changed",
   "workspace.error.verifyRequiresPlanOnly": "workspace verify requires --plan-only",
+  "workspace.scan.issue.noneDiscovered": "No nested git repositories were discovered under {projectsDir}.",
 
   "context.help.summary":
     "Print the agent context for the current mustflow root.",
@@ -771,6 +774,10 @@ Read these files before working:
     "Interactive init stdin input is too large; expected at most {maxBytes} bytes.",
   "init.error.promptInputTooManyResponses":
     "Interactive init stdin input has too many responses; expected at most {maxResponses} lines.",
+  "init.error.workspaceRootDetected":
+    "This directory looks like a multi-repository workspace, not a single repository: found {count} git repositories under {projectsDir}.",
+  "init.error.workspaceRootGuidance":
+    "Run mf workspace scan --json here, or run mf init inside one target repository.",
   "init.prompt.locale": "Which language should mustflow documents use?",
   "init.prompt.profile": "Which project profile should mustflow use?",
   "init.prompt.agentLang":
