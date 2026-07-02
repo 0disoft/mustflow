@@ -826,6 +826,12 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.cli-option-contract-review"]
+source = "locales/en/.mustflow/skills/cli-option-contract-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.cli-output-contract-review"]
 source = "locales/en/.mustflow/skills/cli-output-contract-review/SKILL.md"
 source_locale = "en"
