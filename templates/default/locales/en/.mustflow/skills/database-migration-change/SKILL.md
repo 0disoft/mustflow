@@ -2,11 +2,11 @@
 mustflow_doc: skill.database-migration-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: database-migration-change
-description: Apply this skill when database migration files, schema migration history, ORM schema migrations, generated clients, schema dumps, SQL snapshots, online DDL, large indexes, constraints, state-dependent CHECK constraints, backfills, rolling deploy compatibility, expand-and-contract changes, destructive database changes, migration rollback or roll-forward claims, cut-over plans, lock or timeout policy, replication lag risk, migration observability, or production database migration procedures are created, changed, reviewed, or reported.
+description: Apply this skill when database migration files, schema migration history, ORM schema migrations, generated clients, schema dumps, SQL snapshots, online DDL, large indexes, constraints, state-dependent CHECK constraints, background-job backfills, zero-downtime migration claims, rolling deploy compatibility, expand-and-contract changes, destructive database changes, migration rollback or roll-forward claims, cut-over plans, feature-flagged read/write switches, lock or timeout policy, replication lag risk, migration observability, or production database migration procedures are created, changed, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,13 +33,14 @@ Keep database migrations safe for running systems by checking deploy compatibili
 
 Do not treat migration authoring as "make a file that applies locally." Treat it as "old code and new code must survive the same database during rollout."
 Migration incidents usually happen in the interval where old code, new code, old data, and new data are all alive at once. Design that interval first.
+Do not collapse schema expansion, data backfill, read or write cut-over, and destructive cleanup into one deploy-time migration just because that worked on a developer database.
 
 <!-- mustflow-section: use-when -->
 ## Use When
 
 - A database migration file, migration history entry, schema dump, ORM schema, SQL snapshot, generated client, seed, fixture, schema validator, or migration documentation is created or changed.
 - A change adds, removes, renames, splits, merges, backfills, rewrites, validates, constrains, indexes, foreign-keys, type-changes, defaults, nullable rules, enum values, tables, columns, generated columns, triggers, views, functions, row-level policies, or data migrations.
-- A task mentions rolling deploy, expand-and-contract, online migration, backfill, production schema change, rollback, roll-forward, down migration, migration lock, lock timeout, statement timeout, DDL transaction, `CREATE INDEX CONCURRENTLY`, MySQL `ALGORITHM=INSTANT`, MySQL `LOCK=NONE`, generated ORM client, migration drift, schema drift, or database migration safety.
+- A task mentions rolling deploy, zero-downtime migration, expand-and-contract, online migration, long-running migration, background job backfill, feature flag migration, dual-write, dual-read, compatibility read fallback, production schema change, rollback, roll-forward, down migration, migration lock, lock timeout, statement timeout, DDL transaction, `CREATE INDEX CONCURRENTLY`, MySQL `ALGORITHM=INSTANT`, MySQL `LOCK=NONE`, generated ORM client, migration drift, schema drift, or database migration safety.
 - Prisma, Drizzle, TypeORM, Rails Active Record, Django migrations, Alembic, Diesel, Ecto, Flyway, Liquibase, Knex, Sequelize, SQLx, or another migration tool changes schema, generated output, migration metadata, or deployment behavior.
 - A final report claims a database migration is safe, reversible, applied, validated, production-ready, no-downtime, rollback-safe, or tested from an old schema.
 
@@ -58,6 +59,8 @@ Migration incidents usually happen in the interval where old code, new code, old
 - Deployment shape: single-step deploy, rolling deploy, blue-green, multiple app versions, background workers, read replicas, multiple services, serverless functions, mobile clients, or external integrations.
 - Database engine and operational surface: PostgreSQL, MySQL, SQLite, SQL Server, managed database, migration lock behavior, DDL transaction behavior, online DDL options, table size, write load, long-running transactions, replication or CDC topology, expected lock time, statement timeout, lock timeout, and restore capability when known.
 - Data preservation needs, compatibility window, backfill size, batch strategy, cursor or checkpoint marker, validation query, observability query, rollback or roll-forward type, cut-over control, and whether old code can run after the new schema lands.
+- Application transition controls: feature flags, tenant gates, read fallback, dual-write window, old-write cutoff, old-read cutoff, worker rollout order, admin/reporting/BI dependency review, and how to disable the new path without restoring the database.
+- Production runbook boundary: execution owner, intended window, expected lock time, expected replication lag, metrics to watch, stop or pause thresholds, retry policy, partial-apply handling, customer-impact communication trigger, and manual approval points when relevant.
 - State and timestamp invariant matrix when a migration introduces lifecycle statuses, terminal
   timestamps, retry or dead-letter states, delivery states, soft-delete states, approval states, or
   other columns whose valid nullability depends on status.
@@ -78,6 +81,7 @@ Migration incidents usually happen in the interval where old code, new code, old
 
 - Update migration files, ORM schema files, generated client expectations, schema dumps, SQL snapshots, seeds, fixtures, compatibility code, backfill code, validation checks, docs, and tests directly required by the migration.
 - Prefer expand-and-contract for live systems: add compatible shape, dual-write or compatibility-read where needed, backfill safely, switch reads and writes, then contract only after compatibility is proven.
+- Move long-running data rewrites out of deploy-time schema migrations into bounded, restartable background jobs when production-sized data or live traffic can be affected.
 - Keep destructive cleanup separate from expansion unless the repository explicitly proves a single-step deployment is safe.
 - Do not weaken tests, delete migration history, hand-edit generated client output, suppress migration drift, or claim rollback safety for lossy changes.
 
@@ -93,19 +97,21 @@ Migration incidents usually happen in the interval where old code, new code, old
    - Django: migration files, state operations, historical models, schema editor behavior, generated SQL when relevant, and data migration functions.
    - Alembic or SQLAlchemy: migration revisions, autogenerate output, branch heads, model metadata, downgrade functions, naming conventions, and generated SQL.
    - Diesel, Ecto, Flyway, Liquibase, Knex, Sequelize, SQLx, and raw SQL: migration history, checked-in SQL, generated metadata, compile-time query checks, rollback files, and schema dumps.
-3. Build a migration ledger: old shape, new shape, rows affected, old code behavior, new code behavior, rollback expectation, generated artifact changes, dependent callers, and validation query.
+3. Build a migration ledger: old shape, new shape, rows affected, old code behavior, new code behavior, worker and batch behavior, admin/reporting/BI behavior, rollback expectation, generated artifact changes, dependent callers, and validation query.
 4. Classify compatibility.
    - Old code on old schema.
    - Old code on expanded schema.
    - New code on expanded schema.
    - New code after backfill.
    - New code after contract.
+   - Old background workers, cron jobs, admin tools, reporting queries, and external integrations during the same window.
    If any required state fails, the migration is not rolling-deploy safe.
 5. Split the deployment plan into expand, backfill, switch, and contract phases.
    - Expansion adds shapes old code can ignore and new code can start writing.
-   - Backfill is bounded, restartable, idempotent, observable, and separately validated.
-   - Switch changes read paths through a feature flag, rollout gate, tenant gate, or compatible deploy step where possible.
+   - Backfill is bounded, restartable, idempotent, observable, separately validated, and separated from the deployment pipeline when it can run long.
+   - Switch changes read and write paths through a feature flag, rollout gate, tenant gate, or compatible deploy step where possible.
    - Contract removes old shapes only after at least one compatibility window proves no code, job, report, or manual SQL still depends on them.
+   - A single migration file that expands, rewrites data, flips reads, and drops old structures is not zero-downtime evidence unless the repository proves the single-step path is safe for its deployment model.
 6. For column add, decide nullability, default behavior, backfill strategy, write path, read fallback, index need, and when a future `NOT NULL` or constraint can be enforced.
    - Add nullable first unless a proven engine/version/table-size path makes the non-null default safe.
    - Do not assume a database default backfills existing rows or matches ORM, API, batch, or application defaults.
@@ -139,6 +145,10 @@ Migration incidents usually happen in the interval where old code, new code, old
     - Partition attach can scan existing rows unless a suitable `CHECK` constraint proves the range first.
     - Table split, table merge, or relationship rewrite must preserve stable identifiers, foreign keys, audit references, external IDs, permissions, search documents, exports, and old-to-new mapping until all callers switch.
 15. For backfills, make them bounded, restartable, observable, and validated. Define batch size, cursor-based ordering key such as `id > last_id`, checkpoint, retry behavior, idempotency, timeout, lock expectation, throttle or pause/resume control, dead-letter or manual review behavior, and validation queries.
+    - Keep long-running data rewrites out of deploy-time migrations unless the affected row count, lock behavior, WAL/binlog or undo impact, replication lag, and timeout behavior prove the operation is short and bounded.
+    - Commit in small batches instead of one huge transaction when live data volume can be large.
+    - Process only rows that still need work, so reruns and retries cannot corrupt already migrated rows.
+    - Track progress with a durable cursor or checkpoint; do not rely on offset pagination for mutable production tables.
 16. Do not run or recommend full-table updates on production-sized data without measured volume, lock expectation, WAL or undo impact, replication lag risk, batch plan, timeout policy, and recovery plan.
 17. Review replication, CDC, and long-running transaction interactions.
     - Online DDL can leave replicas, read traffic, backups, CDC connectors, or failover readiness behind even when the primary looks healthy.
@@ -150,14 +160,17 @@ Migration incidents usually happen in the interval where old code, new code, old
     - Monitor dual-write mismatch and sample old/new values during the compatibility window; code intent is not proof that every path writes both sides.
 19. Prepare observability before apply.
     - Pair the migration with read-only progress and safety queries for lock waits, index build progress, replication lag, backfill cursor, skipped rows, failed rows, duplicate rows, missing rows, dead tuples, or estimated remaining range when the engine supports them.
+    - Watch application error rate, p95 or p99 latency, connection pressure, fallback-read rate, dual-write mismatch rate, and critical business event failures when the migration changes a live request path.
     - Log or report dry-run selection counts, apply counts, skip reasons, batch durations, and recovery handles.
     - A final `done` line is not enough evidence for a live migration.
+    - Prepare a runbook before apply. It should name the operator, execution window, expected duration, expected lock and replication behavior, stop thresholds, pause or abort action, partial-apply behavior, code rollback order, feature-flag fallback, validation queries, and customer-impact communication trigger.
 20. Decide rollback honestly and prefer roll-forward for partial live changes.
     - Reversible: schema-only and data-preserving.
     - App rollback: old and new code both tolerate the expanded shape, so the read path can move back without losing new writes.
     - Forward-fix preferred: partial live migration can be corrected without restoring.
     - Restore required: deletes, table merges, generated IDs, hashing, encryption, irreversible type conversions, external side effects, or lossy transforms.
     Do not promise rollback for changes that cannot reconstruct old values.
+    Treat backups as disaster recovery evidence, not ordinary deploy rollback, unless a restore drill proves that restoring the database would not lose acceptable live writes, external side effects, or dependent service state.
 21. Keep external side effects out of database migrations unless the repository has an explicit recovery model. Sending emails, calling payment APIs, deleting files, or mutating external providers from a migration usually breaks rollback.
 22. Check generated surfaces after schema changes: ORM clients, types, SQL snapshots, schema dumps, OpenAPI or GraphQL projections, API mocks, fixtures, seeds, admin screens, analytics, ETL, BI queries, and docs examples.
 23. Review ORM-specific traps.
@@ -180,11 +193,13 @@ Migration incidents usually happen in the interval where old code, new code, old
 - Source schema, target schema, migration files, generated artifacts, schema dumps, seeds, fixtures, and dependent code agree.
 - Expand, backfill, switch, and contract phases are separated or explicitly proven unnecessary.
 - Old-code/new-schema and new-code/expanded-schema compatibility is classified.
+- Read-path fallback, write-path transition, dual-write mismatch detection, feature-flag control, and old worker/admin/reporting dependency review are explicit when a live rollout can overlap versions.
 - Backfill and validation behavior is cursor-based or otherwise bounded, restartable, idempotent, observable, and checkable where relevant.
 - State-dependent CHECK constraints, terminal timestamp exclusivity, and valid nullability matrices
   are explicit where status columns can otherwise contradict timestamp or reason columns.
 - Lock levels, online DDL support, long-running transaction waits, replication lag, cut-over control, timeout policy, and observability queries are explicit where production data may be affected.
 - Rollback claims distinguish schema rollback, data rollback, app rollback, roll-forward, forward-fix, and restore-required cases.
+- Production runbook stop thresholds, pause or abort behavior, partial-apply handling, and communication triggers are explicit where the migration can affect live service behavior.
 - Destructive changes and production lock risks are either deferred, measured, guarded, or reported as remaining risk.
 
 <!-- mustflow-section: verification -->
@@ -212,6 +227,8 @@ Prefer configured migration dry-run, generated-output, schema-diff, or database 
 - If online DDL support, long-running transaction behavior, replication lag, or cut-over control is unknown, report the migration as operationally unproven.
 - If an autogenerator proposes drop/create for a rename, stop and rewrite the migration plan.
 - If a migration is lossy, do not claim rollback beyond restore or forward corrective migration.
+- If rollback depends only on a backup restore, label it disaster recovery instead of deploy rollback and report live-write loss or external-state reconciliation risk.
+- If the migration plan lacks feature-flag fallback, read/write cut-over order, stop thresholds, or partial-apply handling for a live rollout, do not call it zero-downtime.
 - If a backfill is not idempotent, restartable, observable, and throttled or bounded, keep it out of a production migration claim.
 - If generated clients or schema dumps drift, fix the source of truth and regenerated surfaces together.
 - If configured verification is missing, report the missing command intent instead of inferring package-manager, ORM, or migration-tool commands.
@@ -224,7 +241,8 @@ Prefer configured migration dry-run, generated-output, schema-diff, or database 
 - Source schema, target schema, and migration phase
 - Old-code/new-schema and new-code/expanded-schema compatibility
 - Expand/backfill/switch/contract plan and destructive cleanup timing
-- Backfill cursor, idempotency, throttle, pause/resume, validation, lock, timeout, replication, cut-over, and observability classification
+- Read/write transition, feature-flag fallback, dual-write or compatibility-read window, old worker/admin/reporting dependency review
+- Backfill cursor, idempotency, throttle, pause/resume, validation, lock, timeout, replication, cut-over, runbook stop threshold, and observability classification
 - Status, timestamp, CHECK constraint, and existing-row validation matrix where relevant
 - Rollback, app rollback, roll-forward, forward-fix, and restore-required classification
 - ORM/generated client/schema dump/snapshot surfaces synchronized

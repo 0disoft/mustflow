@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.107.9');
+	assert.equal(packageJson.version, '2.108.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -214,6 +214,84 @@ test('default template installs the structured config change skill across profil
 		assert.ok(
 			readTemplateSkillProfile(profile).includes('structured-config-change'),
 			`${profile} profile should include structured-config-change`,
+		);
+	}
+});
+
+test('default template installs the frontend component library review skill across profiles', () => {
+	const skill = 'frontend-component-library-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the AI product readiness skill across profiles', () => {
+	const skill = 'ai-product-readiness-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the notification delivery integrity skill across profiles', () => {
+	const skill = 'notification-delivery-integrity-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the admin control plane safety skill across profiles', () => {
+	const skill = 'admin-control-plane-safety-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the small service platform architecture skill across profiles', () => {
+	const skill = 'small-service-platform-architecture-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the browser automation reliability skill across profiles', () => {
+	const skill = 'browser-automation-reliability-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
 		);
 	}
 });

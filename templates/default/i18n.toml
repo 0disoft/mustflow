@@ -40,7 +40,7 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 27
+revision = 28
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 200
+revision = 206
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -152,11 +152,29 @@ translations = {}
 [documents."skill.payment-integrity-review"]
 source = "locales/en/.mustflow/skills/payment-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
 source = "locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.notification-delivery-integrity-review"]
+source = "locales/en/.mustflow/skills/notification-delivery-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.admin-control-plane-safety-review"]
+source = "locales/en/.mustflow/skills/admin-control-plane-safety-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.small-service-platform-architecture-review"]
+source = "locales/en/.mustflow/skills/small-service-platform-architecture-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -323,10 +341,16 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.frontend-component-library-review"]
+source = "locales/en/.mustflow/skills/frontend-component-library-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.frontend-localization-review"]
 source = "locales/en/.mustflow/skills/frontend-localization-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.website-task-friction-review"]
@@ -398,7 +422,7 @@ translations = {}
 [documents."skill.deployment-rollout-safety-review"]
 source = "locales/en/.mustflow/skills/deployment-rollout-safety-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.cloud-cost-guardrail-review"]
@@ -464,13 +488,13 @@ translations = {}
 [documents."skill.database-change-safety"]
 source = "locales/en/.mustflow/skills/database-change-safety/SKILL.md"
 source_locale = "en"
-revision = 16
+revision = 17
 translations = {}
 
 [documents."skill.database-migration-change"]
 source = "locales/en/.mustflow/skills/database-migration-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.database-query-bottleneck-review"]
@@ -619,7 +643,7 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.security-flow-review"]
@@ -1167,6 +1191,12 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.ai-product-readiness-review"]
+source = "locales/en/.mustflow/skills/ai-product-readiness-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.prompt-contract-quality-review"]
 source = "locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md"
 source_locale = "en"
@@ -1193,6 +1223,12 @@ translations = {}
 
 [documents."skill.agent-execution-control-review"]
 source = "locales/en/.mustflow/skills/agent-execution-control-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.browser-automation-reliability-review"]
+source = "locales/en/.mustflow/skills/browser-automation-reliability-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

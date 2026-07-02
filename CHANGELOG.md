@@ -6,6 +6,61 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+### Added
+
+- Added the `small-service-platform-architecture-review` built-in skill so agents review
+  multi-product platforms and app factories around a shared Product Registry, identity,
+  billing, credit ledger, entitlement, admin, deployment, analytics, logging, i18n, common UI,
+  templates, and operations spine instead of per-service copy-paste.
+- Added the `browser-automation-reliability-review` built-in skill so agents review browser and
+  computer-use automation around state machines, locator contracts, readiness signals, auth-state
+  isolation, CAPTCHA and anti-bot handling, rate limits, screenshot evidence, retries, timeouts,
+  human approval, redacted traces, and business-result verification.
+- Added the `frontend-component-library-review` built-in skill so agents review component
+  libraries and design systems as public API platforms across package exports, tokens,
+  primitives, controlled and uncontrolled contracts, variants, theming, Storybook docs, tests,
+  SemVer, migrations, and codemods.
+- Added the `notification-delivery-integrity-review` built-in skill so agents review email, push,
+  in-app, SMS, digest, unsubscribe, suppression, timezone scheduling, retry, provider webhook,
+  and audit-log paths as an explainable notification delivery lifecycle.
+- Added the `admin-control-plane-safety-review` built-in skill so agents review admin panels,
+  backoffice tools, support consoles, impersonation, dangerous actions, audit logs, change
+  history, exports, imports, bulk operations, search, filters, production guardrails, and
+  operator sessions as high-risk production control planes.
+- Added the `ai-product-readiness-review` built-in skill so agents review AI feature launches as
+  product and operating-system boundaries across AI Gateway ownership, cost budgets, prompt
+  injection boundaries, cache isolation, eval gates, fallback states, streaming risk, user-data
+  protection, observability, and model portability.
+
+### Changed
+
+- Strengthened the `database-migration-change` built-in skill with zero-downtime migration
+  checks for background-job backfills, feature-flagged read/write cut-overs, backup-versus-rollback
+  boundaries, runbook stop thresholds, and live rollout observability.
+- Strengthened the `database-change-safety` built-in skill with regret-prone schema checks for
+  soft-delete uniqueness, DB-owned constraints, relation integrity, enum and lookup-table choices,
+  JSON promotion, EAV boundaries, multi-tenant ownership, status history, optimistic locking, and
+  operational trace fields.
+- Strengthened the `payment-integrity-review` built-in skill with payment-failure checks for
+  invoice and line-item snapshots, partial refund tax reversals, receipt delivery, credit notes,
+  refund-dispute collisions, subscription dunning and entitlement policy, fraud and card-testing
+  holds, payout reconciliation, PCI scope, and provider-dashboard manual actions.
+- Strengthened the `auth-permission-change` built-in skill with login and authorization checks for
+  browser-held auth state, refresh-token rotation and reuse detection, OAuth/OIDC account linking,
+  MFA and passkey recovery, organization and team membership, RBAC/ABAC attributes, account-takeover
+  response paths, and last-owner safeguards.
+- Strengthened the `frontend-localization-review` built-in skill with i18n/l10n checks for
+  translation-key lifecycle, ICU plural/select messages, locale routing, `hreflang` and canonical
+  SEO, fallback telemetry, TMS and string-freeze workflow, global name/address assumptions, RTL and
+  pseudo-localization coverage, and per-locale operations monitoring.
+- Strengthened the `deployment-rollout-safety-review` built-in skill with deployment-pipeline
+  checks for required CI gates, preview deploy isolation, migration dry-runs or shadow checks,
+  immutable artifact promotion, production preflight, environment-scoped secrets, OIDC or
+  short-lived credentials, IaC policy validation, canary metric gates, and post-deploy observation.
+- Strengthened the installed agent workflow so agents keep skills as the primary procedure owner
+  while using script-pack metadata only for optional, read-only helper selection by phase,
+  related-skill, path-risk, and command-contract eligibility.
+
 ## 2.107.3 - 2026-06-30
 
 ### Fixed

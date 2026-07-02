@@ -2,7 +2,7 @@
 mustflow_doc: skill.database-change-safety
 locale: en
 canonical: true
-revision: 16
+revision: 17
 lifecycle: mustflow-owned
 authority: procedure
 name: database-change-safety
@@ -79,6 +79,7 @@ Use the smallest persistence boundary that proves the risk. Do not introduce rep
 - Event role: operational event, audit log, behavior analytics event, integration outbox message, reporting aggregate, or replayable domain event.
 - Data owner and affected tables, collections, stores, indexes, caches, generated files, or read models.
 - Entity identity rules, including stable ids, external provider ids, mutable slugs, titles, locale-specific addresses, redirects, and public API identifiers when content or user-facing resources are involved.
+- Regret-prone schema shape rules, including internal versus public ids, normalized unique keys, tenant-scoped uniqueness, foreign keys, join tables, enum or lookup-table ownership, nullable-field meaning, JSON promotion criteria, custom-field boundaries, status history, optimistic locking, and operational trace fields.
 - Exit and restore rules, including whether exported data preserves relationships, permissions, files, versions, events, audit history, automation rules, provider id mappings, schema metadata, and enough import or restore evidence to reconstruct product state.
 - Identifier ownership rules, including which ids are product-owned, which ids are public, which ids are provider mappings, and whether external auth, payment, CRM, analytics, storage, or CMS ids can change without breaking internal references.
 - Authentication identity rules, including app-owned user id, provider subject records, email-as-attribute behavior, social provider subject preservation, account merge or relink policy, session migration expectations, and whether memberships, roles, permissions, and entitlements live in product-owned tables rather than only provider metadata.
@@ -173,8 +174,25 @@ Use the smallest persistence boundary that proves the risk. Do not introduce rep
    - External-service core facts, such as current entitlement, subscription or plan state, processed payment event id, email consent state, customer lifecycle state, file identity and ownership, search source document metadata, job processing state, and audit evidence. Do not let a provider dashboard be the only place that can explain these facts.
    - Search and queue reconstruction records, such as index document builders, ranking or synonym policy versions, search logs, queue message schema versions, job idempotency keys, retry state, dead-letter state, and manual replay markers.
 4. Check schema shape: primary keys, foreign keys, unique constraints, nullable fields, defaults, check constraints, status values, timestamps, soft delete fields, tenant scope, audit fields, and retention rules.
+   - Use immutable internal primary keys for joins and separate public identifiers for URLs and APIs. Do not make email, slug, username, external provider id, or mutable display code the primary key for product-owned rows.
+   - Enforce uniqueness in the database, not only in application prechecks. Normalize comparison keys such as email, slug, provider id, and idempotency key explicitly, preserve the display value separately when needed, and name the unique constraint or index so operations can diagnose failures.
+   - Scope unique constraints to the real owner. Tenant-owned slugs, emails, invitations, memberships, idempotency keys, and external references usually need `tenant_id`, `workspace_id`, `operation_type`, or `provider` in the key. Global uniqueness should be a deliberate product rule, not an accident.
+   - Design soft-delete uniqueness before shipping. Active-only uniqueness, nullable unique behavior, restore conflicts, deleted-id reuse, and tombstone requirements must be explicit; otherwise deleted rows either block valid new records or allow duplicate active records.
+   - Prefer database foreign keys for core ownership and reference integrity. If an FK is intentionally omitted for scale, import staging, sharding, or asynchronous reconciliation, name the replacement invariant, cleanup path, and orphan-detection evidence. Index FK columns when joins, parent deletion checks, or tenant deletion depend on them.
+   - Treat `ON DELETE CASCADE` as a lifecycle promise, not cleanup convenience. Use it only when child rows truly share the parent's lifetime and audit, retention, restore, and legal obligations do not require separate survival.
+   - Model many-to-many relationships with join tables that can own role, status, order, source, timestamps, and actor fields. Avoid comma-separated ids, arrays of ids, or JSON lists for relationships that need joins, uniqueness, permissions, deletes, or audit.
+   - Treat polymorphic `entity_type` plus `entity_id` relations as integrity debt for core data because ordinary FKs cannot prove the target exists. Prefer target-specific tables, a shared parent table, or explicit constraint and cleanup machinery when the relation is business-critical.
+   - Choose enum, lookup table, or state machine based on change behavior. Stable technical codes may be enums; operator-managed values, values with display or sort metadata, plan or category catalogs, roles, and jurisdiction-specific rules usually need lookup tables. Workflow status needs allowed transitions and history, not only a value list.
+   - Avoid boolean state soup such as several independent `is_*` flags for one lifecycle. Use one current status plus timestamps or event history when states are mutually exclusive, ordered, reversible, or policy-driven.
+   - Give nullable fields exactly one meaning. Separate unknown, not applicable, not entered yet, deleted, failed, and pending states with explicit status or reason fields when queries or reports depend on the distinction.
+   - Avoid EAV or generic `entities`/`attributes`/`values` tables for core domain facts. If customer-defined fields are required, keep them in a bounded custom-field area with definitions, type validation, quotas, ownership, export semantics, and a promotion path once values drive search, sort, permission, billing, or reporting.
+   - Do not hide behavior-driving data in JSON. Keys used for filters, ordering, joins, uniqueness, permissions, tenant scope, status, retention, money, dates, quotas, indexes, or operational dashboards should be typed columns, child tables, or generated/computed columns with a migration path. Use `database-json-modeling-review` when JSON is part of the diff.
+   - Keep tenant ownership close to the owned row when tenant-scoped operations, billing, audit, export, restore, delete, or performance matter. B2B products should usually separate global users from tenant memberships, roles, invitations, entitlements, and billing records.
    - Treat deletion as lifecycle when recovery, audit, search behavior, support handling, or retention matters. Consider `deleted_at`, `deleted_by`, `delete_reason`, `restored_at`, `restored_by`, and `purge_after` instead of a lone boolean or timestamp.
    - Separate business records that should be soft-deleted or archived from personal data that should be anonymized, purged, or retained under a narrower legal rule.
+   - Keep status history for states that affect money, access, fulfillment, support, compliance, or user-visible commitments. A current status alone rarely explains who changed it, why, under which request, and whether a late webhook, retry, or admin action should still apply.
+   - Add optimistic versioning or conditional updates when two users, admins, workers, or webhooks can edit the same important row. Last-write-wins is usually data loss unless the product explicitly accepts it.
+   - Add operational trace fields where incident response will need them: server timestamps, actor ids, `created_by`, `updated_by`, `request_id`, `source`, import or provider reference, and safe reason codes. Do not add them blindly to every table, but do not leave high-value rows untraceable.
    - Treat mutable high-value records as versioned when reproducibility matters, such as AI prompts, documents, contracts, price policies, experiment configs, comparison data, permission policies, automation rules, and model settings. Prefer a stable parent row with a current-version pointer plus immutable version rows.
    - Use ledgers for money-like or quota-like balances, such as points, credits, inventory reservations, refunds, coupon issuance, entitlement grants, and manual adjustments. Treat cached balances as derived from ledger entries unless the local design proves otherwise.
    - For audit logs, store actor type, actor id when safe, action, target type and id, bounded before and after values, reason, request id, idempotency key, and timestamp in the same local transaction as the audited change when possible. Audit logs should be append-only to normal operators and should redact or omit personal data that is not needed to explain the change.
@@ -318,6 +336,7 @@ Use the smallest persistence boundary that proves the risk. Do not introduce rep
 ## Postconditions
 
 - The database role and source of truth are explicit.
+- Regret-prone schema shortcuts such as mutable primary keys, app-only uniqueness, unscoped tenant uniqueness, missing FK or cascade ownership, ambiguous nulls, boolean state soup, polymorphic core relations, EAV core facts, behavior-driving JSON, and user-as-tenant coupling are fixed, explicitly accepted, or reported.
 - Database rows, ORM models, generated caches, and read models do not leak into domain truth unless the local architecture intentionally owns that boundary.
 - Queries preserve authorization, tenant or user scope, deterministic ordering, expected absence behavior, and retention rules.
 - Content and resource models separate stable identity from mutable titles, slugs, URLs, translations, display fields, revisions, facts, sources, projections, and analytics dimensions when those concerns exist.
@@ -375,7 +394,7 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 
 - Database role and owner
 - Affected read and write paths
-- Schema, constraint, and query semantics reviewed
+- Schema-regret, constraint, relation, enum, JSON, custom-field, status-history, traceability, and query semantics reviewed
 - Identity, slug, lifecycle, asset, body block, taxonomy, relationship, attribute, filter URL, landing-page, translation, locale, country, currency, timezone, local-date, money, price snapshot, revision, claim, fact, source, collection, verification, comparison methodology, affiliate link, data-ownership, behavior analytics, audit log, API projection, public identifier, backup or restore, bulk update, admin audit, user-state, aggregate, cache-key, projection, and cache-invalidation checks where relevant
 - Export, import, product-owned id, provider-id mapping, relationship, permission, file, automation, event-history, and reconstruction checks where relevant
 - Authorization, tenant scope, retention, and privacy checks

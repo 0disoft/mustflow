@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 27
+revision: 28
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -67,6 +67,29 @@ Activate a skill later if new evidence changes the task type. For example, a fai
 When multiple skills apply, follow the most specific skill for each affected scope and combine only their declared command intents. Skills never authorize raw shell commands, long-running processes, or writes outside the task scope.
 
 When a skill is used, report the skill name and selection reason briefly in the next user-facing update or final report. When files were created or modified, the final report must include a concise skill-selection note: list the skills used, say that no matching installed skill was found, or report that a plausible skill is missing from the installed profile. Do not create a versioned worklog solely to record skill selection.
+
+### Script-Pack Selection
+
+Script-pack suggestions are optional evidence helpers, not skill procedures or command authority.
+Skills remain the primary procedure owner: select and read the matching `SKILL.md` first, then use
+script-pack metadata only to decide whether a bounded helper would improve orientation,
+synchronization, or review evidence.
+
+When the command contract exposes `script_pack_list`, use it for catalog discovery only. When the
+command contract exposes `script_pack_suggest_changed`, use it after changed files exist to get
+optional helper suggestions from current path evidence. These discovery commands do not run helper
+scripts, authorize new commands, or replace the skill-selection gate.
+
+Prefer helper candidates whose `related_skills` include the selected skill, whose `phases` match the
+current phase (`before_change`, `during_change`, `after_change`, or `review`), and whose `use_when`
+matches the changed paths and risk. Discard a candidate when `read_only` is false, `mutates` is true,
+network, destructive, interactive, or long-running behavior appears, required inputs are unavailable,
+the phase does not match, or no configured oneshot command intent authorizes that exact action.
+
+Script-pack output can focus what to inspect, but it does not replace reading `SKILL.md`, relevant
+source files, configured verification intents, documentation review requirements, or final completion
+evidence. Suggested helpers are not mandatory. Report skipped useful suggestions only when they were
+relevant to the current risk but not run.
 
 ## Input Stability
 

@@ -18,6 +18,12 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["code_change", "behavior_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "public_api_change"]
 
+[routes."small-service-platform-architecture-review"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 84
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
+
 [routes."code-review"]
 category = "general_code"
 route_type = "primary"
@@ -214,6 +220,12 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."notification-delivery-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."api-misuse-resistance-review"]
@@ -600,6 +612,12 @@ route_type = "primary"
 priority = 65
 applies_to_reasons = ["ui_change", "product_change"]
 
+[routes."ai-product-readiness-review"]
+category = "general_code"
+route_type = "primary"
+priority = 64
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
+
 [routes."prompt-contract-quality-review"]
 category = "general_code"
 route_type = "primary"
@@ -635,6 +653,12 @@ category = "general_code"
 route_type = "primary"
 priority = 70
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."browser-automation-reliability-review"]
+category = "general_code"
+route_type = "primary"
+priority = 73
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
 
 [routes."agent-eval-integrity-review"]
 category = "general_code"
@@ -858,6 +882,12 @@ route_type = "adjunct"
 priority = 77
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."admin-control-plane-safety-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."file-upload-security-review"]
 category = "security_privacy"
 route_type = "adjunct"
@@ -971,6 +1001,12 @@ category = "ui_assets"
 route_type = "adjunct"
 priority = 82
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "web_asset_change"]
+
+[routes."frontend-component-library-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 84
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "public_api_change", "package_metadata_change", "performance_change", "security_change", "privacy_change", "web_asset_change", "release_risk"]
 
 [routes."frontend-localization-review"]
 category = "ui_assets"
