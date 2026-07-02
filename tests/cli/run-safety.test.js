@@ -35,6 +35,8 @@ test('redacts secret-like command and output values in JSON run receipts', () =>
 	const projectPath = createTempProject();
 	const stdoutToken = 'sk-abcdefghijklmnop';
 	const stderrToken = 'ghp_1234567890abcdefghij';
+	const githubPatToken = 'github_pat_1234567890abcdefghij';
+	const bearerToken = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature';
 	const argvToken = 'password=supersecretvalue';
 
 	try {
@@ -47,7 +49,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Print secret-like values for receipt redaction."
-argv = ['${process.execPath}', '-e', 'console.log("token ${stdoutToken}"); console.error("api_key=${stderrToken}")', '${argvToken}']
+argv = ['${process.execPath}', '-e', 'console.log("token ${stdoutToken} ${githubPatToken}"); console.error("api_key=${stderrToken} ${bearerToken}")', '${argvToken}']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -66,12 +68,18 @@ destructive = false
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.doesNotMatch(serialized, new RegExp(stdoutToken));
 		assert.doesNotMatch(serialized, new RegExp(stderrToken));
+		assert.doesNotMatch(serialized, new RegExp(githubPatToken));
+		assert.doesNotMatch(serialized, new RegExp(bearerToken.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')));
 		assert.doesNotMatch(serialized, /supersecretvalue/);
 		assert.doesNotMatch(JSON.stringify(receipt.performance), new RegExp(stdoutToken));
 		assert.doesNotMatch(JSON.stringify(receipt.performance), new RegExp(stderrToken));
+		assert.doesNotMatch(JSON.stringify(receipt.performance), new RegExp(githubPatToken));
+		assert.doesNotMatch(JSON.stringify(receipt.performance), new RegExp(bearerToken.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')));
 		assert.doesNotMatch(JSON.stringify(receipt.performance), /supersecretvalue/);
 		assert.doesNotMatch(serializedPerformanceHistory, new RegExp(stdoutToken));
 		assert.doesNotMatch(serializedPerformanceHistory, new RegExp(stderrToken));
+		assert.doesNotMatch(serializedPerformanceHistory, new RegExp(githubPatToken));
+		assert.doesNotMatch(serializedPerformanceHistory, new RegExp(bearerToken.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')));
 		assert.doesNotMatch(serializedPerformanceHistory, /supersecretvalue/);
 		assert.match(receipt.stdout.tail, /\[REDACTED_SECRET\]/);
 		assert.match(receipt.stderr.tail, /\[REDACTED_SECRET\]/);
@@ -85,6 +93,7 @@ destructive = false
 		assert.ok(receipt.redaction.fields.includes('stderr.tail'));
 		assert.ok(receipt.redaction.redaction_kinds.includes('secret_key_value'));
 		assert.ok(receipt.redaction.redaction_kinds.includes('secret_token'));
+		assert.ok(receipt.redaction.redaction_kinds.includes('secret_bearer_token'));
 	} finally {
 		removeTempProject(projectPath);
 	}

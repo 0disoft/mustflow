@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.108.0');
+	assert.equal(packageJson.version, '2.108.2');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -339,6 +339,9 @@ test('CI workflow exercises release-sensitive package smoke paths', () => {
 	assert.match(ciWorkflow, /run: npm run check:core:node/u);
 	assert.match(ciWorkflow, /run: npm run check:install/u);
 	assert.match(ciWorkflow, /run: bun run docs:check/u);
+	assert.match(ciWorkflow, /windows-core:/u);
+	assert.match(ciWorkflow, /runs-on: windows-latest/u);
+	assert.match(ciWorkflow, /name: Windows Node core check/u);
 	assert.ok(ciWorkflow.indexOf('run: npm run check:core:node') > ciWorkflow.indexOf('run: bun run check'));
 	assert.ok(ciWorkflow.indexOf('run: npm run check:install') > ciWorkflow.indexOf('run: npm run check:core:node'));
 });
@@ -431,9 +434,9 @@ test('npm publish workflow uses trusted publisher identity', () => {
 	assert.match(publishNpmWorkflow, /id-token: write/u);
 	assert.match(publishNpmWorkflow, /package-manager-cache: false/u);
 	assert.match(publishNpmWorkflow, /no-cache: true/u);
-	assert.match(publishNpmWorkflow, /npm publish --access public/u);
+	assert.match(publishNpmWorkflow, /npm publish --access public --provenance/u);
 	assert.ok(
-		publishNpmWorkflow.indexOf('npm publish --access public') <
+		publishNpmWorkflow.indexOf('npm publish --access public --provenance') <
 			publishNpmWorkflow.indexOf('Create GitHub release for pushed tag'),
 	);
 	assert.doesNotMatch(publishNpmWorkflow, /NODE_AUTH_TOKEN/u);

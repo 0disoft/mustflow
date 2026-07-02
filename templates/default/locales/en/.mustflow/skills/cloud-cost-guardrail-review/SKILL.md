@@ -2,7 +2,7 @@
 mustflow_doc: skill.cloud-cost-guardrail-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: cloud-cost-guardrail-review
@@ -65,6 +65,9 @@ lifecycle cleanup, and service-specific caps before the bill becomes the first a
   narrower security skill first, then use this skill for spend blast radius.
 - The task only changes local development code with no cloud, provider, telemetry, storage,
   network, external API, or deployable infrastructure surface.
+- The task is primarily CI runner minutes, workflow matrix cost, Actions artifact retention,
+  build-cache quota, release asset handoff, or CI job billing; use `ci-pipeline-triage` first, then
+  return here only when broader cloud, SaaS, or provider spend guardrails remain.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

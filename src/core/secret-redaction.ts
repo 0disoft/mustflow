@@ -26,8 +26,13 @@ const SECRET_REDACTION_RULES: readonly SecretRedactionRule[] = [
 	},
 	{
 		kind: 'secret_token',
-		pattern: /\b(?:sk-[A-Za-z0-9]{16,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/gu,
+		pattern: /\b(?:sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{20,}|AKIA[0-9A-Z]{16})\b/gu,
 		replace: () => REDACTED_SECRET_MARKER,
+	},
+	{
+		kind: 'secret_bearer_token',
+		pattern: /\b(Bearer\s+)([A-Za-z0-9._~+/=-]{24,})\b/gu,
+		replace: (_match, prefix) => `${prefix}${REDACTED_SECRET_MARKER}`,
 	},
 ] as const;
 

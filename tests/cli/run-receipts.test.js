@@ -248,6 +248,54 @@ destructive = false
 	}
 });
 
+test('rejects verify receipt paths outside the run receipt state prefix when rebuilding latest index', async () => {
+	const projectPath = createTempProject();
+	const { updateRunReceiptState } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-receipt-state.js')).href
+	);
+
+	try {
+		const verifyDir = path.join(projectPath, '.mustflow', 'state', 'runs', 'verify-manual');
+		const intentsDir = path.join(verifyDir, 'intents');
+		mkdirSync(intentsDir, { recursive: true });
+		writeFileSync(
+			path.join(intentsDir, '001-verify_echo.json'),
+			`${JSON.stringify({ command: 'run', intent: 'verify_echo', cwd: '.', status: 'passed' }, null, 2)}\n`,
+		);
+		writeFileSync(
+			path.join(verifyDir, 'manifest.json'),
+			`${JSON.stringify(
+				{
+					command: 'verify',
+					status: 'passed',
+					correlation_id: 'manual-correlation',
+					verification_plan_id: 'manual-plan',
+					receipts: [
+						{
+							intent: 'verify_echo',
+							status: 'passed',
+							receipt_path: '.mustflow/state/not-runs/verify-manual/intents/001-verify_echo.json',
+						},
+					],
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		updateRunReceiptState(projectPath, { maxItems: 50, maxTotalMb: 10 });
+
+		const latestIndex = JSON.parse(readFileSync(latestRunReceiptIndexPath(projectPath), 'utf8'));
+		assert.equal(latestIndex.entries.length, 1);
+		assert.equal(latestIndex.entries[0].command, 'verify');
+		assert.equal(latestIndex.entries[0].intent, null);
+		assert.deepEqual(latestIndex.latest_by_intent, {});
+		assert.deepEqual(latestIndex.latest_by_cwd_intent, {});
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps performance history bounded and separate from raw run receipts', async () => {
 	const projectPath = createTempProject();
 	const { recordRunPerformanceHistory } = await import(

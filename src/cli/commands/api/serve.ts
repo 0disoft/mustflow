@@ -1,5 +1,3 @@
-import { createInterface } from 'node:readline';
-
 import { apiReportActionSpec, isApiReportAction, type ApiReportAction } from './actions.js';
 import { printUsageError } from '../../lib/cli-output.js';
 import {
@@ -13,6 +11,7 @@ import { t, type CliLang } from '../../lib/i18n.js';
 import type { Reporter } from '../../lib/reporter.js';
 
 const API_SERVE_SCHEMA_VERSION = '1';
+const API_SERVE_MAX_LINE_CHARS = 1024 * 1024;
 const API_SERVE_OPTIONS: readonly CliOptionSpec[] = [
 	{ name: '--stdio', kind: 'boolean' },
 	{ name: '--help', kind: 'boolean', aliases: ['-h'] },
@@ -21,7 +20,7 @@ const API_SERVE_OPTIONS: readonly CliOptionSpec[] = [
 interface ApiServeRequest {
 	readonly id?: string | number | null;
 	readonly action?: unknown;
-	readonly changed?: unknown;
+	readonly changed?: boolean;
 }
 
 interface ApiServePolicy {
@@ -36,6 +35,7 @@ interface ApiServeError {
 	readonly code:
 		| 'invalid_json'
 		| 'invalid_request'
+		| 'request_too_large'
 		| 'unknown_action'
 		| 'action_requires_changed'
 		| 'action_does_not_accept_changed'
@@ -66,6 +66,11 @@ type ApiServeResponse = ApiServeSuccessResponse | ApiServeErrorResponse;
 interface ParsedApiServeRequestLine {
 	readonly request: ApiServeRequest | null;
 	readonly error: ApiServeErrorResponse | null;
+}
+
+interface ApiServeInputLine {
+	readonly line?: string;
+	readonly oversized?: boolean;
 }
 
 export interface ApiServeRuntime {
@@ -123,6 +128,18 @@ function readApiServeId(request: unknown): string | number | null {
 	return null;
 }
 
+function readApiServeChanged(request: Record<string, unknown>, id: string | number | null): boolean | undefined | ApiServeErrorResponse {
+	if (!Object.hasOwn(request, 'changed')) {
+		return undefined;
+	}
+
+	if (typeof request.changed === 'boolean') {
+		return request.changed;
+	}
+
+	return createApiServeError(id, 'invalid_request', 'Request field "changed" must be a boolean when provided.');
+}
+
 function parseApiServeRequestLine(line: string): ParsedApiServeRequestLine {
 	let parsed: unknown;
 	try {
@@ -143,11 +160,19 @@ function parseApiServeRequestLine(line: string): ParsedApiServeRequestLine {
 		};
 	}
 
+	const changed = readApiServeChanged(parsed, id);
+	if (typeof changed !== 'boolean' && changed !== undefined) {
+		return {
+			request: null,
+			error: changed,
+		};
+	}
+
 	return {
 		request: {
 			id,
 			action: parsed.action,
-			changed: parsed.changed,
+			changed,
 		},
 		error: null,
 	};
@@ -175,8 +200,8 @@ function createApiServeResponse(request: ApiServeRequest, runtime: ApiServeRunti
 
 	try {
 		return createApiServeSuccess(id, runtime.createReport(request.action));
-	} catch (error) {
-		return createApiServeError(id, 'report_unavailable', error instanceof Error ? error.message : String(error));
+	} catch {
+		return createApiServeError(id, 'report_unavailable', 'Report is unavailable for this action.');
 	}
 }
 
@@ -188,6 +213,57 @@ function writeApiServeResponse(response: ApiServeResponse, reporter: Reporter): 
 	}
 
 	reporter.stdout(line.trimEnd());
+}
+
+async function* readApiServeInputLines(input: NodeJS.ReadStream): AsyncGenerator<ApiServeInputLine> {
+	input.setEncoding('utf8');
+	let buffer = '';
+	let discardingOversizedLine = false;
+
+	for await (const chunk of input) {
+		const text = typeof chunk === 'string' ? chunk : String(chunk);
+		let start = 0;
+
+		while (start < text.length) {
+			const newlineIndex = text.indexOf('\n', start);
+			const segmentEnd = newlineIndex === -1 ? text.length : newlineIndex;
+			const segment = text.slice(start, segmentEnd);
+
+			if (discardingOversizedLine) {
+				if (newlineIndex !== -1) {
+					yield { oversized: true };
+					discardingOversizedLine = false;
+				}
+			} else if (buffer.length + segment.length > API_SERVE_MAX_LINE_CHARS) {
+				buffer = '';
+				if (newlineIndex === -1) {
+					discardingOversizedLine = true;
+				} else {
+					yield { oversized: true };
+				}
+			} else {
+				buffer += segment;
+				if (newlineIndex !== -1) {
+					yield { line: buffer.endsWith('\r') ? buffer.slice(0, -1) : buffer };
+					buffer = '';
+				}
+			}
+
+			if (newlineIndex === -1) {
+				break;
+			}
+			start = newlineIndex + 1;
+		}
+	}
+
+	if (discardingOversizedLine) {
+		yield { oversized: true };
+		return;
+	}
+
+	if (buffer.length > 0) {
+		yield { line: buffer.endsWith('\r') ? buffer.slice(0, -1) : buffer };
+	}
 }
 
 export async function runApiServe(
@@ -213,13 +289,16 @@ export async function runApiServe(
 		return 1;
 	}
 
-	const input = createInterface({
-		input: process.stdin,
-		crlfDelay: Infinity,
-	});
+	for await (const inputLine of readApiServeInputLines(process.stdin)) {
+		if (inputLine.oversized) {
+			writeApiServeResponse(
+				createApiServeError(null, 'request_too_large', `Request line exceeds ${API_SERVE_MAX_LINE_CHARS} characters.`),
+				reporter,
+			);
+			continue;
+		}
 
-	for await (const rawLine of input) {
-		const line = rawLine.trim();
+		const line = inputLine.line?.trim() ?? '';
 		if (line.length === 0) {
 			continue;
 		}

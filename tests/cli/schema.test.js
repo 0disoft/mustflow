@@ -523,13 +523,17 @@ test('api serve jsonl responses match the published schema', () => {
 		const input = [
 			JSON.stringify({ id: 'health', action: 'health' }),
 			JSON.stringify({ id: 'missing-changed', action: 'verification-plan' }),
+			JSON.stringify({ id: 'invalid-changed', action: 'verification-plan', changed: 'true' }),
+			`{"id":"oversized","action":"health","padding":"${'x'.repeat(1024 * 1024)}"}`,
 			'',
 		].join('\n');
 		const result = runCli(projectPath, ['api', 'serve', '--stdio'], { input });
 		const lines = result.stdout.trim().split(/\r?\n/u).map((line) => JSON.parse(line));
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(lines.length, 2);
+		assert.equal(lines.length, 4);
+		assert.equal(lines[2].error.code, 'invalid_request');
+		assert.equal(lines[3].error.code, 'request_too_large');
 		for (const line of lines) {
 			assertMatchesSchema(schemaRoot, 'api-serve-response.schema.json', line);
 		}

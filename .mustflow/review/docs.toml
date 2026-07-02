@@ -174,7 +174,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.850Z"
-last_touched_at = "2026-06-25T14:29:46.153Z"
+last_touched_at = "2026-07-02T10:48:21.273Z"
 
 [[documents]]
 path = ".mustflow/skills/clarifying-question-gate/SKILL.md"
@@ -183,6 +183,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T02:26:52.944Z"
 last_touched_at = "2026-06-28T08:53:04.137Z"
+
+[[documents]]
+path = ".mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-02T10:48:21.286Z"
+last_touched_at = "2026-07-02T10:48:21.286Z"
 
 [[documents]]
 path = ".mustflow/skills/completion-evidence-gate/SKILL.md"
@@ -350,7 +358,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-02T08:57:21.602Z"
+last_touched_at = "2026-07-02T10:48:21.299Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -547,6 +555,14 @@ first_seen_at = "2026-06-29T04:11:17.040Z"
 last_touched_at = "2026-06-29T05:43:28.639Z"
 
 [[documents]]
+path = ".mustflow/skills/tauri-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-02T10:48:21.307Z"
+last_touched_at = "2026-07-02T10:48:21.307Z"
+
+[[documents]]
 path = ".mustflow/skills/test-suite-performance-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -610,7 +626,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-30T01:48:24.696Z"
-last_touched_at = "2026-06-30T01:48:24.696Z"
+last_touched_at = "2026-07-02T10:48:21.317Z"
 
 [[documents]]
 path = "CHANGELOG.md"
@@ -1112,7 +1128,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.940Z"
-last_touched_at = "2026-06-25T14:29:46.269Z"
+last_touched_at = "2026-07-02T10:48:21.325Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/clarifying-question-gate/SKILL.md"
@@ -1121,6 +1137,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T02:26:52.966Z"
 last_touched_at = "2026-06-28T08:53:04.288Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-02T10:48:21.332Z"
+last_touched_at = "2026-07-02T10:48:21.332Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
@@ -1288,7 +1312,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-02T08:57:21.691Z"
+last_touched_at = "2026-07-02T10:48:21.340Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
@@ -1483,6 +1507,14 @@ first_seen_at = "2026-06-29T04:11:17.107Z"
 last_touched_at = "2026-06-29T05:43:28.720Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-02T10:48:21.346Z"
+last_touched_at = "2026-07-02T10:48:21.346Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/test-suite-performance-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -1536,4 +1568,4 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-30T01:48:24.737Z"
-last_touched_at = "2026-06-30T01:48:24.737Z"
+last_touched_at = "2026-07-02T10:48:21.354Z"

@@ -2,11 +2,11 @@
 mustflow_doc: skill.wails-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: wails-code-change
-description: Apply this skill when Wails v3 applications, Go services, generated bindings, TypeScript runtime calls, windows, menus, system tray, dialogs, events, frontend bridge payloads, WebView platform behavior, Taskfile or build config, signing, packaging, custom protocols, file associations, server builds, or Wails-related tests are created, changed, reviewed, or upgraded.
+description: Apply this skill when Wails v3 applications, Go services, generated bindings, TypeScript runtime calls, windows, menus, system tray, dialogs, events, frontend bridge payloads, WebView platform behavior, Taskfile or build config, signing, packaging, platform targets, native desktop CI build matrices, custom protocols, file associations, server builds, or Wails-related tests are created, changed, reviewed, or upgraded.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -38,6 +38,8 @@ Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge. D
 - `wails.json`, `build/config.yml`, `Taskfile.yml`, `go.mod`, Wails Go APIs, `application.New`, services, generated bindings, `@wailsio/runtime`, frontend calls to Go methods, events, raw messages, windows, menus, system tray, dialogs, browser, clipboard, autostart, notifications, file associations, custom protocols, single-instance handling, signing, packaging, server builds, or Wails tests change.
 - A task touches Wails v2-to-v3 migration, Electron-to-Wails migration, multi-window design, bridge payloads, binding generation, platform WebView behavior, OS integration, or cross-platform packaging.
 - The task writes durable guidance about Wails version status, Wails CLI or runtime versions, WebView2, WKWebView, WebKitGTK, GTK build tags, Taskfile behavior, or platform packaging.
+- Wails release packaging, `Taskfile.yml`, `build/config.yml`, `wails build` flags, platform
+  targets, installer formats, signing, or CI matrix behavior changes.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -54,6 +56,9 @@ Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge. D
 - Map of frontend calls to Go services: generated function, Go method, request DTO, response DTO, error contract, concurrency owner, cancellation path, and security or permission boundary.
 - Window and native integration ledger: window name or id, owner, lifecycle, hide versus close policy, event subscriptions, runtime-ready handshake, menu projection, tray behavior, dialog decision flow, file association, custom protocol, and single-instance policy.
 - Platform ledger: Windows WebView2 runtime and user-data folder assumptions, macOS WKWebView and signing or notarization expectations, Linux GTK/WebKitGTK target, build tags, package format, and unsupported or legacy distribution targets.
+- Build and release ledger when packaging is in scope: Taskfile targets, build config, Wails CLI
+  flags, runner OS matrix, package formats, frontend and Go cache strategy, signing or
+  notarization gates, artifact retention, and release asset upload path.
 - Official or repository-local source evidence before preserving exact Wails status, alpha, release, CLI, runtime, package, platform dependency, or OS-support claims.
 - Configured verification intents.
 
@@ -72,6 +77,8 @@ Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge. D
 - Keep Go services as app capability boundaries with typed DTOs, validation, thread-safe state, and explicit errors.
 - Keep frontend calls thin around generated bindings and runtime event subscriptions with cleanup.
 - Keep build and package changes in declared Wails config, Taskfile, Go module, frontend package, signing, installer, and docs surfaces.
+- Keep platform and package targets explicit. Do not build every OS, architecture, or installer on
+  every PR unless the repository has a clear compatibility contract requiring it.
 - Do not expose debug, destructive, secret, filesystem, shell, updater, protocol, or raw-message behavior through exported Go methods without an explicit product and security boundary.
 
 <!-- mustflow-section: procedure -->
@@ -130,8 +137,24 @@ Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge. D
     - Wails v3 build and package behavior is Taskfile and build-config oriented;
     - do not assume one host can produce all signed distributable artifacts without platform-specific runners or signing steps;
     - keep WebView runtime strategy, installer format, macOS notarization, Linux distribution matrix, custom protocol registration, and file association registration explicit.
-16. When migration is involved, reject search-and-replace migrations. Rebuild the app assembly around application, services, windows, managers, lifecycle, generated bindings, events, and build tasks.
-17. Choose configured verification intents that cover Go code, frontend typecheck, generated bindings, package build, Wails build, platform package smoke, and docs. If those intents are missing, report the exact missing coverage.
+16. Keep CI release matrices narrow and deliberate:
+    - Wails builds are usually Go compile plus frontend build plus packaging, but signing,
+      notarization, WebView runtime checks, and Linux package dependencies can still dominate;
+    - prefer PR checks that prove frontend build, Go compile or tests, generated bindings, and
+      bridge contracts on the cheapest adequate runner;
+    - reserve full Windows, Linux, macOS, installer, signing, notarization, and cross-architecture
+      matrices for release tags, release branches, or protected manual gates unless the repository
+      explicitly requires every PR to produce distributables;
+    - use platform target and packaging flags such as no-package, installer-only, or universal
+      macOS behavior intentionally, according to the repository's Wails version and Taskfile style;
+    - keep test artifacts short-lived and promote durable distributables through the release or
+      package channel.
+17. When a cost comparison between Wails and another desktop stack is requested, route the CI
+    billing, runner-minute, artifact-storage, and matrix-shape analysis through
+    `ci-pipeline-triage`; use this skill for Wails-specific Taskfile, build config, Go/frontend
+    cache, platform dependency, signing, and packaging behavior.
+18. When migration is involved, reject search-and-replace migrations. Rebuild the app assembly around application, services, windows, managers, lifecycle, generated bindings, events, and build tasks.
+19. Choose configured verification intents that cover Go code, frontend typecheck, generated bindings, package build, Wails build, platform package smoke, and docs. If those intents are missing, report the exact missing coverage.
 
 <!-- mustflow-section: hard-bans -->
 ## Hard Bans
@@ -152,6 +175,8 @@ Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge. D
 - Go service methods, DTOs, errors, shared state, and concurrency ownership are clear.
 - Window lifecycle, event subscriptions, menu/tray/dialog/native integration, and runtime-ready behavior are explicit.
 - Platform WebView and packaging assumptions are recorded when touched.
+- Wails package targets, release matrix, cache strategy, and artifact retention are explicit when
+  packaging is touched.
 - Missing Wails-specific verification is reported rather than hidden behind generic Go or frontend checks.
 
 <!-- mustflow-section: verification -->
@@ -176,6 +201,9 @@ Report missing Wails-specific intents when relevant: generated binding check, fr
 - If bridge calls race or return stale results, add request sequencing, cancellation, job ownership, or synchronized Go state before adding frontend retries.
 - If a large payload stalls, move the payload to pagination, chunks, file handles, or pull-after-notification events.
 - If a tray, menu, dialog, file association, protocol, or packaging behavior differs by OS, document and test the platform-specific path instead of forcing a fake cross-platform abstraction.
+- If packaging cost or duration grows unexpectedly, check Taskfile targets, build config, package
+  flags, release-only matrix gating, Go cache, frontend cache, macOS job count, signing and
+  notarization split, and artifact retention before changing unrelated app code.
 - If exact Wails version or platform support claims cannot be refreshed from official sources, keep the skill behavior version-agnostic and report the unverified source boundary.
 
 <!-- mustflow-section: output-format -->
@@ -184,6 +212,8 @@ Report missing Wails-specific intents when relevant: generated binding check, fr
 - Boundary checked
 - Wails version, app assembly, service, bridge, binding, window, event, menu, tray, dialog, and OS integration notes
 - WebView platform and packaging notes when touched
+- Build matrix, platform target, signing or notarization, cache, artifact retention, and release
+  asset notes when packaging is touched
 - Files changed
 - Command intents run
 - Skipped checks and reasons

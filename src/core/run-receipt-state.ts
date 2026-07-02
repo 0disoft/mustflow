@@ -7,6 +7,7 @@ import { ensureInside, writeJsonFileInsideWithoutSymlinks } from './safe-filesys
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
 const RUN_RECEIPT_DIR = path.join('.mustflow', 'state', 'runs');
+const RUN_RECEIPT_DIR_POSIX = '.mustflow/state/runs';
 const LATEST_RUN_RECEIPT_INDEX = 'latest.index.json';
 const STATE_DIR_PREFIXES = ['run-', 'verify-'] as const;
 const MIN_RETAINED_RUN_DIRS = 1;
@@ -224,6 +225,28 @@ function stringArrayField(value: unknown): readonly string[] | undefined {
 	return Array.isArray(value) && value.every((entry) => typeof entry === 'string') ? value : undefined;
 }
 
+function resolveReceiptPathInsideRunsDir(runsDir: string, receiptPath: string): string | null {
+	if (path.isAbsolute(receiptPath)) {
+		return null;
+	}
+
+	const normalizedReceiptPath = receiptPath.replace(/\\/gu, '/');
+	const runsPrefix = `${RUN_RECEIPT_DIR_POSIX}/`;
+	if (!normalizedReceiptPath.startsWith(runsPrefix)) {
+		return null;
+	}
+
+	const relativeToRunsDir = normalizedReceiptPath.slice(runsPrefix.length);
+	const parts = relativeToRunsDir.split('/');
+	if (parts.length === 0 || parts.some((part) => part.length === 0 || part === '.' || part === '..')) {
+		return null;
+	}
+
+	const receiptAbsolutePath = path.resolve(runsDir, ...parts);
+	ensureInside(runsDir, receiptAbsolutePath);
+	return receiptAbsolutePath;
+}
+
 function createRunEntry(directory: RetainedRunStateDirectory): RunReceiptIndexEntry | null {
 	const receipt = readJsonObject(path.join(directory.absolutePath, 'receipt.json')) as RunReceipt | null;
 
@@ -256,8 +279,10 @@ function readVerifyIntentEntry(
 	}
 
 	const runsDir = path.dirname(directory.absolutePath);
-	const receiptAbsolutePath = path.resolve(runsDir, ...receiptPath.split('/').slice(3));
-	ensureInside(runsDir, receiptAbsolutePath);
+	const receiptAbsolutePath = resolveReceiptPathInsideRunsDir(runsDir, receiptPath);
+	if (!receiptAbsolutePath) {
+		return null;
+	}
 	const receipt = readJsonObject(receiptAbsolutePath);
 
 	return {

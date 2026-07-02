@@ -2,11 +2,11 @@
 mustflow_doc: skill.tauri-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: tauri-code-change
-description: Apply this skill when Tauri frontend invokes, Rust commands, capabilities, permissions, scopes, plugins, filesystem, dialog, shell, opener, updater, sidecar, or mobile native permissions are created or changed.
+description: Apply this skill when Tauri frontend invokes, Rust commands, capabilities, permissions, scopes, plugins, filesystem, dialog, shell, opener, updater, sidecar, mobile native permissions, Tauri bundling targets, release package formats, or native desktop CI build matrices are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -38,6 +38,8 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 - `src-tauri`, `tauri.conf.*`, `Cargo.toml`, `#[tauri::command]`, `invoke`, Tauri JavaScript APIs, plugin config, capabilities, permissions, scopes, CSP, WebView bootstrap HTML, fs, dialog, shell, opener, updater, sidecar, mobile manifests, or native permissions change.
 - A frontend button, menu, or workflow calls native resources through Tauri.
 - A packaged Tauri app shows a blank or black WebView after release and browser console or built HTML may point to Content Security Policy blocking the frontend bootstrap.
+- Tauri release packaging, `bundle.targets`, platform target triples, updater artifacts, signing,
+  or CI matrix behavior changes.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -49,6 +51,9 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 ## Required Inputs
 
 - Frontend package metadata, static build output or generated entry HTML, Tauri config, Rust manifests, main/lib command modules, command registration, capability and permission files, plugin config, updater config, sidecar config, mobile permissions, and tests.
+- Build and release evidence when packaging is in scope: CI workflow or task definitions, runner
+  OS matrix, package formats, `bundle.targets`, Rust and frontend cache strategy, signing or
+  notarization gates, updater artifacts, artifact retention, and release asset upload path.
 - Map of frontend calls to Rust commands or plugin APIs, permission scopes, exact window labels, exact webview labels, CSP directives, remote origins, WebView custom protocols or IPC origins, and actual OS resources.
 - Permission diff: previous permissions, new permissions, newly reachable windows/webviews, new scopes, and native operations enabled.
 - Configured verification intents.
@@ -69,6 +74,8 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 - Prefer app-owned directories and stable app IDs over broad filesystem paths.
 - Keep shell, opener, sidecar, and updater behavior narrowly scoped.
 - Prefer Rust commands that map small enums or ids to fixed native operations over exposing broad plugin APIs directly to the frontend.
+- Keep package target lists explicit. Do not rely on broad "all targets" behavior when the product
+  only ships a small set of installers or archives.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
@@ -81,7 +88,9 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 6. Apply the CSP and WebView bootstrap policy below before tightening `script-src`, `connect-src`, `style-src`, `worker-src`, `img-src`, `font-src`, or remote-origin policy.
 7. Apply the command input policy below before adding or changing `#[tauri::command]` handlers or `invoke` wrappers.
 8. Apply the filesystem, dialog, shell, opener, updater, and sidecar policies below when those plugins or native operations are touched.
-9. Choose configured verification intents that cover Rust, frontend, Tauri build, permission/capability drift, CSP behavior, and security-sensitive behavior when available.
+9. Apply the build and release matrix policy below when `tauri.conf.*`, release scripts, CI
+   workflows, updater artifacts, signing, or bundle targets change.
+10. Choose configured verification intents that cover Rust, frontend, Tauri build, permission/capability drift, CSP behavior, and security-sensitive behavior when available.
 
 ## Capability And Permission Policy
 
@@ -138,6 +147,28 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 - Frontend update input may select only a closed channel enum when needed. Rust or static config must map that enum to hard-coded HTTPS endpoints and configured public keys.
 - Do not enable insecure updater transport in production unless the user explicitly accepts the supply-chain boundary change and the repository records why.
 
+## Build And Release Matrix Policy
+
+- Treat Tauri release builds as Rust release builds plus frontend build plus bundling. Cold Cargo
+  builds can dominate CI time, so check Rust cache, Node or package-manager cache, lockfile keys,
+  and target-specific cache dimensions before blaming frontend code.
+- Do not run full native bundles for every pull request by default. Prefer PR checks that prove the
+  frontend build, Rust compile or checks, command contracts, and permission files on the cheapest
+  adequate runner. Reserve full Windows, Linux, macOS, signing, notarization, updater, and installer
+  matrices for release tags, release branches, or protected manual gates unless the repository
+  explicitly requires more.
+- Keep `bundle.targets` or equivalent packaging configuration to the formats actually shipped. Do
+  not leave broad all-format packaging enabled when the release only needs, for example, one Windows
+  installer, one macOS disk image or app bundle, and one Linux package format.
+- For macOS distribution, prefer one deliberate universal or architecture-specific strategy rather
+  than accidental duplicate jobs. Name signing and notarization boundaries separately from compile
+  time.
+- Keep test artifacts short-lived and promote durable distributables through the release or package
+  channel. Do not use long-retention CI artifacts as the canonical release surface.
+- If a cost comparison between Tauri and another desktop stack is requested, route the CI billing,
+  runner-minute, artifact-storage, and matrix-shape analysis through `ci-pipeline-triage`; use this
+  skill for Tauri-specific bundle targets, Cargo cache, updater, signing, and packaging behavior.
+
 ## Review Rejection Criteria
 
 Reject or revise a change when:
@@ -163,6 +194,8 @@ Reject or revise a change when:
 - Permission and capability changes have a clear diff and native-operation justification.
 - CSP changes have been checked against the generated frontend entry HTML and required Tauri IPC or custom protocol origins.
 - Missing Tauri-specific verification is reported.
+- Tauri package targets, release matrix, cache strategy, and artifact retention are explicit when
+  packaging is touched.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -188,6 +221,9 @@ Report missing native build, packaged WebView smoke, CSP violation, permission d
 - If a CSP change breaks packaged app startup, inspect generated HTML and console CSP violations before widening policy; prefer nonce, hash, or externalized bootstrap before accepting `unsafe-inline`.
 - If a command accepts broad input, replace it with a typed request and Rust-side validation before exposing it to the frontend.
 - If updater, shell, opener, sidecar, or filesystem access cannot be narrowed, report the security boundary change instead of hiding it as a normal feature fix.
+- If packaging cost or duration grows unexpectedly, check `bundle.targets`, release-only matrix
+  gating, Rust cache, frontend cache, macOS job count, signing and notarization split, and artifact
+  retention before changing unrelated app code.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
@@ -196,6 +232,8 @@ Report missing native build, packaged WebView smoke, CSP violation, permission d
 - IPC, command input, CSP, permission, capability, window/webview, and scope notes
 - Permission diff: old permissions, new permissions, newly reachable windows/webviews, new scopes, and native operation justification
 - Filesystem, dialog, shell, opener, updater, sidecar, or mobile risk
+- Build matrix, bundle target, signing or notarization, cache, artifact retention, and release asset
+  notes when packaging is touched
 - Files changed
 - Command intents run
 - Skipped checks and reasons

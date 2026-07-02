@@ -58,7 +58,7 @@ jobs:
           fi
 
       - name: Publish package
-        run: npm publish --access public
+        run: npm publish --access public --provenance
 
       - name: Create GitHub release for pushed tag
         if: github.event_name == 'push'

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 206
+revision = 207
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -242,7 +242,7 @@ translations = {}
 [documents."skill.ci-pipeline-triage"]
 source = "locales/en/.mustflow/skills/ci-pipeline-triage/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.auth-flow-triage"]
@@ -428,7 +428,7 @@ translations = {}
 [documents."skill.cloud-cost-guardrail-review"]
 source = "locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.rate-limit-integrity-review"]
@@ -823,13 +823,13 @@ translations = {}
 [documents."skill.tauri-code-change"]
 source = "locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.wails-code-change"]
 source = "locales/en/.mustflow/skills/wails-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.typescript-code-change"]

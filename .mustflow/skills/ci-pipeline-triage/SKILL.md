@@ -2,11 +2,11 @@
 mustflow_doc: skill.ci-pipeline-triage
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: ci-pipeline-triage
-description: Apply this skill when a CI/CD workflow, pipeline, job, runner, matrix, trigger, cache, artifact, deployment job, required check, or post-deploy verification is failing, skipped, queued, flaky, slow, green despite broken output, or not yet localized to trigger, runner, environment, build, test, artifact, deploy, or verification boundaries.
+description: Apply this skill when a CI/CD workflow, pipeline, job, runner, matrix, trigger, cache, artifact, runner-minute billing, artifact storage or retention, deployment job, required check, or post-deploy verification is failing, skipped, queued, flaky, slow, unexpectedly expensive, green despite broken output, or not yet localized to trigger, runner, environment, build, test, cache, artifact, billing, deploy, or verification boundaries.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -46,6 +46,9 @@ changed from the last known-good run, and what evidence would disprove each boun
   deployment permissions, rollout completion, or post-deploy verification.
 - A pipeline suddenly breaks without application-code changes, or only fails on forks, protected
   branches, specific runners, specific regions, specific matrix entries, or reruns.
+- A CI workflow becomes unexpectedly expensive, burns private-repository minutes too quickly,
+  exhausts artifact storage, keeps long-lived test artifacts, or needs a release matrix cost review
+  before the expensive boundary is known.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -66,6 +69,10 @@ changed from the last known-good run, and what evidence would disprove each boun
 - Run identity ledger: commit SHA, branch or tag, trigger event, workflow file revision, matrix
   entry, runner label and image, architecture, region, toolchain versions, package-manager version,
   execution time, and run or job id.
+- CI billing ledger when cost is in scope: public versus private repository behavior, plan or
+  allowance snapshot, provider billing page or docs date, runner OS and size, job count, matrix
+  shape, per-job rounding behavior, queue versus execution time, artifact retention days, cache
+  retention or quota, and release asset handoff.
 - Last-good comparison: last successful commit and first failing commit, including workflow files,
   lockfiles, base images, shared scripts, secrets or permission scopes, runner labels, cache keys,
   feature flags, deployment config, and required-check settings.
@@ -88,9 +95,9 @@ changed from the last known-good run, and what evidence would disprove each boun
 ## Allowed Edits
 
 - Add or tighten workflow triggers, path filters, matrix guards, version pinning, cache keys,
-  artifact manifests, status aggregation, debug evidence collection, secret-safe diagnostics,
-  timeout classification, runner labels, concurrency locks, environment validation, smoke checks,
-  test isolation, docs, and focused fixtures.
+  artifact manifests, artifact retention, release-asset promotion, status aggregation, debug
+  evidence collection, secret-safe diagnostics, timeout classification, runner labels, concurrency
+  locks, environment validation, smoke checks, test isolation, docs, and focused fixtures.
 - Add tests or docs that prove workflow contract behavior, package metadata, template output,
   release checks, artifact identity, or command-contract mapping when the repository owns those
   surfaces.
@@ -134,21 +141,37 @@ changed from the last known-good run, and what evidence would disprove each boun
     dimensions. Artifacts need file list, size, hash, build SHA, and download verification.
 14. Verify that the tested artifact is the deployed artifact. Rebuilding during deploy can make CI
     test one thing and production receive another.
-15. Check auth and permissions by execution context. Fork PRs, protected branches, environments,
+15. For CI cost or quota questions, split the bill before optimizing:
+    - runner execution minutes, not artifact bytes, usually dominate native app release cost;
+    - macOS or other premium runners can dominate a matrix even when Linux jobs are longer;
+    - job-level minimum billing or rounding can make many tiny split jobs cost more than one
+      grouped job;
+    - public repository standard-runner rules can differ from private repository included minutes;
+    - billing pages may display currency spend while plan allowances are minute or storage quotas,
+      so confirm the unit before comparing options.
+16. Separate Actions artifacts, caches, package registries, and release assets. Short-lived test
+    bundles should use short retention. Long-lived distributables should be promoted through the
+    repository's release or package channel when that is the intended public artifact. Do not treat
+    cache quota as artifact storage or release assets as CI retention.
+17. For native desktop matrices, avoid full bundles on every PR unless the repository explicitly
+    requires it. Prefer PR checks that prove frontend build plus native compile or type contracts on
+    the cheapest adequate runner, then run signed or full OS package matrices only on release tags,
+    release branches, or protected manual gates.
+18. Check auth and permissions by execution context. Fork PRs, protected branches, environments,
     OIDC identity, package publishing identity, cloud role, and repository token scopes can differ
     across otherwise similar runs.
-16. For deployment jobs, require rollout evidence, readiness, smoke checks, error and latency
+19. For deployment jobs, require rollout evidence, readiness, smoke checks, error and latency
     thresholds, and environment concurrency locks instead of treating a zero exit code as success.
-17. Preserve evidence before cleanup. Do not delete runners, caches, artifacts, temporary dirs, or
+20. Preserve evidence before cleanup. Do not delete runners, caches, artifacts, temporary dirs, or
     diagnostic logs until the boundary and redaction plan are clear.
-18. Apply the smallest localized fix and verify with the narrowest configured intent that covers the
+21. Apply the smallest localized fix and verify with the narrowest configured intent that covers the
     changed workflow, package, docs, template, or test surface.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- The pipeline failure is localized to trigger, runner, environment, build, test, artifact, deploy,
-  verification, or a named evidence gap.
+- The pipeline failure is localized to trigger, runner, environment, build, test, artifact, billing
+  or storage quota, deploy, verification, or a named evidence gap.
 - Last-good versus first-failure comparison, run identity, false-green risk, cache and artifact
   behavior, permission scope, and rerun determinism are explicit where relevant.
 - Follow-up deployment, test performance, security, command-contract, or package-release work is
@@ -178,6 +201,9 @@ CI reruns, deploys, cloud shell commands, or provider dashboard writes outside t
 
 - If run identity, last-good comparison, trigger graph, runner, cache, artifact, or permission
   evidence is missing, report the missing field instead of guessing.
+- If CI pricing, included minutes, storage quotas, or runner rates are time-sensitive and not
+  locally available, avoid exact price claims and name the provider billing evidence that must be
+  checked.
 - If debug logs contain secrets or private data, stop copying raw output and summarize safely.
 - If CI evidence requires remote provider access that is unavailable or unconfigured, report the
   manual evidence boundary and continue with local workflow or static evidence.
@@ -191,6 +217,8 @@ CI reruns, deploys, cloud shell commands, or provider dashboard writes outside t
 - Failure shape and localized boundary
 - Run identity and last-good comparison
 - Trigger, runner, environment, build, test, cache, artifact, deploy, and verification findings
+- Billing unit, runner-minute, matrix rounding, artifact retention, cache quota, and release asset
+  findings when cost is in scope
 - Hypotheses killed, still open, and selected follow-up boundary
 - Fix applied or recommended
 - Evidence level: provider run evidence, configured-test evidence, static review risk, manual-only,
