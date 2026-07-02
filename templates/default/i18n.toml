@@ -167,6 +167,12 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.third-party-api-integration-review"]
+source = "locales/en/.mustflow/skills/third-party-api-integration-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.api-access-control-review"]
 source = "locales/en/.mustflow/skills/api-access-control-review/SKILL.md"
 source_locale = "en"
