@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-automation-surface-report.schema.json",
+  "title": "mustflow repo automation-surface report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "summary",
+    "surfaces",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "automation-surface" },
+    "script_ref": { "const": "repo/automation-surface" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": { "$ref": "#/$defs/input" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "surfaces": { "type": "array", "items": { "$ref": "#/$defs/surface" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned_paths", "max_file_bytes"],
+      "properties": {
+        "scanned_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "max_file_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface_count",
+        "mustflow_intent_count",
+        "raw_surface_count",
+        "agent_allowed_intent_count",
+        "manual_only_intent_count",
+        "risky_surface_count",
+        "long_running_surface_count"
+      ],
+      "properties": {
+        "surface_count": { "type": "integer", "minimum": 0 },
+        "mustflow_intent_count": { "type": "integer", "minimum": 0 },
+        "raw_surface_count": { "type": "integer", "minimum": 0 },
+        "agent_allowed_intent_count": { "type": "integer", "minimum": 0 },
+        "manual_only_intent_count": { "type": "integer", "minimum": 0 },
+        "risky_surface_count": { "type": "integer", "minimum": 0 },
+        "long_running_surface_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "line",
+        "name",
+        "command_hint",
+        "category",
+        "risks",
+        "mapped_intent",
+        "agent_allowed"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["ci_workflow", "make_target", "mise_task", "mustflow_intent", "package_script", "taskfile_task"] },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "command_hint": { "type": ["string", "null"] },
+        "category": {
+          "enum": [
+            "bootstrap",
+            "check",
+            "clean",
+            "db",
+            "deploy",
+            "deps",
+            "dev_server",
+            "doctor",
+            "fix",
+            "release",
+            "smoke",
+            "test",
+            "watch",
+            "workflow",
+            "unknown"
+          ]
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "enum": ["destructive", "git_state", "interactive", "long_running", "network", "release", "secret", "writes"]
+          }
+        },
+        "mapped_intent": { "type": ["string", "null"] },
+        "agent_allowed": { "type": ["boolean", "null"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "json_pointer", "metric", "actual", "expected"],
+      "properties": {
+        "code": {
+          "enum": [
+            "dangerous_automation_surface",
+            "long_running_automation_surface",
+            "raw_command_without_mustflow_intent",
+            "mustflow_intent_manual_boundary"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string", "minLength": 1 },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

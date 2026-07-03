@@ -526,7 +526,7 @@ applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "pe
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "package_metadata_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "performance_change", "package_metadata_change", "release_risk"]
 
 [routes."javascript-code-change"]
 category = "general_code"
@@ -538,7 +538,7 @@ applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."powershell-code-change"]
 category = "general_code"
@@ -550,13 +550,13 @@ applies_to_reasons = ["code_change", "test_change", "docs_change", "package_meta
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "package_metadata_change", "release_risk"]
 
 [routes."rust-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
-applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."axum-code-change"]
 category = "general_code"

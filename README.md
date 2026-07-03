@@ -309,6 +309,9 @@ mf run mustflow_update_apply
 | `mf script-pack run code/export-diff compare --base HEAD --json` | Compare exported TypeScript or JavaScript declarations, return metadata, and package surface hints against a git base. |
 | `mf script-pack run docs/reference-drift check [path...] --json` | Check documentation references to `mf` commands, script-pack refs, schema files, and repository paths against current local surfaces. |
 | `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
+| `mf script-pack run repo/toolchain-provenance inspect --json` | Inspect repository-visible runtime, package-manager, lockfile, Docker, and CI toolchain provenance without running those tools. |
+| `mf script-pack run repo/automation-surface inspect --json` | Inventory package scripts, task runners, CI workflows, and mustflow command-intent coverage before adopting automation advice. |
+| `mf script-pack run repo/dependency-surface inspect --json` | Inspect dependency manifests, lockfiles, update automation, and policy surfaces without installing or updating packages. |
 | `mf script-pack run repo/env-contract scan [path...] --json` | Scan code, CI, docs, config, and env examples for environment-variable contract drift without reading or printing real secret env values. |
 | `mf script-pack run repo/secret-risk-scan scan [path...] --json` | Scan code, docs, config, CI, and examples for plausible hardcoded secrets while reporting only redacted fingerprints. |
 | `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |

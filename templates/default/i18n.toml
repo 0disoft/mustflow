@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 207
+revision = 211
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -709,7 +709,7 @@ translations = {}
 [documents."skill.go-code-change"]
 source = "locales/en/.mustflow/skills/go-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.godot-code-change"]
@@ -763,7 +763,7 @@ translations = {}
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.powershell-code-change"]
@@ -787,7 +787,7 @@ translations = {}
 [documents."skill.rust-code-change"]
 source = "locales/en/.mustflow/skills/rust-code-change/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.runtime-target-selection"]
@@ -835,7 +835,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.unocss-code-change"]

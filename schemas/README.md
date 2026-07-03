@@ -165,6 +165,16 @@ Current schemas:
 - `repo-version-source-report.schema.json`: output of
   `mf script-pack run repo/version-source inspect --json`, containing detected version sources,
   release-versioning preference status, source authority counts, and missing-source findings
+- `repo-toolchain-provenance-report.schema.json`: output of
+  `mf script-pack run repo/toolchain-provenance inspect --json`, containing repository-visible
+  runtime, package-manager, lockfile, Docker, and CI toolchain provenance evidence
+- `repo-automation-surface-report.schema.json`: output of
+  `mf script-pack run repo/automation-surface inspect --json`, containing package scripts,
+  task-runner entries, CI workflows, mustflow command intents, risk classifications, and
+  command-contract coverage findings
+- `repo-dependency-surface-report.schema.json`: output of
+  `mf script-pack run repo/dependency-surface inspect --json`, containing dependency manifests,
+  lockfiles, update automation, audit, license, and SBOM policy surfaces
 - `repo-approval-gate-report.schema.json`: output of
   `mf script-pack run repo/approval-gate check --action <type> --json`, containing approval policy
   decisions, required-action findings, and unreadable policy issues

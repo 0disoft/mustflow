@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-dependency-surface-report.schema.json",
+  "title": "mustflow repo dependency-surface report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "summary",
+    "surfaces",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "dependency-surface" },
+    "script_ref": { "const": "repo/dependency-surface" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": { "$ref": "#/$defs/input" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "surfaces": { "type": "array", "items": { "$ref": "#/$defs/surface" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned_paths", "max_file_bytes"],
+      "properties": {
+        "scanned_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "max_file_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface_count",
+        "manifest_count",
+        "lockfile_count",
+        "update_config_count",
+        "audit_config_count",
+        "ecosystem_count",
+        "finding_count"
+      ],
+      "properties": {
+        "surface_count": { "type": "integer", "minimum": 0 },
+        "manifest_count": { "type": "integer", "minimum": 0 },
+        "lockfile_count": { "type": "integer", "minimum": 0 },
+        "update_config_count": { "type": "integer", "minimum": 0 },
+        "audit_config_count": { "type": "integer", "minimum": 0 },
+        "ecosystem_count": { "type": "integer", "minimum": 0 },
+        "finding_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ecosystem", "kind", "path", "line", "name", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "ecosystem": { "enum": ["go", "javascript", "python", "rust"] },
+        "kind": {
+          "enum": [
+            "audit_config",
+            "dependency_update_config",
+            "lockfile",
+            "manifest",
+            "package_manager_config",
+            "workspace_config"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "json_pointer", "metric", "actual", "expected"],
+      "properties": {
+        "code": {
+          "enum": [
+            "conflicting_javascript_lockfiles",
+            "manifest_without_lockfile",
+            "update_automation_without_policy",
+            "lockfile_without_manifest",
+            "dependency_surface_without_update_automation"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string", "minLength": 1 },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

@@ -4820,6 +4820,194 @@
       }
     },
     {
+      "id": "repo-toolchain-provenance-report",
+      "schema_file": "repo-toolchain-provenance-report.schema.json",
+      "producer": "mf script-pack run repo/toolchain-provenance inspect --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "toolchain-provenance",
+        "script_ref": "repo/toolchain-provenance",
+        "action": "inspect",
+        "status": "passed",
+        "ok": true,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "scanned_paths": [
+            "package.json",
+            "bun.lock",
+            ".github/workflows/ci.yml"
+          ],
+          "max_file_bytes": 262144
+        },
+        "input_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "summary": {
+          "source_count": 1,
+          "runtime_count": 1,
+          "package_manager_count": 1,
+          "lockfile_count": 1,
+          "ci_source_count": 0,
+          "finding_count": 0
+        },
+        "sources": [
+          {
+            "kind": "node",
+            "source_kind": "package_json",
+            "path": "package.json",
+            "line": 5,
+            "key": "engines.node",
+            "value": ">=20.0.0"
+          }
+        ],
+        "lockfiles": [
+          "bun.lock"
+        ],
+        "findings": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-automation-surface-report",
+      "schema_file": "repo-automation-surface-report.schema.json",
+      "producer": "mf script-pack run repo/automation-surface inspect --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "automation-surface",
+        "script_ref": "repo/automation-surface",
+        "action": "inspect",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "scanned_paths": [
+            "package.json",
+            ".mustflow/config/commands.toml",
+            ".github/workflows/ci.yml"
+          ],
+          "max_file_bytes": 262144
+        },
+        "input_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "summary": {
+          "surface_count": 2,
+          "mustflow_intent_count": 1,
+          "raw_surface_count": 1,
+          "agent_allowed_intent_count": 1,
+          "manual_only_intent_count": 0,
+          "risky_surface_count": 0,
+          "long_running_surface_count": 0
+        },
+        "surfaces": [
+          {
+            "id": "mustflow_intent:test:.mustflow/config/commands.toml",
+            "kind": "mustflow_intent",
+            "path": ".mustflow/config/commands.toml",
+            "line": 10,
+            "name": "test",
+            "command_hint": "mf run test",
+            "category": "test",
+            "risks": [],
+            "mapped_intent": "test",
+            "agent_allowed": true
+          },
+          {
+            "id": "package_script:test:package.json",
+            "kind": "package_script",
+            "path": "package.json",
+            "line": 12,
+            "name": "test",
+            "command_hint": "bun test",
+            "category": "test",
+            "risks": [],
+            "mapped_intent": null,
+            "agent_allowed": null
+          }
+        ],
+        "findings": [
+          {
+            "code": "raw_command_without_mustflow_intent",
+            "severity": "medium",
+            "path": "package.json",
+            "message": "Package script \"test\" is an automation surface; agents still need a configured mustflow intent before running it.",
+            "json_pointer": "/scripts/test",
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "repo-dependency-surface-report",
+      "schema_file": "repo-dependency-surface-report.schema.json",
+      "producer": "mf script-pack run repo/dependency-surface inspect --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "script-pack",
+        "pack_id": "repo",
+        "script_id": "dependency-surface",
+        "script_ref": "repo/dependency-surface",
+        "action": "inspect",
+        "status": "failed",
+        "ok": false,
+        "mustflow_root": "C:/repo",
+        "input": {
+          "scanned_paths": [
+            "package.json",
+            "bun.lock",
+            ".github/dependabot.yml"
+          ],
+          "max_file_bytes": 262144
+        },
+        "input_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "summary": {
+          "surface_count": 2,
+          "manifest_count": 1,
+          "lockfile_count": 1,
+          "update_config_count": 0,
+          "audit_config_count": 0,
+          "ecosystem_count": 1,
+          "finding_count": 1
+        },
+        "surfaces": [
+          {
+            "id": "javascript:manifest:package.json",
+            "ecosystem": "javascript",
+            "kind": "manifest",
+            "path": "package.json",
+            "line": 1,
+            "name": "package.json",
+            "evidence": "JavaScript package manifest found."
+          },
+          {
+            "id": "javascript:lockfile:bun.lock",
+            "ecosystem": "javascript",
+            "kind": "lockfile",
+            "path": "bun.lock",
+            "line": null,
+            "name": "bun.lock",
+            "evidence": "Bun lockfile found."
+          }
+        ],
+        "findings": [
+          {
+            "code": "dependency_surface_without_update_automation",
+            "severity": "low",
+            "path": "package.json",
+            "message": "Dependency surface exists without repository-visible update automation policy.",
+            "json_pointer": null,
+            "metric": null,
+            "actual": null,
+            "expected": null
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
       "id": "repo-approval-gate-report",
       "schema_file": "repo-approval-gate-report.schema.json",
       "producer": "mf script-pack run repo/approval-gate check --action <type> --json",

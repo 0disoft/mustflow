@@ -31,7 +31,7 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 ]);
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
-	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js|wrangler\.(?:toml|jsonc?)|vercel\.json|netlify\.toml|Dockerfile|docker-compose\.ya?ml|compose\.ya?ml)$/u;
+	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|\.nvmrc|\.node-version|\.python-version|\.tool-versions|mise\.toml|\.mise\.toml|pyproject\.toml|go\.mod|rust-toolchain(?:\.toml)?|Makefile|Taskfile\.ya?ml|justfile|Justfile|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js|wrangler\.(?:toml|jsonc?)|vercel\.json|netlify\.toml|Dockerfile|docker-compose\.ya?ml|compose\.ya?ml)$/u;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -172,7 +172,15 @@ export function classifyScriptPackPathSurface(relativePath: string): readonly Sc
 	if (
 		normalized === 'package.json' ||
 		normalized === 'bun.lock' ||
+		normalized === 'bun.lockb' ||
 		normalized === 'package-lock.json' ||
+		normalized === 'npm-shrinkwrap.json' ||
+		normalized === 'pnpm-lock.yaml' ||
+		normalized === 'yarn.lock' ||
+		normalized === 'uv.lock' ||
+		normalized === 'poetry.lock' ||
+		normalized === 'Cargo.lock' ||
+		normalized === 'go.sum' ||
 		normalized.startsWith('.github/workflows/')
 	) {
 		surfaces.push('package');
@@ -441,6 +449,18 @@ function createRunHint(
 		return 'mf script-pack run repo/version-source inspect --json';
 	}
 
+	if (script.ref === 'repo/toolchain-provenance') {
+		return 'mf script-pack run repo/toolchain-provenance inspect --json';
+	}
+
+	if (script.ref === 'repo/automation-surface') {
+		return 'mf script-pack run repo/automation-surface inspect --json';
+	}
+
+	if (script.ref === 'repo/dependency-surface') {
+		return 'mf script-pack run repo/dependency-surface inspect --json';
+	}
+
 	if (script.ref === 'repo/approval-gate') {
 		return 'mf script-pack run repo/approval-gate check --action <action_type> --json';
 	}
@@ -599,6 +619,30 @@ export function createScriptPackSuggestionReport(
 			) {
 				score += 2;
 				reasons.push('Prioritizes deploy-surface inspection for push, tag, release, docs, and package publication follow-up.');
+			}
+
+			if (
+				script.ref === 'repo/toolchain-provenance' &&
+				(requestedSurfaces.has('package') || requestedSurfaces.has('config'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes toolchain provenance for runtime, package-manager, lockfile, Docker, and CI contract surfaces.');
+			}
+
+			if (
+				script.ref === 'repo/automation-surface' &&
+				(requestedSurfaces.has('package') || requestedSurfaces.has('config'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes automation surface inspection for package scripts, workflows, and command-intent mapping.');
+			}
+
+			if (
+				script.ref === 'repo/dependency-surface' &&
+				(requestedSurfaces.has('package') || requestedSurfaces.has('config'))
+			) {
+				score += 2;
+				reasons.push('Prioritizes dependency surface inspection for manifests, lockfiles, update automation, and audit policy evidence.');
 			}
 
 			if (

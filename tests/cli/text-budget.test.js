@@ -116,6 +116,21 @@ function runRepoDeploySurfaceJson(projectPath, args = []) {
 	return { result, report: JSON.parse(result.stdout) };
 }
 
+function runRepoToolchainProvenanceJson(projectPath, args = []) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/toolchain-provenance', 'inspect', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoAutomationSurfaceJson(projectPath, args = []) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/automation-surface', 'inspect', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
+function runRepoDependencySurfaceJson(projectPath, args = []) {
+	const result = runCli(projectPath, ['script-pack', 'run', 'repo/dependency-surface', 'inspect', ...args, '--json']);
+	return { result, report: JSON.parse(result.stdout) };
+}
+
 function runRepoMergeConflictScanJson(projectPath, args) {
 	const result = runCli(projectPath, ['script-pack', 'run', 'repo/merge-conflict-scan', 'check', ...args, '--json']);
 	return { result, report: JSON.parse(result.stdout) };
@@ -393,6 +408,9 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		const gitIgnoreAudit = repoPack?.scripts.find((script) => script.ref === 'repo/git-ignore-audit');
 		const manifestLockDrift = repoPack?.scripts.find((script) => script.ref === 'repo/manifest-lock-drift');
 		const versionSource = repoPack?.scripts.find((script) => script.ref === 'repo/version-source');
+		const toolchainProvenance = repoPack?.scripts.find((script) => script.ref === 'repo/toolchain-provenance');
+		const automationSurface = repoPack?.scripts.find((script) => script.ref === 'repo/automation-surface');
+		const dependencySurface = repoPack?.scripts.find((script) => script.ref === 'repo/dependency-surface');
 		const approvalGate = repoPack?.scripts.find((script) => script.ref === 'repo/approval-gate');
 		const deploySurface = repoPack?.scripts.find((script) => script.ref === 'repo/deploy-surface');
 
@@ -519,6 +537,48 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(versionSource.risk_level, 'low');
 		assert.equal(versionSource.cost, 'low');
 		assert.equal(versionSource.report_schema_file, 'repo-version-source-report.schema.json');
+
+		assert.ok(toolchainProvenance, 'repo/toolchain-provenance should be listed');
+		assert.equal(toolchainProvenance.read_only, true);
+		assert.equal(toolchainProvenance.mutates, false);
+		assert.equal(toolchainProvenance.network, false);
+		assert.deepEqual(toolchainProvenance.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(toolchainProvenance.use_when.some((hint) => hint.includes('toolchain provenance')));
+		assert.deepEqual(toolchainProvenance.inputs, []);
+		assert.ok(toolchainProvenance.outputs.includes('toolchain_sources'));
+		assert.ok(toolchainProvenance.outputs.includes('toolchain_findings'));
+		assert.ok(toolchainProvenance.related_skills.includes('version-freshness-check'));
+		assert.equal(toolchainProvenance.risk_level, 'low');
+		assert.equal(toolchainProvenance.cost, 'low');
+		assert.equal(toolchainProvenance.report_schema_file, 'repo-toolchain-provenance-report.schema.json');
+
+		assert.ok(automationSurface, 'repo/automation-surface should be listed');
+		assert.equal(automationSurface.read_only, true);
+		assert.equal(automationSurface.mutates, false);
+		assert.equal(automationSurface.network, false);
+		assert.deepEqual(automationSurface.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(automationSurface.use_when.some((hint) => hint.includes('automation surfaces')));
+		assert.deepEqual(automationSurface.inputs, []);
+		assert.ok(automationSurface.outputs.includes('automation_surfaces'));
+		assert.ok(automationSurface.outputs.includes('automation_findings'));
+		assert.ok(automationSurface.related_skills.includes('command-intent-mapping-gate'));
+		assert.equal(automationSurface.risk_level, 'medium');
+		assert.equal(automationSurface.cost, 'low');
+		assert.equal(automationSurface.report_schema_file, 'repo-automation-surface-report.schema.json');
+
+		assert.ok(dependencySurface, 'repo/dependency-surface should be listed');
+		assert.equal(dependencySurface.read_only, true);
+		assert.equal(dependencySurface.mutates, false);
+		assert.equal(dependencySurface.network, false);
+		assert.deepEqual(dependencySurface.phases, ['before_change', 'after_change', 'review']);
+		assert.ok(dependencySurface.use_when.some((hint) => hint.includes('dependency manifests')));
+		assert.deepEqual(dependencySurface.inputs, []);
+		assert.ok(dependencySurface.outputs.includes('dependency_surfaces'));
+		assert.ok(dependencySurface.outputs.includes('dependency_findings'));
+		assert.ok(dependencySurface.related_skills.includes('dependency-upgrade-review'));
+		assert.equal(dependencySurface.risk_level, 'medium');
+		assert.equal(dependencySurface.cost, 'low');
+		assert.equal(dependencySurface.report_schema_file, 'repo-dependency-surface-report.schema.json');
 
 		assert.ok(approvalGate, 'repo/approval-gate should be listed');
 		assert.equal(approvalGate.read_only, true);
@@ -3934,6 +3994,53 @@ test('script-pack suggest recommends version-source for package versioning work'
 	}
 });
 
+test('script-pack suggest recommends provenance, automation, and dependency surfaces for package automation work', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const { result, report } = runScriptPackSuggestJson(projectPath, [
+			'--path',
+			'package.json',
+			'--skill',
+			'command-intent-mapping-gate',
+			'--skill',
+			'dependency-upgrade-review',
+			'--phase',
+			'before_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+
+		const toolchain = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/toolchain-provenance');
+		const automation = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/automation-surface');
+		const dependency = report.suggestions.find((suggestion) => suggestion.script_ref === 'repo/dependency-surface');
+
+		assert.ok(toolchain, 'repo/toolchain-provenance should be suggested for package automation work');
+		assert.ok(toolchain.matched_phases.includes('before_change'));
+		assert.ok(toolchain.matched_surfaces.includes('package'));
+		assert.equal(toolchain.run_hint, 'mf script-pack run repo/toolchain-provenance inspect --json');
+		assert.equal(toolchain.report_schema_file, 'repo-toolchain-provenance-report.schema.json');
+
+		assert.ok(automation, 'repo/automation-surface should be suggested for command-intent mapping work');
+		assert.ok(automation.matched_phases.includes('before_change'));
+		assert.ok(automation.matched_skills.includes('command-intent-mapping-gate'));
+		assert.ok(automation.matched_surfaces.includes('package'));
+		assert.equal(automation.run_hint, 'mf script-pack run repo/automation-surface inspect --json');
+		assert.equal(automation.report_schema_file, 'repo-automation-surface-report.schema.json');
+
+		assert.ok(dependency, 'repo/dependency-surface should be suggested for dependency work');
+		assert.ok(dependency.matched_phases.includes('before_change'));
+		assert.ok(dependency.matched_skills.includes('dependency-upgrade-review'));
+		assert.ok(dependency.matched_surfaces.includes('package'));
+		assert.equal(dependency.run_hint, 'mf script-pack run repo/dependency-surface inspect --json');
+		assert.equal(dependency.report_schema_file, 'repo-dependency-surface-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('script-pack suggest recommends approval-gate for approval-sensitive workflow surfaces', () => {
 	const projectPath = createTempProject();
 
@@ -4463,6 +4570,9 @@ test('script-pack run help does not treat --help as a script ref', () => {
 		assert.match(result.stdout, /mf script-pack run repo\/git-ignore-audit audit \.env\.local dist\/app\.js --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/manifest-lock-drift check AGENTS\.md --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/version-source inspect --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/toolchain-provenance inspect --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/automation-surface inspect --json/);
+		assert.match(result.stdout, /mf script-pack run repo\/dependency-surface inspect --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/approval-gate check --action git_commit --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/deploy-surface inspect --json/);
 		assert.match(result.stdout, /mf script-pack run repo\/related-files map src\/cli\/index\.ts --json/);
@@ -4491,6 +4601,109 @@ test('version-source reports detected repository version sources', () => {
 		assert.equal(report.counts.sources, report.sources.length);
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 		assert.deepEqual(report.findings, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('toolchain-provenance reports runtime and lockfile provenance drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.nvmrc'), '18\n');
+		writeFileSync(path.join(projectPath, '.node-version'), '20\n');
+		writeFileSync(path.join(projectPath, 'bun.lock'), '{}\n');
+		writeFileSync(path.join(projectPath, 'package-lock.json'), '{}\n');
+
+		const { result, report } = runRepoToolchainProvenanceJson(projectPath);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/toolchain-provenance');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.ok(report.sources.some((source) => source.path === '.nvmrc' && source.kind === 'node'));
+		assert.ok(report.sources.some((source) => source.path === '.node-version' && source.kind === 'node'));
+		assert.ok(report.lockfiles.includes('bun.lock'));
+		assert.ok(report.lockfiles.includes('package-lock.json'));
+		assert.ok(report.findings.some((finding) => finding.code === 'conflicting_node_version_sources'));
+		assert.ok(report.findings.some((finding) => finding.code === 'conflicting_package_manager_lockfiles'));
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('automation-surface inventories command surfaces and risky raw automation', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			`${JSON.stringify(
+				{
+					name: 'automation-surface-probe',
+					version: '1.0.0',
+					scripts: {
+						dev: 'vite --host 0.0.0.0',
+						deploy: 'gh release create v1.0.0',
+						test: 'vitest run',
+					},
+				},
+				null,
+				2,
+			)}\n`,
+		);
+
+		const { result, report } = runRepoAutomationSurfaceJson(projectPath);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/automation-surface');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.ok(report.summary.mustflow_intent_count > 0);
+		assert.ok(report.surfaces.some((surface) => surface.kind === 'package_script' && surface.name === 'dev'));
+		assert.ok(report.surfaces.some((surface) => surface.name === 'dev' && surface.risks.includes('long_running')));
+		assert.ok(report.surfaces.some((surface) => surface.name === 'deploy' && surface.risks.includes('release')));
+		assert.ok(report.findings.some((finding) => finding.code === 'dangerous_automation_surface'));
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dependency-surface reports lockfile conflicts and missing policy evidence', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'package-lock.json'), '{}\n');
+		writeFileSync(path.join(projectPath, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+		mkdirSync(path.join(projectPath, '.github'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, '.github', 'dependabot.yml'),
+			['version: 2', 'updates:', '  - package-ecosystem: npm', '    directory: "/"', '    schedule:', '      interval: weekly', ''].join('\n'),
+		);
+
+		const { result, report } = runRepoDependencySurfaceJson(projectPath);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.command, 'script-pack');
+		assert.equal(report.script_ref, 'repo/dependency-surface');
+		assert.equal(report.action, 'inspect');
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.ok(report.surfaces.some((surface) => surface.kind === 'dependency_update_config'));
+		assert.ok(report.surfaces.some((surface) => surface.path === 'package-lock.json'));
+		assert.ok(report.surfaces.some((surface) => surface.path === 'pnpm-lock.yaml'));
+		assert.ok(report.findings.some((finding) => finding.code === 'conflicting_javascript_lockfiles'));
+		assert.ok(report.findings.some((finding) => finding.code === 'update_automation_without_policy'));
+		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

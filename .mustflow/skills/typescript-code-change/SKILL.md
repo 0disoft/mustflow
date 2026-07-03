@@ -2,11 +2,11 @@
 mustflow_doc: skill.typescript-code-change
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: typescript-code-change
-description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 RC or nightly tooling, type safety, or TypeScript tests are created or changed.
+description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 RC or nightly tooling, runtime data validation, type safety, or TypeScript tests are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -35,6 +35,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 
 - `.ts`, `.tsx`, `.mts`, `.cts`, `*.d.ts`, `tsconfig*.json`, package entry metadata, exports, declarations, runtime validators, or TypeScript tests change.
 - The task touches module resolution, ESM/CJS interop, public package API, path aliases, generated declarations, or strict type errors.
+- The task touches project references, monorepo package boundaries, type-check speed, declaration emit speed, ambient type scope, large unions, generated types, or TypeScript build graph shape.
 - The task touches TypeScript compiler major-version behavior, TypeScript 6 transition deprecations, TypeScript 7 RC comparison, TypeScript 7 nightly comparison, `@typescript/typescript6`, `tsc6`, `typescript@rc`, `@typescript/native-preview`, `tsgo`, compiler API use, declaration emit comparison, or editor language-service behavior.
 - The task touches external inputs such as JSON, HTTP responses, environment variables, config files, form data, URL params, local storage, message events, queue payloads, or user-provided objects.
 - A framework component written in TypeScript changes its props, events, routes, loader data, or exported types.
@@ -52,6 +53,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Relevant `package.json`, `tsconfig*.json`, lockfile, build config, test config, and package entry files.
 - Existing source entrypoints, public exports, declaration files, validators, schemas, type tests, and nearby tests.
 - The target runtime and module system: Node, browser, worker, Bun, edge, ESM, CJS, or mixed boundary.
+- Workspace package dependency graph, `tsconfig` references graph, public package entrypoints, path alias policy, generated-type locations, and current import-boundary evidence when the repository is a monorepo or large TypeScript project.
 - TypeScript compiler track and tooling entrypoint when relevant: TS6 stable API track through `@typescript/typescript6` and `tsc6`, TS7 RC compiler track through `typescript@rc` and `tsc`, TS7 nightly track through `@typescript/native-preview` and `tsgo`, future TS7 stable track through the stable `typescript` package, framework typecheck wrappers, editor extension settings, and any compiler API consumers.
 - Package API metadata when relevant: `type`, `main`, `module`, `browser`, `exports`, `types`, `typings`, `typesVersions`, `files`, `bin`, `sideEffects`, and documented import paths.
 - Existing verification intents from the repository command contract.
@@ -78,39 +80,47 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Read `package.json`, `tsconfig*.json`, package exports, build config, and nearby tests before editing.
+1. Read `package.json`, `tsconfig*.json`, package exports, build config, project references, and nearby tests before editing.
 2. Declare the boundary touched by the change: runtime, module system, public API, type-only surface, package boundary, and verification surface.
-3. Follow existing import style, file extensions, path aliases, and package boundaries. Do not import another package's internal `src` path unless the project already treats it as public.
+3. Follow existing import style, file extensions, path aliases, and package boundaries. Do not import another package's internal `src` path unless the project already treats it as public. Treat `paths` aliases as type-resolution hints, not runtime aliases or package-boundary substitutes.
 4. Fix type errors at the narrowest truthful point. Prefer `unknown` plus runtime validation over new `any`.
-5. Treat external data as `unknown` until validated. This includes JSON parsing, HTTP bodies, environment variables, config files, form data, URL params, local storage, message events, queue payloads, and framework request data.
-6. Pick the validation shape before assigning the domain type. Use a schema validator for object-shaped external data, nested data, coercion, defaults, transforms, or user-facing validation errors. Use a type guard for small branching checks. Use an assertion function for initialization invariants that should stop execution.
+5. Treat external data as `unknown` until validated. This includes JSON parsing, HTTP bodies, environment variables, config files, form data, URL params, local storage, message events, queue payloads, framework request data, database raw rows, third-party SDK results, and generated client payloads.
+6. Pick the validation shape before assigning the domain type. Use a schema validator for object-shaped external data, nested data, coercion, defaults, transforms, dates, money, decimal, bigint, optional-or-null normalization, or user-facing validation errors. Use a type guard for small branching checks. Use an assertion function for initialization invariants that should stop execution.
 7. Keep validator and type definitions from drifting. When a schema is the source of truth, infer static types from it. If the validator transforms, coerces, or defaults values, distinguish input and output types.
-8. Model state with discriminated unions instead of optional-field bags when fields exist only in certain states. Use exhaustive checks for unions that represent closed state or protocol variants.
-9. Use `as` only for narrow runtime facts the compiler cannot infer. Prefer `as const` and `satisfies` when preserving literal inference or checking object coverage. Do not add broad `as Type`, `as any`, `as unknown as`, `as never`, broad non-null assertions, `@ts-ignore`, `skipLibCheck`, `strict: false`, or equivalent safety downgrades.
-10. Allow `!` only immediately after a same-scope runtime check that proves presence, such as a `has` check for the same key before `get`. Do not use `!` across `await`, callbacks, mutation, lifecycle boundaries, or property chains.
-11. For type tests, prefer `@ts-expect-error` with a short reason. Do not use `@ts-ignore` in implementation code. Implementation `@ts-expect-error` needs an owner, removal condition, and risk report.
-12. If a public API changes, trace every consumer-visible import specifier, runtime export, type export, declaration output, docs example, type-only export, overload, generic default, interface field, enum or literal member, class member, and package entry condition.
-13. Treat `exports`, `types`, `typings`, `typesVersions`, package `type`, file extensions, path aliases, declaration import paths, and barrel exports as public API surfaces. Adding or tightening `exports` can break existing deep imports.
-14. For TypeScript that emits code for native Node ESM, prefer `.ts` source plus package `"type": "module"` and `module`/`moduleResolution` set to `NodeNext` or the repository's fixed Node mode. Do not rename every source file to `.mts` just to mean ESM; reserve `.mts` and `.cts` for explicit per-file module overrides or mixed-package boundaries.
-15. In TypeScript source that targets native Node ESM, write relative imports using the emitted runtime specifier, usually `.js`, such as `import { createApp } from "./app.js"` from `app.ts`. Do not write extensionless relative imports or `.ts` runtime specifiers unless a declared loader, bundler, or runtime explicitly owns that behavior.
-16. Use `moduleResolution: "Bundler"` only when a bundler such as Vite, esbuild, Rollup, or a framework build system owns final module resolution. Do not use bundler resolution to model code that Node will execute directly without that bundler.
-17. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, and generated declaration files together.
-18. For `tsconfig` updates, make defaults explicit when they affect emitted shape, ambient types, or module semantics. Check `rootDir`, `include`, `exclude`, `types`, `lib`, `target`, `module`, `moduleResolution`, `verbatimModuleSyntax`, `noUncheckedSideEffectImports`, declaration output, and framework wrapper defaults together instead of relying on a compiler-major default.
-19. Treat `types` as an ambient-global allowlist. Add only the runtime or test environment globals the project actually uses, such as Node, Bun, DOM, Vitest, Jest, or Playwright. Do not restore broad ambient discovery just to hide missing imports or environment drift.
-20. Use import attributes, subpath imports, and deferred module evaluation only when the runtime, bundler, and compiler track all support the exact syntax. `import defer` is a side-effect and startup-order choice, not a generic lazy-loading trick; use it only for namespace imports whose module evaluation can safely wait until first export access.
-21. Use `using` or `await using` only when the target runtime or transform path supports explicit resource management and the object really owns a disposable resource. Do not replace visible `try/finally`, context-manager, or framework cleanup contracts with `using` if the surrounding lifecycle, error propagation, or generated JS cannot be verified.
-22. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, or accidental public re-exports.
-23. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
-24. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
-25. For TypeScript 7 migration work, keep the tracks separate:
+8. Separate DTOs, persistence rows, provider payloads, and internal domain types when runtime shape differs. Do not cast a DTO into a domain model when fields need casing changes, `Date` construction, amount branding, null stripping, enum normalization, class rehydration, or policy snapshots.
+9. Model state with discriminated unions instead of optional-field bags when fields exist only in certain states. Use stable internal discriminator strings, not UI copy or translated text. Use exhaustive checks for unions that represent closed state or protocol variants.
+10. Choose type constructs by contract shape. Use `interface` for extendable object contracts, `type` for unions, mapped types, conditional types, primitive aliases, and branded primitives. Brand IDs, currencies, cents, and other same-primitive values when accidental mixing is costly.
+11. Use generics only to preserve a real relationship between inputs, outputs, keys, callbacks, or container members. Add constraints such as `extends`, `keyof`, `const` type parameters, or `NoInfer` when needed. Remove unused or single-position generics that only decorate `unknown` behavior.
+12. Use function-property syntax for callback members when parameter variance matters. Avoid method-shaped callback contracts in listeners, middleware, validators, adapters, or event buses unless the repository intentionally accepts the looser method variance.
+13. Use `as` only for narrow runtime facts the compiler cannot infer. Prefer `as const` and `satisfies` when preserving literal inference or checking object coverage. Do not add broad `as Type`, `as any`, `as unknown as`, `as never`, broad non-null assertions, `@ts-ignore`, `skipLibCheck`, `strict: false`, `noCheck`, or equivalent safety downgrades.
+14. Allow `!` only immediately after a same-scope runtime check that proves presence, such as a `has` check for the same key before `get`. Do not use `!` across `await`, callbacks, mutation, lifecycle boundaries, class async initialization gaps, or property chains.
+15. For type tests, prefer `@ts-expect-error` with a short reason. Do not use `@ts-ignore` in implementation code. Implementation `@ts-expect-error` needs an owner, removal condition, and risk report.
+16. If a public API changes, trace every consumer-visible import specifier, runtime export, type export, declaration output, docs example, type-only export, overload, generic default, interface field, enum or literal member, class member, and package entry condition.
+17. Treat `exports`, `types`, `typings`, `typesVersions`, package `type`, file extensions, path aliases, declaration import paths, and barrel exports as public API surfaces. Adding or tightening `exports` can break existing deep imports.
+18. For TypeScript that emits code for native Node ESM, prefer `.ts` source plus package `"type": "module"` and `module`/`moduleResolution` set to `NodeNext` or the repository's fixed Node mode. Do not rename every source file to `.mts` just to mean ESM; reserve `.mts` and `.cts` for explicit per-file module overrides or mixed-package boundaries.
+19. In TypeScript source that targets native Node ESM, write relative imports using the emitted runtime specifier, usually `.js`, such as `import { createApp } from "./app.js"` from `app.ts`. Do not write extensionless relative imports or `.ts` runtime specifiers unless a declared loader, bundler, or runtime explicitly owns that behavior.
+20. Use `moduleResolution: "Bundler"` only when a bundler such as Vite, esbuild, Rollup, or a framework build system owns final module resolution. Do not use bundler resolution to model code that Node will execute directly without that bundler.
+21. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, generated declarations, and supported consumer resolver modes together. Remember that `exports.import` and `exports.require` select the condition used by the caller; file extension and package `type` still decide whether a target is ESM or CJS.
+22. For dual ESM/CJS packages, check whether runtime entries and declaration entries are separate where needed. Do not assume one `.d.ts` safely describes both `.mjs` and `.cjs`; use `.d.mts` and `.d.cts` when the package shape requires distinct module declarations.
+23. For `tsconfig` updates, make defaults explicit when they affect emitted shape, ambient types, or module semantics. Check `rootDir`, `include`, `exclude`, `files`, `references`, `types`, `lib`, `target`, `module`, `moduleResolution`, `verbatimModuleSyntax`, `noUncheckedSideEffectImports`, `strict`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `strictFunctionTypes`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, declaration output, and framework wrapper defaults together instead of relying on a compiler-major default.
+24. Treat `types` as an ambient-global allowlist. Add only the runtime or test environment globals the project actually uses, such as Node, Bun, DOM, Vitest, Jest, or Playwright. Do not restore broad ambient discovery just to hide missing imports or environment drift.
+25. For large repositories, check whether the root `tsconfig` is a solution file with `files: []`, whether referenced projects use `composite`, declaration output, and narrow `include`, and whether package dependency graph and `references` graph agree. Do not solve slow type-checking by widening `skipLibCheck`, `noCheck`, broad `exclude`, or path aliases that bypass public package entries.
+26. For type-check performance changes, prefer named exported return types, named conditional aliases, interface extension over repeated intersections when practical, smaller unions, bounded generated type inputs, and explicit public export annotations. Treat large anonymous public return types, massive unions, recursive mapped types, and all-visible `@types` globals as graph-size risks.
+27. When a change is boundary-sensitive, use available read-only script-pack suggestions such as `repo/config-chain`, `code/dependency-graph`, `code/import-cycle`, `repo/related-files`, `code/export-diff`, or `repo/manifest-lock-drift` only as orientation or review evidence. Script-pack output does not replace source reading, command intents, or declaration/package verification.
+28. Use import attributes, subpath imports, and deferred module evaluation only when the runtime, bundler, and compiler track all support the exact syntax. `import defer` is a side-effect and startup-order choice, not a generic lazy-loading trick; use it only for namespace imports whose module evaluation can safely wait until first export access.
+29. Use `using` or `await using` only when the target runtime or transform path supports explicit resource management and the object really owns a disposable resource. Do not replace visible `try/finally`, context-manager, or framework cleanup contracts with `using` if the surrounding lifecycle, error propagation, or generated JS cannot be verified.
+30. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, accidental public re-exports, stale `paths` aliases, or wrong ESM/CJS declaration shapes.
+31. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
+32. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
+33. For TypeScript 7 migration work, keep the tracks separate:
    - TS6 stable API track: `@typescript/typescript6` and `tsc6` for compiler API, transformer, ESLint, framework wrapper, and peer-dependency compatibility.
    - TS7 RC compiler track: `typescript@rc` and `tsc` for RC compiler verification.
    - TS7 nightly track: `@typescript/native-preview` and `tsgo` for nightly diagnostics only.
    - Future TS7 stable track: stable `typescript` once upstream publishes TypeScript 7 on the normal stable path.
-26. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API track until their owners explicitly support the TS7 API surface. Treat TS7 RC `tsc` as compiler verification, not proof that JavaScript compiler API consumers can migrate.
-27. When comparing TS6 `tsc6`, TS7 RC `tsc`, and optional TS7 nightly `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
-28. Do not treat faster TS7 RC or nightly results as sufficient verification. Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline until repository policy explicitly adopts a different compiler track.
-29. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, and downstream-style consumer risk.
+34. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API track until their owners explicitly support the TS7 API surface. Treat TS7 RC `tsc` as compiler verification, not proof that JavaScript compiler API consumers can migrate.
+35. When comparing TS6 `tsc6`, TS7 RC `tsc`, and optional TS7 nightly `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
+36. Do not treat faster TS7 RC or nightly results as sufficient verification. Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline until repository policy explicitly adopts a different compiler track.
+37. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, downstream-style consumer risk, and type-check performance risk.
 
 <!-- mustflow-section: assertion-policy -->
 ## Assertion Policy
@@ -129,6 +139,7 @@ Rejected by default:
 - `JSON.parse(...) as T`, `response.json() as T`, `process.env as Env`, `Object.fromEntries(formData) as T`, or any external input cast directly to a domain type.
 - `as any`, `as unknown as T`, `as never`, or a broad object-wide `as T` used to bypass incompatible shapes.
 - `user!.profile!.field!`-style property chains or non-null assertions after async, callbacks, mutation, or lifecycle transitions.
+- Fake generic parsers such as `parseJson<T>()` that do not accept a real runtime parser or validator.
 - Implementation `@ts-ignore`.
 - Compiler setting downgrades such as disabling strictness, null checking, indexed access safety, or declaration checking to make the patch pass.
 - Treating TypeScript 6 deprecation suppression as a long-term fix.
@@ -143,6 +154,7 @@ When package or declaration surfaces change:
 
 - Compare runtime exports and type exports.
 - Check root imports, subpath imports, type-only imports, ESM imports, CJS requires, and documented deep imports when those targets are supported.
+- Check conditional export order, `"types"` condition placement, package `type`, `.mjs`, `.cjs`, `.d.mts`, `.d.cts`, and whether ESM and CJS consumers receive matching runtime and declaration shapes.
 - Treat removed exports, renamed exports, narrowed parameters, changed defaults, changed overload order, widened or narrowed return contracts, required field additions, optional field meaning changes, generic bound changes, and declaration path changes as compatibility-sensitive.
 - Treat path aliases in emitted JS or declarations as release risks unless the consumer environment is guaranteed to resolve them.
 - If a previously importable deep path becomes blocked by `exports`, report it as a breaking-change risk unless a compatibility export remains.
@@ -154,9 +166,12 @@ Reject or revise the patch when any of these appear without explicit evidence an
 
 - A type error is fixed by adding `any`, broad `as`, double assertion, non-null assertion, `@ts-ignore`, or compiler setting downgrades.
 - External data is trusted as a domain type without schema validation, a type guard, or an assertion function.
+- DTOs, raw rows, environment variables, JSON values, form values, or provider payloads are reused as internal domain types without conversion where runtime shape differs.
 - A state object uses optional fields where a discriminated union would encode the lifecycle correctly.
+- A generic parameter, callback method syntax, `Record<string, T>` lookup, optional property, or `Array.find()` result creates a false guarantee that runtime code does not prove.
 - Validator schemas and exported types are duplicated without a single source of truth.
 - Generated declarations expose source-only aliases, internal module paths, workspace-only packages, or accidental barrel exports.
+- Project references, package dependencies, path aliases, root solution config, generated type inputs, ambient `types`, or internal `src` imports enlarge the type graph or bypass public package boundaries without evidence.
 - Package entry metadata changes without checking runtime entry, type entry, declaration output, and supported resolver modes.
 - `tsconfig` defaults, ambient `types`, import attributes, `import defer`, or explicit resource management syntax are adopted without runtime, bundler, compiler-track, and generated-output evidence.
 - `skipLibCheck` or weakened strictness is used as release validation for a library/package.
@@ -171,6 +186,8 @@ Reject or revise the patch when any of these appear without explicit evidence an
 - Runtime input boundaries are validated before values receive domain types.
 - Runtime exports, type exports, and declaration output agree.
 - Assertions are narrow, justified, and contained.
+- DTO/domain, external input, optional property, index access, and generic relationship boundaries are honest about runtime behavior.
+- Large-repository build graph, project references, path alias, generated-type, ambient global, and type-performance risks are checked when relevant.
 - Any public API or module-system risk is reported.
 - TypeScript 6/7 migration, RC, nightly, stable, and compiler-entrypoint risks are classified when relevant.
 - No type-checking or test guard was weakened without an explicit user request and risk report.
@@ -207,8 +224,9 @@ Report whether configured verification exists for declaration output, package ar
 
 - Boundary checked
 - Files changed
-- Type and module safety notes
+- Type, runtime validation, module, and type-graph safety notes
 - Public API or declaration impact
+- Project reference, monorepo boundary, or type-check performance impact
 - Compiler-version, RC, nightly, or API-track notes
 - Command intents run
 - Skipped checks and reasons

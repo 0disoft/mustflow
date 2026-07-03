@@ -1293,6 +1293,66 @@ test('repo version-source json output matches the published schema', () => {
 	}
 });
 
+test('repo toolchain-provenance json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/toolchain-provenance',
+			'inspect',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-toolchain-provenance-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo automation-surface json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/automation-surface',
+			'inspect',
+			'--json',
+		]);
+
+		assert.equal([0, 1].includes(result.status), true, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-automation-surface-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('repo dependency-surface json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/dependency-surface',
+			'inspect',
+			'--json',
+		]);
+
+		assert.equal([0, 1].includes(result.status), true, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'repo-dependency-surface-report.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('repo approval-gate json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

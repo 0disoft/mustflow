@@ -47,6 +47,9 @@ building automation around `--json` output.
 - `skill-route-report.schema.json`: `mf skill route --json`, including compact route candidates,
   selected main and adjunct skills, score breakdowns, route read plans, route source shards, and
   optional read-only script-pack helper suggestions
+- `repo-toolchain-provenance-report.schema.json`: `mf script-pack run repo/toolchain-provenance inspect --json`
+- `repo-automation-surface-report.schema.json`: `mf script-pack run repo/automation-surface inspect --json`
+- `repo-dependency-surface-report.schema.json`: `mf script-pack run repo/dependency-surface inspect --json`
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify`
   writes a pointer to the latest verify run bundle, including the verify completion verdict, evidence model,
   and coverage matrix

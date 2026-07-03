@@ -211,6 +211,43 @@ Vitest, Tailwind, Jest, Playwright, and mustflow config files, then reports stat
 reference, workspace, dynamic-config, path, and content-hash metadata without executing dynamic
 config code.
 
+## Inspect Toolchain Provenance
+
+```sh
+npx mf script-pack run repo/toolchain-provenance inspect --json
+```
+
+`repo/toolchain-provenance` is read-only. It inspects repository-visible runtime and package-manager
+contract sources such as `package.json`, `.node-version`, `.nvmrc`, `.python-version`,
+`pyproject.toml`, `go.mod`, `rust-toolchain.toml`, `mise.toml`, `.tool-versions`, Dockerfiles,
+CI workflows, and lockfiles. It reports provenance drift such as conflicting Node declarations,
+mixed JavaScript lockfiles, package-manager declarations without lockfiles, and CI-only runtime
+contracts without running the runtimes.
+
+## Inspect Automation Surfaces
+
+```sh
+npx mf script-pack run repo/automation-surface inspect --json
+```
+
+`repo/automation-surface` is read-only. It inventories package scripts, Make targets, Taskfile tasks,
+mise tasks, GitHub Actions workflows, and configured mustflow command intents. It classifies surfaces
+such as `doctor`, `bootstrap`, `check`, `fix`, `test`, `deps`, `db`, `release`, `deploy`,
+`dev_server`, and `watch`, then reports risky or long-running surfaces and raw automation that has no
+mapped mustflow intent.
+
+## Inspect Dependency Surfaces
+
+```sh
+npx mf script-pack run repo/dependency-surface inspect --json
+```
+
+`repo/dependency-surface` is read-only. It inspects dependency manifests, lockfiles, workspace files,
+package-manager config, Dependabot or Renovate config, and audit or SBOM workflow evidence across
+JavaScript, Python, Go, and Rust surfaces. It reports lockfile conflicts, manifests without
+lockfiles, dependency surfaces without update automation, and update automation that lacks visible
+audit or policy evidence.
+
 ## Map Related Files
 
 ```sh
@@ -268,6 +305,9 @@ npx mf script-pack run code/export-diff compare src/core/public-json-contracts.t
 npx mf script-pack run docs/reference-drift check README.md schemas/README.md --json
 npx mf script-pack run core/text-budget check package.json --json-pointer /description --max 80 --json
 npx mf script-pack run repo/config-chain inspect src/cli/index.ts --json
+npx mf script-pack run repo/toolchain-provenance inspect --json
+npx mf script-pack run repo/automation-surface inspect --json
+npx mf script-pack run repo/dependency-surface inspect --json
 npx mf script-pack run repo/generated-boundary check AGENTS.md .mustflow/config/manifest.lock.toml --json
 npx mf script-pack run repo/related-files map src/cli/index.ts --json
 ```
@@ -288,6 +328,12 @@ npx mf script-pack run repo/related-files map src/cli/index.ts --json
 `docs/reference-drift` JSON reports are validated by `schemas/reference-drift-report.schema.json`.
 `core/text-budget` JSON reports are validated by `schemas/text-budget-report.schema.json`.
 `repo/config-chain` JSON reports are validated by `schemas/config-chain-report.schema.json`.
+`repo/toolchain-provenance` JSON reports are validated by
+`schemas/repo-toolchain-provenance-report.schema.json`.
+`repo/automation-surface` JSON reports are validated by
+`schemas/repo-automation-surface-report.schema.json`.
+`repo/dependency-surface` JSON reports are validated by
+`schemas/repo-dependency-surface-report.schema.json`.
 `repo/generated-boundary` JSON reports are validated by
 `schemas/generated-boundary-report.schema.json`.
 `repo/related-files` JSON reports are validated by `schemas/related-files-report.schema.json`.

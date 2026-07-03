@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/repo-toolchain-provenance-report.schema.json",
+  "title": "mustflow repo toolchain-provenance report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "pack_id",
+    "script_id",
+    "script_ref",
+    "action",
+    "status",
+    "ok",
+    "mustflow_root",
+    "input",
+    "input_hash",
+    "summary",
+    "sources",
+    "lockfiles",
+    "findings",
+    "issues"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "script-pack" },
+    "pack_id": { "const": "repo" },
+    "script_id": { "const": "toolchain-provenance" },
+    "script_ref": { "const": "repo/toolchain-provenance" },
+    "action": { "const": "inspect" },
+    "status": { "enum": ["passed", "failed", "error"] },
+    "ok": { "type": "boolean" },
+    "mustflow_root": { "type": "string" },
+    "input": { "$ref": "#/$defs/input" },
+    "input_hash": { "$ref": "#/$defs/sha256" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "lockfiles": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanned_paths", "max_file_bytes"],
+      "properties": {
+        "scanned_paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "max_file_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_count",
+        "runtime_count",
+        "package_manager_count",
+        "lockfile_count",
+        "ci_source_count",
+        "finding_count"
+      ],
+      "properties": {
+        "source_count": { "type": "integer", "minimum": 0 },
+        "runtime_count": { "type": "integer", "minimum": 0 },
+        "package_manager_count": { "type": "integer", "minimum": 0 },
+        "lockfile_count": { "type": "integer", "minimum": 0 },
+        "ci_source_count": { "type": "integer", "minimum": 0 },
+        "finding_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source_kind", "path", "line", "key", "value"],
+      "properties": {
+        "kind": { "enum": ["bun", "docker", "go", "node", "package_manager", "python", "rust"] },
+        "source_kind": {
+          "enum": [
+            "ci_workflow",
+            "dockerfile",
+            "go_mod",
+            "mise_toml",
+            "node_version_file",
+            "package_json",
+            "python_version_file",
+            "pyproject_toml",
+            "rust_toolchain",
+            "tool_versions"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "key": { "type": "string", "minLength": 1 },
+        "value": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "message", "path", "json_pointer", "metric", "actual", "expected"],
+      "properties": {
+        "code": {
+          "enum": [
+            "conflicting_node_version_sources",
+            "conflicting_package_manager_lockfiles",
+            "package_manager_without_lockfile",
+            "toolchain_declared_without_package_manager",
+            "runtime_declared_in_ci_only"
+          ]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "path": { "type": "string", "minLength": 1 },
+        "json_pointer": { "type": ["string", "null"] },
+        "metric": { "type": ["string", "null"] },
+        "actual": { "type": ["number", "null"] },
+        "expected": { "type": ["number", "null"] }
+      }
+    }
+  }
+}

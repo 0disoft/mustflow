@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.108.2');
+	assert.equal(packageJson.version, '2.108.3');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -773,6 +773,9 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('schemas/skill-route-audit-report.schema.json'));
 	assert.ok(files.has('schemas/skill-import-report.schema.json'));
 	assert.ok(files.has('schemas/repo-version-source-report.schema.json'));
+	assert.ok(files.has('schemas/repo-toolchain-provenance-report.schema.json'));
+	assert.ok(files.has('schemas/repo-automation-surface-report.schema.json'));
+	assert.ok(files.has('schemas/repo-dependency-surface-report.schema.json'));
 	assert.ok(files.has('schemas/repo-approval-gate-report.schema.json'));
 	assert.ok(files.has('schemas/repo-deploy-surface-report.schema.json'));
 	assert.ok(files.has('schemas/repo-merge-conflict-scan-report.schema.json'));
