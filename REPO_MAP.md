@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 240
+anchor_count: 242
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:a5108c642dc71dcbebcd99ed021945716a7eb635850467530d59c23f65b77b8b"
+source_fingerprint: "sha256:3bcc4904c93437f3da19fe5fea1082cb2ac2d049b03cda8776d93b21171fe559"
 ---
 
 # REPO_MAP.md
@@ -721,6 +721,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/source-freshness-check/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/split-refactor-residual-path-review/
+
+- `.mustflow/skills/split-refactor-residual-path-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/sqlite-code-change/
 
 - `.mustflow/skills/sqlite-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -804,6 +808,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/ui-quality-gate/
 
 - `.mustflow/skills/ui-quality-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/ui-state-resurrection-review/
+
+- `.mustflow/skills/ui-state-resurrection-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/unocss-code-change/
 

@@ -84,7 +84,9 @@ test('copies the default agent workflow into an empty project', () => {
 			),
 		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'desktop-auto-update-safety-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'split-refactor-residual-path-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-state-ownership-review', 'SKILL.md')));
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-state-resurrection-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-stress-layout-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-accessibility-tree-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-localization-review', 'SKILL.md')));
@@ -261,7 +263,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/motion-system-contract-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-background-process-stability-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-auto-update-safety-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/split-refactor-residual-path-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/ui-state-resurrection-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-localization-review\/SKILL\.md/);
@@ -281,7 +285,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillRoutes, /\[routes\."motion-system-contract-review"\]/);
 		assert.match(skillRoutes, /\[routes\."desktop-background-process-stability-review"\]/);
 		assert.match(skillRoutes, /\[routes\."desktop-auto-update-safety-review"\]/);
+		assert.match(skillRoutes, /\[routes\."split-refactor-residual-path-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-state-ownership-review"\]/);
+		assert.match(skillRoutes, /\[routes\."ui-state-resurrection-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-stress-layout-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);

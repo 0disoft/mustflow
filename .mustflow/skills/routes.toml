@@ -36,6 +36,12 @@ route_type = "primary"
 priority = 40
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."split-refactor-residual-path-review"]
+category = "architecture_patterns"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "data_change"]
+
 [routes."composition-over-inheritance"]
 category = "architecture_patterns"
 route_type = "primary"
@@ -989,6 +995,12 @@ category = "ui_assets"
 route_type = "adjunct"
 priority = 80
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"]
+
+[routes."ui-state-resurrection-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."frontend-stress-layout-review"]
 category = "ui_assets"

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 211
+revision = 214
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -111,6 +111,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/behavior-preserving-refactor/SKILL.md"
 source_locale = "en"
 revision = 12
+translations = {}
+
+[documents."skill.split-refactor-residual-path-review"]
+source = "locales/en/.mustflow/skills/split-refactor-residual-path-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.code-review"]
@@ -327,6 +333,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/frontend-state-ownership-review/SKILL.md"
 source_locale = "en"
 revision = 1
+translations = {}
+
+[documents."skill.ui-state-resurrection-review"]
+source = "locales/en/.mustflow/skills/ui-state-resurrection-review/SKILL.md"
+source_locale = "en"
+revision = 3
 translations = {}
 
 [documents."skill.frontend-stress-layout-review"]
@@ -571,7 +583,7 @@ translations = {}
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -709,7 +721,7 @@ translations = {}
 [documents."skill.go-code-change"]
 source = "locales/en/.mustflow/skills/go-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 7
 translations = {}
 
 [documents."skill.godot-code-change"]

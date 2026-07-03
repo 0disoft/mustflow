@@ -2,11 +2,11 @@
 mustflow_doc: skill.go-code-change
 locale: en
 canonical: true
-revision: 5
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: go-code-change
-description: Apply this skill when Go source, modules, workspaces, package APIs, package layout, internal boundaries, interfaces, structs, errors, goroutines, channels, context propagation, HTTP clients or servers, graceful shutdown, reverse proxies, JSON encoding, filesystem roots, network addresses, runtime limits, profiling, benchmarks, tests, tools, or generated code boundaries are created or changed.
+description: Apply this skill when Go source, modules, workspaces, package APIs, package layout, internal boundaries, interfaces, structs, errors, goroutines, channels, context propagation, HTTP clients or servers, Gin engines, router groups, middleware chains, request binding, validation, recovery, access logging, CORS, cookies, trusted headers, graceful shutdown, reverse proxies, database/sql request integration, JSON encoding, filesystem roots, network addresses, runtime limits, profiling, benchmarks, tests, tools, or generated code boundaries are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -33,7 +33,7 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
 <!-- mustflow-section: use-when -->
 ## Use When
 
-- `.go`, `go.mod`, `go.sum`, `go.work`, build tags, generated code, public package API, tests, benchmarks, goroutines, channels, context propagation, HTTP clients or servers, graceful shutdown, reverse proxies, JSON encoding, filesystem access, network addresses, runtime tuning, profiling, tools, or module dependencies change.
+- `.go`, `go.mod`, `go.sum`, `go.work`, build tags, generated code, public package API, tests, benchmarks, goroutines, channels, context propagation, HTTP clients or servers, Gin engines, router groups, middleware chains, request binding, validation, recovery, access logging, CORS, cookies, trusted headers, graceful shutdown, reverse proxies, database/sql request integration, JSON encoding, filesystem access, network addresses, runtime tuning, profiling, tools, or module dependencies change.
 - The task touches interfaces, structs, zero-value behavior, error wrapping, package structure, `internal` boundaries, import direction, concurrency ownership, cancellation, timeout policy, memory limits, race-sensitive code, benchmark measurement, or module dependencies.
 - Code or docs use Go-version-gated features such as expression operands to `new`, range-over-function iterators, generic type aliases, reflect iterators, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `T.ArtifactDir`, `B.ArtifactDir`, `F.ArtifactDir`, `testing/cryptotest.SetGlobalRandom`, `os.Root` or `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `go fix` modernizers, `encoding/json/v2`, experimental `GOEXPERIMENT` features, or newer runtime defaults.
 
@@ -51,6 +51,7 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
 - The public API surface when exported identifiers, errors, or package paths change.
 - Package ownership, import direction, `internal` visibility, module path, major-version suffix, workspace usage, and whether the project is an importable library, self-contained server, tool, or monorepo.
 - Runtime and deployment context when the change touches HTTP, goroutines, timers, memory, `GOMAXPROCS`, cgroups, race detection, PGO, profiling, or container behavior.
+- Gin or other Go HTTP framework context when relevant: framework version, minimum Go version, engine construction, route registration order, group creation order, middleware chain order, trusted proxy settings, recovery owner, logger query-string policy, route-pattern metric policy, CORS policy, cookie policy, trusted header boundary, context reuse boundaries, binding method, validator tags, body-size policy, upload limits, database call context, and response/error ownership.
 - Minimum supported Go version, `go` directive, `toolchain` directive, `GOEXPERIMENT`, and whether the feature is stable, experimental, or repository-pinned.
 - Configured verification intents.
 
@@ -60,7 +61,7 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
 - Inspect the whole package before adding names or methods.
 - Determine whether the change affects exported API, concurrency ownership, or dependency graph.
 - Identify generated files and avoid direct edits unless explicitly requested.
-- If a Go release, "latest Go", standard-library feature, runtime default, experimental package, or toolchain claim is written durably, use `version-freshness-check` and official Go sources.
+- If a Go release, "latest Go", standard-library feature, runtime default, experimental package, toolchain claim, or Go framework version claim such as Gin release or minimum-Go support is written durably, use `version-freshness-check` with official Go, package registry, or framework-owned sources.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -112,6 +113,7 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
    - do not rely on `err == sentinel` when callers may receive wrapped errors;
    - do not expose dependency sentinel or typed errors through wrapping unless the package intentionally supports them as API;
    - treat a change between observable wrapping and non-observable formatting as API-sensitive;
+   - keep public response messages separate from internal error causes. Do not return `err.Error()` to clients when the error may contain SQL, file paths, URLs, tokens, dependency details, or stack context;
    - classify context cancellation, context deadlines, dependency timeouts, and domain failures at package boundaries instead of letting infrastructure errors leak upward unchanged;
    - keep typed error pointer/value behavior consistent and avoid typed-nil errors behind an `error` interface;
    - use `errors.Join` or multiple `%w` only when callers are expected to use `errors.Is` or `errors.As` rather than simple unwrap behavior;
@@ -159,45 +161,80 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
    - reuse clients and transports instead of creating them per request;
    - prefer reverse-proxy rewrite hooks over deprecated or unsafe director-style mutation when the supported Go version allows it;
    - keep hop-by-hop header, forwarded-host, scheme, cancellation, streaming, and error-mapping behavior explicit.
-15. Keep JSON contracts honest:
+15. Check Gin and Go HTTP framework boundaries when relevant:
+   - prefer explicit production server construction around the framework engine; do not treat `Run`, `RunTLS`, or convenience helpers as graceful shutdown, timeout, or lifecycle policy;
+   - treat `gin.Default()` as a demo convenience unless local production policy really accepts its logger and recovery defaults; production paths usually need explicit request id, trace id, structured logging, panic reporting, security headers, timeout, metrics, and recovery ownership;
+   - centralize error response, access log, and metrics ownership. Handlers may classify failures, but one final responder should map typed errors to status, code, safe message, log level, retryability, and exposed details;
+   - use `c.Error` only when a later middleware owns normalization. Do not mix scattered `c.JSON(500, ...)`, `AbortWithError`, and a separate logger that reads a different error source;
+   - preserve `errors.Is` and `errors.As` across service and transport boundaries so domain failures, context deadlines, client cancellations, dependency timeouts, and programmer bugs stay distinguishable;
+   - use custom recovery when production needs panic id, request id, route pattern, user or tenant id, stack capture, error tracking, and a safe generic response. Recovery middleware does not catch panics in goroutines started by the handler;
+   - log structured request fields from a fixed schema such as request id, trace id, method, route pattern, status, latency, client IP, user or tenant id, error code, error kind, panic marker, and body size. Use `c.FullPath()` or an equivalent route pattern for logs and metrics, not raw high-cardinality paths;
+   - treat 4xx, validation, auth denial, not found, timeout, client cancellation, 5xx, dependency failure, and panic as different observability classes instead of logging every non-2xx as the same error;
+   - register middleware before the routes and child groups that must receive it. `group.Use()` and parent middleware added after route or child-group creation must not be assumed to retrofit existing handlers;
+   - review middleware order around `c.Next()`: before-next code wraps inbound work, after-next code observes completed downstream work, and response writers or transactions must be finalized in the right phase;
+   - after `Abort` or `AbortWithStatusJSON`, return from the current middleware or handler unless the remaining local code is intentionally safe to run;
+   - do not pass the original `*gin.Context` into goroutines, store it in structs, or keep it after the request. Extract immutable values and use `c.Request.Context()` only for work that should die with the request;
+   - treat `c.Copy()` as a shallow request-context snapshot, not a deep copy of request data, cancellation semantics, pointers, maps, slices, body bytes, or framework writer state;
+   - keep response writes in the original handler flow. Background work should report through channels, queues, or owned result stores rather than calling `c.JSON`, `c.Error`, `c.Abort`, `c.Writer`, `c.Query`, `c.PostForm`, or multipart parsing from another goroutine;
+   - forward `c.Request.Context()` to database, cache, RPC, outbound HTTP, and long-running work that should respect disconnects or timeouts; for work that must outlive the request, use a queue or an explicit detached lifecycle context with its own timeout and wait or retry policy;
+   - configure trusted proxies before relying on `ClientIP()` for rate limits, admin allowlists, geo policy, audit, or abuse controls; do not trust client-supplied forwarding headers by default, and treat `ClientIP()` as an auxiliary signal rather than authentication;
+   - when using trusted platform headers, require an outer network boundary that prevents direct origin-server access. Strip client-supplied identity, scheme, host, and forwarding headers at the edge before reinjecting trusted values;
+   - review CORS as browser response exposure, not API authentication. Parse and compare Origin by scheme, host, and port; avoid substring checks, origin reflection with credentials, wildcard assumptions for credentialed requests, missing `Vary: Origin`, and exposure of internal request or response headers;
+   - keep cookie policy explicit: narrow domain, `Secure`, `HttpOnly`, `SameSite`, `Path`, and host-only behavior for session cookies. Do not derive cookie `Secure` from `c.Request.TLS` when TLS terminates before the Go process;
+   - treat logger query-string handling as a privacy boundary. Avoid logging tokens, emails, OAuth codes, magic links, redirect parameters, search terms, or payment callback data from query strings;
+   - make route wildcard, escaped-path, raw-path, unescape, trailing-slash redirect, fixed-path redirect, and method-not-allowed behavior explicit when identifiers, file paths, signed URLs, or reverse proxies can change path meaning;
+   - use `ShouldBind` variants instead of `Bind` or `MustBind` when the endpoint owns JSON error shape, status code, validation response, logging, or security behavior;
+   - pick the binding source deliberately: URI params, query, headers, form, multipart, and JSON body should not all feed one domain model or permission object through a vague auto-binding path;
+   - use request DTOs with explicit `json`, `form`, `uri`, and `header` tags and `binding` validator tags. Do not bind directly into database, ORM, or domain models that contain server-owned fields such as owner, role, status, plan, hash, or tenant ids;
+   - distinguish field presence from zero values for booleans, numbers, and optional strings. Use pointers, presence types, or custom validators when `false`, `0`, or empty string can be a valid submitted value;
+   - reject or explicitly account for unknown JSON fields, duplicate keys, large numeric identifiers, and `map[string]any` float conversion when the endpoint makes money, identity, permission, or audit decisions;
+   - if request bodies are read by logging, HMAC, audit, or multiple bind passes, set a route-appropriate size limit first and restore or share the bytes deliberately. Treat `ShouldBindBodyWith` as whole-body memory retention, not a free parser cache;
+   - treat `MaxMultipartMemory` as a memory buffering threshold, not a full upload size limit. Enforce total request size, verify content, discard client filenames, and use server-owned storage names.
+16. Check database integration from handlers when relevant:
+   - open `*sql.DB` once at process or application startup, inject the long-lived pool, and close it during shutdown, not per request;
+   - set `SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime`, and `SetConnMaxIdleTime` from database capacity, app instance count, and traffic shape instead of relying on unbounded defaults;
+   - pass request or operation context to `QueryContext`, `QueryRowContext`, `ExecContext`, `BeginTx`, and driver or ORM APIs that support it;
+   - close `Rows`, check `rows.Err()`, handle transaction commit and rollback paths explicitly, and keep query timeout, retry, and pool-wait observability visible;
+   - expose pool pressure through `DBStats` or local metrics when handler latency may be caused by connection waits rather than slow business code.
+17. Keep JSON contracts honest:
    - choose `omitempty` versus `omitzero` deliberately, especially for `time.Time`, numeric zero, boolean false, and optional fields;
    - use `SetEscapeHTML(false)` only when the JSON is not embedded into HTML and callers expect raw `<`, `>`, or `&`;
    - treat `encoding/json/v2` and `jsontext` as experimental unless the repository explicitly opts into the relevant experiment and migration tests.
-16. Check filesystem and network address helpers:
+18. Check filesystem and network address helpers:
    - use traversal-resistant root APIs when accepting user-controlled relative paths and the supported Go version provides them;
    - do not treat `filepath.Join` plus prefix checks as sufficient against symlinks and TOCTOU;
    - prefer `net/netip` for comparable IP addresses and map keys when supported;
    - use `net.JoinHostPort` instead of string formatting for host and port assembly so IPv6 works.
-17. Check runtime and deployment behavior when relevant:
+19. Check runtime and deployment behavior when relevant:
    - set `GOMEMLIMIT` or `debug.SetMemoryLimit` before tuning `GOGC` for container memory pressure, leaving headroom for non-Go memory such as cgo, mmap, and the kernel;
    - question manual `GOMAXPROCS` pins in containers on Go versions with container-aware defaults;
    - use PGO only with representative profiles and keep `default.pgo` ownership clear;
    - treat goroutine leak profiling, SIMD, JSON v2, and other experiments as opt-in evidence-gathering, not default production assumptions;
    - remember that `-race` only finds races on executed paths and carries significant overhead.
-18. For performance changes, measure before simplifying or optimizing:
+20. For performance changes, measure before simplifying or optimizing:
    - require profile or benchmark evidence before accepting a more complex hot-path change;
    - inspect CPU, heap, allocation, goroutine, block, and mutex evidence according to the symptom instead of assuming CPU is the bottleneck;
    - treat allocation reduction as GC-pressure reduction only when benchmark or profile evidence supports it;
    - use escape-analysis findings to explain heap movement instead of assuming pointers are faster than values;
    - use `sync.Pool` only for disposable temporary objects that may vanish at any time, not as a durable cache or lifecycle owner.
-19. Keep tests and benchmarks deterministic:
+21. Keep tests and benchmarks deterministic:
    - do not use elapsed real time to wait for goroutine progress; use explicit synchronization, owned lifecycle waits, fake time, `testing/synctest` when supported, or the repository's established concurrency test helper;
    - prefer `testing.B.Loop` for new benchmarks when the supported Go version allows it, and keep setup, cleanup, allocation measurement, and compiler optimization boundaries honest;
    - compare benchmark changes across repeated runs and include `B/op` and `allocs/op` when allocation behavior is part of the claim;
    - use test artifact directories for files that should survive a test run only when the supported Go version and test invocation preserve artifacts; otherwise use the repository's existing temporary-file or golden-output policy;
    - for deterministic crypto tests, prefer the standard cryptographic test hook when the supported Go version provides it instead of overriding global readers in production code paths.
-20. Keep Go tools and modernization explicit:
+22. Keep Go tools and modernization explicit:
    - prefer the `tool` directive over `tools.go` pinning only when the repository's supported Go version allows it;
    - use `go fix` modernizers as reviewed migrations, not silent drive-by rewrites;
    - update code generators, schema generators, lint helpers, and reflection-heavy tooling for generic aliases, alias node behavior, and reflect iterator methods only with fixture coverage;
    - prefer standard-library helpers such as `min`, `max`, `clear`, `slices`, `maps`, and `cmp` over new local utility packages when the supported Go version allows them.
-21. If dependency metadata changes, keep module files and dependent tests synchronized:
+23. If dependency metadata changes, keep module files and dependent tests synchronized:
    - do not raise the `go` directive, add toolchain requirements, change module path, or introduce direct dependencies unless the task requires it and the final report calls out the support impact;
    - treat `go.sum` as checksum evidence, not a package lockfile and not disposable noise;
    - treat `replace`, especially local-path `replace`, as temporary main-module or workspace-only wiring unless the repository documents a release plan for it;
    - verify vendor output is regenerated by a configured intent when vendoring is part of the repository contract;
    - check private module settings before adding private import paths so module names do not leak through public proxy or checksum lookups.
-22. Choose configured verification intents that cover formatting, tests, race-sensitive behavior, lint, API drift, module drift, docs, and release metadata when available.
+24. Choose configured verification intents that cover formatting, tests, race-sensitive behavior, lint, API drift, module drift, docs, and release metadata when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -205,7 +242,7 @@ Preserve Go package, module, workspace, API, error, context, concurrency, runtim
 - Package ownership and exported API impact are clear.
 - Context, goroutine, channel, and error ownership are explicit.
 - Go-version-gated syntax, standard-library APIs, runtime defaults, experiments, and module metadata are compatible with the repository's supported Go version.
-- HTTP timeout, graceful shutdown, proxy, JSON, filesystem, network address, runtime, profiling, test-time, benchmark, and tool decisions are explicit where touched.
+- HTTP timeout, graceful shutdown, proxy, Gin route and middleware order, error response ownership, recovery, access logging, CORS, cookie, trusted header, Gin context lifetime, binding, validation, database integration, JSON, filesystem, network address, runtime, profiling, test-time, benchmark, and tool decisions are explicit where touched.
 - Tests cover the changed behavior without sleeps as synchronization.
 - Module drift is reported when dependency verification cannot run.
 
@@ -233,7 +270,7 @@ For concurrency-sensitive changes, report whether a configured race or equivalen
 - If an iterator function ignores `yield` returning false, a pull iterator omits `stop`, or a channel is replaced by an iterator while concurrency or backpressure remains required, restore the ownership contract before accepting the change.
 - If a goroutine has no owner, stop condition, wait path, cancellation path, or error path, do not add it.
 - If a newer Go feature is useful but the repository's `go` directive or CI matrix is lower, keep a fallback, defer the change, or report the required version bump instead of sneaking in the feature.
-- If HTTP clients, servers, or proxies have no timeout or cancellation boundary, stop and make the missing policy explicit before calling the path production-ready.
+- If HTTP clients, servers, proxies, or Gin handlers have no timeout, cancellation, trusted-proxy, error response owner, recovery owner, log schema, CORS, cookie, trusted-header, context-lifetime, binding-source, body-size, database context, or middleware-order boundary, stop and make the missing policy explicit before calling the path production-ready.
 - If JSON tag changes alter omitted fields, zero values, HTML escaping, or experimental JSON behavior, treat the change as an API contract risk.
 - If a public error stops satisfying documented `errors.Is` or `errors.As` checks, restore the contract or report the breaking-change requirement.
 - If wrapping would expose a dependency error as public API, keep the dependency error internal or document the intentional contract.
@@ -245,7 +282,7 @@ For concurrency-sensitive changes, report whether a configured race or equivalen
 - Boundary checked
 - Package and API impact
 - Context/concurrency/error notes
-- Go version, module/workspace, runtime, HTTP/shutdown, JSON, filesystem, profiling, benchmark, and tool notes when relevant
+- Go version, module/workspace, runtime, HTTP/shutdown, Gin route/middleware/error/recovery/logging/CORS/cookie/context/binding, database, JSON, filesystem, profiling, benchmark, and tool notes when relevant
 - Files changed
 - Command intents run
 - Skipped checks and reasons
