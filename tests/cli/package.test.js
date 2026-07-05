@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.108.8');
+	assert.equal(packageJson.version, '2.112.0');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -305,6 +305,19 @@ test('default template installs complex decision analysis only for team decision
 	assert.equal(readTemplateSkillProfile('library').includes('complex-decision-analysis'), false);
 	assert.ok(readTemplateSkillProfile('team').includes('complex-decision-analysis'));
 	assert.ok(readTemplateSkillProfile('product').includes('complex-decision-analysis'));
+});
+
+test('default template installs technology stack selection across profiles', () => {
+	const skill = 'technology-stack-selection';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
 });
 
 test('package exposes a real install verification script', () => {

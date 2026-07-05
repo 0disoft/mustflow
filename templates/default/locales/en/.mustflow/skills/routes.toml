@@ -462,6 +462,12 @@ route_type = "primary"
 priority = 78
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "migration_change", "package_metadata_change", "release_risk"]
 
+[routes."technology-stack-selection"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "product_change", "cross_cutting_code_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
 [routes."structure-first-engineering"]
 category = "general_code"
 route_type = "adjunct"
@@ -539,6 +545,12 @@ category = "general_code"
 route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
+
+[routes."java-code-change"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."python-code-change"]
 category = "general_code"
@@ -739,6 +751,18 @@ priority = 86
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "test_change", "docs_change", "security_change", "performance_change"]
 
 [routes."postgresql-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 86
+applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
+
+[routes."clickhouse-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 86
+applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
+
+[routes."duckdb-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 86
@@ -1187,6 +1211,12 @@ category = "docs_release"
 route_type = "primary"
 priority = 60
 applies_to_reasons = ["docs_change", "copy_change", "product_change"]
+
+[routes."writing-elegance"]
+category = "docs_release"
+route_type = "primary"
+priority = 62
+applies_to_reasons = ["docs_change", "copy_change", "workflow_change", "release_risk", "unknown_change"]
 
 [routes."docs-prose-review"]
 category = "docs_release"

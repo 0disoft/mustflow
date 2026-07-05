@@ -5,7 +5,7 @@ description: An anchor-based map for agents navigating the current mustflow root
 
 `REPO_MAP.md` is a generated file that provides a high-level overview of the current mustflow root.
 
-It is not intended as an exhaustive file listing. Instead, it identifies critical anchor files such as `AGENTS.md`, `REPO_FLOW.md`, root Markdown docs, machine-readable contracts, `package.json`, `SKILL.md`, and configuration files to orient agents within the repository.
+It is not intended as an exhaustive file listing. Instead, it identifies critical anchor files such as `AGENTS.md`, `REPO_FLOW.md`, root Markdown docs, machine-readable contracts, `package.json`, `SKILL.md`, scaffold routers, validation guides, diagrams, and configuration files to orient agents within the repository.
 
 A mustflow root may encompass multiple repositories. If the current root is a workspace containing nested independent repositories, `REPO_MAP.md` provides entry points for those repositories without detailing their internal structures.
 
@@ -23,7 +23,7 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 - **Scope Definition**: Assists agents in determining an appropriate and safe scope for changes.
 - **Conciseness**: Maintains the brevity of mandatory entry-point documents.
 - **Separation of Concerns**: Distinguishes high-level navigation from exhaustive file lists (for which tools like `git ls-files` should be used).
-- **Workspace Support**: Lists only the entry points for nested repositories in workspace environments.
+- **Workspace Support**: Lists only the entry points for nested repositories in workspace environments, including scaffold routers, contract anchors, and minimal ssealed manifest metadata when a nested repository uses ssealed-style generated structure.
 
 ## Document Structure
 
@@ -31,7 +31,7 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 - **Opening Statement**: Clarifies that the file is an anchor-based navigation map rather than a complete directory tree.
 - **Usage Guidelines**: Directs agents to use `git ls-files` when an exhaustive list is needed.
 - **Primary Anchors**: Lists essential first-read files, including `AGENTS.md` and mustflow configuration/index files.
-- **Directory-Level Anchors**: Groups significant files (e.g., `package.json`, `SKILL.md`) by their respective directories.
+- **Directory-Level Anchors**: Groups significant files (e.g., `package.json`, `SKILL.md`, `.agents/context-map.md`, validation guides, and diagrams) by their respective directories.
 - **Nested Repositories**: Provides entry points for independent repositories discovered within a workspace.
 - **Maintenance Notice**: States that the file is automatically generated and should not be modified manually.
 - **Exclusion Criteria**: Specifies that dependencies, build artifacts, caches, and large files are excluded.
@@ -50,6 +50,7 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 - **Context Awareness**: Include `.mustflow/context/INDEX.md` and `PROJECT.md` by default, but avoid automatically expanding domain-specific context files.
 - **Optional Root Anchors**: Include project-owned root Markdown files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, and `API.md` when present; however, the generation tool must not create them.
 - **Machine-Readable Contracts**: Include purpose-specific contract files such as `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, and `schema.prisma` when present. Generic catch-all names such as `SSOT.json` are not default anchors.
+- **Scaffold and Validation Anchors**: Include project scaffold entrypoints such as `CHECKLIST.md`, `VALIDATION.md`, `.agents/context-map.md`, `.agents/checklists/*.md`, `.agents/validations/*.md`, `.agents/skills/*/SKILL.md`, `.ssealed/manifest.json`, `diagrams/*.mmd`, GitHub templates, API examples, and `db/schema.dbml` when present. For ssealed manifests, summarize stable fields such as scope, profile, density, runner, version, and file-kind counts, but do not print checksums or generation timestamps.
 - **Metadata Protection**: Even for nested repositories, do not include remote URLs, branch names, or automatic summaries.
 
 ## Authoring Guidelines

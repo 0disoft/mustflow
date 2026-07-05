@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.108.8",
+  "version": "2.112.0",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -77,13 +77,13 @@
     "workflow"
   ],
   "devDependencies": {
-    "@types/node": "^25.8.0",
+    "@types/node": "^25.9.4",
     "@types/sql.js": "^1.4.11",
     "fast-check": "^4.8.0",
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "smol-toml": "^1.6.1",
+    "smol-toml": "^1.7.0",
     "sql.js": "^1.14.1"
   }
 }

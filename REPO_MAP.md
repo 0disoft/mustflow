@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 242
+anchor_count: 247
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:3bcc4904c93437f3da19fe5fea1082cb2ac2d049b03cda8776d93b21171fe559"
+source_fingerprint: "sha256:c54164ca1e019a2a093f07417dfa2cfa3573a90a97bd042c6b89979ba218b060"
 ---
 
 # REPO_MAP.md
@@ -19,7 +19,7 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ## How To Use
 
 - Start with `AGENTS.md` and the mustflow files listed in Priority Anchors.
-- Use Directory Anchors to find local rules, guides, package manifests, and command adapters.
+- Use Directory Anchors to find local rules, guides, scaffold routers, package manifests, and command adapters.
 - Use `git ls-files` or your editor when you need the complete file list.
 
 ## Priority Anchors
@@ -185,6 +185,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/cli-output-contract-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/clickhouse-code-change/
+
+- `.mustflow/skills/clickhouse-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/client-bundle-pruning-review/
 
 - `.mustflow/skills/client-bundle-pruning-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -345,6 +349,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/docs-update/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/duckdb-code-change/
+
+- `.mustflow/skills/duckdb-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/elysia-code-change/
 
 - `.mustflow/skills/elysia-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -472,6 +480,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/instruction-conflict-scope-check/
 
 - `.mustflow/skills/instruction-conflict-scope-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/java-code-change/
+
+- `.mustflow/skills/java-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/javascript-code-change/
 
@@ -769,6 +781,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/tauri-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/technology-stack-selection/
+
+- `.mustflow/skills/technology-stack-selection/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/template-install-surface-sync/
 
 - `.mustflow/skills/template-install-surface-sync/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -856,6 +872,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/website-task-friction-review/
 
 - `.mustflow/skills/website-task-friction-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/writing-elegance/
+
+- `.mustflow/skills/writing-elegance/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### docs-site/
 

@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 17
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 17, status = "current" }
+revision = 18
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 18, status = "current" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }
@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 214
+revision = 217
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -544,6 +544,18 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.clickhouse-code-change"]
+source = "locales/en/.mustflow/skills/clickhouse-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.duckdb-code-change"]
+source = "locales/en/.mustflow/skills/duckdb-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.search-index-integrity-review"]
 source = "locales/en/.mustflow/skills/search-index-integrity-review/SKILL.md"
 source_locale = "en"
@@ -583,7 +595,7 @@ translations = {}
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 10
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -748,6 +760,12 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.java-code-change"]
+source = "locales/en/.mustflow/skills/java-code-change/SKILL.md"
+source_locale = "en"
+revision = 3
+translations = {}
+
 [documents."skill.node-code-change"]
 source = "locales/en/.mustflow/skills/node-code-change/SKILL.md"
 source_locale = "en"
@@ -804,6 +822,12 @@ translations = {}
 
 [documents."skill.runtime-target-selection"]
 source = "locales/en/.mustflow/skills/runtime-target-selection/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.technology-stack-selection"]
+source = "locales/en/.mustflow/skills/technology-stack-selection/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -956,6 +980,18 @@ translations = {}
 source = "locales/en/.mustflow/skills/docs-prose-review/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.writing-elegance"]
+source = "locales/en/.mustflow/skills/writing-elegance/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.writing-elegance.phrase-bank"]
+source = "locales/en/.mustflow/skills/writing-elegance/references/phrase-bank.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.failure-triage"]

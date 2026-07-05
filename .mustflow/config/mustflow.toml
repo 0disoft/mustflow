@@ -324,7 +324,6 @@ required_for = [
   "git_push",
   "dependency_install",
   "dependency_upgrade",
-  "network_access",
   "database_migration",
   "destructive_command",
   "secret_access",

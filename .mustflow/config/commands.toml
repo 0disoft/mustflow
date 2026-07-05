@@ -216,6 +216,21 @@ network = false
 destructive = false
 required_after = ["test_change", "behavior_removed", "public_api_change"]
 
+[intents.dependency_update_bun]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Update Bun-managed dependencies and refresh bun.lock for maintainer-requested dependency upgrade work."
+argv = ["bun", "update"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["bun.lock"]
+network = true
+destructive = false
+required_after = ["package_metadata_change"]
+
 [intents.test_coverage]
 status = "manual_only"
 description = "Inspect Node's coverage report for the fast mustflow CLI baseline."

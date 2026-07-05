@@ -12,16 +12,19 @@ const technologySkillNames = [
 	'axum-code-change',
 	'babylon-code-change',
 	'bun-code-change',
+	'clickhouse-code-change',
 	'css-code-change',
 	'cpp-code-change',
 	'dart-code-change',
 	'docker-code-change',
+	'duckdb-code-change',
 	'elysia-code-change',
 	'flutter-code-change',
 	'go-code-change',
 	'godot-code-change',
 	'hono-code-change',
 	'html-code-change',
+	'java-code-change',
 	'javascript-code-change',
 	'node-code-change',
 	'python-code-change',
@@ -232,6 +235,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('test-suite-performance-review'),
 			`${profileName} should include test-suite-performance-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('technology-stack-selection'),
+			`${profileName} should include technology-stack-selection`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('async-timing-boundary-review'),

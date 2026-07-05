@@ -127,6 +127,63 @@ function createMinimalNestedRepository(projectPath) {
 	return nestedPath;
 }
 
+function createSsealedStyleNestedRepository(projectPath) {
+	const nestedPath = path.join(projectPath, 'projects', 'scaffolded');
+	mkdirSync(path.join(nestedPath, '.git'), { recursive: true });
+	mkdirSync(path.join(nestedPath, '.ssealed'), { recursive: true });
+	mkdirSync(path.join(nestedPath, '.agents', 'checklists'), { recursive: true });
+	mkdirSync(path.join(nestedPath, '.agents', 'validations'), { recursive: true });
+	mkdirSync(path.join(nestedPath, '.agents', 'skills', 'feature'), { recursive: true });
+	mkdirSync(path.join(nestedPath, '.github', 'ISSUE_TEMPLATE'), { recursive: true });
+	mkdirSync(path.join(nestedPath, 'api', 'examples'), { recursive: true });
+	mkdirSync(path.join(nestedPath, 'db'), { recursive: true });
+	mkdirSync(path.join(nestedPath, 'diagrams'), { recursive: true });
+	writeFileSync(path.join(nestedPath, 'AGENTS.md'), '# Scaffolded rules\n');
+	writeFileSync(path.join(nestedPath, 'README.md'), '# Scaffolded\n');
+	writeFileSync(path.join(nestedPath, 'DEVELOPMENT.md'), '# Development\n');
+	writeFileSync(path.join(nestedPath, 'CHECKLIST.md'), '# Checklist Router\n');
+	writeFileSync(path.join(nestedPath, 'VALIDATION.md'), '# Validation Router\n');
+	writeFileSync(path.join(nestedPath, 'Makefile'), 'check:\n\t@echo check\n');
+	writeFileSync(
+		path.join(nestedPath, '.ssealed', 'manifest.json'),
+		`${JSON.stringify(
+			{
+				tool: 'ssealed',
+				version: '0.4.0',
+				generatedAt: '2026-07-05T00:00:00.000Z',
+				scope: 'backend',
+				profile: 'api-service',
+				density: 'strict',
+				runner: 'make',
+				files: [
+					{ path: 'AGENTS.md', kind: 'agent', checksum: 'sha256:agent' },
+					{ path: 'CHECKLIST.md', kind: 'checklist', checksum: 'sha256:checklist' },
+					{ path: 'VALIDATION.md', kind: 'validation', checksum: 'sha256:validation' },
+					{ path: 'api/openapi.yaml', kind: 'contract', checksum: 'sha256:contract' },
+					{ path: 'diagrams/system-context.mmd', kind: 'diagram', checksum: 'sha256:diagram' },
+					{ path: '.github/CODEOWNERS', kind: 'github', checksum: 'sha256:github' },
+					{ path: 'Makefile', kind: 'runner', checksum: 'sha256:runner' },
+				],
+			},
+			null,
+			2,
+		)}\n`,
+	);
+	writeFileSync(path.join(nestedPath, '.agents', 'README.md'), '# Agent Workspace\n');
+	writeFileSync(path.join(nestedPath, '.agents', 'context-map.md'), '# Context Map\n');
+	writeFileSync(path.join(nestedPath, '.agents', 'checklists', 'security.md'), '# Security Checklist\n');
+	writeFileSync(path.join(nestedPath, '.agents', 'validations', 'default.md'), '# Default Validation\n');
+	writeFileSync(path.join(nestedPath, '.agents', 'skills', 'feature', 'SKILL.md'), '# Feature Skill\n');
+	writeFileSync(path.join(nestedPath, 'api', 'openapi.yaml'), 'openapi: 3.1.0\n');
+	writeFileSync(path.join(nestedPath, 'api', 'examples', 'success-response.json'), '{}\n');
+	writeFileSync(path.join(nestedPath, 'db', 'schema.dbml'), 'Table users { id uuid }\n');
+	writeFileSync(path.join(nestedPath, 'diagrams', 'system-context.mmd'), 'flowchart TD\n');
+	writeFileSync(path.join(nestedPath, '.github', 'CODEOWNERS'), '* @team\n');
+	writeFileSync(path.join(nestedPath, '.github', 'PULL_REQUEST_TEMPLATE.md'), '# PR\n');
+	writeFileSync(path.join(nestedPath, '.github', 'ISSUE_TEMPLATE', 'design-change.md'), '# Design Change\n');
+	return nestedPath;
+}
+
 function createMinimalRepositoryAt(repositoryPath, name) {
 	mkdirSync(path.join(repositoryPath, '.git'), { recursive: true });
 	mkdirSync(path.join(repositoryPath, '.mustflow', 'config'), { recursive: true });
@@ -455,6 +512,67 @@ test('detects a minimal workspace repository fixture', () => {
 		assert.doesNotMatch(result.stdout, /projects\/foo\/REPO_MAP\.md/);
 		assert.doesNotMatch(result.stdout, /projects\/foo\/README\.md/);
 		assert.doesNotMatch(result.stdout, /projects\/foo\/package\.json/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('surfaces ssealed-style scaffold anchors in nested repositories', () => {
+	const projectPath = createTempProject();
+
+	try {
+		writeWorkspaceMapConfig(projectPath);
+		createSsealedStyleNestedRepository(projectPath);
+
+		const result = runMap(projectPath, ['--stdout']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /Nested Repositories/);
+		assert.match(result.stdout, /### `projects\/scaffolded\/`/);
+		assert.match(result.stdout, /mustflow: no/);
+		assert.match(result.stdout, /agent rules: `projects\/scaffolded\/AGENTS\.md`/);
+		assert.match(result.stdout, /agent scaffolds:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.agents\/README\.md`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.agents\/context-map\.md`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.agents\/skills\/feature\/SKILL\.md`/);
+		assert.match(result.stdout, /manifests:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.ssealed\/manifest\.json`/);
+		assert.match(result.stdout, /ssealed scaffold:/);
+		assert.match(result.stdout, /scope `backend`/);
+		assert.match(result.stdout, /profile `api-service`/);
+		assert.match(result.stdout, /density `strict`/);
+		assert.match(result.stdout, /runner `make`/);
+		assert.match(result.stdout, /version `0\.4\.0`/);
+		assert.match(result.stdout, /generated files 7/);
+		assert.match(result.stdout, /ssealed generated file kinds:/);
+		assert.match(result.stdout, /  - agent: 1/);
+		assert.match(result.stdout, /  - checklist: 1/);
+		assert.match(result.stdout, /  - contract: 1/);
+		assert.match(result.stdout, /  - diagram: 1/);
+		assert.match(result.stdout, /  - github: 1/);
+		assert.match(result.stdout, /  - runner: 1/);
+		assert.match(result.stdout, /  - validation: 1/);
+		assert.doesNotMatch(result.stdout, /generatedAt/);
+		assert.doesNotMatch(result.stdout, /2026-07-05T00:00:00\.000Z/);
+		assert.doesNotMatch(result.stdout, /sha256:agent/);
+		assert.match(result.stdout, /command adapters:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/Makefile`/);
+		assert.match(result.stdout, /validation guides:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.agents\/checklists\/security\.md`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.agents\/validations\/default\.md`/);
+		assert.match(result.stdout, /diagrams:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/diagrams\/system-context\.mmd`/);
+		assert.match(result.stdout, /GitHub templates:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.github\/CODEOWNERS`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.github\/PULL_REQUEST_TEMPLATE\.md`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/\.github\/ISSUE_TEMPLATE\/design-change\.md`/);
+		assert.match(result.stdout, /development guide: `projects\/scaffolded\/DEVELOPMENT\.md`/);
+		assert.match(result.stdout, /checklist router: `projects\/scaffolded\/CHECKLIST\.md`/);
+		assert.match(result.stdout, /validation router: `projects\/scaffolded\/VALIDATION\.md`/);
+		assert.match(result.stdout, /machine-readable contracts:/);
+		assert.match(result.stdout, /`projects\/scaffolded\/api\/openapi\.yaml`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/api\/examples\/success-response\.json`/);
+		assert.match(result.stdout, /`projects\/scaffolded\/db\/schema\.dbml`/);
 	} finally {
 		removeTempProject(projectPath);
 	}

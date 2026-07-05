@@ -17,6 +17,22 @@ export interface RepoMapSourceFingerprintNestedDocument {
 	readonly relativePath: string;
 }
 
+export interface RepoMapSourceFingerprintNestedCount {
+	readonly name: string;
+	readonly count: number;
+}
+
+export interface RepoMapSourceFingerprintSsealedScaffold {
+	readonly manifestPath: string;
+	readonly version?: string;
+	readonly scope?: string;
+	readonly profile?: string;
+	readonly density?: string;
+	readonly runner?: string;
+	readonly fileCount: number;
+	readonly fileKinds: readonly RepoMapSourceFingerprintNestedCount[];
+}
+
 export interface RepoMapSourceFingerprintNestedRepository {
 	readonly relativePath: string;
 	readonly mustflow: boolean;
@@ -31,6 +47,11 @@ export interface RepoMapSourceFingerprintNestedRepository {
 	readonly manifests: readonly string[];
 	readonly commandAdapters: readonly string[];
 	readonly editingPolicies: readonly string[];
+	readonly agentScaffolds?: readonly string[];
+	readonly validationGuides?: readonly string[];
+	readonly diagrams?: readonly string[];
+	readonly githubTemplates?: readonly string[];
+	readonly ssealedScaffold?: RepoMapSourceFingerprintSsealedScaffold;
 }
 
 export interface RepoMapSourceFingerprintInput {
@@ -64,6 +85,24 @@ export function getRepoMapSourceFingerprint(input: RepoMapSourceFingerprintInput
 				manifests: [...repository.manifests].sort(),
 				commandAdapters: [...repository.commandAdapters].sort(),
 				editingPolicies: [...repository.editingPolicies].sort(),
+				agentScaffolds: [...(repository.agentScaffolds ?? [])].sort(),
+				validationGuides: [...(repository.validationGuides ?? [])].sort(),
+				diagrams: [...(repository.diagrams ?? [])].sort(),
+				githubTemplates: [...(repository.githubTemplates ?? [])].sort(),
+				ssealedScaffold: repository.ssealedScaffold
+					? {
+							manifestPath: repository.ssealedScaffold.manifestPath,
+							version: repository.ssealedScaffold.version,
+							scope: repository.ssealedScaffold.scope,
+							profile: repository.ssealedScaffold.profile,
+							density: repository.ssealedScaffold.density,
+							runner: repository.ssealedScaffold.runner,
+							fileCount: repository.ssealedScaffold.fileCount,
+							fileKinds: repository.ssealedScaffold.fileKinds
+								.map((kind) => ({ name: kind.name, count: kind.count }))
+								.sort((left, right) => left.name.localeCompare(right.name)),
+						}
+					: undefined,
 			}))
 			.sort((left, right) => left.relativePath.localeCompare(right.relativePath)),
 	};

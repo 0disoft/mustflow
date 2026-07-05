@@ -5,7 +5,7 @@ description: Generates REPO_MAP.md, an anchor-based map for the current mustflow
 
 `mf map` reads the current mustflow root and generates an anchor-based navigation map for agents.
 
-It is not intended to be a full file listing. `git ls-files` or an editor is better for that. `mf map` only includes anchors that help navigation, such as `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, context files, and important configuration files.
+It is not intended to be a full file listing. `git ls-files` or an editor is better for that. `mf map` only includes anchors that help navigation, such as `AGENTS.md`, `README.md`, `DESIGN.md`, `package.json`, `SKILL.md`, context files, scaffold routers, validation guides, contract files, diagrams, and important configuration files.
 
 ## Options
 
@@ -31,13 +31,27 @@ REPO_FLOW.md
 .mustflow/skills/routes.toml
 .mustflow/skills/INDEX.md
 README.md
+DEVELOPMENT.md
 DESIGN.md
+CHECKLIST.md
+VALIDATION.md
 package.json
 pyproject.toml
 go.mod
 Cargo.toml
 deno.json
 SKILL.md
+.agents/context-map.md
+.agents/checklists/*.md
+.agents/validations/*.md
+.ssealed/manifest.json
+api/openapi.yaml
+api/examples/*.json
+db/schema.dbml
+diagrams/*.mmd
+.github/PULL_REQUEST_TEMPLATE.md
+.github/ISSUE_TEMPLATE/*.md
+.github/CODEOWNERS
 justfile
 Taskfile.yml
 Makefile
@@ -88,7 +102,7 @@ When `.mustflow/config/mustflow.toml` sets both `map.include_nested = true` and 
 
 `--root-only` forces the current run to ignore nested repositories even when configuration enables them. The two options are mutually exclusive.
 
-This section does not list internal files from nested repositories. It only shows entrypoints such as `AGENTS.md`, `REPO_MAP.md`, `.mustflow/config/commands.toml`, `.mustflow/context/INDEX.md`, `DESIGN.md`, and major manifest files.
+This section does not list every internal file from nested repositories. It only shows navigation entrypoints such as `AGENTS.md`, `REPO_MAP.md`, `.mustflow/config/commands.toml`, `.mustflow/context/INDEX.md`, `DESIGN.md`, major manifest files, scaffold routers, validation guides, diagrams, GitHub templates, and machine-readable contracts. When a nested repository has a ssealed manifest, the map also summarizes stable scaffold metadata such as scope, profile, density, runner, version, and generated file-kind counts without printing checksums or generation timestamps.
 
 ## Structured Output
 

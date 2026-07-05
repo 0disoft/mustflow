@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { toPosixPath } from './filesystem.js';
@@ -13,6 +13,7 @@ import { isRecord } from './command-contract.js';
 import { readMustflowTomlFile } from './toml.js';
 
 const DEFAULT_DEPTH = 3;
+const NESTED_REPOSITORY_ANCHOR_DEPTH = 3;
 const GIT_LS_FILES_TIMEOUT_MS = 5_000;
 const GIT_LS_FILES_MAX_BUFFER_BYTES = 1_048_576;
 const EXCLUDED_SEGMENTS = new Set([
@@ -45,6 +46,7 @@ const ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES = [
 	'ROADMAP.md',
 	'DESIGN.md',
 	'CONTRIBUTING.md',
+	'DEVELOPMENT.md',
 	'SECURITY.md',
 	'CHANGELOG.md',
 	'CODE_OF_CONDUCT.md',
@@ -64,6 +66,8 @@ const ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES = [
 	'TROUBLESHOOTING.md',
 	'ARCHITECTURE.md',
 	'API.md',
+	'CHECKLIST.md',
+	'VALIDATION.md',
 ];
 const MACHINE_CONTRACT_ANCHOR_FILES = [
 	'project.contract.json',
@@ -77,6 +81,7 @@ const MACHINE_CONTRACT_ANCHOR_FILES = [
 	'asyncapi.yml',
 	'schema.graphql',
 	'schema.prisma',
+	'schema.dbml',
 ];
 const ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILE_SET = new Set(ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILES);
 const MACHINE_CONTRACT_ANCHOR_FILE_SET = new Set(MACHINE_CONTRACT_ANCHOR_FILES);
@@ -108,7 +113,32 @@ const DEFAULT_NESTED_ANCHOR_FILES = [
 	'Taskfile.yml',
 	'Taskfile.yaml',
 ];
-const MANIFEST_ANCHORS = new Set(['package.json', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'deno.json', 'deno.jsonc']);
+const MANIFEST_ANCHORS = new Set([
+	'.ssealed/manifest.json',
+	'package.json',
+	'pyproject.toml',
+	'go.mod',
+	'Cargo.toml',
+	'deno.json',
+	'deno.jsonc',
+]);
+const SSEALED_MANIFEST_PATH = '.ssealed/manifest.json';
+const SSEALED_SCOPES = new Set(['backend', 'frontend', 'fullstack', 'design']);
+const SSEALED_PROFILES = new Set(['generic', 'cli-tool', 'api-service', 'desktop-app', 'library']);
+const SSEALED_DENSITIES = new Set(['minimal', 'standard', 'strict']);
+const SSEALED_RUNNERS = new Set(['none', 'make', 'just', 'task', 'npm', 'pnpm']);
+const SSEALED_FILE_KINDS = new Set([
+	'document',
+	'contract',
+	'agent',
+	'checklist',
+	'validation',
+	'diagram',
+	'github',
+	'runner',
+	'manifest',
+	'hygiene',
+]);
 const COMMAND_ADAPTER_ANCHORS = new Set(['justfile', 'Justfile', 'Makefile', 'Taskfile.yml', 'Taskfile.yaml']);
 const EDITING_POLICY_ANCHORS = new Set(['.gitattributes', '.editorconfig']);
 const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
@@ -117,6 +147,7 @@ const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
 	['ROADMAP.md', 'planning context'],
 	['DESIGN.md', 'visual design'],
 	['CONTRIBUTING.md', 'contribution guide'],
+	['DEVELOPMENT.md', 'development guide'],
 	['SECURITY.md', 'security policy'],
 	['CHANGELOG.md', 'changelog'],
 	['CODE_OF_CONDUCT.md', 'code of conduct'],
@@ -136,6 +167,8 @@ const NESTED_ROOT_DOC_LABELS = new Map<string, string>([
 	['TROUBLESHOOTING.md', 'troubleshooting guide'],
 	['ARCHITECTURE.md', 'architecture reference'],
 	['API.md', 'API reference'],
+	['CHECKLIST.md', 'checklist router'],
+	['VALIDATION.md', 'validation router'],
 ]);
 const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['AGENTS.md', 'Root agent operating rules. Read this before changing files.'],
@@ -147,6 +180,7 @@ const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['ROADMAP.md', 'Optional project planning, priority, milestone, and non-goal context.'],
 	['DESIGN.md', 'Optional visual identity and design-token reference for UI work.'],
 	['CONTRIBUTING.md', 'Optional contribution workflow and pull request guidance.'],
+	['DEVELOPMENT.md', 'Optional local development setup and workflow guide.'],
 	['SECURITY.md', 'Optional security policy, vulnerability reporting, and sensitive-change guidance.'],
 	['CHANGELOG.md', 'Optional release history and user-visible change log.'],
 	['CODE_OF_CONDUCT.md', 'Optional community participation and conduct expectations.'],
@@ -166,6 +200,8 @@ const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['TROUBLESHOOTING.md', 'Optional known-failure and recovery guide.'],
 	['ARCHITECTURE.md', 'Optional system structure, module boundaries, and architectural decisions.'],
 	['API.md', 'Optional API surface and integration contract reference.'],
+	['CHECKLIST.md', 'Checklist router for selecting project review checklists.'],
+	['VALIDATION.md', 'Validation router for stable verification names and reporting requirements.'],
 	['project.contract.json', 'Machine-readable project contract. Prefer domain-specific names over catch-all files.'],
 	['project.constants.json', 'Machine-readable project constants. Prefer domain-specific names over catch-all files.'],
 	['design-tokens.json', 'Machine-readable design token contract.'],
@@ -177,6 +213,8 @@ const EXACT_ANCHOR_DESCRIPTIONS = new Map<string, string>([
 	['asyncapi.yml', 'Machine-readable AsyncAPI contract.'],
 	['schema.graphql', 'Machine-readable GraphQL schema contract.'],
 	['schema.prisma', 'Machine-readable Prisma data schema contract.'],
+	['schema.dbml', 'Machine-readable DBML database schema contract.'],
+	['.ssealed/manifest.json', 'ssealed scaffold manifest with generated file paths and checksums.'],
 	['package.json', 'Node.js package manifest, binary entry points, and package scripts.'],
 	['pyproject.toml', 'Python project metadata and tool configuration.'],
 	['go.mod', 'Go module definition and dependency boundary.'],
@@ -245,6 +283,22 @@ export interface NestedAnchor {
 	readonly relativePath: string;
 }
 
+export interface NestedCount {
+	readonly name: string;
+	readonly count: number;
+}
+
+export interface SsealedScaffoldSummary {
+	readonly manifestPath: string;
+	readonly version?: string;
+	readonly scope?: string;
+	readonly profile?: string;
+	readonly density?: string;
+	readonly runner?: string;
+	readonly fileCount: number;
+	readonly fileKinds: readonly NestedCount[];
+}
+
 export interface NestedRepository {
 	readonly relativePath: string;
 	readonly mustflow: boolean;
@@ -259,6 +313,11 @@ export interface NestedRepository {
 	readonly manifests: readonly string[];
 	readonly commandAdapters: readonly string[];
 	readonly editingPolicies: readonly string[];
+	readonly agentScaffolds: readonly string[];
+	readonly validationGuides: readonly string[];
+	readonly diagrams: readonly string[];
+	readonly githubTemplates: readonly string[];
+	readonly ssealedScaffold?: SsealedScaffoldSummary;
 }
 
 export interface RepoMapConfig {
@@ -347,6 +406,18 @@ function getBoolean(value: unknown, fallback: boolean): boolean {
 
 function getPositiveInteger(value: unknown, fallback: number): number {
 	return Number.isInteger(value) && Number(value) > 0 ? Number(value) : fallback;
+}
+
+function getKnownString(value: unknown, knownValues: ReadonlySet<string>): string | undefined {
+	return typeof value === 'string' && knownValues.has(value) ? value : undefined;
+}
+
+function getSafeVersionString(value: unknown): string | undefined {
+	if (typeof value !== 'string') {
+		return undefined;
+	}
+
+	return /^[0-9A-Za-z][0-9A-Za-z.+_-]{0,63}$/u.test(value) ? value : undefined;
 }
 
 function readMustflowConfig(projectRoot: string): MustflowConfig {
@@ -527,12 +598,80 @@ function getDirectoryName(relativePath: string): string {
 	return directory === '.' ? '/' : `${directory}/`;
 }
 
+function isAgentsScaffoldAnchor(relativePath: string): boolean {
+	return (
+		relativePath === '.agents/README.md' ||
+		relativePath === '.agents/context-map.md' ||
+		/^\.agents\/skills\/[^/]+\/SKILL\.md$/u.test(relativePath)
+	);
+}
+
+function isValidationGuideAnchor(relativePath: string): boolean {
+	return (
+		relativePath === 'CHECKLIST.md' ||
+		relativePath === 'VALIDATION.md' ||
+		/^\.agents\/(?:checklists|validations)\/[^/]+\.md$/u.test(relativePath)
+	);
+}
+
+function isDiagramAnchor(relativePath: string): boolean {
+	return relativePath === 'diagrams/README.md' || /^diagrams\/[^/]+\.mmd$/u.test(relativePath);
+}
+
+function isGithubTemplateAnchor(relativePath: string): boolean {
+	return (
+		relativePath === '.github/CODEOWNERS' ||
+		relativePath === '.github/PULL_REQUEST_TEMPLATE.md' ||
+		/^\.github\/ISSUE_TEMPLATE\/[^/]+\.md$/u.test(relativePath)
+	);
+}
+
+function isApiExampleContractAnchor(relativePath: string): boolean {
+	return (
+		/^api\/examples\/[^/]+\.json$/u.test(relativePath) ||
+		/^contracts\/[^/]+\/examples\/[^/]+\.json$/u.test(relativePath)
+	);
+}
+
+function isMachineContractAnchor(relativePath: string): boolean {
+	const fileName = path.posix.basename(relativePath);
+	return (
+		MACHINE_CONTRACT_ANCHOR_FILE_SET.has(relativePath) ||
+		MACHINE_CONTRACT_ANCHOR_FILE_SET.has(fileName) ||
+		isApiExampleContractAnchor(relativePath)
+	);
+}
+
+function isManifestAnchor(relativePath: string): boolean {
+	return MANIFEST_ANCHORS.has(relativePath);
+}
+
 function getAnchorDescription(relativePath: string): string | undefined {
 	if (EXACT_ANCHOR_DESCRIPTIONS.has(relativePath)) {
 		return EXACT_ANCHOR_DESCRIPTIONS.get(relativePath);
 	}
 
 	const fileName = path.posix.basename(relativePath);
+
+	if (isAgentsScaffoldAnchor(relativePath)) {
+		return 'Agent scaffold router, skill, or workspace guide for this repository.';
+	}
+
+	if (isValidationGuideAnchor(relativePath)) {
+		return 'Checklist or validation router for project-specific review and verification.';
+	}
+
+	if (isDiagramAnchor(relativePath)) {
+		return 'Diagram navigation or Mermaid source for repository design flows.';
+	}
+
+	if (isGithubTemplateAnchor(relativePath)) {
+		return 'GitHub collaboration template or ownership entrypoint.';
+	}
+
+	if (isApiExampleContractAnchor(relativePath)) {
+		return 'Machine-readable API example payload contract.';
+	}
 
 	if (fileName === 'AGENTS.md') {
 		return 'Scoped agent operating rules for this directory.';
@@ -548,6 +687,10 @@ function getAnchorDescription(relativePath: string): string | undefined {
 
 	if (fileName === 'SKILL.md') {
 		return 'Procedural skill document for a repeatable agent task.';
+	}
+
+	if (fileName === 'schema.dbml') {
+		return 'Machine-readable DBML database schema contract.';
 	}
 
 	return EXACT_ANCHOR_DESCRIPTIONS.get(fileName);
@@ -697,13 +840,60 @@ function resolveSafeDirectoryTarget(
 	}
 }
 
+function readSsealedScaffoldSummary(repositoryPath: string, relativeRoot: string): SsealedScaffoldSummary | undefined {
+	const manifestAbsolutePath = path.join(repositoryPath, ...SSEALED_MANIFEST_PATH.split('/'));
+
+	if (!existsSync(manifestAbsolutePath)) {
+		return undefined;
+	}
+
+	try {
+		const parsed = JSON.parse(readFileSync(manifestAbsolutePath, 'utf8')) as unknown;
+
+		if (!isRecord(parsed) || parsed.tool !== 'ssealed') {
+			return undefined;
+		}
+
+		const fileKinds = new Map<string, number>();
+		const manifestFiles = Array.isArray(parsed.files)
+			? parsed.files.filter((file): file is Record<string, unknown> => isRecord(file))
+			: [];
+
+		for (const file of manifestFiles) {
+			const kind = getKnownString(file.kind, SSEALED_FILE_KINDS);
+
+			if (kind) {
+				fileKinds.set(kind, (fileKinds.get(kind) ?? 0) + 1);
+			}
+		}
+
+		return {
+			manifestPath: `${relativeRoot}${SSEALED_MANIFEST_PATH}`,
+			version: getSafeVersionString(parsed.version),
+			scope: getKnownString(parsed.scope, SSEALED_SCOPES),
+			profile: getKnownString(parsed.profile, SSEALED_PROFILES),
+			density: getKnownString(parsed.density, SSEALED_DENSITIES),
+			runner: getKnownString(parsed.runner, SSEALED_RUNNERS),
+			fileCount: manifestFiles.length,
+			fileKinds: [...fileKinds.entries()]
+				.map(([name, count]) => ({ name, count }))
+				.sort((left, right) => left.name.localeCompare(right.name)),
+		};
+	} catch {
+		return undefined;
+	}
+}
+
 function collectNestedRepository(
 	projectRoot: string,
 	repositoryPath: string,
 	anchorFiles: readonly string[],
 ): NestedRepository {
 	const relativeRoot = `${toPosixPath(path.relative(projectRoot, repositoryPath))}/`;
-	const existingAnchors = new Set<string>();
+	const anchorFileSet = new Set(anchorFiles);
+	const existingAnchors = new Set<string>(
+		listAnchorCandidateFilesRecursive(repositoryPath, NESTED_REPOSITORY_ANCHOR_DEPTH, anchorFileSet),
+	);
 
 	for (const anchorFile of anchorFiles) {
 		if (existsSync(path.join(repositoryPath, ...anchorFile.split('/')))) {
@@ -711,28 +901,43 @@ function collectNestedRepository(
 		}
 	}
 
+	const discoveredAnchors = [...existingAnchors].sort((left, right) => left.localeCompare(right));
+
 	const resolveAnchor = (anchorFile: string): string | undefined =>
 		existingAnchors.has(anchorFile) ? `${relativeRoot}${anchorFile}` : undefined;
-	const manifests = anchorFiles
-		.filter((anchorFile) => MANIFEST_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
+	const manifests = discoveredAnchors
+		.filter(isManifestAnchor)
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
-	const commandAdapters = anchorFiles
+	const commandAdapters = discoveredAnchors
 		.filter((anchorFile) => COMMAND_ADAPTER_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
-	const editingPolicies = anchorFiles
+	const editingPolicies = discoveredAnchors
 		.filter((anchorFile) => EDITING_POLICY_ANCHORS.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
-	const rootDocuments = anchorFiles
+	const rootDocuments = discoveredAnchors
 		.filter((anchorFile) => ROOT_OPTIONAL_MARKDOWN_ANCHOR_FILE_SET.has(anchorFile) && existingAnchors.has(anchorFile))
 		.map((anchorFile) => ({
 			label: NESTED_ROOT_DOC_LABELS.get(anchorFile) ?? 'root document',
 			relativePath: `${relativeRoot}${anchorFile}`,
 		}));
-	const machineContracts = anchorFiles
-		.filter((anchorFile) => MACHINE_CONTRACT_ANCHOR_FILE_SET.has(anchorFile) && existingAnchors.has(anchorFile))
+	const machineContracts = discoveredAnchors
+		.filter(isMachineContractAnchor)
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const agentScaffolds = discoveredAnchors
+		.filter(isAgentsScaffoldAnchor)
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const validationGuides = discoveredAnchors
+		.filter((anchorFile) => /^\.agents\/(?:checklists|validations)\/[^/]+\.md$/u.test(anchorFile))
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const diagrams = discoveredAnchors
+		.filter(isDiagramAnchor)
+		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
+	const githubTemplates = discoveredAnchors
+		.filter(isGithubTemplateAnchor)
 		.map((anchorFile) => `${relativeRoot}${anchorFile}`);
 	const mustflowConfig = resolveAnchor('.mustflow/config/mustflow.toml');
 	const commandContract = resolveAnchor('.mustflow/config/commands.toml');
+	const ssealedScaffold = readSsealedScaffoldSummary(repositoryPath, relativeRoot);
 
 	return {
 		relativePath: relativeRoot,
@@ -748,6 +953,11 @@ function collectNestedRepository(
 		manifests,
 		commandAdapters,
 		editingPolicies,
+		agentScaffolds,
+		validationGuides,
+		diagrams,
+		githubTemplates,
+		ssealedScaffold,
 	};
 }
 
@@ -833,6 +1043,26 @@ export function discoverNestedRepositories(
 	return repositories.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 }
 
+function renderSsealedScaffoldSummary(summary: SsealedScaffoldSummary): string[] {
+	const facts = [
+		`manifest \`${summary.manifestPath}\``,
+		summary.scope ? `scope \`${summary.scope}\`` : undefined,
+		summary.profile ? `profile \`${summary.profile}\`` : undefined,
+		summary.density ? `density \`${summary.density}\`` : undefined,
+		summary.runner ? `runner \`${summary.runner}\`` : undefined,
+		summary.version ? `version \`${summary.version}\`` : undefined,
+		`generated files ${summary.fileCount}`,
+	].filter((fact): fact is string => Boolean(fact));
+	const lines = [`- ssealed scaffold: ${facts.join(', ')}`];
+
+	if (summary.fileKinds.length > 0) {
+		lines.push('- ssealed generated file kinds:');
+		lines.push(...summary.fileKinds.map((kind) => `  - ${kind.name}: ${kind.count}`));
+	}
+
+	return lines;
+}
+
 function renderNestedRepositories(nestedRepositories: readonly NestedRepository[]): string[] {
 	if (nestedRepositories.length === 0) {
 		return [];
@@ -876,9 +1106,18 @@ function renderNestedRepositories(nestedRepositories: readonly NestedRepository[
 			lines.push(`- skill index: \`${repository.skillIndex}\``);
 		}
 
+		if (repository.agentScaffolds.length > 0) {
+			lines.push('- agent scaffolds:');
+			lines.push(...repository.agentScaffolds.map((anchor) => `  - \`${anchor}\``));
+		}
+
 		if (repository.manifests.length > 0) {
 			lines.push('- manifests:');
 			lines.push(...repository.manifests.map((manifest) => `  - \`${manifest}\``));
+		}
+
+		if (repository.ssealedScaffold) {
+			lines.push(...renderSsealedScaffoldSummary(repository.ssealedScaffold));
 		}
 
 		if (repository.commandAdapters.length > 0) {
@@ -889,6 +1128,21 @@ function renderNestedRepositories(nestedRepositories: readonly NestedRepository[
 		if (repository.editingPolicies.length > 0) {
 			lines.push('- editing policies:');
 			lines.push(...repository.editingPolicies.map((policy) => `  - \`${policy}\``));
+		}
+
+		if (repository.validationGuides.length > 0) {
+			lines.push('- validation guides:');
+			lines.push(...repository.validationGuides.map((guide) => `  - \`${guide}\``));
+		}
+
+		if (repository.diagrams.length > 0) {
+			lines.push('- diagrams:');
+			lines.push(...repository.diagrams.map((diagram) => `  - \`${diagram}\``));
+		}
+
+		if (repository.githubTemplates.length > 0) {
+			lines.push('- GitHub templates:');
+			lines.push(...repository.githubTemplates.map((template) => `  - \`${template}\``));
 		}
 
 		for (const document of repository.rootDocuments) {
@@ -919,6 +1173,10 @@ function countNestedEntrypoints(repository: NestedRepository): number {
 		...repository.manifests,
 		...repository.commandAdapters,
 		...repository.editingPolicies,
+		...repository.agentScaffolds,
+		...repository.validationGuides,
+		...repository.diagrams,
+		...repository.githubTemplates,
 	].filter(Boolean).length;
 }
 
@@ -999,7 +1257,7 @@ export function generateRepoMap(projectRoot: string, options: RepoMapOptions = {
 		'## How To Use',
 		'',
 		'- Start with `AGENTS.md` and the mustflow files listed in Priority Anchors.',
-		'- Use Directory Anchors to find local rules, guides, package manifests, and command adapters.',
+		'- Use Directory Anchors to find local rules, guides, scaffold routers, package manifests, and command adapters.',
 		...(nestedRepositories.length > 0
 			? ['- Use Nested Repositories only as entrypoints into independent repositories.']
 			: []),
