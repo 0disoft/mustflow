@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -49,10 +50,10 @@ function pathLockKey(relativePath: string): string {
 function validateEffectPath(projectRoot: string, commandContract: CommandContract, intent: TomlTable, rawPath: string): string {
 	const cwd = resolveSafeProjectCwd(projectRoot, readEffectiveCommandCwd(commandContract, intent));
 	const resolved = path.resolve(cwd, rawPath);
-	const root = path.resolve(projectRoot);
-	const relative = path.relative(root, resolved);
+	const rootRealPath = realpathSync.native(projectRoot);
+	const relative = path.relative(rootRealPath, resolved);
 
-	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+	if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
 		throw new Error(`Command effect path must stay inside the current root: ${rawPath}`);
 	}
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -147,5 +147,54 @@ test('POSIX command effect containment is case-sensitive', async (t) => {
 		);
 	} finally {
 		rmSync(mixedCaseRoot, { recursive: true, force: true });
+	}
+});
+
+test('command effect containment accepts a project root reached through a realpath alias', async (t) => {
+	const { normalizeCommandEffects } = await import(commandEffectsModuleUrl);
+	const parent = mkdtempSync(path.join(tmpdir(), 'mustflow-effect-realpath-'));
+	const realRoot = path.join(parent, 'real-root');
+	const aliasRoot = path.join(parent, 'alias-root');
+
+	try {
+		mkdirSync(realRoot);
+		symlinkSync(realRoot, aliasRoot, process.platform === 'win32' ? 'junction' : 'dir');
+	} catch (error) {
+		t.skip(`directory symlink unavailable: ${error instanceof Error ? error.message : String(error)}`);
+		rmSync(parent, { recursive: true, force: true });
+		return;
+	}
+
+	try {
+		const contract = {
+			defaults: {},
+			resources: {},
+			intents: {
+				index_cache: {
+					cwd: '.',
+					effects: [
+						{
+							type: 'write',
+							mode: 'replace',
+							path: '.mustflow/cache/**',
+						},
+					],
+				},
+			},
+		};
+
+		assert.deepEqual(normalizeCommandEffects(aliasRoot, contract, 'index_cache'), [
+			{
+				intent: 'index_cache',
+				source: 'effects',
+				access: 'write',
+				mode: 'replace',
+				path: '.mustflow/cache/**',
+				lock: 'path:.mustflow/cache/**',
+				concurrency: 'exclusive',
+			},
+		]);
+	} finally {
+		rmSync(parent, { recursive: true, force: true });
 	}
 });
