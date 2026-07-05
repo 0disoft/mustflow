@@ -714,7 +714,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-07-02T08:57:21.628Z"
+last_touched_at = "2026-07-05T11:05:40.500Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -1744,7 +1744,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-04T12:39:37.190Z"
-last_touched_at = "2026-07-05T05:47:37.883Z"
+last_touched_at = "2026-07-05T11:05:40.513Z"
 
 [[documents]]
 path = "templates/default/locales/ko/AGENTS.md"
@@ -1752,4 +1752,4 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-04T12:39:37.203Z"
-last_touched_at = "2026-07-05T05:47:37.888Z"
+last_touched_at = "2026-07-05T11:05:40.521Z"

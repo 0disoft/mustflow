@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 18
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 18, status = "current" }
+revision = 19
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 19, status = "current" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }

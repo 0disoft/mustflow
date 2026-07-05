@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.112.3');
+	assert.equal(packageJson.version, '2.112.4');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -492,6 +492,57 @@ test('source repository declares bounded prompt-cache audit checks', () => {
 	assert.match(sourceCommandContract, /writes = \[\]/u);
 	assert.match(sourceCommandContract, /network = false/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
+});
+
+test('source repository exposes dogfood update intents as bounded agent-runnable commands', () => {
+	const dryRunIntent = /\[intents\.mustflow_update_dry_run\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const applyIntent = /\[intents\.mustflow_update_apply\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(dryRunIntent, '');
+	assert.match(dryRunIntent, /status = "configured"/u);
+	assert.match(dryRunIntent, /run_policy = "agent_allowed"/u);
+	assert.match(dryRunIntent, /argv = \["node", "dist\/cli\/index\.js", "update", "--dry-run", "--json"\]/u);
+	assert.match(dryRunIntent, /writes = \[\]/u);
+	assert.match(dryRunIntent, /network = false/u);
+	assert.match(dryRunIntent, /destructive = false/u);
+	assert.doesNotMatch(dryRunIntent, /manual_only/u);
+
+	assert.notEqual(applyIntent, '');
+	assert.match(applyIntent, /status = "configured"/u);
+	assert.match(applyIntent, /run_policy = "agent_allowed"/u);
+	assert.match(applyIntent, /argv = \["node", "dist\/cli\/index\.js", "update", "--apply", "--json"\]/u);
+	assert.match(applyIntent, /"AGENTS\.md"/u);
+	assert.match(applyIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(applyIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(applyIntent, /"\.mustflow\/backups\/\*\*"/u);
+	assert.match(applyIntent, /network = false/u);
+	assert.match(applyIntent, /destructive = false/u);
+	assert.match(applyIntent, /clean_mustflow_update_plan/u);
+	assert.doesNotMatch(applyIntent, /manual_only/u);
+});
+
+test('source repository exposes reviewed manifest lock baseline acceptance as a bounded intent', () => {
+	const baselineResource = /\[resources\.manifest_lock_baseline\][\s\S]*?(?=\n\[)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const baselineIntent = /\[intents\.manifest_lock_accept_workflow_baseline\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const baselineScript = readProjectText('scripts/accept-manifest-lock-baseline.mjs');
+
+	assert.notEqual(baselineResource, '');
+	assert.match(baselineResource, /manifest\.lock\.toml/u);
+	assert.notEqual(baselineIntent, '');
+	assert.match(baselineIntent, /status = "configured"/u);
+	assert.match(baselineIntent, /run_policy = "agent_allowed"/u);
+	assert.match(
+		baselineIntent,
+		/argv = \["node", "scripts\/accept-manifest-lock-baseline\.mjs", "AGENTS\.md", "\.mustflow\/config\/commands\.toml"\]/u,
+	);
+	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
+	assert.match(baselineIntent, /lock = "manifest_lock_baseline"/u);
+	assert.match(baselineIntent, /network = false/u);
+	assert.match(baselineIntent, /destructive = false/u);
+	assert.match(baselineScript, /const allowedPaths = new Set/u);
+	assert.match(baselineScript, /'AGENTS\.md'/u);
+	assert.match(baselineScript, /'\.mustflow\/config\/commands\.toml'/u);
+	assert.match(baselineScript, /markManifestLockFileCustomized/u);
 });
 
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {

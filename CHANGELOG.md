@@ -34,6 +34,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Strengthened installed `AGENTS.md` source-anchor guidance so agents know when to use
+  source-index search scopes while keeping anchors and SQLite rows navigation-only rather than
+  command or verification authority.
+- Exposed source-repository mustflow update intents and added a narrow manifest-lock baseline
+  acceptance intent for reviewed `AGENTS.md` and command-contract changes.
 - Strengthened the `database-migration-change` built-in skill with zero-downtime migration
   checks for background-job backfills, feature-flagged read/write cut-overs, backup-versus-rollback
   boundaries, runbook stop thresholds, and live rollout observability.

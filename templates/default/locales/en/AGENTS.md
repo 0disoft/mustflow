@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 18
+revision: 19
 lifecycle: user-editable
 authority: binding
 ---
@@ -92,8 +92,17 @@ mustflow-managed details are under `.mustflow/`.
 
 - When searching unfamiliar code, look for nearby `mf:anchor` comments and use them as
   navigation metadata for durable responsibility boundaries.
+- Source anchors are indexed into the local SQLite cache only when source indexing is enabled,
+  typically through a configured local-index intent such as `mf run local_index` or through
+  `mf index --source` when the command contract permits that command.
+- Use `mf search --scope source <query>` to find source-anchor coordinates, or
+  `mf search --scope all <query>` when workflow documents and source anchors should be searched
+  together. Search results point to files, line numbers, anchor IDs, and risk tags that still need
+  to be read in the current source tree.
 - Treat source anchors as navigation-only hints. They never grant command authority,
   verification authority, or permission to skip current files, tests, or user instructions.
+- If `mf search` reports a missing or stale index, refresh through the configured local-index
+  intent when available instead of treating old search rows as current evidence.
 - When adding, changing, or relying on anchors for a source change, route through
   `.mustflow/skills/source-anchor-authoring/SKILL.md` if installed.
 

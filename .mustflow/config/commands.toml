@@ -45,6 +45,10 @@ concurrency = "exclusive_writer"
 description = "Repository-local documentation review queue under .mustflow/review/docs.toml."
 concurrency = "exclusive_writer"
 
+[resources.manifest_lock_baseline]
+description = "Repository-local manifest lock baseline under .mustflow/config/manifest.lock.toml."
+concurrency = "exclusive_writer"
+
 [resources.npm_release_channel]
 description = "Remote GitHub Release and npm publication channel for mustflow."
 concurrency = "exclusive_writer"
@@ -620,18 +624,63 @@ destructive = false
 required_after = ["release_risk"]
 
 [intents.mustflow_update_dry_run]
-status = "manual_only"
-description = "Preview updating the source repository's dogfood workflow files from the installed template."
-reason = "The mustflow source repository owns the template source; updating it from its own generated output requires maintainer review."
-agent_action = "do_not_run_report_manual"
-required_after = ["template_update_check"]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Preview source repository dogfood workflow template updates without writing files."
+argv = ["node", "dist/cli/index.js", "update", "--dry-run", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change", "template_update_check"]
 
 [intents.mustflow_update_apply]
-status = "manual_only"
-description = "Apply updates to the source repository's dogfood workflow files from the installed template."
-reason = "The mustflow source repository owns the template source; update application must be an explicit maintainer action."
-agent_action = "do_not_run_report_manual"
-required_after = ["template_update_apply"]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply safe source repository dogfood workflow template updates after a clean update plan."
+argv = ["node", "dist/cli/index.js", "update", "--apply", "--json"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = [
+  "AGENTS.md",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/mustflow.toml",
+  ".mustflow/config/preferences.toml",
+  ".mustflow/context/**",
+  ".mustflow/docs/**",
+  ".mustflow/skills/**",
+  ".mustflow/backups/**",
+]
+network = false
+destructive = false
+required_after = ["clean_mustflow_update_plan", "template_update_apply"]
+
+[intents.manifest_lock_accept_workflow_baseline]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept reviewed local workflow baseline changes for AGENTS.md and the source command contract."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "AGENTS.md", ".mustflow/config/commands.toml"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
 [intents.git_commit]
 status = "manual_only"
