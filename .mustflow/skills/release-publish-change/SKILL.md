@@ -2,7 +2,7 @@
 mustflow_doc: skill.release-publish-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: release-publish-change
@@ -31,7 +31,7 @@ metadata:
 
 Keep release work honest by treating a release as a remote state transition, not as a local code edit.
 
-The release is not done when tests pass locally, a version string changes, or a workflow succeeds. It is done only when the intended remote channel contains the expected artifact and a user-facing installation or update path has been smoke-tested through configured command intents or explicitly reported as unverified.
+The release is not done when tests pass locally, a version string changes, or a workflow succeeds. It is done only when the intended remote channel contains the expected artifact and a user-facing installation or update path has been smoke-tested through configured command intents or explicitly reported as unverified. Release publication success and branch or tag check-suite health are separate evidence surfaces.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -56,6 +56,9 @@ The release is not done when tests pass locally, a version string changes, or a 
 - Public contract source for versioning: package metadata, manifest, lock or generated metadata, changelog, release workflow, tag policy, and SemVer or project-specific compatibility rules.
 - Artifact source and inspection method: package file list, archive contents, generated distributions, checksums, signatures, SBOM, provenance, installer contents, image digest, updater metadata, or release asset manifest.
 - Remote publication surface: registry, Git tag, GitHub Release, Docker registry, tap, updater feed, appcast, CDN, package index, or store.
+- Remote check surface: pushed branch, tag, commit SHA, workflow run, required checks, matrix jobs,
+  and whether each belongs to publication, branch CI, tag CI, release asset generation, or another
+  independent verification path.
 - Recovery model: unpublish, yank, deprecate, republish with new version, move channel pointer, revoke asset, restore from backup, or forward fix.
 - Configured command intents for build, package inspection, release verification, docs validation, and user installation or updater smoke test. If no such intent exists, report the missing intent instead of inventing a raw command.
 
@@ -112,12 +115,19 @@ The release is not done when tests pass locally, a version string changes, or a 
    - Check the registry, tag, release page, asset download, digest, updater feed, tap, or package index that users actually consume.
    - Then run the configured user installation, pull, download, or updater smoke intent.
    - If remote publication was not authorized or not performed, report the release as prepared but not published.
-15. Report immutable or hard-to-recover mistakes honestly.
+15. Verify check-suite state separately from publication state.
+   - Identify which workflow runs belong to the pushed branch, release tag, and publication event.
+   - Do not treat npm registry visibility, package installability, or GitHub Release creation as
+     proof that push checks, branch protection, or platform matrix jobs are green.
+   - If a publication workflow succeeds while a branch, tag, or same-commit check fails or remains
+     in progress, report `published` and `checks failing` or `checks pending` as separate states.
+   - Route any failing check through `failure-triage` before reporting an all-clear.
+16. Report immutable or hard-to-recover mistakes honestly.
    - Bad package version: usually deprecate, yank, or release a new version.
    - Bad Go module tag: do not assume moving the tag fixes proxy/cache consumers.
    - Bad Docker tag: distinguish moved tag from old digest still being referenced.
    - Bad updater metadata: treat as a live channel incident if clients may already have seen it.
-16. Never call a release complete from local tests alone. The completion evidence must name the remote channel and the user installation or update path, or explicitly say that post-publish verification was skipped.
+17. Never call a release complete from local tests alone. The completion evidence must name the remote channel, the user installation or update path, and the current relevant check-suite state, or explicitly say which post-publish verification was skipped.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -125,6 +135,8 @@ The release is not done when tests pass locally, a version string changes, or a 
 - Version bump, release notes, package metadata, manifests, artifacts, workflows, tests, and docs agree.
 - The artifact contents have been inspected through configured evidence, not inferred from the source tree.
 - Remote publication status is classified as not started, prepared, published, verified, failed, yanked, deprecated, superseded, or unknown.
+- Branch, tag, and publication workflow checks are classified separately as green, failing, pending,
+  skipped, not applicable, or unknown.
 - User installation, pull, download, or updater smoke test status is known or explicitly reported as skipped.
 - Recovery plan matches the channel's actual permanence and rules.
 
@@ -153,6 +165,9 @@ Do not infer package manager, registry, Docker, Git, Homebrew, or updater comman
 - If the artifact contents differ from the intended release, stop release claims and fix the source, generated output, or packaging configuration before publication.
 - If the remote registry already contains the version, do not assume overwrite is possible. Report the channel-specific recovery path.
 - If publication succeeds but install smoke fails, treat the release as published but not verified and recommend channel-appropriate mitigation.
+- If publication succeeds but branch, tag, or same-commit checks fail, treat the release as
+  published but not all-clear. Do not hide the red check behind successful registry or GitHub
+  Release evidence.
 - If a tag, asset, digest, checksum, signature, updater feed, or release body is missing, do not collapse the issue into "workflow failed"; name the missing remote surface.
 - If release evidence comes only from CI logs, report that no independent user-path smoke test was completed unless the configured CI explicitly performs that path.
 - If unpublish, yank, tag movement, channel rollback, or asset deletion is proposed, check host and repository authorization first and report the permanence risk.
@@ -164,6 +179,7 @@ Do not infer package manager, registry, Docker, Git, Homebrew, or updater comman
 - Public API and version bump classification
 - Artifact contents inspected
 - Remote publication state
+- Branch, tag, and publication check-suite state
 - User installation, download, pull, or updater smoke path result
 - Synchronized version, docs, manifest, workflow, and test surfaces
 - Recovery or rollback classification

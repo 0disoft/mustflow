@@ -353,7 +353,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.equal(localSkill, templateSkill);
 	assert.equal(nextActionSkill, templateNextActionSkill);
 	assert.equal(workflow, templateWorkflow);
-	assert.match(localSkill, /revision: 6/u);
+	assert.match(localSkill, /revision: 7/u);
 	assert.match(nextActionSkill, /revision: 5/u);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
@@ -394,7 +394,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 6/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 7/u,
 	);
 	assert.match(
 		i18n,

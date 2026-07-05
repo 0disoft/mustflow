@@ -206,7 +206,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T03:18:51.582Z"
-last_touched_at = "2026-06-27T03:18:21.592Z"
+last_touched_at = "2026-07-05T09:25:46.991Z"
 
 [[documents]]
 path = ".mustflow/skills/complex-decision-analysis/SKILL.md"
@@ -295,6 +295,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-29T03:47:19.128Z"
 last_touched_at = "2026-06-29T05:43:28.607Z"
+
+[[documents]]
+path = ".mustflow/skills/failure-triage/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-05T09:24:00.780Z"
+last_touched_at = "2026-07-05T09:25:47.006Z"
 
 [[documents]]
 path = ".mustflow/skills/file-path-cross-platform-change/SKILL.md"
@@ -513,6 +521,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.579Z"
 last_touched_at = "2026-06-26T08:13:17.708Z"
+
+[[documents]]
+path = ".mustflow/skills/release-publish-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-05T09:24:00.788Z"
+last_touched_at = "2026-07-05T09:25:47.017Z"
 
 [[documents]]
 path = ".mustflow/skills/rust-code-change/SKILL.md"
@@ -1240,7 +1256,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T03:18:51.610Z"
-last_touched_at = "2026-06-27T03:18:21.614Z"
+last_touched_at = "2026-07-05T09:25:47.027Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/complex-decision-analysis/SKILL.md"
@@ -1329,6 +1345,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-29T03:47:19.184Z"
 last_touched_at = "2026-06-29T05:43:28.692Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/failure-triage/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-05T09:24:00.802Z"
+last_touched_at = "2026-07-05T09:25:47.034Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md"
@@ -1545,6 +1569,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.617Z"
 last_touched_at = "2026-06-26T08:13:17.760Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/release-publish-change/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-05T09:24:00.809Z"
+last_touched_at = "2026-07-05T09:25:47.041Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/rust-code-change/SKILL.md"

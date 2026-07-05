@@ -2,11 +2,11 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
-description: Apply this skill before a final report or completion claim after non-trivial changed-file work, verification, commit, release readiness, paused implementation, or any report where changed files, skipped checks, concrete next actions, or remaining risks must be tied to repository evidence.
+description: Apply this skill before a final report or completion claim after non-trivial changed-file work, verification, commit, push, release readiness, paused implementation, or any report where changed files, skipped checks, concrete next actions, remote check-suite state, or remaining risks must be tied to repository evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -68,6 +68,9 @@ missing, blocked, failed, stale, or only partially relevant.
 - The skills used, main route chosen, and any supporting or event skills activated.
 - Requirement, bug, issue, or external-advice sources that influenced the work.
 - Command intents run, exit status, and whether the evidence came from `mf run` receipts or lower-confidence direct shell output.
+- Remote check-suite evidence when the task includes commit, push, tag, release, deploy, or a
+  GitHub/GitLab/CI status claim: ref, commit SHA, workflow names, required checks, failed checks,
+  pending checks, skipped checks, and the timestamp or run id of the evidence.
 - Command intents skipped, missing, unknown, manual-only, failed, timed out, or judged not applicable.
 - Optional script-pack discovery evidence when the command contract exposes `script_pack_list`.
 - Synchronized surfaces expected by the changed contract: source, tests, fixtures, schemas, templates, manifests, docs, release metadata, generated output, and localized copies.
@@ -108,6 +111,9 @@ missing, blocked, failed, stale, or only partially relevant.
 4. Check verification quality.
    - Prefer configured `mf run` receipts over direct shell output.
    - Confirm that each command intent was relevant to the changed surface and current diff.
+   - For commit, push, tag, release, or deploy claims, classify remote checks separately from
+     artifact publication. A successful package registry lookup, GitHub Release, uploaded asset,
+     or deployment artifact does not prove branch CI or same-commit checks passed.
    - Treat stale receipts, missing latest receipts, failed intents, timed-out intents, repeated failure fingerprints, write-drift risks, validation-ratchet risks, scope-drift risks, and external-evidence risks as completion limitations.
    - Treat repeated identical observations, duplicate-call guards, failed reads, truncated output,
      and directory listings used as file-content proof as evidence limitations; use
@@ -148,6 +154,8 @@ missing, blocked, failed, stale, or only partially relevant.
 - The final report's completion language matches the evidence actually available.
 - Every user requirement is mapped to proof, a limitation, or an explicit out-of-scope decision.
 - Skipped, missing, failed, stale, or manual-only verification is visible.
+- Push, tag, release, and deploy completion claims name the relevant remote check-suite state, or
+  explicitly say that it was not checked.
 - Contract, template, schema, docs, test, and release drift is either resolved or named as remaining risk.
 - For non-trivial final reports, useful follow-up tasks appear through `next-action-menu` whenever
   at least one concrete next action remains, including approval-gated next actions.
@@ -181,6 +189,8 @@ instead of replacing it with an inferred command.
 
 - If changed-file evidence is unavailable, stop the completion claim and run or request the configured status intent.
 - If a configured command fails, switch to `failure-triage` for that intent before claiming completion.
+- If a remote check is failing or still pending for the pushed ref, do not report the work as fully
+  green even when publication, artifact upload, or installation verification succeeded.
 - If a required surface is missing, either synchronize it under the matching skill or report the remaining drift.
 - If evidence is stale or comes from a different diff, treat the task as unverified until current evidence exists.
 - If evidence stalls behind repeated reads, searches, or duplicate-call warnings, use
@@ -196,6 +206,7 @@ instead of replacing it with an inferred command.
 - Changed surfaces
 - Synchronized surfaces and deferred surfaces
 - Command intents run
+- Remote check-suite state for pushed refs, tags, releases, or deploys
 - Skipped, missing, failed, stale, or manual-only checks
 - Lower-confidence evidence, if any
 - Stalled or repeated observations, if any

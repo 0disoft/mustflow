@@ -2,7 +2,7 @@
 mustflow_doc: skill.failure-triage
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: failure-triage
@@ -28,6 +28,8 @@ Identify the most probable root cause of a failed command or verification step b
 
 - A configured command intent returns a non-zero exit code.
 - Validation, build, test, or documentation checks fail.
+- A local release or publish path succeeded, but a remote CI job, check suite, or platform-specific
+  runner still shows a failure for the pushed branch, tag, or commit.
 - The root cause of the failure is not yet apparent.
 - A test or build failure may have been caused by an overlapping run, orphaned process, stale lock, or deleted build output.
 - Several failures appear together and the first root cause needs to be separated from follow-on noise.
@@ -45,6 +47,8 @@ Identify the most probable root cause of a failed command or verification step b
 - Original command intent
 - Exit code
 - Truncated stdout and stderr output
+- Remote run context when applicable: branch, tag, commit SHA, job name, runner OS, matrix entry,
+  and whether the failure belongs to a push, pull request, tag, release, or scheduled run
 - Recently modified files
 - Relevant command contract entry
 - Active or recently active build/test/profile processes when the failure mentions missing compiled files, stale output, port/resource conflicts, or unexpected file deletion
@@ -74,17 +78,27 @@ Identify the most probable root cause of a failed command or verification step b
    - `documentation`: docs navigation, frontmatter, generated content, or localized metadata drifted.
    - `environment`: missing tool, platform difference, path, permission, lock, stale build output, or orphaned process.
    - `tool_runner`: the verification runner, scheduler, cache, or build wrapper failed independently from the code under test.
-4. If several failures appear, triage in this order: environment and overlapping processes, build or generated output, configuration/schema drift, fixture setup, then behavior logic.
-5. For failures involving `dist/`, generated output, temporary files, ports, databases, or abrupt test termination, check whether another build/test/profile process for the same repository is still running.
-6. If an orphaned or overlapping process is found, stop or wait for it before changing source files, then rerun the narrowest failing intent to confirm the failure is reproducible.
-7. Pick one rerun target:
+4. For remote CI failures, record the failing ref, commit, job name, runner OS, and matrix before
+   editing. Compare that runner to local verification instead of assuming local success covers the
+   remote job.
+5. Treat Windows-only, path-only, or runner-only failures as real until proven otherwise. If the
+   error mentions `inside the current root`, `.mustflow/cache/**`, `.mustflow/review/docs.toml`,
+   symlinks, junctions, realpaths, drive-letter casing, path separators, or root containment, inspect
+   path normalization and containment helpers first. Add or update a regression test that models the
+   platform/root-alias behavior instead of weakening containment checks.
+6. If several failures appear, triage in this order: environment and overlapping processes, build or generated output, configuration/schema drift, fixture setup, then behavior logic.
+7. For failures involving `dist/`, generated output, temporary files, ports, databases, or abrupt test termination, check whether another build/test/profile process for the same repository is still running.
+8. If an orphaned or overlapping process is found, stop or wait for it before changing source files, then rerun the narrowest failing intent to confirm the failure is reproducible.
+9. Pick one rerun target:
    - the original failing intent when it is narrow enough;
    - `test_related` when changed files map to a focused suite;
    - `docs_validate_fast` for docs navigation or content-only failures;
    - `test_release` for package, template, schema, or release metadata drift;
    - `mustflow_check` for workflow, skill, command-contract, or manifest-lock failures.
-8. Examine the most relevant files.
-9. Develop a single hypothesis and verify it using the most targeted configured intent.
+10. Examine the most relevant files.
+11. Develop a single hypothesis and verify it using the most targeted configured intent. When the
+    failure came from remote CI, also confirm the replacement run or check suite for the affected
+    ref before reporting that the remote failure is fixed.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -105,6 +119,9 @@ intent that isolates the same failure area.
 - If the failure is due to missing tools, report the missing tool and the command that revealed the issue.
 - If the failure was caused by an orphaned or overlapping process, report that the original run was invalid and add or use a guard that prevents the same overlap before taking new measurements.
 - If rerunning the same intent produces a different failure without code changes, classify the issue as flaky or environmental and avoid weakening assertions until the unstable dependency is identified.
+- If publication, release creation, or artifact upload succeeded while another check on the same
+  pushed commit failed, report those as separate states and triage the failed check before using
+  all-clear language.
 - If sensitive data appears in the output, cease copying raw output and summarize the information safely.
 
 <!-- mustflow-section: output-format -->

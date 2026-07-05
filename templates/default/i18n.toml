@@ -901,7 +901,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.next-action-menu"]
@@ -997,7 +997,7 @@ translations = {}
 [documents."skill.failure-triage"]
 source = "locales/en/.mustflow/skills/failure-triage/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.external-prompt-injection-defense"]
@@ -1146,7 +1146,7 @@ translations = {}
 [documents."skill.release-publish-change"]
 source = "locales/en/.mustflow/skills/release-publish-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.security-privacy-review"]
