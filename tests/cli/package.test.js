@@ -48,7 +48,7 @@ function readProjectText(relativePath) {
 }
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.112.5');
+	assert.equal(packageJson.version, '2.112.6');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -99,6 +99,19 @@ test('default template installs the API failure triage skill across profiles', (
 
 test('default template installs the third-party API integration skill across profiles', () => {
 	const skill = 'third-party-api-integration-review';
+
+	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
+
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(
+			readTemplateSkillProfile(profile).includes(skill),
+			`${profile} profile should include ${skill}`,
+		);
+	}
+});
+
+test('default template installs the abstraction boundary review skill across profiles', () => {
+	const skill = 'abstraction-boundary-review';
 
 	assert.ok(templateCreates.includes(`.mustflow/skills/${skill}/SKILL.md`));
 

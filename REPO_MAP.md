@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 247
+anchor_count: 248
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:c54164ca1e019a2a093f07417dfa2cfa3573a90a97bd042c6b89979ba218b060"
+source_fingerprint: "sha256:47ecdb5c9ad2a9d6c07743ad7755d02c238030d2481d59d17babdfd8117b6c53"
 ---
 
 # REPO_MAP.md
@@ -52,6 +52,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/context/
 
 - `.mustflow/context/PROJECT.md`: Project goals, non-goals, terms, and repository-wide promises for agents.
+
+### .mustflow/skills/abstraction-boundary-review/
+
+- `.mustflow/skills/abstraction-boundary-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/adapter-boundary/
 

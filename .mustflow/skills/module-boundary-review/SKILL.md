@@ -2,11 +2,11 @@
 mustflow_doc: skill.module-boundary-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: module-boundary-review
-description: Apply this skill when code is created, changed, reviewed, or reported and module separation, cohesion, coupling, data ownership, rule ownership, failure ownership, import direction, circular dependency, DTO leakage, shared/common/utils growth, mock-heavy tests, repeated policy conditions, enum interpretation, repository business logic, anemic domain, domain-to-I/O leakage, transaction boundary mismatch, event naming, public API bloat, caller sequencing, premature reuse, co-change history, bug/fix distance, config ownership, log responsibility, exception translation, cache invalidation ownership, repeated authorization checks, frontend/backend policy leakage, time policy, batch or worker bypass, or temporary-code accumulation can make a change spread beyond its real owner.
+description: Apply this skill when code is created, changed, reviewed, or reported and module separation, cohesion, coupling, change axes, stability direction, data ownership, rule ownership, failure ownership, import direction, circular dependency, DTO leakage, shared/common/utils growth, mock-heavy tests, repeated policy conditions, enum interpretation, repository business logic, anemic domain, domain-to-I/O leakage, transaction boundary mismatch, event naming, public API bloat, caller sequencing, premature reuse, co-change history, bug/fix distance, config ownership, log responsibility, exception translation, cache invalidation ownership, repeated authorization checks, frontend/backend policy leakage, time policy, batch or worker bypass, shallow modules, or temporary-code accumulation can make a change spread beyond its real owner.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -46,6 +46,12 @@ who must change, who owns the data, who owns the failure, and who should not nee
   files repeatedly change together.
 - A review claims that layering, clean architecture, DDD, modular monolith, feature folders,
   repositories, services, shared utilities, events, DTOs, or frontend/backend separation is clean.
+- A design starts from feature folders, technical layers, or CRUD nouns and may be missing the real
+  split criterion: who changes the code, when, why, and independently of which other owners.
+- A module depends on a more volatile detail such as a provider SDK, UI route flow, database query
+  shape, external response, framework object, config dialect, or generated transport model.
+- A change creates many thin files whose public APIs are wider than the hidden implementation, or
+  whose abstractions only forward calls, wrap switches, or rename CRUD.
 - The suspected issue is not a large service split yet, but a local module boundary that leaks
   business rules, data shape, failure handling, sequencing, or ownership to neighbors.
 
@@ -70,12 +76,21 @@ who must change, who owns the data, who owns the failure, and who should not nee
 
 - Change reason: the policy, feature, bug, data shape, failure path, or operational behavior that
   caused the edit.
+- Change-axis ledger: likely independent changes over the next useful planning horizon, including
+  policy, external provider, data model, UI flow, permission, pricing, billing, deployment, and
+  operational changes, plus who or what would cause each change.
 - Changed-file spread: folders, modules, layers, packages, tests, generated files, templates, and
   docs touched by the same reason.
 - Co-change evidence when available: recent commits, PRs, repeated paired files, or local diff
   history showing files that usually move together.
 - Module graph evidence: imports, exports, public APIs, call sites, dependency direction, cycles,
   shared helpers, DTO flow, and configuration reads.
+- Stability evidence: which modules many callers rely on, which modules change because external
+  details move, and whether dependencies point toward the more stable policy owner rather than the
+  more volatile implementation detail.
+- Change-simulation evidence: expected files touched for at least three concrete next changes, such
+  as changing a payment provider, adding a pricing rule, changing admin UI flow, changing invoice
+  format, changing permissions, or adding a worker path.
 - Configured guardrail evidence when available: `code/module-boundary` results for
   `.mustflow/config/module-boundaries.toml` layer deny rules, public entrypoints, feature imports,
   shared budgets, and import cycles.
@@ -121,15 +136,30 @@ who must change, who owns the data, who owns the failure, and who should not nee
    - Count how many modules, folders, layers, tests, docs, and templates changed for that one reason.
    - If one policy edit forces controller, service, repository, mapper, utility, constants, worker,
      and UI edits together, treat the module boundary as suspect.
+   - Before accepting a new split, list the independent change axes first. Do not start with
+     `controllers`, `services`, `repositories`, `utils`, or CRUD nouns unless the repository already
+     proves those are the real change units.
 2. Group by reason to change.
    - Files with different names but the same change reason are one module candidate.
    - `UserService`, `UserValidator`, `UserMapper`, `UserPolicy`, and `UserHelper` changing together is
      evidence of sliced roles, not necessarily separated modules.
+   - Write each candidate module as "this module changes when ...". If that sentence names more than
+     one independent owner, split the candidate or report the boundary risk.
+   - Prefer volatility names and business capabilities, such as pricing policy, payment provider,
+     subscription lifecycle, invoice rendering, fraud check, fulfillment handoff, or entitlement
+     decision, over role-sliced layer names when those better predict future edits.
 3. Check import direction.
    - Infrastructure or low-level modules should not know high-level business use case names unless
      the repository intentionally uses that inversion.
    - Treat lower layers importing policy names such as plan, checkout, approval, permission, or
      subscription as evidence that the policy leaked downward.
+   - Check stability direction. Code that many callers depend on should not import volatile details
+     such as Stripe, Toss, Prisma, SQLAlchemy, React Router, FastAPI request objects, provider DTOs,
+     raw SQL builders, generated clients, or `process.env` unless the repository explicitly makes
+     that layer an edge adapter.
+   - Prefer interfaces or ports owned by the using side when the abstraction protects stable policy
+     code from an unstable provider, database, queue, cache, filesystem, network, framework, or UI
+     detail.
 4. Treat cycles as boundary failure until proven harmless.
    - If A imports B and B imports A, identify the missing concept, ownership decision, event, port, or
      data-flow direction.
@@ -188,6 +218,11 @@ who must change, who owns the data, who owns the failure, and who should not nee
     - Too many exported functions can mean internals are on display.
     - If callers must call `create`, then `apply`, then `reserve`, then `mark`, the module has handed
       out an assembly manual instead of owning the sequence.
+    - A good module should have a small door and a deeper inside. If most files only expose one-line
+      forwarding methods, wrapper services, or renamed CRUD calls, treat the split as shallow module
+      theater until a real hidden decision or variation point is named.
+    - A public API wider than the behavior it hides is usually not a boundary; it is implementation
+      leakage with extra navigation.
 16. Check reuse claims.
     - "Used in many places" is not enough reason to extract a common helper.
     - Reuse is safe only when the callers change for the same reason. Similar code from different
@@ -197,20 +232,27 @@ who must change, who owns the data, who owns the failure, and who should not nee
       names.
     - If a file repeatedly receives temporary exceptions in the same direction, name the missing
       concept instead of adding another branch.
-18. Compare bug location with fix location.
+18. Run change simulations.
+    - Pick at least three plausible next changes from the change-axis ledger.
+    - For each scenario, list which modules should change and which modules must stay ignorant.
+    - If changing a provider, UI flow, invoice format, permission rule, or pricing rule repeatedly
+      crosses the same unrelated modules, treat that as hidden coupling.
+    - If a module would break because a different module's test changed, identify whether the
+      boundary couples futures that should be independent.
+19. Compare bug location with fix location.
     - If the symptom appears in one module but the fix belongs in an unrelated utility, policy, or
       mapper, the responsibility line may be bent.
-19. Check config, time, and logging responsibility.
+20. Check config, time, and logging responsibility.
     - Raw `process.env`, feature flag, remote config, clock, timezone, locale, and date parsing should
       usually be read at the edge and injected as explicit values.
     - Logs that mention another module's job, such as payment code logging welcome-email failure, are
       strong ownership evidence.
-20. Translate exceptions at boundaries.
+21. Translate exceptions at boundaries.
     - Database, provider, filesystem, framework, and payment errors should not leak through every
       layer unchanged.
     - Convert external failure dialect into the receiving module's language while preserving safe
       diagnostic causes.
-21. Check cache invalidation, authorization, frontend policy, and alternate entrypoints.
+22. Check cache invalidation, authorization, frontend policy, and alternate entrypoints.
     - Cache invalidation belongs near the data owner, not scattered across random callers.
     - Authorization checks repeated in controllers should move to one use-case entry, policy, or
       capability boundary.
@@ -218,7 +260,14 @@ who must change, who owns the data, who owns the failure, and who should not nee
       backend policy from internal statuses.
     - Batch, cron, worker, and admin tools should use the same use case or policy owner as online
       requests instead of bypassing validations, events, logs, and permissions.
-22. Decide the smallest response.
+23. Attack the design before accepting it.
+    - Name the three modules or abstractions most likely to rot first.
+    - For each, name the change request that would break it, the owner that would cause the change,
+      and whether the blast stays inside one module.
+    - Remove or redesign shallow wrappers, central managers, enum-switch strategies, provider-shaped
+      "neutral" ports, configuration-driven logic hiding, event-bus call hiding, and CRUD stamp
+      modules when they fail the attack.
+24. Decide the smallest response.
     - If evidence is strong and the edit is in scope, make the smallest boundary fix.
     - If the fix would be broad, report the module boundary risk and the first safe split point.
     - If evidence is weak, leave the structure alone and report the missing co-change or ownership
@@ -229,9 +278,15 @@ who must change, who owns the data, who owns the failure, and who should not nee
 
 - The changed reason, changed-file spread, co-change evidence, data owner, policy owner, failure
   owner, and public module surface are explicit or reported as missing.
+- The relevant change axes and stability direction are explicit, or reported as missing evidence.
+- At least three change simulations were checked when designing or accepting a new module boundary,
+  unless the task is only auditing an existing small local diff.
 - Import direction, cycles, DTO spread, shared helper ownership, repository policy leakage, domain
   I/O leakage, transaction mismatch, event naming, caller sequencing, duplicated policy, and alternate
   entrypoints are fixed or reported where relevant.
+- Shallow module signals such as role-sliced CRUD layers, one-line wrappers, provider-shaped ports,
+  ownerless managers, event-bus call hiding, config-hidden logic, and public API bloat are removed,
+  justified, or reported.
 - Any new abstraction hides a named responsibility and reduces caller knowledge, change spread, or
   test mock cost.
 - Behavior, public contracts, permissions, data ownership, and failure semantics remain intact or
@@ -276,11 +331,13 @@ design is clean.
 ## Output Format
 
 - Module boundary reviewed
-- Change reason and changed-file spread
+- Change reason, change axes, stability direction, and changed-file spread
 - Co-change, import direction, cycle, DTO, shared helper, public API, caller sequencing, and test mock
   evidence
 - Data owner, policy owner, failure owner, cache invalidation owner, config/time owner, and
   authorization owner where relevant
+- Change simulations and most-likely-to-rot modules
+- Shallow module signals found, fixed, justified, or deferred
 - Boundary fixes made or recommended
 - Evidence level: current diff, local source evidence, history evidence, configured-test evidence,
   missing, or not applicable

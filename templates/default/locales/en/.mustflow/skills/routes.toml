@@ -198,6 +198,12 @@ route_type = "adjunct"
 priority = 76
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
 
+[routes."abstraction-boundary-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 77
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change"]
+
 [routes."module-boundary-review"]
 category = "general_code"
 route_type = "adjunct"
