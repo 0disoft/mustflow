@@ -186,6 +186,14 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		installedCommand: ['mf', 'workspace', 'command-catalog', '--json'],
 	},
 	{
+		id: 'workspace-command-fragments',
+		schemaFile: 'workspace-command-fragments.schema.json',
+		producer: 'mf workspace command-fragments --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'workspace', 'command-fragments', '--json'],
+	},
+	{
 		id: 'workspace-verification-plan',
 		schemaFile: 'workspace-verification-plan.schema.json',
 		producer: 'mf workspace verify --changed --plan-only --json',

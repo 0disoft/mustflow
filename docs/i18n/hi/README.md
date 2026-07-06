@@ -231,6 +231,7 @@ mf run mustflow_update_apply
 | `mf evidence --changed` | commands चलाए बिना changed-file verification requirements, latest evidence, receipts और remaining gaps summarize करता है। |
 | `mf workspace status` | configured workspace roots और nested repository contract readiness inspect करता है, parent-to-child command authority दिए बिना। |
 | `mf workspace command-catalog` | raw command strings के बिना per-repository command intent availability और safe `mf run` entrypoints दिखाता है। |
+| `mf workspace command-fragments` | files लिखे बिना और parent-to-child command authority दिए बिना repo-farm orchestration के लिए per-repository `.mustflow/config/commands/*.toml` fragments suggest करता है। |
 | `mf workspace verify --changed --plan-only` | commands चलाए बिना per-repository changed-file verification plans दिखाता है। |
 | `mf api locks --json` | multi-session coordination के लिए active `mf run` locks दिखाता है। |
 | `mf context --json`       | पढ़ने के क्रम, कमांड नियम, उपलब्ध क्षमताएँ और हाल की रन सारांश JSON के रूप में प्रदर्शित करता है। |

@@ -272,6 +272,7 @@ mf run mustflow_update_apply
 | `mf workspace scan` | Scan a `projects/` directory for nested repositories without requiring workspace configuration or granting command authority. |
 | `mf workspace status` | Inspect configured workspace roots and nested repository contract readiness without granting parent-to-child command authority. |
 | `mf workspace command-catalog` | Aggregate per-repository command intent availability with safe `mf run` entrypoints and no raw command strings. |
+| `mf workspace command-fragments` | Suggest repo-level `.mustflow/config/commands/*.toml` fragments for repo-farm orchestration without writing files or granting parent-to-child command authority. |
 | `mf workspace verify --changed --plan-only` | Aggregate per-repository changed-file verification plans without running commands or granting parent-to-child command authority. |
 | `mf doctor` | Inspect the current mustflow root without writing files. |
 | `mf api workspace-summary --json` | Print a stable, read-only JSON summary for coding agents and external harnesses. |

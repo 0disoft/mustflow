@@ -207,6 +207,7 @@ mf run mustflow_update_apply
 | `mf evidence --changed` | Résume les exigences de vérification des changements, les preuves récentes, les reçus et les écarts restants sans exécuter de commandes. |
 | `mf workspace status` | Inspecte les racines workspace configurées et l'état des contrats imbriqués sans accorder d'autorité de commande du parent vers l'enfant. |
 | `mf workspace command-catalog` | Affiche la disponibilité des intents par dépôt et les entrées `mf run` sûres sans chaînes de commande brutes. |
+| `mf workspace command-fragments` | Suggère des fragments `.mustflow/config/commands/*.toml` par dépôt pour l'orchestration repo-farm sans écrire de fichiers ni accorder d'autorité de commande du parent vers l'enfant. |
 | `mf workspace verify --changed --plan-only` | Affiche les plans de vérification des changements par dépôt sans exécuter de commandes. |
 | `mf api locks --json` | Affiche les verrous `mf run` actifs pour coordonner plusieurs sessions. |
 | `mf context --json`         | Affiche en JSON l’ordre de lecture, les règles de commandes, les capacités disponibles et le résumé de la dernière exécution. |

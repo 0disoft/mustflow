@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 19
+revision: 20
 lifecycle: user-editable
 authority: binding
 ---
@@ -115,6 +115,10 @@ mustflow-managed details are under `.mustflow/`.
   Follow the stricter rule.
 - When navigating to a nested repository, reread that repository's `AGENTS.md` and
   `.mustflow/config/*.toml` before editing.
+- In repository farms, prefer each child repository's own command contract for repository-owned
+  commands. If the parent root intentionally orchestrates children, split parent-owned commands
+  into repo-named fragments under `.mustflow/config/commands/`; use
+  `mf workspace command-fragments` for read-only guidance.
 - Do not edit outside the selected child repository unless explicitly requested.
 
 ## Host-Specific Instruction Compatibility

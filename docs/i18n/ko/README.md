@@ -207,6 +207,7 @@ mf run mustflow_update_apply
 | `mf evidence --changed` | 명령을 실행하지 않고 changed-file 검증 요구사항, 최신 evidence, receipt, 남은 gap을 요약합니다. |
 | `mf workspace status` | configured workspace root와 nested repository contract 준비 상태를 확인하며 부모가 자식에게 명령 권한을 부여하지 않습니다. |
 | `mf workspace command-catalog` | repository별 command intent 사용 가능 상태와 안전한 `mf run` 진입점을 원본 command string 없이 출력합니다. |
+| `mf workspace command-fragments` | repo farm orchestration용 repo별 `.mustflow/config/commands/*.toml` fragment를 파일 쓰기나 부모-자식 명령 권한 부여 없이 제안합니다. |
 | `mf workspace verify --changed --plan-only` | repository별 changed-file verification plan을 명령 실행 없이 출력합니다. |
 | `mf api locks --json` | 여러 세션 조율용 활성 `mf run` 잠금을 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |

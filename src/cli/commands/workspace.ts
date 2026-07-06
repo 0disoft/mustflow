@@ -27,6 +27,7 @@ const DEFAULT_WORKSPACE_SCAN_ROOT = 'projects';
 const WORKSPACE_SCAN_SCHEMA_VERSION = '1';
 const WORKSPACE_STATUS_SCHEMA_VERSION = '1';
 const WORKSPACE_COMMAND_CATALOG_SCHEMA_VERSION = '1';
+const WORKSPACE_COMMAND_FRAGMENTS_SCHEMA_VERSION = '1';
 const WORKSPACE_VERIFICATION_PLAN_SCHEMA_VERSION = '1';
 const WORKSPACE_SCAN_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
@@ -34,11 +35,17 @@ const WORKSPACE_SCAN_OPTIONS = [
 ] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_STATUS_OPTIONS = [{ name: '--json', kind: 'boolean' }] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_COMMAND_CATALOG_OPTIONS = [{ name: '--json', kind: 'boolean' }] as const satisfies readonly CliOptionSpec[];
+const WORKSPACE_COMMAND_FRAGMENTS_OPTIONS = [
+	{ name: '--json', kind: 'boolean' },
+	{ name: '--projects-dir', kind: 'string' },
+] as const satisfies readonly CliOptionSpec[];
 const WORKSPACE_VERIFY_OPTIONS = [
 	{ name: '--changed', kind: 'boolean' },
 	{ name: '--plan-only', kind: 'boolean' },
 	{ name: '--json', kind: 'boolean' },
 ] as const satisfies readonly CliOptionSpec[];
+const COMMAND_FRAGMENT_DIRECTORY = '.mustflow/config/commands';
+const COMMAND_FRAGMENT_INCLUDE_PREFIX = 'commands';
 
 interface WorkspaceStatusConfig {
 	readonly enabled: boolean;
@@ -62,6 +69,12 @@ interface WorkspaceStatusPolicy {
 interface WorkspaceVerificationPlanPolicy extends WorkspaceStatusPolicy {
 	readonly plan_command_per_root: 'mf verify --changed --plan-only --json';
 	readonly selected_intents_run_via: 'mf run <intent>';
+}
+
+interface WorkspaceCommandFragmentsPolicy extends WorkspaceStatusPolicy {
+	readonly writes_files: false;
+	readonly suggestions_are_review_only: true;
+	readonly parent_fragments_grant_child_authority: false;
 }
 
 interface WorkspaceStatusCommandSurface {
@@ -159,6 +172,33 @@ interface WorkspaceCommandCatalogOutput {
 	readonly issues: readonly string[];
 }
 
+interface WorkspaceCommandFragmentSuggestion {
+	readonly repository: string;
+	readonly status: 'child_contract_ready' | 'contract_missing' | 'contract_invalid';
+	readonly suggested_fragment_path: string;
+	readonly include_entry: string;
+	readonly source_command_contract: string | null;
+	readonly intent_count: number | null;
+	readonly runnable_intent_count: number | null;
+	readonly guidance: readonly string[];
+}
+
+interface WorkspaceCommandFragmentsOutput {
+	readonly schema_version: typeof WORKSPACE_COMMAND_FRAGMENTS_SCHEMA_VERSION;
+	readonly command: 'workspace command-fragments';
+	readonly mustflow_root: string;
+	readonly workspace: WorkspaceStatusConfig;
+	readonly policy: WorkspaceCommandFragmentsPolicy;
+	readonly repository_count: number;
+	readonly fragment_directory: typeof COMMAND_FRAGMENT_DIRECTORY;
+	readonly root_command_contract: '.mustflow/config/commands.toml';
+	readonly root_include_snippet: string;
+	readonly suggestions: readonly WorkspaceCommandFragmentSuggestion[];
+	readonly issues: readonly string[];
+	readonly projects_dir: string | null;
+	readonly next_actions: readonly string[];
+}
+
 interface WorkspaceVerificationPlanSelectedIntent {
 	readonly intent: string;
 	readonly run_command: string | null;
@@ -220,6 +260,7 @@ function getWorkspaceHelp(lang: CliLang = 'en'): string {
 				{ label: 'scan', description: t(lang, 'workspace.help.action.scan') },
 				{ label: 'status', description: t(lang, 'workspace.help.action.status') },
 				{ label: 'command-catalog', description: t(lang, 'workspace.help.action.commandCatalog') },
+				{ label: 'command-fragments', description: t(lang, 'workspace.help.action.commandFragments') },
 				{ label: 'verify', description: t(lang, 'workspace.help.action.verify') },
 			],
 			options: [
@@ -234,6 +275,7 @@ function getWorkspaceHelp(lang: CliLang = 'en'): string {
 				'mf workspace scan --projects-dir projects --json',
 				'mf workspace status --json',
 				'mf workspace command-catalog --json',
+				'mf workspace command-fragments --json',
 				'mf workspace verify --changed --plan-only --json',
 			],
 			exitCodes: [
@@ -265,12 +307,138 @@ function createWorkspaceVerificationPlanPolicy(): WorkspaceVerificationPlanPolic
 	};
 }
 
+function createWorkspaceCommandFragmentsPolicy(): WorkspaceCommandFragmentsPolicy {
+	return {
+		...createWorkspaceStatusPolicy(),
+		writes_files: false,
+		suggestions_are_review_only: true,
+		parent_fragments_grant_child_authority: false,
+	};
+}
+
 function createAdHocWorkspaceConfig(base: WorkspaceConfig, projectsDir: string): WorkspaceConfig {
 	return {
 		...base,
 		enabled: true,
 		roots: [projectsDir],
 	};
+}
+
+function slugCommandFragmentSegment(segment: string): string {
+	const slug = segment
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9._-]+/gu, '-')
+		.replace(/^-+|-+$/gu, '')
+		.replace(/\.toml$/u, '');
+
+	return slug.length > 0 ? slug : 'repository';
+}
+
+function repositoryPathSegments(repositoryPath: string): readonly string[] {
+	return repositoryPath.split('/').filter((segment) => segment.length > 0);
+}
+
+function createCommandFragmentPaths(repositories: readonly WorkspaceStatusRepository[]): ReadonlyMap<string, string> {
+	const leafSlugCounts = new Map<string, number>();
+
+	for (const repository of repositories) {
+		const segments = repositoryPathSegments(repository.relative_path);
+		const leafSlug = slugCommandFragmentSegment(segments.at(-1) ?? repository.relative_path);
+		leafSlugCounts.set(leafSlug, (leafSlugCounts.get(leafSlug) ?? 0) + 1);
+	}
+
+	const usedSlugs = new Set<string>();
+	const paths = new Map<string, string>();
+
+	for (const repository of repositories) {
+		const segments = repositoryPathSegments(repository.relative_path);
+		const leafSlug = slugCommandFragmentSegment(segments.at(-1) ?? repository.relative_path);
+		const baseSlug = (leafSlugCounts.get(leafSlug) ?? 0) > 1
+			? segments.map((segment) => slugCommandFragmentSegment(segment)).join('--')
+			: leafSlug;
+		let candidateSlug = baseSlug;
+		let suffix = 2;
+
+		while (usedSlugs.has(candidateSlug)) {
+			candidateSlug = `${baseSlug}-${suffix}`;
+			suffix += 1;
+		}
+
+		usedSlugs.add(candidateSlug);
+		paths.set(repository.relative_path, `${COMMAND_FRAGMENT_INCLUDE_PREFIX}/${candidateSlug}.toml`);
+	}
+
+	return paths;
+}
+
+function createCommandFragmentGuidance(repository: WorkspaceStatusRepository): readonly string[] {
+	if (repository.status === 'mustflow_ready') {
+		return [
+			'Prefer the child repository command contract for commands owned by this repository.',
+			'Use the parent command fragment only for intentionally parent-owned orchestration or cross-repository workflows.',
+		];
+	}
+
+	if (repository.status === 'contract_invalid') {
+		return [
+			'Fix the child repository command contract before copying or mirroring any intent shape.',
+			'Keep the parent command fragment empty or review-only until the child contract parses cleanly.',
+		];
+	}
+
+	return [
+		'Initialize or author this repository command contract before adding runnable parent-level orchestration.',
+		'If the parent root still needs orchestration, keep that repository-specific intent group in the suggested fragment.',
+	];
+}
+
+function createCommandFragmentSuggestion(
+	repository: WorkspaceStatusRepository,
+	includeEntry: string,
+): WorkspaceCommandFragmentSuggestion {
+	const commandSurface = repository.command_contract;
+
+	return {
+		repository: repository.relative_path,
+		status: repository.status === 'mustflow_ready'
+			? 'child_contract_ready'
+			: repository.status === 'contract_invalid'
+				? 'contract_invalid'
+				: 'contract_missing',
+		suggested_fragment_path: `.mustflow/config/${includeEntry}`,
+		include_entry: includeEntry,
+		source_command_contract: commandSurface.path,
+		intent_count: commandSurface.total_intents,
+		runnable_intent_count: commandSurface.runnable_count,
+		guidance: createCommandFragmentGuidance(repository),
+	};
+}
+
+function renderCommandFragmentIncludeSnippet(includeEntries: readonly string[]): string {
+	if (includeEntries.length === 0) {
+		return '[include]\nfiles = []';
+	}
+
+	return [
+		'[include]',
+		'files = [',
+		...includeEntries.map((entry) => `  "${entry}",`),
+		']',
+	].join('\n');
+}
+
+function commandFragmentNextActions(repositoryCount: number): readonly string[] {
+	if (repositoryCount === 0) {
+		return ['Run mf workspace scan --projects-dir <dir> --json against the directory that contains cloned repositories.'];
+	}
+
+	return [
+		'Review each suggested fragment before editing .mustflow/config/commands.toml.',
+		'Prefer child repository command contracts for repository-owned commands.',
+		'Use parent command fragments only for intentionally parent-owned orchestration or cross-repository workflows.',
+		'After accepting fragments, run the configured mustflow check intent.',
+	];
 }
 
 function getIntentNames(intents: TomlTable): readonly string[] {
@@ -585,6 +753,44 @@ function createWorkspaceCommandCatalogOutput(): WorkspaceCommandCatalogOutput {
 	};
 }
 
+function createWorkspaceCommandFragmentsOutput(projectsDir?: string): WorkspaceCommandFragmentsOutput {
+	const projectRoot = resolveMustflowRoot();
+	const config = getRepoMapConfig(projectRoot);
+	const workspace = projectsDir ? createAdHocWorkspaceConfig(config.workspace, projectsDir) : config.workspace;
+	const nestedRepositories = discoverNestedRepositories(
+		projectRoot,
+		{ ...config.map, includeNested: true },
+		workspace,
+	);
+	const repositories = nestedRepositories.map((repository) => summarizeRepository(projectRoot, repository));
+	const includePaths = createCommandFragmentPaths(repositories);
+	const suggestions = repositories.map((repository) =>
+		createCommandFragmentSuggestion(repository, includePaths.get(repository.relative_path) ?? `${COMMAND_FRAGMENT_INCLUDE_PREFIX}/repository.toml`),
+	);
+	const includeEntries = suggestions.map((suggestion) => suggestion.include_entry);
+	const issues = projectsDir
+		? repositories.length === 0
+			? [t('en', 'workspace.scan.issue.noneDiscovered', { projectsDir })]
+			: []
+		: createWorkspaceIssues(config, repositories.length);
+
+	return {
+		schema_version: WORKSPACE_COMMAND_FRAGMENTS_SCHEMA_VERSION,
+		command: 'workspace command-fragments',
+		mustflow_root: projectRoot,
+		workspace: workspaceConfigOutput(workspace),
+		policy: createWorkspaceCommandFragmentsPolicy(),
+		repository_count: repositories.length,
+		fragment_directory: COMMAND_FRAGMENT_DIRECTORY,
+		root_command_contract: '.mustflow/config/commands.toml',
+		root_include_snippet: renderCommandFragmentIncludeSnippet(includeEntries),
+		suggestions,
+		issues,
+		projects_dir: projectsDir ?? null,
+		next_actions: commandFragmentNextActions(repositories.length),
+	};
+}
+
 function createUnavailableVerificationRepository(
 	repository: NestedRepository,
 	commandSurface: WorkspaceStatusCommandSurface,
@@ -802,6 +1008,43 @@ function renderWorkspaceCommandCatalog(output: WorkspaceCommandCatalogOutput): s
 	return lines.join('\n');
 }
 
+function renderWorkspaceCommandFragments(output: WorkspaceCommandFragmentsOutput): string {
+	const lines = [
+		'mustflow workspace command-fragments',
+		`mustflow root: ${output.mustflow_root}`,
+		`workspace enabled: ${output.workspace.enabled ? 'yes' : 'no'}`,
+		`repositories: ${output.repository_count}`,
+		`fragment directory: ${output.fragment_directory}`,
+		'',
+	];
+
+	if (output.suggestions.length === 0) {
+		lines.push('No nested repositories discovered.');
+		return lines.join('\n');
+	}
+
+	lines.push('Root include snippet:');
+	lines.push(output.root_include_snippet);
+	lines.push('', 'Suggested fragments:');
+
+	for (const suggestion of output.suggestions) {
+		lines.push(`- ${suggestion.repository} -> ${suggestion.suggested_fragment_path} (${suggestion.status})`);
+		if (suggestion.source_command_contract) {
+			lines.push(`  source command contract: ${suggestion.source_command_contract}`);
+		}
+		for (const guidance of suggestion.guidance) {
+			lines.push(`  - ${guidance}`);
+		}
+	}
+
+	lines.push('', 'Next actions:');
+	for (const action of output.next_actions) {
+		lines.push(`- ${action}`);
+	}
+
+	return lines.join('\n');
+}
+
 function renderWorkspaceVerificationPlan(output: WorkspaceVerificationPlanOutput): string {
 	const lines = [
 		'mustflow workspace verify',
@@ -891,6 +1134,25 @@ function runWorkspaceCommandCatalog(args: readonly string[], reporter: Reporter,
 	return 0;
 }
 
+function runWorkspaceCommandFragments(args: readonly string[], reporter: Reporter, lang: CliLang): number {
+	if (hasCliOptionToken(args, '--help', ['-h'])) {
+		reporter.stdout(getWorkspaceHelp(lang));
+		return 0;
+	}
+
+	const parsed = parseCliOptions(args, WORKSPACE_COMMAND_FRAGMENTS_OPTIONS);
+	if (parsed.error) {
+		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf workspace --help', getWorkspaceHelp(lang), lang);
+		return 1;
+	}
+
+	const projectsDirValue = parsed.values.get('--projects-dir');
+	const projectsDir = typeof projectsDirValue === 'string' ? projectsDirValue : undefined;
+	const output = createWorkspaceCommandFragmentsOutput(projectsDir);
+	reporter.stdout(hasParsedCliOption(parsed, '--json') ? JSON.stringify(output, null, 2) : renderWorkspaceCommandFragments(output));
+	return 0;
+}
+
 function runWorkspaceVerify(args: readonly string[], reporter: Reporter, lang: CliLang): number {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getWorkspaceHelp(lang));
@@ -946,6 +1208,10 @@ export function runWorkspace(args: string[], reporter: Reporter, lang: CliLang =
 
 	if (action === 'command-catalog') {
 		return runWorkspaceCommandCatalog(rest, reporter, lang);
+	}
+
+	if (action === 'command-fragments') {
+		return runWorkspaceCommandFragments(rest, reporter, lang);
 	}
 
 	if (action === 'verify') {

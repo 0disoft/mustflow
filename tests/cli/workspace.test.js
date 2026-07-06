@@ -289,6 +289,66 @@ test('workspace command-catalog aggregates child command contracts without raw c
 	}
 });
 
+test('workspace command-fragments suggests repo-level fragments without writing files', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createBareNestedRepository(projectPath, 'projects/zdp-platforms/platform/zdp-auth-ui');
+		createBareNestedRepository(projectPath, 'projects/zdp-platforms/platform/zdp-platform-runtime');
+
+		const result = await runCli(projectPath, ['workspace', 'command-fragments', '--projects-dir', 'projects', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.schema_version, '1');
+		assert.equal(output.command, 'workspace command-fragments');
+		assert.equal(output.repository_count, 2);
+		assert.equal(output.policy.writes_files, false);
+		assert.equal(output.policy.suggestions_are_review_only, true);
+		assert.equal(output.policy.parent_fragments_grant_child_authority, false);
+		assert.equal(output.fragment_directory, '.mustflow/config/commands');
+		assert.equal(output.root_command_contract, '.mustflow/config/commands.toml');
+		assert.deepEqual(
+			output.suggestions.map((suggestion) => suggestion.repository),
+			['projects/zdp-platforms/platform/zdp-auth-ui/', 'projects/zdp-platforms/platform/zdp-platform-runtime/'],
+		);
+		assert.deepEqual(
+			output.suggestions.map((suggestion) => suggestion.suggested_fragment_path),
+			[
+				'.mustflow/config/commands/zdp-auth-ui.toml',
+				'.mustflow/config/commands/zdp-platform-runtime.toml',
+			],
+		);
+		assert.match(output.root_include_snippet, /"commands\/zdp-auth-ui\.toml"/u);
+		assert.match(output.root_include_snippet, /"commands\/zdp-platform-runtime\.toml"/u);
+		assert.equal(output.suggestions[0].status, 'contract_missing');
+		assert.equal(output.suggestions[0].source_command_contract, null);
+		assert.ok(output.next_actions.includes('Prefer child repository command contracts for repository-owned commands.'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace command-fragments disambiguates duplicate repository leaf names', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createBareNestedRepository(projectPath, 'projects/team-a/api');
+		createBareNestedRepository(projectPath, 'projects/team-b/api');
+
+		const result = await runCli(projectPath, ['workspace', 'command-fragments', '--projects-dir', 'projects', '--json']);
+		const output = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(
+			output.suggestions.map((suggestion) => suggestion.include_entry),
+			['commands/projects--team-a--api.toml', 'commands/projects--team-b--api.toml'],
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('workspace verify plans changed-file verification per child repository without running commands', async () => {
 	const projectPath = createTempProject();
 
@@ -364,6 +424,21 @@ test('workspace command-catalog rejects unknown options', async () => {
 	try {
 		initProject(projectPath);
 		const result = await runCli(projectPath, ['workspace', 'command-catalog', '--bad']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unknown option: --bad/u);
+		assert.match(result.stderr, /mf workspace --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace command-fragments rejects unknown options', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = await runCli(projectPath, ['workspace', 'command-fragments', '--bad']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Unknown option: --bad/u);

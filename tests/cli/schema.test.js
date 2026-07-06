@@ -711,6 +711,20 @@ test('workspace command-catalog json output matches the published schema', () =>
 	}
 });
 
+test('workspace command-fragments json output matches the published schema', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['workspace', 'command-fragments', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assertMatchesSchema(schemaRoot, 'workspace-command-fragments.schema.json', JSON.parse(result.stdout));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('workspace verify json output matches the published schema', () => {
 	const projectPath = createTempProject();
 

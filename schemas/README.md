@@ -45,6 +45,9 @@ Current schemas:
 - `workspace-command-catalog.schema.json`: output of `mf workspace command-catalog --json`,
   containing per-root command intent availability, safe `mf run` entrypoints, and no raw command
   strings
+- `workspace-command-fragments.schema.json`: output of `mf workspace command-fragments --json`,
+  containing read-only per-repository command fragment suggestions for repo-farm orchestration
+  without writing files or granting parent-to-child command authority
 - `workspace-verification-plan.schema.json`: output of
   `mf workspace verify --changed --plan-only --json`, containing per-root changed-file
   verification plans and risk-priced evidence assessment without running commands or granting

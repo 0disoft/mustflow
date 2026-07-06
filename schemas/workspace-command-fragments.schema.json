@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/workspace-command-fragments.schema.json",
+  "title": "mustflow workspace command fragments report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "command",
+    "mustflow_root",
+    "workspace",
+    "policy",
+    "repository_count",
+    "fragment_directory",
+    "root_command_contract",
+    "root_include_snippet",
+    "suggestions",
+    "issues",
+    "projects_dir",
+    "next_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "workspace command-fragments" },
+    "mustflow_root": { "type": "string" },
+    "workspace": { "$ref": "#/$defs/workspace" },
+    "policy": { "$ref": "#/$defs/policy" },
+    "repository_count": { "type": "integer", "minimum": 0 },
+    "fragment_directory": { "const": ".mustflow/config/commands" },
+    "root_command_contract": { "const": ".mustflow/config/commands.toml" },
+    "root_include_snippet": { "type": "string" },
+    "suggestions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suggestion" }
+    },
+    "issues": { "$ref": "#/$defs/stringArray" },
+    "projects_dir": { "type": ["string", "null"] },
+    "next_actions": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "roots",
+        "max_depth",
+        "max_repositories",
+        "follow_symlinks",
+        "stop_at_repository_root"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "roots": { "$ref": "#/$defs/stringArray" },
+        "max_depth": { "type": "integer", "minimum": 1 },
+        "max_repositories": { "type": "integer", "minimum": 1 },
+        "follow_symlinks": { "type": "boolean" },
+        "stop_at_repository_root": { "type": "boolean" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "grants_command_authority",
+        "parent_root_grants_child_authority",
+        "command_authority_per_root",
+        "run_entrypoint_per_root",
+        "executes_commands",
+        "raw_commands_included",
+        "writes_files",
+        "suggestions_are_review_only",
+        "parent_fragments_grant_child_authority"
+      ],
+      "properties": {
+        "mode": { "const": "read_only" },
+        "grants_command_authority": { "const": false },
+        "parent_root_grants_child_authority": { "const": false },
+        "command_authority_per_root": { "const": ".mustflow/config/commands.toml" },
+        "run_entrypoint_per_root": { "const": "mf run <intent>" },
+        "executes_commands": { "const": false },
+        "raw_commands_included": { "const": false },
+        "writes_files": { "const": false },
+        "suggestions_are_review_only": { "const": true },
+        "parent_fragments_grant_child_authority": { "const": false }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "status",
+        "suggested_fragment_path",
+        "include_entry",
+        "source_command_contract",
+        "intent_count",
+        "runnable_intent_count",
+        "guidance"
+      ],
+      "properties": {
+        "repository": { "type": "string" },
+        "status": { "enum": ["child_contract_ready", "contract_missing", "contract_invalid"] },
+        "suggested_fragment_path": { "type": "string" },
+        "include_entry": { "type": "string" },
+        "source_command_contract": { "$ref": "#/$defs/nullableString" },
+        "intent_count": { "type": ["integer", "null"], "minimum": 0 },
+        "runnable_intent_count": { "type": ["integer", "null"], "minimum": 0 },
+        "guidance": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  }
+}

@@ -5522,6 +5522,46 @@
           }
         ]
       }
+    },
+    {
+      "id": "workspace-command-fragments",
+      "schema_file": "workspace-command-fragments.schema.json",
+      "producer": "mf workspace command-fragments --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "workspace command-fragments",
+        "mustflow_root": "C:/repo",
+        "workspace": {
+          "enabled": false,
+          "roots": [],
+          "max_depth": 4,
+          "max_repositories": 50,
+          "follow_symlinks": false,
+          "stop_at_repository_root": true
+        },
+        "policy": {
+          "mode": "read_only",
+          "grants_command_authority": false,
+          "parent_root_grants_child_authority": false,
+          "command_authority_per_root": ".mustflow/config/commands.toml",
+          "run_entrypoint_per_root": "mf run <intent>",
+          "executes_commands": false,
+          "raw_commands_included": false,
+          "writes_files": false,
+          "suggestions_are_review_only": true,
+          "parent_fragments_grant_child_authority": false
+        },
+        "repository_count": 0,
+        "fragment_directory": ".mustflow/config/commands",
+        "root_command_contract": ".mustflow/config/commands.toml",
+        "root_include_snippet": "[include]\nfiles = []",
+        "suggestions": [],
+        "issues": [],
+        "projects_dir": null,
+        "next_actions": [
+          "Run mf workspace scan --projects-dir <dir> --json against the directory that contains cloned repositories."
+        ]
+      }
     }
   ]
 }

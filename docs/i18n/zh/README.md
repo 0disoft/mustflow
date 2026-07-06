@@ -209,6 +209,7 @@ mf run mustflow_update_apply
 | `mf evidence --changed` | 不执行命令，汇总 changed-file 验证需求、最新 evidence、receipt 和剩余缺口。 |
 | `mf workspace status` | 检查已配置 workspace 根目录和嵌套仓库合同状态，不授予父到子的命令权限。 |
 | `mf workspace command-catalog` | 输出各仓库命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |
+| `mf workspace command-fragments` | 为 repo farm 编排建议按仓库拆分的 `.mustflow/config/commands/*.toml` fragment，不写入文件也不授予父到子命令权限。 |
 | `mf workspace verify --changed --plan-only` | 不执行命令，输出各仓库的变更文件验证计划。 |
 | `mf api locks --json` | 输出用于多会话协调的活动 `mf run` 锁。 |
 | `mf context --json` | 以 JSON 格式输出读取顺序、命令规则、可用能力及最近运行摘要。 |
