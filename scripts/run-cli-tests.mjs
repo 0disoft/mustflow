@@ -586,14 +586,18 @@ function readListBatchRequests(batchPath) {
 	}));
 }
 
+function writeJsonAndExit(value) {
+	// Large list-batch reports can be truncated on POSIX if console.log is followed by process.exit().
+	writeFileSync(1, `${JSON.stringify(value, null, 2)}\n`);
+	process.exit(0);
+}
+
 if (listOnly) {
 	if (listBatchPath) {
-		console.log(JSON.stringify(readListBatchRequests(listBatchPath).map((request) => selectionReportForMode(request.mode, request.changed_files)), null, 2));
-		process.exit(0);
+		writeJsonAndExit(readListBatchRequests(listBatchPath).map((request) => selectionReportForMode(request.mode, request.changed_files)));
 	}
 
-	console.log(JSON.stringify(selectionReportForMode(mode, currentChangedFiles), null, 2));
-	process.exit(0);
+	writeJsonAndExit(selectionReportForMode(mode, currentChangedFiles));
 }
 
 function assertCachedModeSafe() {
