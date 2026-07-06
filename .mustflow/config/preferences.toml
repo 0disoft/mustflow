@@ -65,13 +65,13 @@ auto_push = false
 
 [git.commit_message]
 suggest = "when_changes_made"
-style = "conventional"
+style = "gitmoji"
 # language can be "preserve_existing", "agent_response", "docs", or a locale tag such as "ja" or "pt-BR".
 language = "preserve_existing"
 language_when_missing = "en"
 scope = "infer_from_changed_paths"
 max_suggestions = 2
-include_body = "when_non_trivial"
+include_body = "always"
 split_when_multiple_concerns = true
 avoid_sensitive_details = true
 
