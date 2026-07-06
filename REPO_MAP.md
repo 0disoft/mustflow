@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 248
+anchor_count: 249
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:47ecdb5c9ad2a9d6c07743ad7755d02c238030d2481d59d17babdfd8117b6c53"
+source_fingerprint: "sha256:ef1639fe705fad8b245797cefe4bea5a9206e63ca6c75cde7a67ad99860cfd34"
 ---
 
 # REPO_MAP.md
@@ -644,6 +644,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/readme-authoring/
 
 - `.mustflow/skills/readme-authoring/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/readme-evidence-gate/
+
+- `.mustflow/skills/readme-evidence-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/release-notes-authoring/
 

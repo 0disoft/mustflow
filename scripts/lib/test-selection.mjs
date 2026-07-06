@@ -45,6 +45,7 @@ export function createTestSelection(allCliTests) {
 		'dashboard-safety.test.js',
 		'dashboard-verification.test.js',
 	];
+	const testSelectionTests = ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js'];
 	const commandContractTests = ['check-command-contracts.test.js', ...runTests];
 	const sourceAnchorTests = [
 		'check-source-anchors.test.js',
@@ -52,14 +53,51 @@ export function createTestSelection(allCliTests) {
 		'index-source-anchors.test.js',
 		'search-source-scope.test.js',
 	];
-	const schemaSmokeTests = ['schema.test.js', 'schema-command-contracts.test.js', 'schema-explain-verify-output.test.js'];
-	const codeOutlineContractTests = ['text-budget.test.js', ...schemaSmokeTests];
+	const schemaSmokeTests = [
+		'schema-api-workspace-contracts.test.js',
+		'schema-cli-output-contracts.test.js',
+		'schema-command-contracts.test.js',
+		'schema-docs-workflow-contracts.test.js',
+		'schema-explain-verify-output.test.js',
+		'schema-manifest-contracts.test.js',
+		'schema-script-pack-code-contracts.test.js',
+		'schema-script-pack-repo-contracts.test.js',
+	];
+	const packageContractTests = [
+		'package-command-contracts.test.js',
+		'package-metadata-contracts.test.js',
+		'package-release-workflow-contracts.test.js',
+		'package-template-skill-contracts.test.js',
+	];
+	const scriptPackContractTests = [
+		'script-pack-catalog-contracts.test.js',
+		'script-pack-code-boundary-contracts.test.js',
+		'script-pack-code-change-contracts.test.js',
+		'script-pack-code-outline-contracts.test.js',
+		'script-pack-code-symbol-read-contracts.test.js',
+		'script-pack-docs-contracts.test.js',
+		'script-pack-repo-security-contracts.test.js',
+		'script-pack-repo-surface-contracts.test.js',
+		'script-pack-route-related-contracts.test.js',
+		'script-pack-suggest-code-contracts.test.js',
+		'script-pack-suggest-repo-contracts.test.js',
+		'script-pack-suggest-safety-contracts.test.js',
+		'script-pack-test-tool-contracts.test.js',
+		'script-pack-text-generated-contracts.test.js',
+	];
+	const codeOutlineContractTests = [...scriptPackContractTests, ...schemaSmokeTests];
 	const routerSmokeTests = ['router.test.js'];
+	const verifyCompletionVerdictTests = [
+		'verify-completion-verdict-core-contracts.test.js',
+		'verify-completion-verdict-evidence-contracts.test.js',
+		'verify-completion-verdict-ratchet-contracts.test.js',
+		'verify-completion-verdict-repeated-failure-contracts.test.js',
+	];
 	const verifyTests = [
 		'verify.test.js',
 		'verify-inputs.test.js',
 		'verify-changed.test.js',
-		'verify-completion-verdict.test.js',
+		...verifyCompletionVerdictTests,
 		'verify-plan-scheduler.test.js',
 	];
 	const verificationPlanningTests = [
@@ -97,11 +135,11 @@ export function createTestSelection(allCliTests) {
 		...indexTests,
 		'security-fuzz.test.js',
 		'test-audit.test.js',
-		'test-selection.test.js',
+		...testSelectionTests,
 	];
 
 	const fastTests = [...fastCommandSurfaceTests, ...fastWorkflowContractTests, ...fastHarnessSafetyTests];
-	const releaseTests = ['package.test.js', 'package-template.test.js'];
+	const releaseTests = [...packageContractTests, 'package-template.test.js'];
 	const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 	const coverageTests = fastTests;
 	const inProcessCliTests = new Set(['check.test.js', 'contract-lint.test.js', 'next.test.js', 'onboard.test.js', ...verifyTests]);
@@ -143,13 +181,13 @@ export function createTestSelection(allCliTests) {
 		{ match: /^schemas\//u, tests: schemaSmokeTests },
 		{ match: /^templates\/default\/locales\/en\/\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
 		{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js', 'package-template.test.js'] },
-		{ match: /^package\.json$/u, tests: ['package.test.js', 'package-template.test.js', ...versioningTests] },
+		{ match: /^package\.json$/u, tests: [...packageContractTests, 'package-template.test.js', ...versioningTests] },
 		{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
 		{ match: /^\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
 		{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
-		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: ['test-selection.test.js'] },
-		{ match: /^scripts\/lib\/test-selection\.mjs$/u, tests: ['test-selection.test.js'] },
-		{ match: /^scripts\/lib\/test-ordering\.mjs$/u, tests: ['test-selection.test.js'] },
+		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: testSelectionTests },
+		{ match: /^scripts\/lib\/test-selection\.mjs$/u, tests: testSelectionTests },
+		{ match: /^scripts\/lib\/test-ordering\.mjs$/u, tests: testSelectionTests },
 		{ match: /^src\/cli\/index\.ts$/u, tests: ['router.test.js', 'workflow.test.js'] },
 		{ match: /^src\/cli\/i18n\//u, tests: ['i18n-architecture.test.js', 'router.test.js', ...dashboardTests] },
 		{
@@ -235,18 +273,18 @@ export function createTestSelection(allCliTests) {
 		{ match: /^src\/core\/test-regression-selector\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/text-budget\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/route-outline\.ts$/u, tests: codeOutlineContractTests },
-		{ match: /^src\/core\/completion-verdict\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
-		{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard-verification.test.js', 'verify.test.js', 'verify-completion-verdict.test.js', ...schemaSmokeTests] },
+		{ match: /^src\/core\/completion-verdict\.ts$/u, tests: verifyCompletionVerdictTests },
+		{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard-verification.test.js', 'verify.test.js', ...verifyCompletionVerdictTests, ...schemaSmokeTests] },
 		{ match: /^src\/core\/doc-review-triage\.ts$/u, tests: ['docs.test.js', ...dashboardTests, ...schemaSmokeTests] },
-		{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', 'schema.test.js'] },
+		{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/change-verification\.ts$/u, tests: verificationPlanningTests },
-		{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', 'schema.test.js'] },
+		{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check-command-contracts.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/(release-version-validation|version-impact|version-sources|version-sync-policy)\.ts$/u, tests: versioningTests },
-		{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', 'schema.test.js'] },
+		{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/authority-resolution\.ts$/u, tests: ['check-doc-authority.test.js', 'explain-authority.test.js'] },
-		{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', 'schema.test.js'] },
-		{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: ['schema.test.js'] },
+		{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', ...schemaSmokeTests] },
+		{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: schemaSmokeTests },
 		{ match: /^src\/core\/script-pack-suggestions\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/public-surface-explanation\.ts$/u, tests: ['explain-surface.test.js'] },
 		{ match: /^src\/core\/command-effects\.ts$/u, tests: ['check-command-contracts.test.js', 'explain-command.test.js', 'index-workflow.test.js', ...runTests] },
@@ -254,10 +292,10 @@ export function createTestSelection(allCliTests) {
 		{ match: /^src\/core\/retention-(explanation|policy)\.ts$/u, tests: ['explain-retention-asset.test.js'] },
 		{ match: /^src\/core\/command-cwd\.ts$/u, tests: runTests },
 		{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: commandContractTests },
-		{ match: /^src\/core\/repeated-failure\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
-		{ match: /^src\/core\/validation-ratchet\.ts$/u, tests: ['verify-completion-verdict.test.js'] },
+		{ match: /^src\/core\/repeated-failure\.ts$/u, tests: ['verify-completion-verdict-repeated-failure-contracts.test.js'] },
+		{ match: /^src\/core\/validation-ratchet\.ts$/u, tests: ['verify-completion-verdict-ratchet-contracts.test.js'] },
 		{ match: /^src\/core\/verification-plan\.ts$/u, tests: verificationPlanningTests },
-		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', 'verify-completion-verdict.test.js', 'dashboard-verification.test.js', ...schemaSmokeTests] },
+		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', ...verifyCompletionVerdictTests, 'dashboard-verification.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 		{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
 		{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js'] },

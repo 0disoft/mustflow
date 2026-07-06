@@ -1200,6 +1200,12 @@ route_type = "primary"
 priority = 50
 applies_to_reasons = ["docs_change"]
 
+[routes."readme-evidence-gate"]
+category = "docs_release"
+route_type = "adjunct"
+priority = 72
+applies_to_reasons = ["docs_change", "copy_change", "public_api_change", "package_metadata_change", "security_change", "performance_change", "release_risk", "unknown_change"]
+
 [routes."release-notes-authoring"]
 category = "docs_release"
 route_type = "primary"

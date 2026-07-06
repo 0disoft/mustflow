@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 220
+revision = 224
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -1141,6 +1141,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.readme-evidence-gate"]
+source = "locales/en/.mustflow/skills/readme-evidence-gate/SKILL.md"
+source_locale = "en"
+revision = 4
 translations = {}
 
 [documents."skill.release-notes-authoring"]

@@ -69,7 +69,7 @@ export function getRepoRelatedFilesHelp(lang: CliLang = 'en'): string {
 			examples: [
 				'mf script-pack run repo/related-files map src/cli/index.ts --json',
 				'mf script-pack run repo/related-files map src/core/code-outline.ts --max-candidates 50 --json',
-				'mf script-pack run repo/related-files map src tests/cli/package.test.js --max-files 500 --json',
+				'mf script-pack run repo/related-files map src tests/cli/package-metadata-contracts.test.js --max-files 500 --json',
 			],
 			exitCodes: [
 				{ label: '0', description: t(lang, 'relatedFiles.help.exit.ok') },

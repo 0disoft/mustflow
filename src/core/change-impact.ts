@@ -321,9 +321,15 @@ function addContractImpacts(
 ): void {
 	const contractPaths =
 		changedFile.surface === 'schema'
-			? ['schemas/README.md', 'src/core/public-json-contracts.ts', 'tests/cli/schema.test.js']
+			? ['schemas/README.md', 'src/core/public-json-contracts.ts', 'tests/cli/schema-manifest-contracts.test.js']
 			: changedFile.surface === 'package' || changedFile.surface === 'template'
-				? ['tests/cli/package.test.js', 'templates/default/manifest.toml']
+				? [
+						'tests/cli/package-command-contracts.test.js',
+						'tests/cli/package-metadata-contracts.test.js',
+						'tests/cli/package-release-workflow-contracts.test.js',
+						'tests/cli/package-template-skill-contracts.test.js',
+						'templates/default/manifest.toml',
+					]
 				: changedFile.surface === 'workflow'
 					? ['.mustflow/config/commands.toml', 'tests/cli/authoring-skill-contracts.test.js']
 					: [];

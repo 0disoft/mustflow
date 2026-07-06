@@ -1,0 +1,523 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+	assertI18nSkillDocument,
+	assertRouteReasonsText,
+	assertSkillsIndexRevision,
+	readSkillDirectoryNames,
+	readText,
+	routeReasons,
+} from './helpers/skill-contracts.js';
+
+test('cpp code change keeps target identity and compatibility risk explicit', () => {
+	const localSkill = readText('.mustflow/skills/cpp-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/cpp-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /owning build target/u);
+	assert.match(localSkill, /compilation identity/u);
+	assert.match(localSkill, /Local compile success alone does not prove/u);
+	assert.match(localSkill, /source_api/u);
+	assert.match(localSkill, /binary_abi/u);
+	assert.match(localSkill, /static_link_contract/u);
+	assert.match(localSkill, /generated_binding/u);
+	assert.match(localSkill, /ffi_boundary/u);
+	assert.match(localSkill, /undefined-behavior/u);
+	assert.match(localSkill, /std::string_view/u);
+	assert.match(localSkill, /std::span/u);
+	assert.match(localSkill, /noexcept/u);
+	assert.match(localSkill, /modern, shorter, or cleaner-looking/u);
+	assert.match(localSkill, /Do not invent native build/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/cpp-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /C\+\+ source, headers, modules/u);
+	assert.match(routes, /\[routes\."cpp-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assertRouteReasonsText(routes, [
+		'code_change',
+		'public_api_change',
+		'test_change',
+		'package_metadata_change',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/cpp-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"cpp-code-change"/u);
+});
+
+test('Node, Bun, Docker, and JavaScript code change skills keep runtime and toolchain ownership explicit', () => {
+	const nodeSkill = readText('.mustflow/skills/node-code-change/SKILL.md');
+	const templateNodeSkill = readText('templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md');
+	const jsSkill = readText('.mustflow/skills/javascript-code-change/SKILL.md');
+	const templateJsSkill = readText('templates/default/locales/en/.mustflow/skills/javascript-code-change/SKILL.md');
+	const bunSkill = readText('.mustflow/skills/bun-code-change/SKILL.md');
+	const templateBunSkill = readText('templates/default/locales/en/.mustflow/skills/bun-code-change/SKILL.md');
+	const dockerSkill = readText('.mustflow/skills/docker-code-change/SKILL.md');
+	const templateDockerSkill = readText('templates/default/locales/en/.mustflow/skills/docker-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(nodeSkill, templateNodeSkill);
+	assert.equal(jsSkill, templateJsSkill);
+	assert.equal(bunSkill, templateBunSkill);
+	assert.equal(dockerSkill, templateDockerSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(nodeSkill, /deployment runtime as the hard constraint/u);
+	assert.match(nodeSkill, /CI runtime as the verified constraint/u);
+	assert.match(nodeSkill, /package manager ownership/u);
+	assert.match(nodeSkill, /ESM-only package with `"type": "module"`/u);
+	assert.match(nodeSkill, /Do not rename every file to `\.mjs` just to mean ESM/u);
+	assert.match(nodeSkill, /fully specified relative and absolute import specifiers/u);
+	assert.match(nodeSkill, /Adding `exports` can block deep imports/u);
+	assert.match(nodeSkill, /dual package hazards/u);
+	assert.match(nodeSkill, /Node native TypeScript execution is limited type stripping/u);
+	assert.match(nodeSkill, /does not typecheck, read `tsconfig`, resolve path aliases, emit declarations/u);
+	assert.match(nodeSkill, /Do not migrate Jest, Vitest, Playwright, or another runner to `node:test`/u);
+	assert.match(nodeSkill, /permission model as a trusted-code seatbelt/u);
+
+	assert.match(jsSkill, /prefer ESM-only with package `"type": "module"`/u);
+	assert.match(jsSkill, /Use `\.mjs` and `\.cjs` as explicit override markers/u);
+	assert.match(jsSkill, /Extensionless imports and automatic directory `index\.js` lookup/u);
+
+	assert.match(bunSkill, /Classify every Bun signal by role/u);
+	assert.match(bunSkill, /package manager signals/u);
+	assert.match(bunSkill, /runtime signals/u);
+	assert.match(bunSkill, /test runner signals/u);
+	assert.match(bunSkill, /bundler or compiler signals/u);
+	assert.match(bunSkill, /If `bun.lock` exists, treat Bun as the dependency owner/u);
+	assert.match(bunSkill, /Treat `trustedDependencies` as install-time code execution policy/u);
+	assert.match(bunSkill, /Do not claim Bun runs TypeScript as typecheck/u);
+	assert.match(bunSkill, /Bun build output proves bundling for the selected target and format/u);
+	assert.match(bunSkill, /Bun server changes, check idle timeout/u);
+	assert.match(bunSkill, /WebSocket changes, review `idleTimeout`, `maxPayloadLength`, `backpressureLimit`/u);
+	assert.match(bunSkill, /`SO_REUSEPORT` and same-port multi-process assumptions/u);
+	assert.match(bunSkill, /Do not assume bundling eliminates `node_modules`/u);
+	assert.match(bunSkill, /Treat minification as an observability decision/u);
+	assert.match(bunSkill, /`PORT` environment binding/u);
+	assert.match(bunSkill, /A CLI with `#!\/usr\/bin\/env node` may execute under Node/u);
+
+	assert.match(dockerSkill, /Prevent container image accidents/u);
+	assert.match(dockerSkill, /This skill is not a Docker syntax guide/u);
+	assert.match(dockerSkill, /runtime-source app/u);
+	assert.match(dockerSkill, /compiled artifact app/u);
+	assert.match(dockerSkill, /Use Debian slim as a conservative default/u);
+	assert.match(dockerSkill, /Alpine\s+only after libc and native package behavior are verified/u);
+	assert.match(dockerSkill, /distroless or `scratch` only/u);
+	assert.match(dockerSkill, /Preserve build cache boundaries/u);
+	assert.match(dockerSkill, /Check `.dockerignore` whenever build context changes/u);
+	assert.match(dockerSkill, /Do not put tokens, passwords, SSH keys/u);
+	assert.match(dockerSkill, /Treat `USER` as a runtime proof obligation/u);
+	assert.match(dockerSkill, /Keep Compose scoped/u);
+	assert.match(dockerSkill, /PR and fork events should not push images/u);
+	assert.match(dockerSkill, /missing Docker-specific verification/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/node-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/bun-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/docker-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining Node\.js risk/u);
+	assert.match(skillIndex, /remaining Bun risk/u);
+	assert.match(skillIndex, /remaining Docker risk/u);
+	assert.match(routes, /\[routes\."node-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /\[routes\."bun-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /\[routes\."docker-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/node-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/javascript-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/bun-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/docker-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"node-code-change"/u);
+	assert.match(manifest, /"javascript-code-change"/u);
+	assert.match(manifest, /"bun-code-change"/u);
+	assert.match(manifest, /"docker-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.javascript-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.bun-code-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
+});
+
+test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () => {
+	const tauriSkill = readText('.mustflow/skills/tauri-code-change/SKILL.md');
+	const templateTauriSkill = readText('templates/default/locales/en/.mustflow/skills/tauri-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(tauriSkill, templateTauriSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(tauriSkill, /CSP, WebView bootstrap HTML/u);
+	assert.match(tauriSkill, /blank or black WebView/u);
+	assert.match(tauriSkill, /Content Security Policy blocking the frontend bootstrap/u);
+	assert.match(tauriSkill, /generated entry HTML/u);
+	assert.match(tauriSkill, /SvelteKit may inject inline bootstrap scripts/u);
+	assert.match(tauriSkill, /`script-src 'self'` can block the app before JavaScript starts/u);
+	assert.match(tauriSkill, /nonce, hash, or externalized bootstrap/u);
+	assert.match(tauriSkill, /`script-src 'self' 'unsafe-inline'` may be an explicit compatibility tradeoff/u);
+	assert.match(tauriSkill, /does not also allow remote script origins, `unsafe-eval`, or wildcard script sources/u);
+	assert.match(tauriSkill, /make `connect-src` explicit for the required IPC scheme or local origin/u);
+	assert.match(tauriSkill, /Do not replace a specific IPC allowance with `connect-src \*`/u);
+	assert.match(tauriSkill, /packaged WebView smoke, CSP violation/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/tauri-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /WebView\/native boundary drift/u);
+	assert.match(routes, /\[routes\."tauri-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/tauri-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"tauri-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.tauri-code-change"\][\s\S]*?revision = 4/u);
+});
+
+test('Wails code change skill covers v3 app, bridge, WebView, and packaging traps', () => {
+	const wailsSkill = readText('.mustflow/skills/wails-code-change/SKILL.md');
+	const templateWailsSkill = readText('templates/default/locales/en/.mustflow/skills/wails-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(wailsSkill, templateWailsSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(wailsSkill, /Treat Wails as a native shell around OS WebViews plus a Go-to-frontend bridge/u);
+	assert.match(wailsSkill, /application\.New/u);
+	assert.match(wailsSkill, /generated bindings, Go binary, frontend runtime package, lockfiles, and Wails CLI version as one compatibility set/u);
+	assert.match(wailsSkill, /Build a bridge map for every frontend-to-Go call/u);
+	assert.match(wailsSkill, /Wails bridge calls can run simultaneously/u);
+	assert.match(wailsSkill, /wait for the target window runtime-ready event/u);
+	assert.match(wailsSkill, /Windows uses WebView2/u);
+	assert.match(wailsSkill, /macOS uses WKWebView/u);
+	assert.match(wailsSkill, /Linux uses WebKitGTK/u);
+	assert.match(wailsSkill, /Do not design Wails v3 as Electron/u);
+	assert.match(wailsSkill, /generated binding drift/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/wails-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /Electron or Wails v2 migration drift/u);
+	assert.match(routes, /\[routes\."wails-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/wails-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"wails-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.wails-code-change"\][\s\S]*?revision = 2/u);
+});
+
+test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain traps by Go version', () => {
+	const goSkill = readText('.mustflow/skills/go-code-change/SKILL.md');
+	const templateGoSkill = readText('templates/default/locales/en/.mustflow/skills/go-code-change/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(goSkill, templateGoSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(goSkill, /go` directive as a language and module compatibility switch/u);
+	assert.match(goSkill, /`new\(expr\)`/u);
+	assert.match(goSkill, /`errors\.AsType`/u);
+	assert.match(goSkill, /`sync\.WaitGroup\.Go` only for tasks that do not return errors and must not panic/u);
+	assert.match(goSkill, /errgroup-style boundary/u);
+	assert.match(goSkill, /cancellation causes/u);
+	assert.match(goSkill, /`context\.WithoutCancel` only for short bounded cleanup/u);
+	assert.match(goSkill, /`context\.AfterFunc`/u);
+	assert.match(goSkill, /module as a release, version, and distribution boundary/u);
+	assert.match(goSkill, /`go\.work` as a local multi-module development surface/u);
+	assert.match(goSkill, /prefer `internal` for server implementation packages/u);
+	assert.match(goSkill, /manual `WaitGroup\.Add` before starting the goroutine/u);
+	assert.match(goSkill, /`context\.Value` as dependency injection/u);
+	assert.match(goSkill, /buffered channels are not durable queues/u);
+	assert.match(goSkill, /explicit `http\.Server` for production-facing servers/u);
+	assert.match(goSkill, /`ReadHeaderTimeout`/u);
+	assert.match(goSkill, /do not use `ResponseWriter` or request bodies after `ServeHTTP` returns/u);
+	assert.match(goSkill, /design graceful shutdown as a state transition/u);
+	assert.match(goSkill, /reverse-proxy rewrite hooks/u);
+	assert.match(goSkill, /Gin engines, router groups, middleware chains, request binding, validation/u);
+	assert.match(goSkill, /`gin\.Default\(\)` as a demo convenience/u);
+	assert.match(goSkill, /`group\.Use\(\)` and parent middleware added after route or child-group creation/u);
+	assert.match(goSkill, /middleware order around `c\.Next\(\)`/u);
+	assert.match(goSkill, /do not pass the original `\*gin\.Context` into goroutines/u);
+	assert.match(goSkill, /`c\.Copy\(\)` as a shallow request-context snapshot/u);
+	assert.match(goSkill, /centralize error response, access log, and metrics ownership/u);
+	assert.match(goSkill, /Do not return `err\.Error\(\)` to clients/u);
+	assert.match(goSkill, /one final responder should map typed errors to status, code, safe message/u);
+	assert.match(goSkill, /custom recovery when production needs panic id/u);
+	assert.match(goSkill, /Recovery middleware does not catch panics in goroutines/u);
+	assert.match(goSkill, /Use `c\.FullPath\(\)` or an equivalent route pattern/u);
+	assert.match(goSkill, /4xx, validation, auth denial, not found, timeout, client cancellation, 5xx/u);
+	assert.match(goSkill, /configure trusted proxies before relying on `ClientIP\(\)`/u);
+	assert.match(goSkill, /trusted platform headers/u);
+	assert.match(goSkill, /CORS as browser response exposure, not API authentication/u);
+	assert.match(goSkill, /origin reflection with credentials/u);
+	assert.match(goSkill, /missing `Vary: Origin`/u);
+	assert.match(goSkill, /Do not derive cookie `Secure` from `c\.Request\.TLS`/u);
+	assert.match(goSkill, /logger query-string handling as a privacy boundary/u);
+	assert.match(goSkill, /use `ShouldBind` variants instead of `Bind` or `MustBind`/u);
+	assert.match(goSkill, /`binding` validator tags/u);
+	assert.match(goSkill, /unknown JSON fields, duplicate keys, large numeric identifiers/u);
+	assert.match(goSkill, /`ShouldBindBodyWith` as whole-body memory retention/u);
+	assert.match(goSkill, /`MaxMultipartMemory` as a memory buffering threshold/u);
+	assert.match(goSkill, /open `\*sql\.DB` once at process or application startup/u);
+	assert.match(goSkill, /`SetMaxOpenConns`, `SetMaxIdleConns`, `SetConnMaxLifetime`/u);
+	assert.match(goSkill, /`QueryContext`, `QueryRowContext`, `ExecContext`, `BeginTx`/u);
+	assert.match(goSkill, /close `Rows`, check `rows\.Err\(\)`/u);
+	assert.match(goSkill, /pool pressure through `DBStats`/u);
+	assert.match(goSkill, /`omitempty` versus `omitzero`/u);
+	assert.match(goSkill, /`encoding\/json\/v2` and `jsontext` as experimental/u);
+	assert.match(goSkill, /traversal-resistant root APIs/u);
+	assert.match(goSkill, /`net\/netip`/u);
+	assert.match(goSkill, /`net\.JoinHostPort`/u);
+	assert.match(goSkill, /`GOMEMLIMIT` or `debug\.SetMemoryLimit`/u);
+	assert.match(goSkill, /manual `GOMAXPROCS` pins in containers/u);
+	assert.match(goSkill, /goroutine leak profiling/u);
+	assert.match(goSkill, /profile or benchmark evidence before accepting a more complex hot-path change/u);
+	assert.match(goSkill, /`sync\.Pool` only for disposable temporary objects/u);
+	assert.match(goSkill, /`-race` only finds races on executed paths/u);
+	assert.match(goSkill, /`testing\/synctest`/u);
+	assert.match(goSkill, /`testing\.B\.Loop`/u);
+	assert.match(goSkill, /`tool` directive over `tools\.go`/u);
+	assert.match(goSkill, /`go fix` modernizers/u);
+
+	assert.match(freshnessSkill, /Go release, toolchain, standard-library, runtime, experiment, framework, or dependency references such as Gin/u);
+	assert.match(freshnessSkill, /official Go release notes or package documentation/u);
+	assert.match(freshnessSkill, /For Gin, prefer official Gin release notes, pkg\.go\.dev module metadata/u);
+	assert.match(freshnessSkill, /framework minor can still require a Go toolchain, CI image, Docker base, middleware, route, or binding migration/u);
+	assert.match(freshnessSkill, /expression operands to `new`/u);
+	assert.match(freshnessSkill, /goroutine leak profiles/u);
+	assert.match(freshnessSkill, /`GOEXPERIMENT` APIs/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/go-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /HTTP clients or servers, Gin engines, router groups, middleware chains/u);
+	assert.match(skillIndex, /Gin context reuse bug, unsafe middleware order, trusted-proxy drift, binding or validation bypass/u);
+	assert.match(skillIndex, /unsupported Go feature/u);
+	assert.match(routes, /\[routes\."go-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.deepEqual(routeReasons(routes, 'go-code-change'), [
+		'code_change',
+		'behavior_change',
+		'public_api_change',
+		'test_change',
+		'docs_change',
+		'data_change',
+		'performance_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"go-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+});
+
+test('Java code change skill gates JDK tracks, JVM tuning, virtual threads, and reflection traps', () => {
+	const javaSkill = readText('.mustflow/skills/java-code-change/SKILL.md');
+	const templateJavaSkill = readText('templates/default/locales/en/.mustflow/skills/java-code-change/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(javaSkill, templateJavaSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(javaSkill, /current GA, latest LTS, and vendor-support track/u);
+	assert.match(javaSkill, /latest GA is not automatically the production baseline/u);
+	assert.match(javaSkill, /not loaded, not found, forbidden/u);
+	assert.match(javaSkill, /reject `null` elements inside collections/u);
+	assert.match(javaSkill, /use `Optional` mainly as a return protocol/u);
+	assert.match(javaSkill, /value-based class: avoid identity equality/u);
+	assert.match(javaSkill, /eager `orElse\(expensive\(\)\)`/u);
+	assert.match(javaSkill, /records are shallowly immutable/u);
+	assert.match(javaSkill, /array record components use reference equality/u);
+	assert.match(javaSkill, /sealed classes control inheritance, not plugin extension/u);
+	assert.match(javaSkill, /use `--release` or the build tool equivalent/u);
+	assert.match(javaSkill, /preview and incubator APIs as migration-sensitive/u);
+	assert.match(javaSkill, /do not expose structured concurrency preview types in public APIs/u);
+	assert.match(javaSkill, /adding a method to an interface can break implementers/u);
+	assert.match(javaSkill, /already compiled consumers/u);
+	assert.match(javaSkill, /ServiceLoader, `META-INF\/services`/u);
+	assert.match(javaSkill, /Surefire, Failsafe, JUnit Platform/u);
+	assert.match(javaSkill, /golden serialized payloads/u);
+	assert.match(javaSkill, /mutates `final` fields reflectively/u);
+	assert.match(javaSkill, /`java\.applet`/u);
+	assert.match(javaSkill, /use virtual threads for high-concurrency blocking I\/O paths/u);
+	assert.match(javaSkill, /do not pool virtual threads/u);
+	assert.match(javaSkill, /fixed thread pools can hide overload behind unbounded queues/u);
+	assert.match(javaSkill, /`CompletableFuture` default async methods/u);
+	assert.match(javaSkill, /rejection policy/u);
+	assert.match(javaSkill, /treat `ThreadLocal` as a memory and lifecycle risk/u);
+	assert.match(javaSkill, /use `ScopedValue` for immutable request/u);
+	assert.match(javaSkill, /Java `HttpClient` HTTP\/3 support as client-side and opt-in/u);
+	assert.match(javaSkill, /`@Transactional` is reached through the proxy/u);
+	assert.match(javaSkill, /checked exceptions/u);
+	assert.match(javaSkill, /`REQUIRES_NEW` as a connection-pool/u);
+	assert.match(javaSkill, /`@TransactionalEventListener\(AFTER_COMMIT\)`/u);
+	assert.match(javaSkill, /OSIV or lazy loading/u);
+	assert.match(javaSkill, /bind external requests to DTOs/u);
+	assert.match(javaSkill, /Spring Security filter-chain matchers/u);
+	assert.match(javaSkill, /Separate AOT cache from native image/u);
+	assert.match(javaSkill, /G1 pause targets are goals, not SLAs/u);
+	assert.match(javaSkill, /ZGC and Shenandoah trade CPU and headroom/u);
+	assert.match(javaSkill, /Generational Shenandoah, Compact Object Headers/u);
+	assert.match(javaSkill, /optimize allocation rate, live set, peak memory/u);
+	assert.match(javaSkill, /new-TLAB, outside-TLAB/u);
+	assert.match(javaSkill, /pooling ordinary short-lived DTOs/u);
+	assert.match(javaSkill, /G1 humongous-object risks/u);
+	assert.match(javaSkill, /heap is only part of RSS/u);
+	assert.match(javaSkill, /`MaxRAMPercentage`, `InitialRAMPercentage`, `MaxDirectMemorySize`/u);
+	assert.match(javaSkill, /`ActiveProcessorCount`/u);
+	assert.match(javaSkill, /use JMH for microbenchmarks/u);
+	assert.match(javaSkill, /JFR, GC logs, native memory tracking/u);
+	assert.match(javaSkill, /Jackson, Gson, Kryo, protobuf, Avro, Hibernate/u);
+	assert.match(javaSkill, /Maven compiler plugin, Gradle toolchains/u);
+	assert.match(javaSkill, /Maven parent inheritance separate from aggregator reactor membership/u);
+	assert.match(javaSkill, /Gradle `api` only for public types/u);
+	assert.match(javaSkill, /Maven `dependencyManagement` manages versions but does not add dependencies/u);
+	assert.match(javaSkill, /version catalog as a BOM/u);
+	assert.match(javaSkill, /Gradle variant-aware resolution versus Maven POM publication metadata/u);
+
+	assert.match(freshnessSkill, /Java or JDK release, GA, LTS, support, JEP, JVM flag, GC/u);
+	assert.match(freshnessSkill, /Oracle\/OpenJDK\/vendor support tracks/u);
+	assert.match(freshnessSkill, /official Java, OpenJDK, vendor, Maven, or Gradle sources/u);
+	assert.match(freshnessSkill, /Do not collapse latest GA, latest LTS, repository runtime/u);
+	assert.match(freshnessSkill, /JVM AOT cache as startup or warmup optimization, not Native Image/u);
+	assert.match(freshnessSkill, /G1 pause targets as goals rather than SLAs/u);
+	assert.match(freshnessSkill, /container memory claims separate across heap, direct buffers, metaspace/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/java-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /Java\/JDK version-gated features are created or changed/u);
+	assert.match(skillIndex, /GA\/LTS confusion/u);
+	assert.match(skillIndex, /Spring transaction leak/u);
+	assert.match(skillIndex, /binary compatibility break/u);
+	assert.match(skillIndex, /executor backpressure gap/u);
+	assert.match(skillIndex, /allocation folklore/u);
+	assert.match(skillIndex, /virtual-thread misuse/u);
+	assert.match(skillIndex, /container OOM/u);
+	assert.match(skillIndex, /Java latest-GA\/LTS\/runtime\/JEP\/preview\/incubator confusion/u);
+	assert.match(routes, /\[routes\."java-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.deepEqual(routeReasons(routes, 'java-code-change'), [
+		'code_change',
+		'behavior_change',
+		'public_api_change',
+		'test_change',
+		'docs_change',
+		'data_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/java-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"java-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.java-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+});
+
+test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-profile traps by Rust version', () => {
+	const rustSkill = readText('.mustflow/skills/rust-code-change/SKILL.md');
+	const templateRustSkill = readText('templates/default/locales/en/.mustflow/skills/rust-code-change/SKILL.md');
+	const freshnessSkill = readText('.mustflow/skills/version-freshness-check/SKILL.md');
+	const templateFreshnessSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(rustSkill, templateRustSkill);
+	assert.equal(freshnessSkill, templateFreshnessSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(rustSkill, /`rust-version`, edition, `rust-toolchain\.toml`/u);
+	assert.match(rustSkill, /API-specific MSRV ledger/u);
+	assert.match(rustSkill, /`cfg_select!`, match `if let` guards, `core::range` items, `Vec::push_mut`/u);
+	assert.match(rustSkill, /`assert_matches!`, and `debug_assert_matches!`/u);
+	assert.match(rustSkill, /guard patterns do not satisfy match exhaustiveness/u);
+	assert.match(rustSkill, /Import it explicitly from `std` or `core`/u);
+	assert.match(rustSkill, /`Arc::make_mut`/u);
+	assert.match(rustSkill, /`LazyLock` for no-argument static lazy values/u);
+	assert.match(rustSkill, /`OnceLock` when boot-time or test-time code supplies the value/u);
+	assert.match(rustSkill, /`Cow<'_, str>`/u);
+	assert.match(rustSkill, /query `HashMap<String, V>` with `&str`/u);
+	assert.match(rustSkill, /`Option::take`, `take_if`, or `as_slice`/u);
+	assert.match(rustSkill, /`ControlFlow`, `try_for_each`, or `try_fold`/u);
+	assert.match(rustSkill, /`spare_capacity_mut`/u);
+	for (const signal of [
+		'ownership ledger before reshaping modules',
+		'derived `Clone` that hides shared mutable state',
+		'`Rc<RefCell<_>>` object graphs',
+		'Use zero-copy only when the lifetime cost is lower than the copy cost',
+		'shape error variants around caller action',
+		'Keep `anyhow` mostly at application, CLI, worker, migration, or top-level '
+			+ 'orchestration boundaries',
+		"Track every spawned task's owner, join/abort policy, panic handling, "
+			+ 'cancellation signal, and shutdown wait point',
+		'prefer bounded channels unless unbounded memory growth is explicitly acceptable',
+	]) {
+		assert.ok(rustSkill.includes(signal), `Rust skill should include ${signal}`);
+	}
+	assert.match(rustSkill, /avoid repeated `String::insert`/u);
+	assert.match(rustSkill, /argument-position `impl Trait` removes caller turbofish control/u);
+	assert.match(rustSkill, /implement `Deref` only for pointer-like wrappers/u);
+	assert.match(rustSkill, /use GATs for borrowing iterator\/view traits/u);
+	assert.match(rustSkill, /`workspace\.package`, `workspace\.dependencies`, `workspace\.lints`/u);
+	assert.match(rustSkill, /`resolver = "2"`/u);
+	assert.match(rustSkill, /Rust 2024 or when `unsafe_op_in_unsafe_fn` is enabled/u);
+	assert.match(rustSkill, /`opt-level`, LTO, `panic`, `codegen-units`, and `strip`/u);
+
+	assert.match(freshnessSkill, /Rust release, toolchain, standard-library, Cargo, edition, MSRV, lint, or target references/u);
+	assert.match(freshnessSkill, /official Rust release notes, standard-library docs, the Cargo Book, Rust Reference, or rustc book/u);
+	assert.match(freshnessSkill, /let chains, match `if let` guards, `cfg_select!`, `assert_matches!`, `core::range`, `Vec::push_mut`/u);
+	assert.match(freshnessSkill, /Rust 2024 `unsafe_op_in_unsafe_fn`/u);
+	assert.match(freshnessSkill, /Use an API-by-API MSRV ledger/u);
+
+	assert.match(skillIndex, /\.mustflow\/skills\/rust-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /shared-state aliasing/u);
+	assert.match(skillIndex, /task or channel leak/u);
+	assert.match(skillIndex, /allocation folklore/u);
+	assert.match(skillIndex, /unsupported Rust feature/u);
+	assert.match(skillIndex, /Rust stable\/nightly\/MSRV confusion/u);
+	assert.match(routes, /\[routes\."rust-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
+	assert.deepEqual(routeReasons(routes, 'rust-code-change'), [
+		'code_change',
+		'behavior_change',
+		'public_api_change',
+		'test_change',
+		'docs_change',
+		'data_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"rust-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+});

@@ -400,7 +400,10 @@ function testDemand(testPath) {
 			...runTests,
 			...dashboardTests,
 			'update.test.js',
-			'package.test.js',
+			'package-command-contracts.test.js',
+			'package-metadata-contracts.test.js',
+			'package-release-workflow-contracts.test.js',
+			'package-template-skill-contracts.test.js',
 		].includes(name)
 	) {
 		return { cpu: 1, io: 3, process: 3, sqlite: 0, git: name === 'check.test.js' ? 1 : 0, className: 'process_io_heavy' };

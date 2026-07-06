@@ -390,7 +390,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-06T02:38:08.894Z"
+last_touched_at = "2026-07-06T06:29:43.875Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -537,6 +537,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.579Z"
 last_touched_at = "2026-06-26T08:13:17.708Z"
+
+[[documents]]
+path = ".mustflow/skills/readme-evidence-gate/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-06T05:16:44.726Z"
+last_touched_at = "2026-07-06T06:29:43.887Z"
 
 [[documents]]
 path = ".mustflow/skills/release-publish-change/SKILL.md"
@@ -1456,7 +1464,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-06T02:38:08.931Z"
+last_touched_at = "2026-07-06T06:29:43.896Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/java-code-change/SKILL.md"
@@ -1601,6 +1609,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-26T04:36:26.617Z"
 last_touched_at = "2026-06-26T08:13:17.760Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/readme-evidence-gate/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-06T05:16:44.746Z"
+last_touched_at = "2026-07-06T06:29:43.904Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/release-publish-change/SKILL.md"
