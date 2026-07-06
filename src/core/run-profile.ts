@@ -1,6 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 
+import { withRunStateUpdateMutex } from './active-run-locks.js';
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const RUN_PROFILE_SCHEMA_VERSION = '1';
@@ -128,7 +129,9 @@ export class RunProfiler {
 		};
 		const profilePath = path.join(input.projectRoot, RUN_PROFILE_DIR, LATEST_RUN_PROFILE);
 
-		writeJsonFileInsideWithoutSymlinks(input.projectRoot, profilePath, profile);
+		withRunStateUpdateMutex(input.projectRoot, () => {
+			writeJsonFileInsideWithoutSymlinks(input.projectRoot, profilePath, profile);
+		});
 	}
 
 	private recordPhase(name: string, startedAtMs: number): void {

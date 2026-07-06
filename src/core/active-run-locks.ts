@@ -26,6 +26,7 @@ const LOCK_ROOT_RELATIVE_PATH = '.mustflow/state/locks';
 export const ACTIVE_RUN_LOCK_ID_ENV = 'MUSTFLOW_ACTIVE_RUN_LOCK_ID';
 const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
+const RUN_STATE_UPDATE_MUTEX_WAIT_MS = 35_000;
 const LOCK_MUTEX_SLEEP_MS = 25;
 const LOCK_MUTEX_SLEEP_BUFFER = new Int32Array(new SharedArrayBuffer(4));
 const LOCK_MUTEX_RECOVERY_DIRECTORY = 'mutex.recovery';
@@ -491,13 +492,14 @@ function recoverStaleMutexWithoutOwner(mutex: string): boolean {
 	}
 }
 
-function acquireMutex(projectRoot: string): () => void {
+function acquireMutex(projectRoot: string, options: { readonly waitMs?: number } = {}): () => void {
 	const root = activeLockRoot(projectRoot);
 	const mutex = activeLockMutexDirectory(projectRoot);
 	const ownerPath = path.join(mutex, 'owner.json');
 	const ownerToken = sha256(`${process.pid}:${Date.now()}:${process.hrtime.bigint()}`);
 	mkdirSync(root, { recursive: true });
 	const startedAt = Date.now();
+	const waitMs = options.waitMs ?? LOCK_MUTEX_WAIT_MS;
 
 	while (true) {
 		try {
@@ -528,7 +530,7 @@ function acquireMutex(projectRoot: string): () => void {
 				throw error;
 			}
 
-			if (Date.now() - startedAt > LOCK_MUTEX_WAIT_MS) {
+			if (Date.now() - startedAt > waitMs) {
 				const owner = readMutexOwner(ownerPath);
 				if (owner) {
 					if (mutexOwnerIsStale(owner) && recoverStaleMutexWithOwner(mutex, ownerPath, owner)) {
@@ -562,6 +564,16 @@ function acquireMutex(projectRoot: string): () => void {
 
 			sleep(LOCK_MUTEX_SLEEP_MS);
 		}
+	}
+}
+
+export function withRunStateUpdateMutex<T>(projectRoot: string, callback: () => T): T {
+	const releaseMutex = acquireMutex(projectRoot, { waitMs: RUN_STATE_UPDATE_MUTEX_WAIT_MS });
+
+	try {
+		return callback();
+	} finally {
+		releaseMutex();
 	}
 }
 

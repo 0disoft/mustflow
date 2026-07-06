@@ -368,6 +368,54 @@ test('keeps performance history bounded and separate from raw run receipts', asy
 	}
 });
 
+test('serializes run state updates through a short shared mutex', async () => {
+	const projectPath = createTempProject();
+	const { withRunStateUpdateMutex } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'active-run-locks.js')).href);
+	const waitingPath = path.join(projectPath, 'waiting-for-state-lock.txt');
+	const markerPath = path.join(projectPath, 'entered-state-lock.txt');
+	const childScript = `
+import { writeFileSync } from 'node:fs';
+import { withRunStateUpdateMutex } from ${JSON.stringify(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'active-run-locks.js')).href)};
+
+writeFileSync(process.argv[2], 'waiting');
+withRunStateUpdateMutex(process.argv[1], () => {
+\twriteFileSync(process.argv[3], 'entered');
+\tconsole.log('entered');
+});
+`;
+	const stdout = [];
+	const stderr = [];
+	let child;
+
+	try {
+		withRunStateUpdateMutex(projectPath, () => {
+			child = spawn(process.execPath, ['--input-type=module', '-e', childScript, projectPath, waitingPath, markerPath], {
+				cwd: projectPath,
+				encoding: 'utf8',
+				stdio: ['ignore', 'pipe', 'pipe'],
+				windowsHide: true,
+			});
+			child.stdout.on('data', (chunk) => stdout.push(chunk.toString()));
+			child.stderr.on('data', (chunk) => stderr.push(chunk.toString()));
+
+			const startedAt = Date.now();
+			while (!existsSync(waitingPath) && Date.now() - startedAt < 2_000) {
+				Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+			}
+			assert.equal(existsSync(waitingPath), true);
+			assert.equal(existsSync(markerPath), false);
+		});
+
+		const closeResult = await waitForClose(child);
+
+		assert.equal(closeResult.status, 0, stderr.join(''));
+		assert.equal(readFileSync(markerPath, 'utf8'), 'entered');
+		assert.match(stdout.join(''), /entered/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps receipt performance fields limited to safe structured values', async () => {
 	const projectPath = createTempProject();
 	const { createRunReceipt } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-receipt.js')).href);

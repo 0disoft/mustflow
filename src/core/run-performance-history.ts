@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { withRunStateUpdateMutex } from './active-run-locks.js';
 import type { RunReceipt, RunReceiptPerformance } from './run-receipt.js';
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
@@ -466,15 +467,17 @@ export function recordRunPerformanceHistory(projectRoot: string, receipt: RunRec
 	}
 
 	try {
-		const historyDir = path.join(projectRoot, PERFORMANCE_HISTORY_DIR);
-		const samplesPath = path.join(historyDir, PERFORMANCE_SAMPLES_FILE);
-		const summaryPath = path.join(historyDir, PERFORMANCE_SUMMARY_FILE);
-		const samples = enforceSizeLimit(pruneSamples([...readSamples(samplesPath), sample], sample.observed_day), sample.observed_day);
-		const samplesFile = createSamplesFile(samples);
-		const summaryFile = createSummary(samples, sample.observed_day);
+		withRunStateUpdateMutex(projectRoot, () => {
+			const historyDir = path.join(projectRoot, PERFORMANCE_HISTORY_DIR);
+			const samplesPath = path.join(historyDir, PERFORMANCE_SAMPLES_FILE);
+			const summaryPath = path.join(historyDir, PERFORMANCE_SUMMARY_FILE);
+			const samples = enforceSizeLimit(pruneSamples([...readSamples(samplesPath), sample], sample.observed_day), sample.observed_day);
+			const samplesFile = createSamplesFile(samples);
+			const summaryFile = createSummary(samples, sample.observed_day);
 
-		writeJsonFileInsideWithoutSymlinks(projectRoot, samplesPath, samplesFile);
-		writeJsonFileInsideWithoutSymlinks(projectRoot, summaryPath, summaryFile);
+			writeJsonFileInsideWithoutSymlinks(projectRoot, samplesPath, samplesFile);
+			writeJsonFileInsideWithoutSymlinks(projectRoot, summaryPath, summaryFile);
+		});
 	} catch {
 		// Performance history is a local optimization hint. A write failure must not affect command execution.
 	}

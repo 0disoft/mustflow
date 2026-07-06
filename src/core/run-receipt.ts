@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
+import { withRunStateUpdateMutex } from './active-run-locks.js';
 import { createStateRunId } from './atomic-state-write.js';
 import type { CommandEnvPolicy } from './command-env.js';
 import { COMMAND_OUTPUT_LIMIT_SCOPE } from './command-output-limits.js';
@@ -534,10 +535,12 @@ export function writeRunReceipt(projectRoot: string, receipt: RunReceipt, policy
 		throw new Error(`Run receipt path must stay inside ${RUN_RECEIPT_DIR}`);
 	}
 
-	writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
-	writeJsonFileInsideWithoutSymlinks(projectRoot, latestPath, receipt);
+	withRunStateUpdateMutex(projectRoot, () => {
+		writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
+		writeJsonFileInsideWithoutSymlinks(projectRoot, latestPath, receipt);
 
-	if (policy) {
-		updateRunReceiptState(projectRoot, policy);
-	}
+		if (policy) {
+			updateRunReceiptState(projectRoot, policy);
+		}
+	});
 }
