@@ -261,6 +261,8 @@ npx mf init --set git.auto_commit=true
 - `--yes`: 질문 없이 영어 기본 초기 설정을 사용합니다.
 - `--set`: 설치 중 허용된 설정을 변경합니다. 지원하는 키는 `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`, `git.commit_message.*`, `reporting.commit_suggestion.enabled`, `language.memory.summary`, `release.versioning.*`, `verification.selection.*`, `testing.authoring.*`입니다.  
   `git.commit_message.style`에는 `conventional`, `descriptive`, `gitmoji`를 지정할 수 있으며, `gitmoji`는 제안 메시지 형식만 변경합니다.  
+  `git.commit_message.gitmoji.map=conventional_default`는 conventional 타입과 Gitmoji 접두어의 매핑을 선언합니다.  
+  `git.commit_message.body.template=summary_validation`는 커밋 본문에 변경 요약과 검증 근거를 담도록 요청하며, `git.commit_message.body.require_validation_line`은 `true` 또는 `false`를 받습니다.  
   `git.commit_message.language`에는 `preserve_existing`, `agent_response`, `docs`를 쓰거나 `ja`, `de`, `pt-BR` 같은 로케일 태그를 직접 지정할 수 있습니다.  
   `testing.authoring.new_test_policy`에는 `evidence_required`, `manual_approval`, `broad`를 지정할 수 있습니다.
 - `--product-source-locale`, `--product-locale`: 제품 문자열의 기준 언어와 대상 로케일입니다.

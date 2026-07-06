@@ -75,6 +75,16 @@ include_body = "when_non_trivial"
 split_when_multiple_concerns = true
 avoid_sensitive_details = true
 
+[git.commit_message.gitmoji]
+# conventional_default maps common conventional types to Gitmoji prefixes:
+# feat=✨, fix=🐛, docs=📝, refactor=♻️, test=✅, chore/build/config=🔧.
+map = "conventional_default"
+
+[git.commit_message.body]
+# summary_validation keeps suggested bodies concise and evidence-backed.
+template = "summary_validation"
+require_validation_line = true
+
 [reporting.commit_suggestion]
 enabled = true
 when = "files_changed"

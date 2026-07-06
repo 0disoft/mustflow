@@ -553,6 +553,15 @@ export const frMessages = {
     "Ajoute un corps seulement quand le changement demande plus de contexte que le sujet.",
   "dashboard.setting.git.commit_message.include_body.description.always":
     "Ajoute toujours un corps aux suggestions de message de commit.",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Carte Gitmoji",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "Associe les types conventional courants aux préfixes Gitmoji : feat, fix, docs, refactor, test et chore.",
+  "dashboard.setting.git.commit_message.body.template": "Modèle de corps de commit",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "Utilise un corps concis avec ce qui a changé, pourquoi quand c'est utile, et les preuves de validation.",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "Exiger une ligne de validation",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "Demande aux corps suggérés d'inclure les contrôles ou preuves utilisés pour valider le changement.",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "Suggérer des commits séparés",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "Éviter les détails sensibles",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description":

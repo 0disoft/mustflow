@@ -178,6 +178,11 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(preferences, /auto_stage = false/);
 		assert.match(preferences, /\[git\.commit_message\]/);
 		assert.match(preferences, /suggest = "when_changes_made"/);
+		assert.match(preferences, /\[git\.commit_message\.gitmoji\]/);
+		assert.match(preferences, /map = "conventional_default"/);
+		assert.match(preferences, /\[git\.commit_message\.body\]/);
+		assert.match(preferences, /template = "summary_validation"/);
+		assert.match(preferences, /require_validation_line = true/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]/);
 		assert.match(preferences, /\[testing\.authoring\]/);
 		assert.match(preferences, /new_test_policy = "evidence_required"/);

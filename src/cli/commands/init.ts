@@ -15,7 +15,12 @@ import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
 import { formatCliOptionParseError, hasCliOptionToken, parseCliOptions, type CliOptionSpec } from '../lib/option-parser.js';
-import { isCommitMessageStyle, isTestAuthoringPolicy } from '../lib/preferences-options.js';
+import {
+	isCommitMessageBodyTemplate,
+	isCommitMessageGitmojiMap,
+	isCommitMessageStyle,
+	isTestAuthoringPolicy,
+} from '../lib/preferences-options.js';
 import { discoverNestedRepositories, getRepoMapConfig } from '../lib/repo-map.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
@@ -321,6 +326,50 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 			section: 'git.commit_message',
 			field: 'include_body',
 			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.gitmoji.map') {
+		if (!isCommitMessageGitmojiMap(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message.gitmoji',
+			field: 'map',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.body.template') {
+		if (!isCommitMessageBodyTemplate(value)) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message.body',
+			field: 'template',
+			renderedValue: tomlString(value),
+		};
+	}
+
+	if (key === 'git.commit_message.body.require_validation_line') {
+		const parsed = parseBoolean(value);
+
+		if (parsed === undefined) {
+			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
+			return undefined;
+		}
+
+		return {
+			key,
+			section: 'git.commit_message.body',
+			field: 'require_validation_line',
+			renderedValue: String(parsed),
 		};
 	}
 

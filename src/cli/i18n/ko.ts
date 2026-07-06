@@ -556,6 +556,15 @@ export const koMessages = {
     "변경 내용을 제목만으로 설명하기 어려울 때만 본문을 함께 제안합니다.",
   "dashboard.setting.git.commit_message.include_body.description.always":
     "항상 커밋 메시지 본문을 넣습니다.",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Gitmoji 매핑",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "conventional 타입을 Gitmoji 접두어에 연결합니다: feat=✨, fix=🐛, docs=📝, refactor=♻️, test=✅, chore=🔧.",
+  "dashboard.setting.git.commit_message.body.template": "커밋 본문 템플릿",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "무엇을 바꿨는지, 필요하면 왜 바꿨는지, 어떤 검증을 했는지 간결한 본문으로 제안합니다.",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "검증 줄 요구",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "커밋 본문 제안에 실행한 검사나 검증 근거를 포함하게 합니다.",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "여러 주제면 커밋 분리 제안",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "민감한 세부 정보 제외",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description":

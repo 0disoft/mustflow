@@ -553,6 +553,15 @@ export const hiMessages = {
     "body तभी जोड़ें जब बदलाव को subject line से अधिक संदर्भ चाहिए।",
   "dashboard.setting.git.commit_message.include_body.description.always":
     "commit message सुझावों में हमेशा body जोड़ें।",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Gitmoji map",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "सामान्य conventional types को Gitmoji prefixes से जोड़ें: feat, fix, docs, refactor, test, और chore.",
+  "dashboard.setting.git.commit_message.body.template": "Commit body template",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "क्या बदला, उपयोगी होने पर क्यों बदला, और validation evidence के साथ छोटा body इस्तेमाल करें.",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "Validation line आवश्यक करें",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "सुझाए गए commit bodies में बदलाव validate करने वाली checks या evidence शामिल करवाएँ.",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "अलग commits सुझाएँ",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "संवेदनशील विवरण से बचें",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description":

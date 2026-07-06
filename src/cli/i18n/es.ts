@@ -553,6 +553,15 @@ export const esMessages = {
     "Incluye cuerpo solo cuando el cambio necesita más contexto que el asunto.",
   "dashboard.setting.git.commit_message.include_body.description.always":
     "Incluye siempre un cuerpo en las sugerencias de mensaje de commit.",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Mapa Gitmoji",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "Mapea tipos conventional comunes a prefijos Gitmoji: feat, fix, docs, refactor, test y chore.",
+  "dashboard.setting.git.commit_message.body.template": "Plantilla del cuerpo de commit",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "Usa un cuerpo conciso con qué cambió, por qué cambió cuando sea útil y evidencia de validación.",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "Exigir línea de validación",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "Pide que los cuerpos sugeridos incluyan las comprobaciones o evidencias usadas para validar el cambio.",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "Sugerir commits separados",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "Evitar detalles sensibles",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description":

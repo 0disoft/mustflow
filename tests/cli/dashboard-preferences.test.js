@@ -388,6 +388,22 @@ test('dashboard serves and updates safe preferences', async () => {
 		);
 		assert.match(
 			html,
+			/dashboard\.setting\.git\.commit_message\.gitmoji\.map\.description\.conventional_default":"Map conventional types to Gitmoji prefixes/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.git\.commit_message\.gitmoji\.map\.description\.conventional_default":"conventional 타입을 Gitmoji 접두어/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.git\.commit_message\.body\.template\.description\.summary_validation":"Use a concise body with what changed/,
+		);
+		assert.match(
+			html,
+			/dashboard\.setting\.git\.commit_message\.body\.require_validation_line\.description":"커밋 본문 제안에 실행한 검사나 검증 근거/,
+		);
+		assert.match(
+			html,
 			/dashboard\.setting\.git\.commit_message\.avoid_sensitive_details\.description":"Avoid secrets, credentials, personal data, and private incident details/,
 		);
 		assert.match(
@@ -641,6 +657,18 @@ test('dashboard serves and updates safe preferences', async () => {
 				?.options.includes('gitmoji'),
 		);
 		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'git.commit_message.gitmoji.map')?.value,
+			'conventional_default',
+		);
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'git.commit_message.body.template')?.value,
+			'summary_validation',
+		);
+		assert.equal(
+			preferences.settings.find((setting) => setting.id === 'git.commit_message.body.require_validation_line')?.value,
+			true,
+		);
+		assert.equal(
 			preferences.settings.find((setting) => setting.id === 'git.auto_push')?.lockedReason,
 			'dashboard.locked.git.auto_push',
 		);
@@ -665,6 +693,36 @@ test('dashboard serves and updates safe preferences', async () => {
 			body: JSON.stringify({ updates: [{ id: 'git.commit_message.language', value: 'not a language' }] }),
 		});
 		assert.equal(invalidLanguage.status, 400);
+
+		const invalidGitmojiMap = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'git.commit_message.gitmoji.map', value: 'random' }] }),
+		});
+		assert.equal(invalidGitmojiMap.status, 400);
+
+		const invalidBodyTemplate = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'git.commit_message.body.template', value: 'essay' }] }),
+		});
+		assert.equal(invalidBodyTemplate.status, 400);
+
+		const invalidValidationLine = await fetch(new URL('/api/preferences', info.url), {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json',
+				'x-mustflow-dashboard-token': token,
+			},
+			body: JSON.stringify({ updates: [{ id: 'git.commit_message.body.require_validation_line', value: 'yes' }] }),
+		});
+		assert.equal(invalidValidationLine.status, 400);
 
 		const invalidVerificationStrategy = await fetch(new URL('/api/preferences', info.url), {
 			method: 'POST',
@@ -718,6 +776,9 @@ test('dashboard serves and updates safe preferences', async () => {
 					{ id: 'git.commit_message.style', value: 'gitmoji' },
 					{ id: 'git.commit_message.language', value: 'pt-BR' },
 					{ id: 'git.commit_message.max_suggestions', value: 3 },
+					{ id: 'git.commit_message.gitmoji.map', value: 'conventional_default' },
+					{ id: 'git.commit_message.body.template', value: 'summary_validation' },
+					{ id: 'git.commit_message.body.require_validation_line', value: false },
 					{ id: 'verification.selection.strategy', value: 'targeted' },
 					{ id: 'verification.selection.skip_low_risk_code_full_test', value: false },
 					{ id: 'verification.selection.report_skipped', value: false },
@@ -740,6 +801,9 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(updatedPreferences, /style = "gitmoji"/);
 		assert.match(updatedPreferences, /language = "pt-BR"/);
 		assert.match(updatedPreferences, /max_suggestions = 3/);
+		assert.match(updatedPreferences, /\[git\.commit_message\.gitmoji\]\r?\n(?:.*\r?\n)*?map = "conventional_default"/);
+		assert.match(updatedPreferences, /\[git\.commit_message\.body\]\r?\n(?:.*\r?\n)*?template = "summary_validation"/);
+		assert.match(updatedPreferences, /\[git\.commit_message\.body\]\r?\n(?:.*\r?\n)*?require_validation_line = false/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?strategy = "targeted"/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?skip_low_risk_code_full_test = false/);
 		assert.match(updatedPreferences, /\[verification\.selection\]\r?\n(?:.*\r?\n)*?report_skipped = false/);

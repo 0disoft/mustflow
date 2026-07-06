@@ -585,6 +585,13 @@ test('fails when preferences configuration fields are invalid', () => {
 				'split_when_multiple_concerns = "yes"',
 				'avoid_sensitive_details = "yes"',
 				'',
+				'[git.commit_message.gitmoji]',
+				'map = "random"',
+				'',
+				'[git.commit_message.body]',
+				'template = "essay"',
+				'require_validation_line = "yes"',
+				'',
 				'[reporting.commit_suggestion]',
 				'enabled = "yes"',
 				'when = 1',
@@ -657,6 +664,9 @@ test('fails when preferences configuration fields are invalid', () => {
 		assert.match(result.stderr, /\[preferences\.git\]\.auto_stage must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.git\]\.auto_commit must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.git\.commit_message\]\.max_suggestions must be a positive integer/);
+		assert.match(result.stderr, /\[preferences\.git\.commit_message\.gitmoji\]\.map must be "conventional_default"/);
+		assert.match(result.stderr, /\[preferences\.git\.commit_message\.body\]\.template must be "summary_validation"/);
+		assert.match(result.stderr, /\[preferences\.git\.commit_message\.body\]\.require_validation_line must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.reporting\.commit_suggestion\]\.enabled must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.impact_check must be a boolean/);
 		assert.match(result.stderr, /\[preferences\.release\.versioning\]\.suggest_bump must be a boolean/);

@@ -544,6 +544,15 @@ export const zhMessages = {
   "dashboard.setting.git.commit_message.include_body.description.when_non_trivial":
     "只有当标题行不足以说明变更时，才建议提交正文。",
   "dashboard.setting.git.commit_message.include_body.description.always": "始终在建议中包含提交正文。",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Gitmoji 映射",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "将常见 conventional 类型映射到 Gitmoji 前缀：feat、fix、docs、refactor、test 和 chore。",
+  "dashboard.setting.git.commit_message.body.template": "提交正文模板",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "使用简洁正文说明改了什么、必要时说明原因，并包含验证证据。",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "要求验证行",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "要求建议的提交正文包含用于验证改动的检查或证据。",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "建议拆分提交",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "避免敏感细节",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description": "避免写入密钥、凭据、个人数据和非公开事故细节。",

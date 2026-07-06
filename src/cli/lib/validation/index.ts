@@ -63,6 +63,8 @@ import {
 	ALLOWED_APPROVAL_GATES,
 	ALLOWED_BUDGET_LIMIT_ACTIONS,
 	ALLOWED_CAPABILITY_STATES,
+	ALLOWED_COMMIT_MESSAGE_BODY_TEMPLATES,
+	ALLOWED_COMMIT_MESSAGE_GITMOJI_MAPS,
 	ALLOWED_COMMIT_MESSAGE_STYLES,
 	ALLOWED_COMPACTION_CATEGORIES,
 	ALLOWED_COMPACTION_LONG_LIMIT_ACTIONS,
@@ -783,6 +785,42 @@ function validatePreferencesConfig(preferencesToml: TomlTable | undefined, issue
 				'[preferences.git.commit_message].avoid_sensitive_details',
 				issues,
 			);
+			const commitMessageGitmoji = validateNestedTable(
+				commitMessage,
+				'gitmoji',
+				'[preferences.git.commit_message.gitmoji]',
+				issues,
+			);
+			if (commitMessageGitmoji) {
+				validateAllowedStringField(
+					commitMessageGitmoji,
+					'map',
+					'[preferences.git.commit_message.gitmoji].map',
+					ALLOWED_COMMIT_MESSAGE_GITMOJI_MAPS,
+					issues,
+				);
+			}
+			const commitMessageBody = validateNestedTable(
+				commitMessage,
+				'body',
+				'[preferences.git.commit_message.body]',
+				issues,
+			);
+			if (commitMessageBody) {
+				validateAllowedStringField(
+					commitMessageBody,
+					'template',
+					'[preferences.git.commit_message.body].template',
+					ALLOWED_COMMIT_MESSAGE_BODY_TEMPLATES,
+					issues,
+				);
+				validateBooleanField(
+					commitMessageBody,
+					'require_validation_line',
+					'[preferences.git.commit_message.body].require_validation_line',
+					issues,
+				);
+			}
 		}
 	}
 

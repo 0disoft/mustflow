@@ -286,6 +286,8 @@ npx mf init --set git.auto_commit=true
 - `--yes`: prompts के बिना डिफ़ॉल्ट English init सेटिंग्स का उपयोग करता है।  
 - `--set`: इंस्टॉलेशन के दौरान अनुमत प्रेफरेंस सेट करता है। समर्थित keys हैं `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`, `git.commit_message.*`, `reporting.commit_suggestion.enabled`, `language.memory.summary`, `release.versioning.*`, `verification.selection.*`, और `testing.authoring.*`।  
   `git.commit_message.style` में `conventional`, `descriptive`, या `gitmoji` दिया जा सकता है; `gitmoji` केवल सुझाए गए संदेश प्रारूप को बदलता है।  
+  `git.commit_message.gitmoji.map=conventional_default` conventional types से Gitmoji prefixes की mapping घोषित करता है।  
+  `git.commit_message.body.template=summary_validation` body में बदलाव का सार और validation evidence मांगता है; `git.commit_message.body.require_validation_line` `true` या `false` लेता है।  
   `git.commit_message.language` में `preserve_existing`, `agent_response`, `docs`, या `ja`, `de`, `pt-BR` जैसे locale टैग दिए जा सकते हैं।  
   `testing.authoring.new_test_policy` में `evidence_required`, `manual_approval`, या `broad` दिया जा सकता है।  
 - `--product-source-locale`, `--product-locale`: उपयोगकर्ता-सामना करने वाली उत्पाद स्ट्रिंग के लिए स्रोत और लक्ष्य लोकेल।  

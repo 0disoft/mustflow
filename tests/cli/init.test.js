@@ -290,6 +290,12 @@ test('applies safe preference overrides from repeated set options', async () => 
 			'--set',
 			'git.commit_message.include_body=always',
 			'--set',
+			'git.commit_message.gitmoji.map=conventional_default',
+			'--set',
+			'git.commit_message.body.template=summary_validation',
+			'--set',
+			'git.commit_message.body.require_validation_line=false',
+			'--set',
 			'git.commit_message.split_when_multiple_concerns=false',
 			'--set',
 			'reporting.commit_suggestion.enabled=false',
@@ -326,6 +332,9 @@ test('applies safe preference overrides from repeated set options', async () => 
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "pt-BR"/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?max_suggestions = 4/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?include_body = "always"/);
+		assert.match(preferences, /\[git\.commit_message\.gitmoji\]\n(?:.*\n)*?map = "conventional_default"/);
+		assert.match(preferences, /\[git\.commit_message\.body\]\n(?:.*\n)*?template = "summary_validation"/);
+		assert.match(preferences, /\[git\.commit_message\.body\]\n(?:.*\n)*?require_validation_line = false/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?split_when_multiple_concerns = false/);
 		assert.match(preferences, /\[reporting\.commit_suggestion\]\n(?:.*\n)*?enabled = false/);
 		assert.match(preferences, /\[release\.versioning\]\n(?:.*\n)*?suggest_bump = false/);
@@ -353,6 +362,9 @@ test('rejects unsupported init preference overrides', async () => {
 		['git.commit_message.style=emoji', /Invalid value for git\.commit_message\.style: emoji/],
 		['git.commit_message.max_suggestions=6', /Invalid value for git\.commit_message\.max_suggestions: 6/],
 		['git.commit_message.include_body=sometimes', /Invalid value for git\.commit_message\.include_body: sometimes/],
+		['git.commit_message.gitmoji.map=random', /Invalid value for git\.commit_message\.gitmoji\.map: random/],
+		['git.commit_message.body.template=essay', /Invalid value for git\.commit_message\.body\.template: essay/],
+		['git.commit_message.body.require_validation_line=yes', /Invalid value for git\.commit_message\.body\.require_validation_line: yes/],
 		['release.versioning.auto_bump=maybe', /Invalid value for release\.versioning\.auto_bump: maybe/],
 		['verification.selection.strategy=always_full', /Invalid value for verification\.selection\.strategy: always_full/],
 		['verification.selection.skip_low_risk_code_full_test=maybe', /Invalid value for verification\.selection\.skip_low_risk_code_full_test: maybe/],

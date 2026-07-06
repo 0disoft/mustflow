@@ -261,6 +261,8 @@ npx mf init --set git.auto_commit=true
 - `--yes` : utilise les paramètres initiaux anglais par défaut sans poser de questions.
 - `--set` : définit une préférence autorisée pendant l’installation. Les clés prises en charge sont `git.auto_stage`, `git.auto_commit`, `git.auto_push=false`, `git.commit_message.*`, `reporting.commit_suggestion.enabled`, `language.memory.summary`, `release.versioning.*`, `verification.selection.*` et `testing.authoring.*`.
   - `git.commit_message.style` accepte `conventional`, `descriptive` ou `gitmoji` ; `gitmoji` modifie uniquement le format du message suggéré.
+  - `git.commit_message.gitmoji.map=conventional_default` déclare la correspondance des types conventional vers les préfixes Gitmoji.
+  - `git.commit_message.body.template=summary_validation` demande un corps qui résume le changement et les preuves de validation ; `git.commit_message.body.require_validation_line` accepte `true` ou `false`.
   - `git.commit_message.language` accepte `preserve_existing`, `agent_response`, `docs` ou une étiquette de langue comme `ja`, `de` ou `pt-BR`.
   - `testing.authoring.new_test_policy` accepte `evidence_required`, `manual_approval` ou `broad`.
 - `--product-source-locale`, `--product-locale` : locales source et cible pour les chaînes de produit destinées aux utilisateurs.

@@ -551,6 +551,15 @@ export const enMessages = {
     "Include a body only when the change needs more context than the subject line.",
   "dashboard.setting.git.commit_message.include_body.description.always":
     "Always include a commit message body in suggestions.",
+  "dashboard.setting.git.commit_message.gitmoji.map": "Gitmoji map",
+  "dashboard.setting.git.commit_message.gitmoji.map.description.conventional_default":
+    "Map conventional types to Gitmoji prefixes: feat=✨, fix=🐛, docs=📝, refactor=♻️, test=✅, chore=🔧.",
+  "dashboard.setting.git.commit_message.body.template": "Commit body template",
+  "dashboard.setting.git.commit_message.body.template.description.summary_validation":
+    "Use a concise body with what changed, why it changed when useful, and validation evidence.",
+  "dashboard.setting.git.commit_message.body.require_validation_line": "Require validation line",
+  "dashboard.setting.git.commit_message.body.require_validation_line.description":
+    "Ask suggested commit bodies to include the checks or evidence used to validate the change.",
   "dashboard.setting.git.commit_message.split_when_multiple_concerns": "Suggest split commits",
   "dashboard.setting.git.commit_message.avoid_sensitive_details": "Avoid sensitive details",
   "dashboard.setting.git.commit_message.avoid_sensitive_details.description":

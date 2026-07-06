@@ -263,6 +263,8 @@ npx mf init --set git.auto_commit=true
 - `--yes`：无提示使用英文默认设置。
 - `--set`：安装过程中设置允许的偏好项。支持键包括 `git.auto_stage`、`git.auto_commit`、`git.auto_push=false`、`git.commit_message.*`、`reporting.commit_suggestion.enabled`、`language.memory.summary`、`release.versioning.*`、`verification.selection.*` 和 `testing.authoring.*`。  
   `git.commit_message.style` 可选 `conventional`、`descriptive` 或 `gitmoji`，其中 `gitmoji` 仅改变建议消息格式。  
+  `git.commit_message.gitmoji.map=conventional_default` 声明 conventional 类型到 Gitmoji 前缀的映射。  
+  `git.commit_message.body.template=summary_validation` 要求正文包含变更摘要和验证证据；`git.commit_message.body.require_validation_line` 接受 `true` 或 `false`。  
   `git.commit_message.language` 可选 `preserve_existing`、`agent_response`、`docs`，也可直接指定如 `ja`、`de`、`pt-BR` 等 locale 标签。  
   `testing.authoring.new_test_policy` 可选 `evidence_required`、`manual_approval` 或 `broad`。
 - `--product-source-locale`、`--product-locale`：面向用户的产品字符串的源区域设置和目标区域设置。

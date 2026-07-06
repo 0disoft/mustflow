@@ -5,7 +5,12 @@ import { isRecord, type TomlTable } from './command-contract.js';
 import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './filesystem.js';
 import { isLocaleTag } from './locale-tags.js';
 import { ensureManifestLockTargetSafe, markManifestLockFileCustomized } from './manifest-lock.js';
-import { COMMIT_MESSAGE_STYLES, TEST_AUTHORING_POLICIES } from './preferences-options.js';
+import {
+	COMMIT_MESSAGE_BODY_TEMPLATES,
+	COMMIT_MESSAGE_GITMOJI_MAPS,
+	COMMIT_MESSAGE_STYLES,
+	TEST_AUTHORING_POLICIES,
+} from './preferences-options.js';
 import { parseTomlText } from './toml.js';
 
 export type DashboardSettingKind = 'boolean' | 'select' | 'number';
@@ -99,6 +104,29 @@ export const DASHBOARD_PREFERENCE_SETTINGS: readonly DashboardSettingDefinition[
 		kind: 'select',
 		fallback: 'when_non_trivial',
 		options: ['never', 'when_non_trivial', 'always'],
+	},
+	{
+		id: 'git.commit_message.gitmoji.map',
+		path: ['git', 'commit_message', 'gitmoji', 'map'],
+		label: 'Gitmoji map',
+		kind: 'select',
+		fallback: 'conventional_default',
+		options: COMMIT_MESSAGE_GITMOJI_MAPS,
+	},
+	{
+		id: 'git.commit_message.body.template',
+		path: ['git', 'commit_message', 'body', 'template'],
+		label: 'Commit body template',
+		kind: 'select',
+		fallback: 'summary_validation',
+		options: COMMIT_MESSAGE_BODY_TEMPLATES,
+	},
+	{
+		id: 'git.commit_message.body.require_validation_line',
+		path: ['git', 'commit_message', 'body', 'require_validation_line'],
+		label: 'Require validation line',
+		kind: 'boolean',
+		fallback: true,
 	},
 	{
 		id: 'git.commit_message.split_when_multiple_concerns',
