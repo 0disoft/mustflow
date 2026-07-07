@@ -432,6 +432,9 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(securitySkill, /bounded parser, token scanner, structured parser/u);
 	assert.match(securitySkill, /lockfile CVEs/u);
 	assert.match(securitySkill, /vulnerable package version no longer appears in the resolved graph/u);
+	assert.match(securitySkill, /prototype-pollution sinks/u);
+	assert.match(securitySkill, /value parameter binding does not protect identifier positions/u);
+	assert.match(securitySkill, /sparse arrays, giant indexes, deep objects/u);
 	assert.match(regressionSkill, /BOLA\/IDOR-style/u);
 	assert.match(regressionSkill, /SSRF-style private network/u);
 	assert.match(regressionSkill, /CSRF-style state change/u);

@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 24
+revision: 25
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -200,6 +200,9 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 35. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit.
 36. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
     - For lockfile CVEs, inspect the manifest and lockfile together. Identify the direct parent that keeps the vulnerable transitive package in the graph, update the narrowest direct dependency or override needed to reach the fixed range, and confirm the vulnerable package version no longer appears in the resolved graph before claiming the alert is fixed.
+    - For object merge, defaulting, or configuration merge advisories, trace whether parsed request bodies, database records, uploaded JSON, repository config, or provider payloads can become the first or highest-priority merge input. Treat `__proto__`, `constructor`, and `prototype` keys, inherited polluted values, and default-overwrite behavior as prototype-pollution sinks; prove the patched dependency is resolved or add a regression payload that cannot override trusted defaults.
+    - For ORM or SQL-builder advisories around identifiers, aliases, dynamic sorting, report columns, CTE names, or `.as()`-style APIs, remember that value parameter binding does not protect identifier positions. Runtime input must map through an allowlist of known columns or aliases, and dialect quote delimiters inside identifiers must be escaped by the library before the identifier is wrapped.
+    - For serializer or deserializer advisories, treat sparse arrays, giant indexes, deep objects, cyclic references, and attacker-controlled serialized payloads as allocation and CPU sinks. Bound serialized size, array length or highest index, nesting depth, and parse source trust before claiming a parser-only upgrade removes the availability risk.
     - For advisories involving development tools such as Vite, Vitest UI, browser-mode test servers, Storybook, docs preview, asset servers, or framework dev servers, do not dismiss the issue merely because the package is a devDependency. Check whether scripts, docs, Docker, Codespaces, CI previews, tunnels, or config bind the server to a non-localhost host, widen file-serving roots, disable deny lists, or expose privileged read, write, rerun, snapshot, attachment, or execute APIs.
 37. For deployment settings, check debug mode, sample admin accounts, default credentials, public admin panels, open metrics endpoints, public storage, root container users, HTTPS enforcement, and exposed GraphQL or development consoles.
 38. For runtime and framework security updates, check that supported versions are documented, end-of-life versions are rejected, dependency locks exist where appropriate, security patches can be tested and deployed quickly, and rollback or redeploy can happen without manual dashboard memory. Do not treat a fashionable or high-performance runtime as safe unless the patch path is operationally credible.
