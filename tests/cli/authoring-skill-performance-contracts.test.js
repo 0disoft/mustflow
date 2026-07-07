@@ -39,6 +39,11 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(localSkill, /shared_ptr/u);
 	assert.match(localSkill, /Rc/u);
 	assert.match(localSkill, /weak references/u);
+	assert.match(localSkill, /Do not add object pools as a default leak or GC fix/u);
+	assert.match(localSkill, /use `WeakMap` or `WeakSet` for metadata attached to DOM nodes/u);
+	assert.match(localSkill, /allocation and GC/u);
+	assert.match(localSkill, /`--trace-gc`/u);
+	assert.match(localSkill, /Separate allocation churn from retained memory/u);
 	assert.match(localSkill, /first invalid access/u);
 	assert.match(localSkill, /first sanitizer/u);
 	assert.match(localSkill, /watchpoint, reverse-debugging, core dump/u);
@@ -66,7 +71,7 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(manifest, /"\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md"/u);
 	assert.match(manifest, /"memory-lifetime-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 3/u);
 });
 
 test('desktop memory footprint review separates resident numbers from owned memory', () => {
@@ -173,22 +178,50 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(localSkill, /ORM relation access/u);
 	assert.match(localSkill, /multi-pass collection code/u);
 	assert.match(localSkill, /hidden quadratic lookup/u);
+	assert.match(localSkill, /do not claim `Map` or `Set` is guaranteed O\(1\)/u);
+	assert.match(localSkill, /average sublinear/u);
+	assert.match(localSkill, /Use `Set` for membership or insertion-order scalar dedupe/u);
 	assert.match(localSkill, /`SELECT \*`/u);
 	assert.match(localSkill, /`OFFSET \.\.\. LIMIT \.\.\.`/u);
 	assert.match(localSkill, /transaction and lock hold time/u);
 	assert.match(localSkill, /Sequential `await`/u);
 	assert.match(localSkill, /`Promise\.all` over thousands/u);
+	assert.match(localSkill, /`async` does not make CPU work free/u);
+	assert.match(localSkill, /Large `response\.json\(\)` parsing/u);
+	assert.match(localSkill, /Promise aggregation strategy/u);
+	assert.match(localSkill, /`Promise\.all` fails fast without cancelling siblings/u);
 	assert.match(localSkill, /cache stampede/u);
 	assert.match(localSkill, /Check allocation and GC churn/u);
+	assert.match(localSkill, /syntax preference into the first fight/u);
+	assert.match(localSkill, /sort comparators, DOM layout, GC, sync APIs/u);
+	assert.match(localSkill, /JavaScript hot arrays should stay dense and type-stable/u);
+	assert.match(localSkill, /Hot JavaScript objects should keep stable field order/u);
+	assert.match(localSkill, /Array built-in borrowing on `arguments`, `NodeList`, `HTMLCollection`/u);
+	assert.match(localSkill, /Check `Array\.prototype\.sort` comparators/u);
+	assert.match(localSkill, /`localeCompare` with options/u);
+	assert.match(localSkill, /Object pooling is not a default allocation fix/u);
 	assert.match(localSkill, /`filter\(\)\.map\(\)\.reduce\(\)`/u);
 	assert.match(localSkill, /`split\(\)\.map\(trim\)`/u);
 	assert.match(localSkill, /repeated object spread while building indexes/u);
 	assert.match(localSkill, /`Object\.values`/u);
 	assert.match(localSkill, /heap growth/u);
 	assert.match(localSkill, /GC pause/u);
+	assert.match(localSkill, /Runtime-pressure evidence/u);
+	assert.match(localSkill, /flame graph/u);
+	assert.match(localSkill, /DevTools Performance or Memory/u);
+	assert.match(localSkill, /event-loop utilization/u);
+	assert.match(localSkill, /p95 or p99 event-loop delay/u);
+	assert.match(localSkill, /separate CPU, event-loop delay, and I\/O wait/u);
+	assert.match(localSkill, /`eventLoopUtilization` is not CPU percent/u);
+	assert.match(localSkill, /large JSON parse or stringify/u);
+	assert.match(localSkill, /REDOS-prone regexes/u);
+	assert.match(localSkill, /recursive `process\.nextTick\(\)`/u);
+	assert.match(localSkill, /Worker threads fit CPU-heavy JavaScript/u);
+	assert.match(localSkill, /stream backpressure gaps/u);
 	assert.match(localSkill, /`JSON\.parse\(JSON\.stringify\(\.\.\.\)\)`/u);
 	assert.match(localSkill, /retry and timeout multiplication/u);
 	assert.match(localSkill, /p95 or p99/u);
+	assert.match(localSkill, /V8-specific until Safari, Firefox/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md/u);
 	assert.match(skillIndex, /Code review or implementation needs hot-path triage/u);
 	assert.match(skillIndex, /repeated I\/O in loops, N\+1 query, multi-pass array traversal/u);
@@ -206,7 +239,7 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(manifest, /"\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"hot-path-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 6/u);
 });
 
 test('api request performance review counts per-request fan-out and latency evidence', () => {
@@ -314,6 +347,8 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(localSkill, /Image, video, and iframe ledger/u);
 	assert.match(localSkill, /Third-party script ledger/u);
 	assert.match(localSkill, /JavaScript bundle and hydration ledger/u);
+	assert.match(localSkill, /gzip or brotli transfer size/u);
+	assert.match(localSkill, /parse\/compile\/evaluate cost/u);
 	assert.match(localSkill, /Data and HTML delivery ledger/u);
 	assert.match(localSkill, /Cache, compression, and resource-hint ledger/u);
 	assert.match(localSkill, /Main-thread and long-task ledger/u);
@@ -331,6 +366,9 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(localSkill, /Gate third-party scripts/u);
 	assert.match(localSkill, /Keep `use client` boundaries narrow/u);
 	assert.match(localSkill, /Lazy-load heavy interactive widgets/u);
+	assert.match(localSkill, /Do not report gzip-only JavaScript wins as first-render wins/u);
+	assert.match(localSkill, /initial parse, compile, evaluate, hydration, and long tasks/u);
+	assert.match(localSkill, /Resource Timing/u);
 	assert.match(localSkill, /Do not fetch first-view data in a client effect/u);
 	assert.match(localSkill, /Stream HTML and shell early/u);
 	assert.match(localSkill, /Split static shells from dynamic holes/u);
@@ -357,7 +395,7 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(manifest, /"\.mustflow\/skills\/web-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"web-render-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 2/u);
 });
 
 test('core web vitals field review treats CWV as real-user percentile operations', () => {
@@ -511,7 +549,15 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(localSkill, /Framework boundary ledger/u);
 	assert.match(localSkill, /Heavy-feature ledger/u);
 	assert.match(localSkill, /Polyfill and target ledger/u);
+	assert.match(localSkill, /Measurement ledger/u);
+	assert.match(localSkill, /initial JavaScript transfer/u);
+	assert.match(localSkill, /parse, compile, evaluate/u);
+	assert.match(localSkill, /route-specific Chrome Coverage/u);
+	assert.match(localSkill, /Resource Timing/u);
+	assert.match(localSkill, /chunk hash stability/u);
 	assert.match(localSkill, /first-route JavaScript/u);
+	assert.match(localSkill, /Budget execution, not only gzip/u);
+	assert.match(localSkill, /Compare analyzer receipts with coverage evidence/u);
 	assert.match(localSkill, /failing bundle budget/u);
 	assert.match(localSkill, /non-ESM packages/u);
 	assert.match(localSkill, /broad utility imports/u);
@@ -522,8 +568,10 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(localSkill, /PURE annotations/u);
 	assert.match(localSkill, /Move client boundaries inward/u);
 	assert.match(localSkill, /Server Components or server-only code/u);
-	assert.match(localSkill, /dynamic imports statically analyzable/u);
+	assert.match(localSkill, /dynamic imports statically analyzable and outside the initial static graph/u);
+	assert.match(localSkill, /the same module is statically imported by the first route/u);
 	assert.match(localSkill, /`React\.lazy`/u);
+	assert.match(localSkill, /Split by "the user can wait here,"/u);
 	assert.match(localSkill, /optional heavy widgets/u);
 	assert.match(localSkill, /event or visibility point/u);
 	assert.match(localSkill, /Angular `@defer`/u);
@@ -538,9 +586,14 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(localSkill, /dev-only branches fold/u);
 	assert.match(localSkill, /Remove console calls safely/u);
 	assert.match(localSkill, /one giant vendor chunk/u);
-	assert.match(localSkill, /Vite modulepreload behavior/u);
+	assert.match(localSkill, /Vite and Rollup version semantics/u);
+	assert.match(localSkill, /`cssCodeSplit`/u);
+	assert.match(localSkill, /Vite modulepreload, preload, and prefetch behavior/u);
+	assert.match(localSkill, /preload, and prefetch behavior with timing evidence/u);
 	assert.match(localSkill, /Tailwind and utility extraction/u);
 	assert.match(localSkill, /inline asset thresholds/u);
+	assert.match(localSkill, /cache lifetimes/u);
+	assert.match(localSkill, /long-term chunk cache stability/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md/u);
 	assert.match(skillIndex, /client-bundle-pruning triage/u);
 	assert.match(skillIndex, /unmeasured bundle claim/u);
@@ -557,7 +610,7 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(manifest, /"\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md"/u);
 	assert.match(manifest, /"client-bundle-pruning-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 2/u);
 });
 
 test('frame render performance review catches layout, paint, and INP frame risks', () => {
@@ -578,6 +631,7 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	assert.match(localSkill, /per-frame work/u);
 	assert.match(localSkill, /Interaction and frame ledger/u);
 	assert.match(localSkill, /DOM and layout ledger/u);
+	assert.match(localSkill, /DOM update ledger/u);
 	assert.match(localSkill, /Style and CSS ledger/u);
 	assert.match(localSkill, /Paint and compositing ledger/u);
 	assert.match(localSkill, /Event and scheduling ledger/u);
@@ -590,12 +644,20 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	assert.match(localSkill, /contain-intrinsic-size/u);
 	assert.match(localSkill, /Virtualize long lists/u);
 	assert.match(localSkill, /DOM depth and breadth/u);
+	assert.match(localSkill, /Reduce DOM attachment and observable mutation count/u);
+	assert.match(localSkill, /`DocumentFragment` can make batch assembly cleaner/u);
+	assert.match(localSkill, /Avoid repeated hot-path `innerHTML` replacement/u);
+	assert.match(localSkill, /focus, selection, scroll position/u);
+	assert.match(localSkill, /Use event delegation for large repeated regions/u);
+	assert.match(localSkill, /target with `closest\(\)`/u);
 	assert.match(localSkill, /Simplify selectors/u);
+	assert.match(localSkill, /Focus on invalidation scope/u);
 	assert.match(localSkill, /global class toggles/u);
 	assert.match(localSkill, /CSS variables/u);
 	assert.match(localSkill, /Reserve media, ad, and embed geometry/u);
 	assert.match(localSkill, /native lazy loading/u);
 	assert.match(localSkill, /IntersectionObserver/u);
+	assert.match(localSkill, /Debounce or throttle high-frequency input/u);
 	assert.match(localSkill, /passive wheel, touch, and scroll listeners/u);
 	assert.match(localSkill, /overscroll-behavior/u);
 	assert.match(localSkill, /requestAnimationFrame/u);
@@ -609,6 +671,7 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	assert.match(localSkill, /deferred rendering or transitions/u);
 	assert.match(localSkill, /Narrow hydration/u);
 	assert.match(localSkill, /DevTools Performance/u);
+	assert.match(localSkill, /Long Tasks API or `PerformanceObserver`/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md/u);
 	assert.match(skillIndex, /frame-render-performance triage/u);
 	assert.match(skillIndex, /Lighthouse-score-only claim/u);
@@ -624,7 +687,7 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	assert.match(manifest, /"\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frame-render-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frame-render-performance-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.frame-render-performance-review"\][\s\S]*?revision = 2/u);
 });
 
 test('motion system contract review catches animation state and settlement risks', () => {

@@ -126,6 +126,45 @@ test('related selection covers the selector script itself', () => {
 	assert.deepEqual(ruleReasons[0].tests, ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js']);
 });
 
+test('related selection covers related-selection audit tooling', () => {
+	const report = selectRelated(['scripts/audit-related-selection.mjs']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
+
+	assert.deepEqual([...selected], ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js']);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'scripts/audit-related-selection.mjs');
+	assert.equal(ruleReasons[0].rule, '^scripts\\/audit-related-selection\\.mjs$');
+	assert.deepEqual(ruleReasons[0].tests, ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js']);
+});
+
+test('related selection covers ops analysis tooling without full fallback', () => {
+	for (const changedFile of ['scripts/analyze-test-ops.mjs', 'tests/cli/helpers/ops-profiler.js']) {
+		const report = selectRelated([changedFile]);
+		const selected = new Set(report.selected);
+		const ruleReasons = reasonsFor(report, 'related_rule');
+
+		assert.deepEqual([...selected], ['test-ops-profiler.test.js'], changedFile);
+		assert.equal(ruleReasons.length, 1, changedFile);
+		assert.equal(ruleReasons[0].changed_file, changedFile);
+		assert.equal(ruleReasons[0].tests.length, 1);
+		assert.equal(ruleReasons[0].tests[0], 'test-ops-profiler.test.js');
+		assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0, changedFile);
+	}
+});
+
+test('related selection covers selection test helpers without full fallback', () => {
+	const report = selectRelated(['tests/cli/helpers/test-selection-contracts.js']);
+	const selected = new Set(report.selected);
+	const ruleReasons = reasonsFor(report, 'related_rule');
+
+	assert.deepEqual([...selected], ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js']);
+	assert.equal(ruleReasons.length, 1);
+	assert.equal(ruleReasons[0].changed_file, 'tests/cli/helpers/test-selection-contracts.js');
+	assert.deepEqual(ruleReasons[0].tests, ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js']);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+});
+
 test('related selection covers the extracted selector module itself', () => {
 	const report = selectRelated(['scripts/lib/test-selection.mjs']);
 	const selected = new Set(report.selected);

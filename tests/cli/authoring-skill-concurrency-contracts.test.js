@@ -137,12 +137,22 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(localSkill, /`forEach` plus `includes`/u);
 	assert.match(localSkill, /`filter` plus `indexOf`/u);
 	assert.match(localSkill, /`filter` plus `findIndex`/u);
+	assert.match(localSkill, /helper-hidden `find`, `includes`, `some`, `filter`, `indexOf`/u);
 	assert.match(localSkill, /`Set\.has` or `Map\.has`/u);
+	assert.match(localSkill, /average sublinear/u);
+	assert.match(localSkill, /setup, hashing, equality, memory, and resize costs/u);
 	assert.match(localSkill, /code joins by ID/u);
 	assert.match(localSkill, /duplicate removal/u);
 	assert.match(localSkill, /Sorting does not make `find` fast/u);
+	assert.match(localSkill, /Sorting a collection does not make exact lookup cheap/u);
+	assert.match(localSkill, /expensive sort comparators/u);
+	assert.match(localSkill, /calls `localeCompare` with options/u);
+	assert.match(localSkill, /many times per item/u);
+	assert.match(localSkill, /decorate-sort-undecorate/u);
 	assert.match(localSkill, /`reduce` with `\[\.\.\.acc, item\]`/u);
 	assert.match(localSkill, /JavaScript `shift\(\)`/u);
+	assert.match(localSkill, /`unshift\(\)`/u);
+	assert.match(localSkill, /swap the item with the last slot and `pop\(\)`/u);
 	assert.match(localSkill, /`findIndex` plus `splice`/u);
 	assert.match(localSkill, /repeated `concat`/u);
 	assert.match(localSkill, /repeated string `\+=`/u);
@@ -175,7 +185,7 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(manifest, /"\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md"/u);
 	assert.match(manifest, /"quadratic-scan-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 4/u);
 });
 
 test('type state modeling review makes impossible states unrepresentable', () => {
@@ -345,6 +355,15 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 	assert.match(localSkill, /health\/readiness checks/u);
 	assert.match(localSkill, /bounded polling/u);
 	assert.match(localSkill, /The awaited Promise must represent the real work/u);
+	assert.match(localSkill, /Scheduling and backpressure model/u);
+	assert.match(localSkill, /task, microtask, `process\.nextTick`, timer/u);
+	assert.match(localSkill, /recursive `Promise\.resolve\(\)\.then\(\.\.\.\)`/u);
+	assert.match(localSkill, /`queueMicrotask\(\.\.\.\)`/u);
+	assert.match(localSkill, /starve rendering, input, timers, I\/O/u);
+	assert.match(localSkill, /Yield long work at the right boundary/u);
+	assert.match(localSkill, /feature-detected `scheduler\.yield`/u);
+	assert.match(localSkill, /Treat `Promise\.all` as a failure-policy choice/u);
+	assert.match(localSkill, /`allSettled`/u);
 	assert.match(localSkill, /Define "once" by scope/u);
 	assert.match(localSkill, /Guard stale async results before they apply/u);
 	assert.match(localSkill, /generation, version, etag, sequence/u);
@@ -387,7 +406,7 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 		);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 3/u);
 });
 
 test('concurrency invariant review checks time-order ownership and primitive discipline', () => {

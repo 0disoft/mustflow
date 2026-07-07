@@ -9,6 +9,33 @@ const runId =
 	process.env.MUSTFLOW_TEST_PROFILE_RUN_ID ??
 	`${new Date().toISOString().replace(/[:.]/gu, '-')}-${process.pid}`;
 
+function normalizePath(value) {
+	return String(value).replaceAll('\\', '/');
+}
+
+function toRepoRelativePath(value) {
+	const normalized = normalizePath(value);
+
+	if (path.isAbsolute(value)) {
+		const relative = normalizePath(path.relative(repoRoot, value));
+		return relative.startsWith('..') ? normalized : relative;
+	}
+
+	return normalized.replace(/^\.?\//u, '');
+}
+
+function inferTestFile() {
+	if (process.env.MUSTFLOW_TEST_FILE) {
+		return toRepoRelativePath(process.env.MUSTFLOW_TEST_FILE);
+	}
+
+	const fromArgv = process.argv
+		.map((arg) => toRepoRelativePath(arg))
+		.find((arg) => /^tests\/cli\/[^/]+\.test\.js$/u.test(arg));
+
+	return fromArgv ?? null;
+}
+
 function profilePath() {
 	if (!profileSetting) {
 		return undefined;
@@ -31,15 +58,41 @@ function writeProfileRecord(record) {
 	appendFileSync(target, `${JSON.stringify(record)}\n`);
 }
 
+function sanitizeDetails(details) {
+	if (!details || typeof details !== 'object') {
+		return {};
+	}
+
+	return Object.fromEntries(
+		Object.entries(details).map(([key, value]) => {
+			if (Array.isArray(value)) {
+				return [key, value.map((entry) => String(entry))];
+			}
+
+			if (typeof value === 'string') {
+				return [key, value.length > 500 ? `${value.slice(0, 500)}...` : value];
+			}
+
+			if (value === null || ['number', 'boolean'].includes(typeof value)) {
+				return [key, value];
+			}
+
+			return [key, String(value)];
+		}),
+	);
+}
+
 function recordOperation(operation, start, details, status, error) {
 	writeProfileRecord({
-		schema_version: 1,
+		schema_version: 2,
 		run_id: runId,
 		pid: process.pid,
+		ppid: process.ppid,
+		test_file: inferTestFile(),
 		operation,
 		status,
 		duration_ms: Math.round((performance.now() - start) * 1000) / 1000,
-		details,
+		details: sanitizeDetails(details),
 		error: error ? String(error.message ?? error) : null,
 		timestamp: new Date().toISOString(),
 	});

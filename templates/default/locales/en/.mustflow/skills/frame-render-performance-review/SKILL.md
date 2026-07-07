@@ -2,7 +2,7 @@
 mustflow_doc: skill.frame-render-performance-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: frame-render-performance-review
@@ -56,6 +56,7 @@ The review question is not "did we add `useMemo`?" It is "what work does the bro
 
 - Interaction and frame ledger: affected interaction, route, viewport, target frame rate, user-visible symptom, expected INP or next-paint boundary, and whether the path runs during startup, scroll, input, animation, resize, or idle.
 - DOM and layout ledger: node count, tree depth, affected subtree, list size, virtualization boundary, layout containment, geometry reads, geometry writes, reserved media slots, and layout-shift evidence.
+- DOM update ledger: node attach count, observable mutation count, keyed update behavior, fragment or template usage, `innerHTML`, `replaceChildren`, focus, selection, scroll position, listener ownership, and event delegation.
 - Style and CSS ledger: class or attribute toggles, selector complexity, global state classes, CSS custom property scope, runtime style injection, CSS animations, transitions, `will-change`, `contain`, `content-visibility`, and stacking or containing block side effects.
 - Paint and compositing ledger: animated properties, repaint area, layer promotion, transform and opacity usage, canvas or SVG drawing, image/video/ad slots, shadows, filters, clipping, and expensive visual effects.
 - Event and scheduling ledger: scroll, wheel, touch, pointer, resize, observer, timer, `requestAnimationFrame`, long task, worker, `OffscreenCanvas`, `scheduler.yield`, debounce, throttle, and cancellation behavior.
@@ -92,32 +93,37 @@ The review question is not "did we add `useMemo`?" It is "what work does the bro
 8. Stop offscreen work, not only offscreen rendering. For skipped or hidden charts, maps, canvas, or media widgets, pause redraws, resize loops, observers, polling, and expensive updates while the widget is not visible.
 9. Virtualize long lists. Large tables, chat logs, feeds, option lists, and grids should keep only the visible window plus buffer in the DOM when item count can grow.
 10. Reduce DOM depth and breadth where it affects a hot render path. Deep wrapper chains and wide repeated structures increase style and layout propagation even when no single node looks expensive.
-11. Simplify selectors on hot or broad subtrees. Prefer simple class selectors over selectors that depend on deep descendants, complex siblings, expensive pseudo-classes, or global ancestor state.
-12. Avoid broad global class toggles. `body` or `html` state changes force wide style invalidation. Use the narrowest subtree root unless the state is truly global, such as theme.
-13. Scope frequently changing CSS variables close to the affected subtree. Avoid changing `:root` custom properties on pointer move, scroll, drag, or animation. Use non-inheriting registered properties when project support and browser targets allow it.
-14. Reserve media, ad, and embed geometry. Use width, height, `aspect-ratio`, or stable placeholders so image, video, iframe, and ad loads do not trigger layout shifts and repeated paint.
-15. Keep LCP media and first-render discovery concerns routed to `web-render-performance-review`. In this skill, focus on whether loaded media shifts layout, repaints broad regions, or forces per-frame work.
-16. Prefer native lazy loading for below-fold images and iframes when it covers the case. Avoid JS lazy loaders that add scroll handlers, observers, state churn, and rerenders without a project reason.
-17. Use `IntersectionObserver` for visibility and infinite-scroll triggers. Do not calculate viewport intersection manually on every scroll event unless a browser limitation forces it.
-18. Use passive wheel, touch, and scroll listeners when the handler does not call `preventDefault()`. Do not mark listeners passive when the gesture intentionally cancels scrolling.
-19. Use CSS `overscroll-behavior` before JavaScript scroll blocking for modals, drawers, and nested scroll containers. Keep JS scroll locks as the narrow fallback for focus and body-lock requirements.
-20. Schedule visual writes with `requestAnimationFrame`. Do not use fixed `setTimeout(..., 16)` as a frame clock. Use the animation timestamp so high-refresh displays do not speed up motion.
-21. Split long tasks. Work longer than one frame or around 50ms should yield between chunks, show urgent UI first, and move non-urgent analytics, cache cleanup, validation, or transformation out of the immediate interaction path.
-22. Move DOM-free heavy computation off the main thread when the boundary cost is worth it. Filtering, sorting, diffing, crypto, markdown parsing, image preprocessing, and search indexing can move to a worker when data transfer and cancellation are defined.
-23. Consider `OffscreenCanvas` for heavy canvas rendering when browser targets and architecture support it. Charts, whiteboards, maps, and image editors should not block input and paint if a worker boundary is practical.
-24. Use `ResizeObserver` for element size changes. Avoid window resize handlers that read every card and write layout back in the same pass.
-25. Avoid runtime CSS rule churn. Do not inject new style tags or rules during click, hover, drag, pointer move, or repeated list rendering. Use static classes and narrow CSS variables where dynamic values are needed.
-26. Treat React `memo` as a rerender scope tool, not a cure. It fails when props are fresh objects, arrays, or functions each render. Prefer smaller component boundaries and stable primitive props.
-27. Split React context by change frequency and audience. A fresh provider object rerenders all consumers of that context; do not put theme, auth, permissions, feature flags, and editor state into one object unless they change together.
-28. Keep input updates urgent and heavy results deferred. Use deferred rendering or transitions for large filtered lists, charts, panels, or route changes when immediate input feedback matters more than full result freshness.
-29. Narrow hydration. SSR can still hurt INP when the client hydrates too much at once. Hydrate only interactive islands early and defer low-priority regions by visibility, idle time, or route intent when the framework supports it.
-30. Verify with the right evidence. Prefer DevTools Performance, paint flashing, layout shift regions, Selector Stats, long tasks, and INP flame evidence when configured or provided. If unavailable, report static risks and skipped measurement reasons.
+11. Reduce DOM attachment and observable mutation count. `DocumentFragment` can make batch assembly cleaner, but it is not magic by itself; the win is fewer live DOM attachments, fewer layout-visible changes, and a narrower subtree to reconcile.
+12. Avoid repeated hot-path `innerHTML` replacement. Replacing a large parent destroys node identity, focus, selection, scroll position, listener ownership, and browser reuse. Prefer keyed patching, targeted `replaceChildren`, template clones, or virtualization when only part of the subtree changed.
+13. Use event delegation for large repeated regions. Lists, grids, tables, menus, and icon rows should usually attach one container listener and resolve the target with `closest()` instead of attaching thousands of per-node listeners.
+14. Simplify selectors on hot or broad subtrees. Prefer simple class selectors over selectors that depend on deep descendants, complex siblings, expensive pseudo-classes, or global ancestor state.
+15. Focus on invalidation scope, not selector folklore alone. Ask how many elements a class, attribute, CSS variable, or DOM mutation invalidates before spending time on cosmetic selector rewrites.
+16. Avoid broad global class toggles. `body` or `html` state changes force wide style invalidation. Use the narrowest subtree root unless the state is truly global, such as theme.
+17. Scope frequently changing CSS variables close to the affected subtree. Avoid changing `:root` custom properties on pointer move, scroll, drag, or animation. Use non-inheriting registered properties when project support and browser targets allow it.
+18. Reserve media, ad, and embed geometry. Use width, height, `aspect-ratio`, or stable placeholders so image, video, iframe, and ad loads do not trigger layout shifts and repeated paint.
+19. Keep LCP media and first-render discovery concerns routed to `web-render-performance-review`. In this skill, focus on whether loaded media shifts layout, repaints broad regions, or forces per-frame work.
+20. Prefer native lazy loading for below-fold images and iframes when it covers the case. Avoid JS lazy loaders that add scroll handlers, observers, state churn, and rerenders without a project reason.
+21. Use `IntersectionObserver` for visibility and infinite-scroll triggers. Do not calculate viewport intersection manually on every scroll event unless a browser limitation forces it.
+22. Debounce or throttle high-frequency input only after deciding the interaction contract. Scroll, resize, pointermove, mousemove, and text input can flood async work, state updates, layout reads, and network calls; keep urgent visual feedback separate from delayed heavy work.
+23. Use passive wheel, touch, and scroll listeners when the handler does not call `preventDefault()`. Do not mark listeners passive when the gesture intentionally cancels scrolling.
+24. Use CSS `overscroll-behavior` before JavaScript scroll blocking for modals, drawers, and nested scroll containers. Keep JS scroll locks as the narrow fallback for focus and body-lock requirements.
+25. Schedule visual writes with `requestAnimationFrame`. Do not use fixed `setTimeout(..., 16)` as a frame clock. Use the animation timestamp so high-refresh displays do not speed up motion.
+26. Split long tasks. Work longer than one frame or around 50ms should yield between chunks, show urgent UI first, and move non-urgent analytics, cache cleanup, validation, or transformation out of the immediate interaction path.
+27. Move DOM-free heavy computation off the main thread when the boundary cost is worth it. Filtering, sorting, diffing, crypto, markdown parsing, image preprocessing, and search indexing can move to a worker when data transfer and cancellation are defined.
+28. Consider `OffscreenCanvas` for heavy canvas rendering when browser targets and architecture support it. Charts, whiteboards, maps, and image editors should not block input and paint if a worker boundary is practical.
+29. Use `ResizeObserver` for element size changes. Avoid window resize handlers that read every card and write layout back in the same pass.
+30. Avoid runtime CSS rule churn. Do not inject new style tags or rules during click, hover, drag, pointer move, or repeated list rendering. Use static classes and narrow CSS variables where dynamic values are needed.
+31. Treat React `memo` as a rerender scope tool, not a cure. It fails when props are fresh objects, arrays, or functions each render. Prefer smaller component boundaries and stable primitive props.
+32. Split React context by change frequency and audience. A fresh provider object rerenders all consumers of that context; do not put theme, auth, permissions, feature flags, and editor state into one object unless they change together.
+33. Keep input updates urgent and heavy results deferred. Use deferred rendering or transitions for large filtered lists, charts, panels, or route changes when immediate input feedback matters more than full result freshness.
+34. Narrow hydration. SSR can still hurt INP when the client hydrates too much at once. Hydrate only interactive islands early and defer low-priority regions by visibility, idle time, or route intent when the framework supports it.
+35. Verify with the right evidence. Prefer DevTools Performance, paint flashing, layout shift regions, Selector Stats, Long Tasks API or `PerformanceObserver`, and INP flame evidence when configured or provided. If unavailable, report static risks and skipped measurement reasons.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - The affected interaction, frame phase, DOM scope, style scope, layout reads/writes, paint or compositing cost, scheduling path, and framework render boundary are explicit where relevant.
-- Forced synchronous layout, layout thrashing, layout-affecting animations, stale `will-change`, missing containment, unsafe `content-visibility`, offscreen background work, oversized DOM, complex selectors, broad global class toggles, root CSS variable churn, unreserved media geometry, JS scroll polling, non-passive listeners, JS scroll blocking, timer-based animation, long tasks, main-thread heavy computation, canvas main-thread cost, resize measurement loops, runtime CSS injection, ineffective memo, broad context rerenders, urgent heavy results, and full hydration cost are fixed or reported.
+- Forced synchronous layout, layout thrashing, layout-affecting animations, stale `will-change`, missing containment, unsafe `content-visibility`, offscreen background work, oversized DOM, high mutation count, hot-path `innerHTML`, missing event delegation, complex selectors, broad style invalidation, broad global class toggles, root CSS variable churn, unreserved media geometry, JS scroll polling, high-frequency event floods, non-passive listeners, JS scroll blocking, timer-based animation, long tasks, main-thread heavy computation, canvas main-thread cost, resize measurement loops, runtime CSS injection, ineffective memo, broad context rerenders, urgent heavy results, and full hydration cost are fixed or reported.
 - Rendering performance claims are backed by current configured evidence or labeled as static frame-risk, manual-only measurement, or missing evidence.
 - Accessibility, focus, scroll intent, reduced motion, layout stability, privacy, and framework semantics remain intact or are reported as tradeoffs.
 

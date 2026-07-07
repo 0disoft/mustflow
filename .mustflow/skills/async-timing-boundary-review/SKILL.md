@@ -2,7 +2,7 @@
 mustflow_doc: skill.async-timing-boundary-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: async-timing-boundary-review
@@ -63,6 +63,7 @@ The review question is not "how many milliseconds are safe?" It is "is the code 
 - Completion signal available in the codebase: event, callback, listener, promise that resolves on real completion, `finish`, `close`, `fsync`, atomic rename, health check, listen callback, ack, status endpoint, observer, transition event, cancellation token, latch, barrier, fake clock, or deterministic scheduler.
 - Caller ownership: whether every caller awaits the returned Promise or whether the async work is fire-and-forget, debounced, event-handler-owned, framework-owned, or lifecycle-owned.
 - Operation identity and ordering model: operation id, entity id, attempt, causation id, generation, version, sequence, cancellation reason, idempotency key, and whether the apply step checks that the result still belongs to the current state.
+- Scheduling and backpressure model: task, microtask, `process.nextTick`, timer, `requestAnimationFrame`, idle callback, `scheduler.yield`, worker message, bounded concurrency, debounce, throttle, and whether producers can outrun consumers.
 - Test evidence: current tests, fake timers, controlled promises, barriers, polling utilities, readiness probes, stress tests, CI logs, or missing configured verification.
 
 <!-- mustflow-section: preconditions -->
@@ -109,6 +110,9 @@ The review question is not "how many milliseconds are safe?" It is "is the code 
    - The awaited Promise must represent the real work, not only scheduling the work.
    - Catch async `forEach`, `map` without `Promise.all`, missing `return` in `.then`, unawaited callers, swallowed catches, async event handlers whose business flow is not awaited, debounced promises, and event APIs that need explicit `load`, `error`, `finish`, or `close` wrapping.
    - In UI code, do not treat state setters, microtasks, or Promise resolution as proof that DOM layout or paint has happened.
+   - Do not use recursive `Promise.resolve().then(...)`, `queueMicrotask(...)`, or `process.nextTick(...)` loops as a general scheduler. They can starve rendering, input, timers, I/O, and shutdown work because the runtime drains those queues before moving on.
+   - Yield long work at the right boundary. Use `requestAnimationFrame` for visual writes, bounded tasks or feature-detected `scheduler.yield` for cooperative main-thread work, idle callbacks for non-urgent browser work, and worker offload when CPU work is too large to share the UI thread.
+   - Treat `Promise.all` as a failure-policy choice, not as automatic cancellation. If one failure should stop sibling work, wire cancellation to the underlying operations; if all outcomes matter, collect them with `allSettled`; if first success is enough, use the local `any` or fallback pattern.
 6. Define "once" by scope.
    - Name the scope: call, component mount, route lifetime, tab, process, deployment, worker, queue message, transaction retry, cron tick, or durable resource.
    - Make side effects idempotent when retries, remounts, StrictMode, HMR, reconnects, queue redelivery, transaction retries, multiple tabs, serverless cold starts, or rolling deploys can repeat them.
@@ -140,6 +144,7 @@ The review question is not "how many milliseconds are safe?" It is "is the code 
 - Every fixed wait is classified as a true time contract, replaced with a completion signal, converted to bounded polling, or reported as residual risk.
 - The exact completion condition and boundary crossed by the old delay are named.
 - Promise, "once", event-loop, render, filesystem, process, worker, database, queue, external consistency, and test claims are checked where relevant.
+- Microtask, next-tick, timer, frame, idle, bounded-concurrency, debounce, throttle, and cancellation scheduling claims are checked where relevant.
 - Latest-request-wins, generation or version guards, cancellation states, duplicate delivery, late success, outbox or inbox handoffs, and per-key ordering are checked where relevant.
 - Remaining waits have explicit reason, bound, cancellation, and diagnostic behavior when possible.
 - Verification covers the changed timing boundary or reports the missing configured intent.

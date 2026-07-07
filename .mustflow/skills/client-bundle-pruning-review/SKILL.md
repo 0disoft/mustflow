@@ -2,7 +2,7 @@
 mustflow_doc: skill.client-bundle-pruning-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: client-bundle-pruning-review
@@ -29,9 +29,9 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Review frontend bundle weight by finding code shapes that keep bundlers from deleting unused client code, not by repeating generic advice about compression, images, or code splitting.
+Review frontend bundle weight by finding code shapes that keep bundlers from deleting unused client code, not by repeating generic advice about compression, images, or code splitting. Treat compressed transfer size as only one receipt; the browser pays again when JavaScript is decompressed, parsed, compiled, evaluated, and run on the main thread.
 
-The review question is not "is code splitting enabled?" It is "which imports, package entrypoints, module formats, side-effect claims, client boundaries, polyfills, and chunk rules force unused code into the first route or shared vendor bundle?"
+The review question is not "is code splitting enabled?" It is "which imports, package entrypoints, module formats, side-effect claims, client boundaries, polyfills, coverage gaps, and chunk rules force unused or late-use code into the first route or shared vendor bundle?"
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -60,6 +60,7 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 - Framework boundary ledger: Next.js Server/Client Component boundary, `next/dynamic`, `optimizePackageImports`, React `lazy`, Angular `@defer`, Vue route lazy loading, Svelte/Astro island or hydration boundary, and whether code is required for first interaction.
 - Heavy-feature ledger: icons, UI component libraries, date locales, syntax highlighters, markdown, editors, charts, maps, PDF viewers, search/fuzzy libraries, Node polyfills, dev-only tools, logs, and CSS utility extraction.
 - Polyfill and target ledger: browser support target, Babel or TypeScript output target, `core-js` usage, Node polyfills, `process` or `Buffer` shims, Vite modulepreload polyfill, and esbuild/Webpack/Rollup define or drop settings.
+- Measurement ledger: initial JavaScript transfer, decompressed size, parse, compile, evaluate, bootup or long-task time, route-specific Chrome Coverage or equivalent unused-code evidence, Resource Timing for preload or prefetch changes, manifest or chunk hash stability, and whether the evidence is flow-specific or a single refresh snapshot.
 - Existing tests, build output, bundle budgets, analyzer screenshots or reports, package metadata checks, and configured command-intent evidence.
 
 <!-- mustflow-section: preconditions -->
@@ -83,42 +84,47 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 ## Procedure
 
 1. Review first-route JavaScript separately from total build output. Name the route or entry users actually load first, then separate initial JS, route JS, shared vendor JS, CSS, and lazy chunks when evidence exists.
-2. Prefer a failing bundle budget over human memory. If the repository has a budget pattern, enforce initial route JS and shared vendor growth with configured tests or release checks. If no configured budget exists, report the gap instead of inventing analyzer commands.
-3. Suspect non-ESM packages first. Tree shaking depends on static imports and exports; CommonJS `require`, mixed module packages, dynamic require patterns, or ambiguous package entrypoints often keep unused code alive.
-4. Replace broad utility imports. Avoid `import _ from 'lodash'`, broad date imports, or whole-library namespace imports on client paths when ESM or function-level imports preserve behavior.
-5. Audit barrel files on hot client paths. `export *` design-system or icon barrels can force bundlers to inspect or include too much. Prefer direct subpath imports when the package owns that contract.
-6. Split internal package exports by feature. Provide stable subpath exports such as component, icon, or helper entrypoints when `@scope/ui` as a single entry drags unrelated modules into client bundles.
-7. Set `sideEffects` metadata carefully. Use `false` only when modules are truly side-effect-free, and preserve CSS imports, polyfills, global registrations, telemetry setup, and plugin initialization through an allowlist.
-8. Treat Rollup or Vite `moduleSideEffects: false` as dangerous by default. Use a function or allowlist when CSS, polyfills, custom elements, plugin registration, or global patches exist.
-9. Add PURE annotations only for pure wrapper calls. React `memo`, `forwardRef`, higher-order component factories, icon factories, and generated component wrappers may need `/* @__PURE__ */`, but never mark a call pure unless its arguments and call have no required side effects.
-10. Move client boundaries inward. In Next.js style apps, avoid putting `'use client'` on pages, layouts, or broad shells when only a small search box, menu, chart, or control needs browser state.
-11. Use Server Components or server-only code as a deletion boundary. Keep markdown parsing, CMS transforms, price formatting, permission checks, data shaping, and server-safe library use out of Client Components when interactivity does not require them.
-12. Keep dynamic imports statically analyzable. `next/dynamic` and similar APIs need explicit import strings at module top level when preloading or chunk naming depends on static analysis.
-13. Declare `React.lazy` and similar lazy components outside render functions. Recreating lazy definitions during render can reset state and blur split boundaries.
-14. Lazy-load optional heavy widgets. Modals, charts, editors, maps, search, PDF viewers, markdown preview, syntax highlighting, and admin-only panels should not enter initial JS unless they are visible and necessary at first load.
-15. Move external library imports to the event or visibility point when safe. Search libraries can load on focus or input, charts on tab open, maps on section reveal, markdown preview on preview mode, and editors on edit intent.
-16. Use Angular `@defer`, Vue route lazy loading, Svelte/Astro islands, or framework-native deferral when that framework is present. Confirm the dependencies are not also imported eagerly outside the deferred boundary.
-17. Use import modularization options cautiously. Next.js `optimizePackageImports` or equivalent compiler transforms can help large export surfaces, but verify the actual output and do not treat an experimental option as proof.
-18. Audit icon imports. Prefer per-icon imports, stable subpath imports, or build-time SVG sprites over package roots or barrels that can pull an icon catalog into client JS.
-19. Audit date locales. Import only needed locales, prefer platform `Intl` when it is enough, and keep server-format-able date work off the client path.
-20. Split syntax highlighters, markdown processors, and code editors by language, mode, or worker boundary. Do not ship every grammar, theme, plugin, or editor worker for one small code block.
-21. Avoid accidental Node polyfills in browser bundles. Do not fix `crypto`, `stream`, `buffer`, `process`, or `path` resolution errors by adding browser shims unless the browser feature truly needs them; prefer false fallbacks or server-only boundaries when possible.
-22. Modernize browser targets only with product support evidence. Too-low Babel or TypeScript targets can inject helper and polyfill overhead; too-high targets can break real users.
-23. Replace broad Babel polyfill imports. Avoid whole `core-js/stable` or blanket polyfill entrypoints when target-aware `preset-env` or explicit feature polyfills can cover the supported browsers.
-24. Ensure dev-only branches fold at build time. `process.env.NODE_ENV`, `__DEV__`, `import.meta.env.DEV`, feature labels, and debug helpers must become constants for dead-code elimination to remove dev tooling.
-25. Remove console calls safely. Do not blindly drop all console calls when arguments may have side effects. Prefer logging wrappers or pure-log configuration that preserves required argument behavior.
-26. Avoid one giant vendor chunk. Manual chunk rules that put all `node_modules` in one vendor bundle can pull charts, editors, maps, and admin-only code into the first route and can change side-effect timing.
-27. Check Vite modulepreload behavior. Disable the modulepreload polyfill only when supported browser targets make that safe; avoid preloading lazy route or widget chunks that are not needed soon.
-28. Keep Tailwind and utility extraction finite. Avoid dynamic class string construction that production extraction cannot see, and avoid broad safelists that inflate CSS. Prefer complete static class strings or constrained maps.
-29. Check inline asset thresholds. Large SVGs, fonts, or images inlined into JavaScript increase parse and transfer cost; use separate resources unless the asset is small and truly critical.
-30. Label evidence honestly. If no configured bundle analyzer, budget, build output, or package-size proof exists, report the result as static import-graph risk or missing measurement, not a measured bundle reduction.
+2. Budget execution, not only gzip. Prefer initial JavaScript parse, compile, evaluate, bootup, and long-task budgets over compressed KB-only claims. Treat gzip or brotli size as transfer evidence, not proof that the main thread got faster.
+3. Compare analyzer receipts with coverage evidence. Bundle analyzers show what entered the build; route-specific Coverage or equivalent evidence shows what was unused in the flow. Check first entry, logged-in state, key route, checkout or save path, and heavy feature entry separately when those flows matter.
+4. Prefer a failing bundle budget over human memory. If the repository has a budget pattern, enforce initial route JS, shared vendor growth, evaluate time, or long-task growth with configured tests or release checks. If no configured budget exists, report the gap instead of inventing analyzer commands.
+5. Suspect non-ESM packages first. Tree shaking depends on static imports and exports; CommonJS `require`, mixed module packages, dynamic require patterns, or ambiguous package entrypoints often keep unused code alive.
+6. Replace broad utility imports. Avoid `import _ from 'lodash'`, broad date imports, or whole-library namespace imports on client paths when ESM or function-level imports preserve behavior.
+7. Audit barrel files on hot client paths. `export *` design-system or icon barrels can force bundlers to inspect or include too much. Prefer direct subpath imports when the package owns that contract.
+8. Split internal package exports by feature. Provide stable subpath exports such as component, icon, or helper entrypoints when `@scope/ui` as a single entry drags unrelated modules into client bundles.
+9. Set `sideEffects` metadata carefully. Use `false` only when modules are truly side-effect-free, and preserve CSS imports, polyfills, global registrations, telemetry setup, and plugin initialization through an allowlist.
+10. Treat Rollup or Vite `moduleSideEffects: false` as dangerous by default. Use a function or allowlist when CSS, polyfills, custom elements, plugin registration, or global patches exist.
+11. Add PURE annotations only for pure wrapper calls. React `memo`, `forwardRef`, higher-order component factories, icon factories, and generated component wrappers may need `/* @__PURE__ */`, but never mark a call pure unless its arguments and call have no required side effects.
+12. Move client boundaries inward. In Next.js style apps, avoid putting `'use client'` on pages, layouts, or broad shells when only a small search box, menu, chart, or control needs browser state.
+13. Use Server Components or server-only code as a deletion boundary. Keep markdown parsing, CMS transforms, price formatting, permission checks, data shaping, and server-safe library use out of Client Components when interactivity does not require them.
+14. Keep dynamic imports statically analyzable and outside the initial static graph. `next/dynamic` and similar APIs need explicit import strings at module top level when preloading or chunk naming depends on static analysis; `import()` does not help when the same module is statically imported by the first route, shell, barrel, or shared vendor path.
+15. Declare `React.lazy` and similar lazy components outside render functions. Recreating lazy definitions during render can reset state and blur split boundaries.
+16. Split by "the user can wait here," not by arbitrary component size. Route transitions, modal first open, editor mode, chart tab, map reveal, admin panel entry, or preview mode are stronger boundaries than small components that are needed together.
+17. Lazy-load optional heavy widgets. Modals, charts, editors, maps, search, PDF viewers, markdown preview, syntax highlighting, and admin-only panels should not enter initial JS unless they are visible and necessary at first load.
+18. Move external library imports to the event or visibility point when safe. Search libraries can load on focus or input, charts on tab open, maps on section reveal, markdown preview on preview mode, and editors on edit intent.
+19. Use Angular `@defer`, Vue route lazy loading, Svelte/Astro islands, or framework-native deferral when that framework is present. Confirm the dependencies are not also imported eagerly outside the deferred boundary.
+20. Use import modularization options cautiously. Next.js `optimizePackageImports` or equivalent compiler transforms can help large export surfaces, but verify the actual output and do not treat an experimental option as proof.
+21. Audit icon imports. Prefer per-icon imports, stable subpath imports, or build-time SVG sprites over package roots or barrels that can pull an icon catalog into client JS.
+22. Audit date locales. Import only needed locales, prefer platform `Intl` when it is enough, and keep server-format-able date work off the client path.
+23. Split syntax highlighters, markdown processors, and code editors by language, mode, or worker boundary. Do not ship every grammar, theme, plugin, or editor worker for one small code block.
+24. Avoid accidental Node polyfills in browser bundles. Do not fix `crypto`, `stream`, `buffer`, `process`, or `path` resolution errors by adding browser shims unless the browser feature truly needs them; prefer false fallbacks or server-only boundaries when possible.
+25. Modernize browser targets only with product support evidence. Too-low Babel or TypeScript targets can inject helper and polyfill overhead; too-high targets can break real users.
+26. Replace broad Babel polyfill imports. Avoid whole `core-js/stable` or blanket polyfill entrypoints when target-aware `preset-env` or explicit feature polyfills can cover the supported browsers.
+27. Ensure dev-only branches fold at build time. `process.env.NODE_ENV`, `__DEV__`, `import.meta.env.DEV`, feature labels, and debug helpers must become constants for dead-code elimination to remove dev tooling.
+28. Remove console calls safely. Do not blindly drop all console calls when arguments may have side effects. Prefer logging wrappers or pure-log configuration that preserves required argument behavior.
+29. Avoid one giant vendor chunk. Manual chunk rules that put all `node_modules` in one vendor bundle can pull charts, editors, maps, and admin-only code into the first route and can change side-effect timing.
+30. Check Vite and Rollup version semantics before copying old chunk advice. Confirm whether the project uses current `build.rollupOptions`, newer Rolldown aliases, `cssCodeSplit`, framework wrappers, and modulepreload behavior before changing chunk rules.
+31. Check Vite modulepreload, preload, and prefetch behavior with timing evidence. Disable the modulepreload polyfill only when supported browser targets make that safe; avoid preloading or prefetching lazy route or widget chunks that are not needed soon, and use Resource Timing or configured evidence when priority changes are claimed.
+32. Keep Tailwind and utility extraction finite. Avoid dynamic class string construction that production extraction cannot see, and avoid broad safelists that inflate CSS. Prefer complete static class strings or constrained maps.
+33. Check inline asset thresholds. Large SVGs, fonts, or images inlined into JavaScript increase parse and transfer cost, couple cache lifetimes, and can force re-downloads when an app chunk changes; use separate resources unless the asset is small and truly critical.
+34. Check long-term chunk cache stability. One source edit should not churn every chunk hash unless the graph contract requires it. Inspect manifest use, stable vendor or route chunks, and rarely-used heavy chunks when deployment cache behavior is part of the claim.
+35. Label evidence honestly. If no configured bundle analyzer, coverage report, Resource Timing, budget, build output, or package-size proof exists, report the result as static import-graph risk or missing measurement, not a measured bundle reduction.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - First-route JS, route chunks, shared vendor chunks, package entrypoints, imports, barrels, side effects, client/server boundaries, dynamic imports, heavy optional features, polyfills, targets, chunk rules, CSS extraction, and inline assets are explicit where relevant.
 - CJS-heavy imports, broad package roots, hot-path barrels, missing subpath exports, unsafe side-effect metadata, missing PURE hints, broad client boundaries, eager heavy widgets, event-time libraries, icon catalogs, date locale packs, highlighter/editor language packs, Node polyfills, old browser targets, broad polyfills, un-folded dev code, unsafe console drops, giant vendor chunks, modulepreload spam, dynamic Tailwind classes, broad safelists, and large inline assets are fixed or reported.
-- Bundle-size claims are backed by current configured evidence or labeled as static import-graph risk, manual-only measurement, or missing evidence.
+- Bundle-size, unused-code, initial-JS, evaluate-time, long-task, preload, prefetch, and cache-stability claims are backed by current configured evidence or labeled as static import-graph risk, manual-only measurement, or missing evidence.
 - Public import compatibility, CSS, polyfills, localization, accessibility, logging semantics, and framework behavior remain intact or are reported as tradeoffs.
 
 <!-- mustflow-section: verification -->
@@ -152,7 +158,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 
 - Client bundle surface reviewed
 - First-route JS, route chunk, and shared vendor evidence
-- Import graph, package entry, side-effect, client boundary, lazy-loading, polyfill, target, chunk, CSS extraction, and inline asset ledgers
+- Import graph, package entry, side-effect, client boundary, coverage, lazy-loading, polyfill, target, chunk, CSS extraction, preload or prefetch, inline asset, and cache-stability ledgers
 - Findings or fixes
 - Evidence level: measured, configured-test evidence, static import-graph risk, manual-only, missing, or not applicable
 - Command intents run

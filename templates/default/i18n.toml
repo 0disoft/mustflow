@@ -50,13 +50,13 @@ translations.hi = { path = "locales/hi/.mustflow/docs/agent-workflow.md", source
 [documents."config.preferences"]
 source = "common/.mustflow/config/preferences.toml"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."config.technology"]
 source = "common/.mustflow/config/technology.toml"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skills.index"]
@@ -224,7 +224,7 @@ translations = {}
 [documents."skill.memory-lifetime-review"]
 source = "locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.desktop-memory-footprint-review"]
@@ -236,7 +236,7 @@ translations = {}
 [documents."skill.hot-path-performance-review"]
 source = "locales/en/.mustflow/skills/hot-path-performance-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 6
 translations = {}
 
 [documents."skill.api-request-performance-review"]
@@ -272,7 +272,7 @@ translations = {}
 [documents."skill.web-render-performance-review"]
 source = "locales/en/.mustflow/skills/web-render-performance-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.core-web-vitals-field-review"]
@@ -290,13 +290,13 @@ translations = {}
 [documents."skill.client-bundle-pruning-review"]
 source = "locales/en/.mustflow/skills/client-bundle-pruning-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.frame-render-performance-review"]
 source = "locales/en/.mustflow/skills/frame-render-performance-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.motion-system-contract-review"]
@@ -386,7 +386,7 @@ translations = {}
 [documents."skill.quadratic-scan-review"]
 source = "locales/en/.mustflow/skills/quadratic-scan-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 4
 translations = {}
 
 [documents."skill.type-state-modeling-review"]
@@ -404,7 +404,7 @@ translations = {}
 [documents."skill.async-timing-boundary-review"]
 source = "locales/en/.mustflow/skills/async-timing-boundary-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.concurrency-invariant-review"]
@@ -763,7 +763,7 @@ translations = {}
 [documents."skill.javascript-code-change"]
 source = "locales/en/.mustflow/skills/javascript-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 6
 translations = {}
 
 [documents."skill.java-code-change"]
@@ -775,7 +775,7 @@ translations = {}
 [documents."skill.node-code-change"]
 source = "locales/en/.mustflow/skills/node-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 4
 translations = {}
 
 [documents."skill.react-code-change"]
@@ -1056,7 +1056,7 @@ translations = {}
 [documents."skill.performance-budget-check"]
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
-revision = 20
+revision = 24
 translations = {}
 
 [documents."skill.pattern-scout"]

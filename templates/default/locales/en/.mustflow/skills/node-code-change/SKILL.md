@@ -2,11 +2,11 @@
 mustflow_doc: skill.node-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: node-code-change
-description: Apply this skill when Node.js runtime code, package manager ownership, module format, package entry metadata, native dependencies, Node test runner behavior, TypeScript execution mode, or deployment runtime support is created or changed.
+description: Apply this skill when Node.js runtime code, server performance behavior, event-loop blocking, libuv worker-pool use, package manager ownership, module format, package entry metadata, native dependencies, Node test runner behavior, TypeScript execution mode, or deployment runtime support is created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -29,12 +29,13 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Preserve the actual Node.js runtime, module, package manager, TypeScript execution, test runner, package entry, native dependency, and deployment boundaries.
+Preserve the actual Node.js runtime, module, package manager, TypeScript execution, test runner, package entry, native dependency, deployment, event-loop, worker-pool, and server-performance boundaries.
 
 <!-- mustflow-section: use-when -->
 ## Use When
 
 - Node.js runtime code, `node:*` APIs, `process`, `Buffer`, streams, workers, child processes, native addons, Node permission flags, Node test runner behavior, package entry metadata, or deployment runtime support changes.
+- Node server code, CLI code, workers, request handlers, stream handlers, serializers, parsers, regex validation, crypto, zlib, filesystem, DNS, child process, or CPU-heavy JavaScript changes can affect event-loop delay, event-loop utilization, libuv worker-pool pressure, CPU profiles, GC, or p95/p99 latency.
 - `package.json` Node fields change, including `engines.node`, `devEngines`, `packageManager`, `type`, `main`, `exports`, `imports`, `types`, `typesVersions`, `files`, `bin`, `sideEffects`, or `workspaces`.
 - Node version signals, CI Node setup, Docker Node base images, serverless Node runtime settings, Corepack usage, npm, pnpm, Yarn, or lockfile ownership changes.
 - The task proposes native Node TypeScript execution, ESM/CJS conversion, conditional exports, package manager migration, or Node built-in test runner migration.
@@ -55,6 +56,7 @@ Preserve the actual Node.js runtime, module, package manager, TypeScript executi
 - Module and package metadata: nearest `package.json#type`, file extensions, `main`, `module`, `exports`, `imports`, `types`, `typings`, `typesVersions`, `files`, `bin`, `sideEffects`, and documented import paths.
 - TypeScript and loader signals: `tsconfig*.json`, `tsx`, `ts-node`, SWC, Babel, Vite, tsup, esbuild, Node native type stripping, path aliases, declaration output, and test or build transforms.
 - Test, native, and deployment signals: package scripts, test runner config, `node:test` usage, native dependency indicators such as `.node`, `binding.gyp`, `node-gyp`, lifecycle scripts, optional dependencies, serverless or edge config, and command contract entries.
+- Node performance signals: `perf_hooks` usage, event-loop utilization, event-loop delay histograms, CPU profile or flame graph setup, request-level I/O timings, `--trace-sync-io`, worker-thread pools, `UV_THREADPOOL_SIZE`, stream backpressure, large JSON handling, regex validation, GC or heap flags, and timeout or cancellation paths.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -99,7 +101,16 @@ Preserve the actual Node.js runtime, module, package manager, TypeScript executi
 17. Inspect native and install-sensitive dependencies when package metadata or runtime imports touch `.node`, `binding.gyp`, `node-gyp`, `preinstall`, `install`, `postinstall`, `prepare`, optional dependencies, peer dependencies, OS, CPU, libc, or Node ABI boundaries.
 18. Treat optional dependencies and optional peers as absent until code handles absence. Do not require optional packages directly without fallback or error handling that matches the existing project pattern.
 19. Treat the Node permission model as a trusted-code seatbelt, not a sandbox for untrusted code. If permission flags are introduced or changed, map required filesystem, network, child process, worker, native addon, WASI, inspector, and temporary directory access explicitly.
-20. Choose configured verification intents that cover lint, build, tests, package metadata, release-sensitive package output, docs examples, and mustflow contract checks when available. Report missing consumer fixture, ESM, CJS, TypeScript consumer, native dependency, deployment, or permission verification.
+20. Separate Node performance bottlenecks before choosing a fix. Use available `perf_hooks` or configured evidence to distinguish JavaScript CPU, event-loop delay, external I/O wait, libuv worker-pool saturation, stream backpressure, and GC or allocation churn. Event-loop utilization is not CPU percent; high ELU with low CPU can still mean sync blocking.
+21. Prefer CPU profiles or flame graphs over timing logs for CPU-heavy Node paths. Use profile or configured evidence for parsing, validation, rendering, hashing, compression, crypto, diffing, report generation, sorting, JSON work, formatter creation, or AST work; log timers alone rarely prove the hot stack.
+22. Treat event-loop delay as a tail metric. Check p95 and p99 delay when evidence exists, not only averages. A rare 800ms block can dominate user-visible latency while average delay looks clean.
+23. Keep server code off synchronous Node APIs after startup. `fs`, crypto, zlib, DNS, and child-process sync calls block the event loop; large `JSON.parse` or `JSON.stringify`, catastrophic regex, expensive sort comparators, repeated `Intl` or `Date` formatter construction, and eager logging serialization can do the same even without `Sync` in the name.
+24. Use worker threads for CPU-bound JavaScript or native-bound work, not as a cure for slow DB, HTTP, Redis, or filesystem waits. Slow external I/O needs query, pool, timeout, cancellation, backpressure, batching, or provider-boundary fixes.
+25. Treat the libuv worker pool as shared. Async `fs`, crypto, zlib, and `dns.lookup` can starve each other; `UV_THREADPOOL_SIZE` is a startup environment decision, not a runtime patch hidden inside application code.
+26. Preserve stream backpressure. For large files, uploads, exports, compression, proxying, and generated responses, prefer pipeline-style boundaries with error handling over whole-buffer reads or unchecked writes.
+27. Avoid `process.nextTick()` starvation. Recursive next-tick queues can prevent I/O polling; long work should be batched with event-loop yielding that lets I/O progress.
+28. Include GC and allocation in Node CPU diagnosis. A profile dominated by V8, GC, allocation, string/Buffer copies, or JSON work usually needs allocation reduction, streaming, chunking, pagination, bounded caches, or worker offload before heap-size tuning.
+29. Choose configured verification intents that cover lint, build, tests, package metadata, release-sensitive package output, docs examples, and mustflow contract checks when available. Report missing consumer fixture, ESM, CJS, TypeScript consumer, native dependency, deployment, permission, profiler, event-loop-delay, worker-pool, stream, or performance verification.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -109,6 +120,7 @@ Preserve the actual Node.js runtime, module, package manager, TypeScript executi
 - Native TypeScript execution is not mistaken for typecheck, declaration emit, or a full build pipeline.
 - Node-only APIs do not leak into browser, edge, Bun, or shared package surfaces unintentionally.
 - Native dependency, lifecycle, optional dependency, and permission-model risks are handled or reported.
+- Event-loop blocking, CPU profile, libuv worker-pool, stream backpressure, large JSON, regex REDOS, worker-thread fit, `process.nextTick()` starvation, and GC or allocation risks are handled or reported when touched.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -123,7 +135,7 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Report missing ESM/CJS consumer, declaration output, package artifact, frozen install, native dependency, deployment runtime, permission-model, or runner-specific verification intents when those surfaces change.
+Report missing ESM/CJS consumer, declaration output, package artifact, frozen install, native dependency, deployment runtime, permission-model, runner-specific, CPU-profile, event-loop-delay, worker-pool, stream-backpressure, or performance verification intents when those surfaces change.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -133,6 +145,7 @@ Report missing ESM/CJS consumer, declaration output, package artifact, frozen in
 - If a package entry change blocks a documented or previously supported import path, restore compatibility or report the breaking-change requirement.
 - If native Node TypeScript execution fails, repair the build/loader boundary instead of weakening typecheck or deleting the TypeScript pipeline.
 - If native dependency installation or optional dependency behavior is unclear, classify the change as release-sensitive and report the missing install or runtime evidence.
+- If a Node performance claim lacks event-loop, CPU, I/O, worker-pool, stream, or GC evidence, label it as static risk or missing measurement instead of reporting a measured speedup.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
@@ -141,6 +154,7 @@ Report missing ESM/CJS consumer, declaration output, package artifact, frozen in
 - Module and package entry notes
 - TypeScript execution and test runner notes
 - Native, lifecycle, deployment, or permission risks
+- Event-loop, CPU, worker-pool, stream, JSON, regex, next-tick, or GC risks
 - Files changed
 - Command intents run
 - Skipped checks and reasons

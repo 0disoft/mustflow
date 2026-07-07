@@ -26,7 +26,7 @@ import {
 } from './helpers/package-contracts.js';
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.114.0');
+	assert.equal(packageJson.version, '2.114.5');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {
@@ -59,6 +59,8 @@ test('package exposes a real install verification script', () => {
 	assert.equal(packageJson.scripts['test:cli'], 'node scripts/run-cli-tests.mjs --build cli');
 	assert.equal(packageJson.scripts['test:coverage'], 'node scripts/run-cli-tests.mjs --build coverage');
 	assert.equal(packageJson.scripts['test:audit'], 'node scripts/audit-tests.mjs --json');
+	assert.equal(packageJson.scripts['test:audit:related'], 'node scripts/audit-related-selection.mjs');
+	assert.equal(packageJson.scripts['test:ops'], 'node scripts/analyze-test-ops.mjs');
 	assert.equal(packageJson.scripts['test:release'], 'node scripts/run-cli-tests.mjs --build release');
 	assert.equal(packageJson.scripts['test:fast:node'], 'node scripts/run-cli-tests.mjs --build-runner=npm fast');
 	assert.equal(packageJson.scripts['test:release:node'], 'node scripts/run-cli-tests.mjs --build-runner=npm release');

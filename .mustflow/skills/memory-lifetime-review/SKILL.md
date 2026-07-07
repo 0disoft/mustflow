@@ -2,7 +2,7 @@
 mustflow_doc: skill.memory-lifetime-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: memory-lifetime-review
@@ -80,6 +80,7 @@ The question is not only "where was it allocated?" The stronger review question 
 - Refactor setup and cleanup into a shared lifecycle boundary when it prevents duplicate registration or forgotten teardown.
 - Add focused tests, fixtures, probes, or docs that prove cleanup symmetry, bounded retention, repeated lifecycle behavior, or native-resource disposal when repository evidence supports them.
 - Do not hide leak warnings by raising listener limits, disabling strict lifecycle checks, adding finalizers as primary cleanup, or weakening tests.
+- Do not add object pools as a default leak or GC fix. Pool only heavy buffers, large arrays, native handles, or repeatedly allocated expensive objects after allocation evidence shows churn; ordinary short-lived records are often cheaper to let the generational collector reclaim.
 - Do not use weak references as a design cover-up when the real owner and cleanup point should be explicit.
 
 <!-- mustflow-section: procedure -->
@@ -110,6 +111,8 @@ The question is not only "where was it allocated?" The stronger review question 
    - Producer-consumer queues need a capacity, drop or backpressure policy, timeout, and consumer shutdown path.
 10. Check language and runtime traps where applicable.
     - JavaScript and TypeScript: `addEventListener`, EventEmitter listeners, `setMaxListeners`, timers, intervals, unresolved promises, `AbortSignal`, React effects, ref arrays, module caches, maps, and logging queues.
+    - JavaScript metadata: use `WeakMap` or `WeakSet` for metadata attached to DOM nodes, AST nodes, request objects, sockets, or component instances when the metadata should die with the object; use a normal `Map` only when retention is intentional and bounded.
+    - JavaScript allocation and GC: avoid turning small short-lived records into long-lived pooled objects without evidence; check large temporary arrays, buffers, object graphs, array method chains, and old-generation retention before tuning `--max-old-space-size` or `--max-semi-space-size`.
     - React and similar UI runtimes: effects that touch the outside world need cleanup that reverses setup; ref callbacks and registries must remove old nodes and survive strict double-invocation checks.
     - Android: ViewModel or application-scope objects must not retain Activity, Fragment, View, lifecycle owner, or short-lived context; use lifecycle cleanup such as `onCleared` where appropriate.
     - Java and Kotlin: thread pools plus `ThreadLocal`, static caches, listener registries, executors, cursors, streams, and closeable resources need explicit release.
@@ -131,7 +134,8 @@ The question is not only "where was it allocated?" The stronger review question 
     - Core dump, exact binary, symbols, build id, shared library list, process maps, allocator state, failing input, and deployment version can be the only evidence for a memory fault.
     - If those artifacts are unavailable or manual-only, report that boundary instead of implying the crash was diagnosed from logs alone.
 15. Reject finalizers as the main plan. Finalizers, destructors, drop hooks, or weak callbacks can be last-resort diagnostics or safety nets, but the review should still identify deterministic cleanup for resources and reference removal.
-16. Add a repeated-lifecycle proof when feasible. Prefer a focused test or probe that repeats the risky lifecycle, then asserts listener count, registry size, cache size, goroutine/task completion, handle closure, queue depth, or retained object count. If heap snapshots, leak profilers, sanitizer runs, memory-checker runs, fuzzers, core dump inspection, or platform-specific diagnostics are not configured intents, report them as manual evidence gaps instead of running raw commands.
+16. Separate allocation churn from retained memory. High allocation rate, GC pauses, retained heap, external memory, and RSS growth point to different fixes. Prefer allocation timeline, heap snapshot, retaining-path, `--trace-gc`, sanitizer, or runtime memory evidence when configured; report unconfigured tools as manual evidence instead of guessing from RSS alone.
+17. Add a repeated-lifecycle proof when feasible. Prefer a focused test or probe that repeats the risky lifecycle, then asserts listener count, registry size, cache size, goroutine/task completion, handle closure, queue depth, or retained object count. If heap snapshots, leak profilers, sanitizer runs, memory-checker runs, fuzzers, core dump inspection, or platform-specific diagnostics are not configured intents, report them as manual evidence gaps instead of running raw commands.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -139,6 +143,7 @@ The question is not only "where was it allocated?" The stronger review question 
 - Every setup site has a cleanup owner, cleanup trigger, and repeated-path behavior, or the missing evidence is reported.
 - Long-lived owners no longer retain short-lived objects beyond their intended lifecycle, or the remaining retention is intentional and bounded.
 - Caches, queues, registries, debug stores, and logging or telemetry buffers have capacity, eviction, truncation, or copied-value boundaries where they can grow.
+- Weak metadata, object pooling, allocation churn, GC flags, and retained-heap claims are backed by ownership or diagnostic evidence rather than folklore.
 - Async, stream, worker, goroutine, thread, and native-resource paths have deterministic cancellation, close, shutdown, or release behavior where the platform supports it.
 - Native or low-level memory fault analysis names the first invalid access evidence or reports the missing diagnostic boundary instead of blaming the final crash line.
 - Tests or configured verification cover the highest-risk repeated lifecycle when feasible.
@@ -177,6 +182,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Retainer paths found or ruled out
 - Long-lived owners and short-lived objects checked
 - Timers, listeners, subscriptions, streams, workers, goroutines, threads, native handles, caches, queues, registries, closures, and logs checked where relevant
+- Weak metadata, object pooling, allocation churn, and GC diagnostics checked where relevant
 - First invalid access, diagnostic build axis, dangling ownership, fuzzing or core-dump evidence where relevant
 - Cleanup symmetry changes made or recommended
 - Repeated-lifecycle proof: configured, manual-only, missing, or not applicable

@@ -2,7 +2,7 @@
 mustflow_doc: skill.javascript-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: javascript-code-change
@@ -28,7 +28,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency, and test boundaries.
+Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency, data-shape, hot-path, and test boundaries.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -48,6 +48,8 @@ Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency
 - `package.json`, lockfile, engines, module `type`, package `exports`, bundler config, lint config, test config, and relevant entrypoints.
 - Target runtime: browser, Node, worker, edge, Bun, or multi-runtime boundary.
 - Runtime adapter files, source entrypoints, package docs examples, and build output layout when package entry or runtime support changes.
+- Data shape and hot-path surface when collection lookup, grouping, sorting, queueing, array mutation, object shape, typed arrays, allocation, or GC pressure changes.
+- JavaScript engine evidence when performance is claimed: Chrome or Node V8 profile, browser DevTools Performance or Memory output, Node CPU profile, event-loop delay, GC evidence, or an explicit note that Safari and Firefox behavior still needs project-specific measurement.
 - Async ownership and cleanup surface when Promises, retries, timers, event listeners, streams, abort signals, background tasks, startup, shutdown, or external I/O change.
 - Configured verification intents.
 
@@ -66,6 +68,7 @@ Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency
 - Prefer existing dependencies and platform APIs over adding a new dependency.
 - Keep runtime-specific APIs behind platform adapters or runtime-specific entrypoints.
 - Keep package entry changes synchronized with declarations, docs examples, build output, and consumer smoke coverage when available.
+- Prefer semantic data-shape changes over folklore micro-optimizations: use `Set` or `Map` for repeated lookup only when the setup cost is paid back, use objects for fixed-shape records, and keep order, duplicate, and winner semantics explicit.
 
 <!-- mustflow-section: procedure -->
 ## Procedure
@@ -95,14 +98,27 @@ Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency
 12. For package entry changes, check source entrypoints, build output layout, docs import examples, TypeScript or declaration settings, bundler config, and consumer-style tests. Report missing Node ESM, Node CJS, browser bundle, edge, Bun, or TypeScript consumer verification when those targets are claimed but no configured intent exists.
 13. Treat build targets as syntax/output compatibility, not as permission to use a runtime API. A browser or edge build target does not make Node filesystem, process, Buffer, or native APIs safe.
 14. Treat implicit globals as failures.
-15. Do not discard Promises. Every Promise-producing call must be awaited, returned, joined, or intentionally supervised by the project's detached-task pattern.
-16. Do not leave `.map(async ...)` unjoined. Join with the established Promise aggregation or bounded-concurrency helper when parallel work is intended.
-17. Do not use unbounded parallelism for large external I/O fan-out. Use the local concurrency limit pattern when the workload touches HTTP, database, filesystem, queue, AI, or other external services.
-18. Propagate cancellation when the operation can outlive a request, job, stream, retry loop, timeout, or user action. Accept and forward `AbortSignal` or the repository's established cancellation token when available.
-19. Do not implement timeout as a caller-only race that leaves the real work running. Timeout behavior must cancel or abort the underlying operation when the API supports it.
-20. Put cleanup in a deterministic path. Timers, event listeners, stream readers, Node streams, temp files, locks, transactions, subscriptions, and shutdown drains need success, failure, timeout, and cancellation cleanup coverage when touched.
-21. Do not build package exports or dependency changes without checking consumers, tests, and docs examples.
-22. Choose configured verification intents that cover lint, build, tests, package entry, runtime behavior, async rejection handling, cancellation, and cleanup when available.
+15. Do not treat `async`, `await`, or Promise syntax as a thread or CPU offload boundary. CPU-heavy parsing, sorting, diffing, compression, crypto, markdown rendering, syntax highlighting, chart preparation, and large JSON work still block the browser main thread or Node event loop unless moved to a real worker, backend job, streaming pipeline, or bounded chunked scheduler.
+    - When optimizing JavaScript syntax or data shape, classify the evidence by engine. V8 evidence from Chrome or Node is useful, but it does not prove Safari or Firefox behavior without measurement in the target browser/runtime.
+16. Do not claim JavaScript `Map`, `Set`, `WeakMap`, or `WeakSet` are guaranteed O(1). Treat them as average sublinear keyed collections, then choose them only when repeated lookups, dynamic keys, object keys, or membership checks justify the setup and memory cost.
+17. Use `Map` for dynamic, user-controlled, object-identity, or frequently added and removed keys. Use plain objects for fixed-shape records with known fields. Avoid turning hot objects into ad hoc dictionaries.
+18. Keep hot object shapes stable. Create the same fields in the same order for the same record kind, prefer sentinel values such as `null` for optional fields, and avoid `delete` on hot objects unless dynamic-key behavior is the real requirement and a `Map` is more honest. In V8-heavy Chrome or Node paths, treat late property addition and inconsistent field order as engine-shape risks unless a profile proves they are outside the hot path.
+19. Keep arrays dense and type-stable in hot paths. Avoid `delete array[i]`, far-out index writes, partially-filled `new Array(n)`, mixed numeric and object values, and out-of-bounds reads. Prefer `push` when values arrive sequentially, and consider `TypedArray` for numeric buffers, vectors, pixels, counters, and other fixed numeric data. Do not mix small integers, doubles, objects, holes, and sentinel values casually in arrays that execute inside render, request, parser, or worker loops.
+20. Avoid JavaScript array operations that move or rebuild large collections in hot paths. Use a head-index queue instead of repeated `shift()` or `unshift()`, swap-with-last plus `pop()` for unordered deletes instead of repeated middle `splice()`, and avoid `filter().map().flatMap()` chains when intermediate arrays dominate allocation.
+21. Treat sorting as ordering work, not lookup work. Use `Map` for exact repeated lookup, sorted arrays plus binary search or merge for range work, decorate-sort-undecorate when the comparator computes expensive keys, and a heap or bounded top-k structure for repeated priority extraction. Keep comparators cheap: precompute `Date`, locale, normalized string, JSON, path, or score keys instead of recalculating them for every comparison call.
+22. Use `WeakMap` or `WeakSet` for metadata tied to object lifetime, such as DOM nodes, AST nodes, request objects, sockets, or component instances. Do not keep those objects alive in a normal `Map` unless retention is intentional and bounded.
+23. Prefer rest parameters over `arguments` in new hot-path code. Convert `arguments`, `NodeList`, `HTMLCollection`, and other array-like objects to a real array once when repeated `map`, `filter`, `forEach`, iteration, or indexing work follows. Pool only heavy buffers, arrays, or repeatedly allocated expensive objects after allocation evidence; do not pool ordinary short-lived records just to look optimized.
+24. Do not discard Promises. Every Promise-producing call must be awaited, returned, joined, or intentionally supervised by the project's detached-task pattern.
+25. Do not leave `.map(async ...)` unjoined. Join with the established Promise aggregation or bounded-concurrency helper when parallel work is intended.
+26. Do not use unbounded parallelism for large external I/O fan-out. Use the local concurrency limit pattern when the workload touches HTTP, database, filesystem, queue, AI, or other external services.
+27. Avoid accidental serial waits over independent work. A `for...of` loop with `await` is correct for ordered dependencies, rate spacing, or shared mutable state, but independent HTTP, filesystem, database, or worker tasks should use the local bounded-concurrency pattern instead of one slow item holding the whole line hostage.
+28. Choose Promise aggregation by failure policy. `Promise.all` fails fast but does not cancel remaining work by itself; use `allSettled` when every result matters, `any` when the first success wins, and explicit `AbortController` or local cancellation when first failure should stop underlying work.
+29. Treat `await fetch()` and `response.json()` as two different costs. The network wait is async, but large body buffering and JSON parse can block the main thread or event loop; prefer pagination, projection, NDJSON, streaming parsers, worker parsing, or server-side shaping when payloads can grow. Cache `Intl.NumberFormat`, `Intl.DateTimeFormat`, regexes, and similar formatter/parser objects outside hot loops or render paths when ownership and locale inputs are stable.
+30. Propagate cancellation when the operation can outlive a request, job, stream, retry loop, timeout, or user action. Accept and forward `AbortSignal` or the repository's established cancellation token when available.
+31. Do not implement timeout as a caller-only race that leaves the real work running. Timeout behavior must cancel or abort the underlying operation when the API supports it.
+32. Put cleanup in a deterministic path. Timers, event listeners, stream readers, Node streams, temp files, locks, transactions, subscriptions, and shutdown drains need success, failure, timeout, and cancellation cleanup coverage when touched.
+33. Do not build package exports or dependency changes without checking consumers, tests, and docs examples.
+34. Choose configured verification intents that cover lint, build, tests, package entry, runtime behavior, async rejection handling, cancellation, cleanup, and hot-path data-shape semantics when available.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -110,8 +126,9 @@ Preserve JavaScript module, runtime, package entry, Promise, cleanup, dependency
 - Runtime and module boundaries are explicit.
 - Promise failures are not hidden.
 - Runtime-specific APIs do not leak into shared, browser, edge, or package entry code.
+- Collection and object-shape changes preserve lookup, ordering, duplicate, lifecycle, and allocation semantics.
 - Package entry changes are synchronized with tests or reported as unverified.
-- Async cancellation and cleanup behavior is covered or reported as a remaining risk.
+- Async cancellation, failure policy, payload parsing, CPU offload, and cleanup behavior are covered or reported as remaining risk.
 - No unnecessary dependency was added.
 
 <!-- mustflow-section: verification -->
@@ -145,6 +162,7 @@ Report missing browser, Node, edge, Bun, TypeScript-consumer, package-entry, asy
 - Boundary checked
 - Runtime and module notes
 - Async and dependency notes
+- Data-shape and hot-path notes
 - Files changed
 - Command intents run
 - Skipped checks and reasons
