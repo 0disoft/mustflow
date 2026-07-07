@@ -41,6 +41,7 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - बड़े बदलावों से पहले read-only स्वास्थ्य जांच के लिए `mf doctor` या `mf doctor --json` चलाएं।  
 - `mf context --json` मशीन-पठनीय आउटपुट दे सकता है, लेकिन यह नियम और कमांड विनिर्देशन का विकल्प नहीं है।  
 - `.mustflow/config/preferences.toml` की प्राथमिकता सीधे उपयोगकर्ता निर्देशों और मौजूदा परियोजना शैली से कम है।  
+- यदि यह repository ऐसी child repository है जिसके पास अपना `.mustflow/config/preferences.toml` नहीं है, तो निकटतम parent mustflow root की preferences को defaults के रूप में inherit करें। इसमें `[git]`, `[git.commit_message]`, `[release.versioning]`, verification, testing, language, reporting, और अन्य preference sections शामिल हैं। child-local preferences parent preferences को field-by-field override करती हैं। `.mustflow/config/commands.toml` को कभी inherit न करें; command authority repository-local command contract में ही रहती है।
 - code, templates, schemas, CLI व्यवहार, package metadata, user-visible docs, installation output, या tests बदलने पर अंतिम रिपोर्ट से पहले `.mustflow/config/preferences.toml` में `[release.versioning]` देखें। version files केवल उन्हीं preferences के अनुसार बदली जा सकती हैं: यदि `auto_bump = true` और `require_user_confirmation = false` हो तो automatic bump लागू करें; अन्यथा configuration के अनुसार bump सुझाएं या संपादन से पहले confirmation मांगें। version source को `package.json` मानकर न चलें; version suggest या edit करने से पहले repository-specific version source खोजें।  
 - `.mustflow/context/` की संदर्भ फाइलें परियोजना दिशा और डोमेन परंपराएं बताती हैं। इन्हें कार्य-विशिष्ट संदर्भ के रूप में लें, न कि कोड, परीक्षण, कमांड या उपयोगकर्ता निर्देशों के स्थान पर।  
 - यदि `DESIGN.md` मौजूद हो, तो उसे केवल UI, दृश्य डिज़ाइन, लेआउट, design token, या अभिगम्यता कार्य के लिए पढ़ें। यदि `DESIGN.md` नहीं है, तो नई फाइल न बनाएं।  
@@ -57,6 +58,7 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - यदि कार्यप्रवाह, शैली, परीक्षण, या कमांड नियमों में टकराव हो, तो child रिपॉजिटरी के `AGENTS.md` और `.mustflow/config/commands.toml` का पालन करें।  
 - secrets, गोपनीयता, destructive commands, और अनुमत संपादन मार्गों के सुरक्षा नियम संचयी होते हैं। अधिक सख्त नियम अपनाएं।  
 - nested रिपॉजिटरी में जाने पर संपादन से पहले उसका `AGENTS.md` और `.mustflow/config/*.toml` फिर से पढ़ें।  
+- यदि nested repository में local preferences file नहीं है, तो nested repository के `AGENTS.md` और command contract का पालन करते हुए निकटतम parent mustflow preferences को inherited defaults के रूप में लागू करें।
 - स्पष्ट अनुरोध के बिना चुनी हुई child रिपॉजिटरी के बाहर संपादन न करें।  
 
 ## होस्ट-विशिष्ट निर्देश अनुकूलता

@@ -41,6 +41,7 @@ Les détails gérés par mustflow se trouvent dans `.mustflow/`.
 - Utiliser `mf doctor` ou `mf doctor --json` pour un contrôle de santé en lecture seule avant des changements importants.  
 - `mf context --json` peut aider pour une orientation lisible par machine, mais ne remplace pas les règles ni la spécification des commandes.  
 - Les préférences dans `.mustflow/config/preferences.toml` ont une priorité plus faible que les instructions utilisateur directes et que le style existant du projet.  
+- Si ce dépôt est un dépôt enfant sans son propre `.mustflow/config/preferences.toml`, hériter comme valeurs par défaut des préférences du mustflow root parent le plus proche. Cela inclut `[git]`, `[git.commit_message]`, `[release.versioning]`, verification, testing, language, reporting et les autres sections de préférences. Les préférences locales du dépôt enfant remplacent celles du parent champ par champ. Ne jamais hériter de `.mustflow/config/commands.toml` ; l’autorité de commande reste locale au dépôt.
 - Quand le code, les modèles, les schémas, le comportement CLI, les métadonnées du paquet, la documentation visible par l’utilisateur, la sortie d’installation ou les tests changent, vérifier `[release.versioning]` dans `.mustflow/config/preferences.toml` avant le rapport final.  
   Les fichiers de version ne peuvent être modifiés que selon ces préférences : appliquer un changement automatique quand `auto_bump = true` et `require_user_confirmation = false` ; sinon, suggérer le changement ou demander confirmation avant modification selon la configuration. Ne pas supposer que la source de version est `package.json` ; localiser la source de version propre au dépôt avant de suggérer ou d’éditer des versions.  
 - Les fichiers de contexte dans `.mustflow/context/` expliquent la direction du projet et les conventions du domaine. Les considérer comme un contexte spécifique à la tâche, pas comme un remplacement du code, des tests, des commandes ou des instructions utilisateur.  
@@ -58,6 +59,7 @@ Les détails gérés par mustflow se trouvent dans `.mustflow/`.
 - En cas de conflit entre les règles de flux, de style, de tests ou de commandes, suivre le `AGENTS.md` du dépôt enfant et `.mustflow/config/commands.toml`.  
 - Les règles de sécurité sur les secrets, la vie privée, les commandes destructrices et les chemins d’édition autorisés sont cumulatives. Appliquer la règle la plus stricte.  
 - Lors de la navigation vers un dépôt imbriqué, relire le `AGENTS.md` de ce dépôt et `.mustflow/config/*.toml` avant d’éditer.  
+- Si le dépôt imbriqué n’a pas de fichier preferences local, appliquer les preferences du mustflow parent le plus proche comme valeurs héritées tout en continuant de suivre le `AGENTS.md` et le command contract du dépôt imbriqué.
 - Ne pas éditer en dehors du dépôt enfant sélectionné, sauf demande explicite.  
 
 ## Compatibilité avec les instructions du host

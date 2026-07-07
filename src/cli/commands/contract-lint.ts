@@ -1,8 +1,6 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-
 import { lintCommandContract, type ContractLintReport } from '../../core/contract-lint.js';
-import { readCommandContract, isRecord, type TomlTable } from '../../core/config-loading.js';
+import { readCommandContract } from '../../core/config-loading.js';
+import { readEffectivePreferencesToml } from '../../core/preferences.js';
 import { releaseVersioningIsEnabled } from '../../core/version-sources.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -14,7 +12,6 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readMustflowTomlFile } from '../lib/toml.js';
 
 const CONTRACT_LINT_SCHEMA_VERSION = '1';
 const CONTRACT_LINT_OPTIONS = [
@@ -51,17 +48,6 @@ export function getContractLintHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function readPreferences(projectRoot: string): TomlTable | undefined {
-	const preferencesPath = path.join(projectRoot, '.mustflow', 'config', 'preferences.toml');
-
-	if (!existsSync(preferencesPath)) {
-		return undefined;
-	}
-
-	const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
-	return isRecord(preferences) ? preferences : undefined;
-}
-
 function createContractLintOutput(projectRoot: string, coverage: boolean, suggest: boolean): ContractLintOutput {
 	return {
 		schema_version: CONTRACT_LINT_SCHEMA_VERSION,
@@ -71,7 +57,7 @@ function createContractLintOutput(projectRoot: string, coverage: boolean, sugges
 			coverage,
 			suggest,
 			projectRoot,
-			releaseVersioningEnabled: releaseVersioningIsEnabled(readPreferences(projectRoot)),
+			releaseVersioningEnabled: releaseVersioningIsEnabled(readEffectivePreferencesToml(projectRoot)),
 		}),
 	};
 }

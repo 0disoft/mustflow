@@ -26,6 +26,7 @@ import {
 	TECHNOLOGY_CONFIG_RELATIVE_PATH,
 	type TechnologyPreference,
 } from '../../core/technology-preferences.js';
+import { readEffectivePreferencesToml } from '../../core/preferences.js';
 import {
 	isPromptCacheStableLeafSkillSurface,
 	measurePromptCacheReferenceBlockBytes,
@@ -2218,7 +2219,7 @@ export async function getPromptCacheProfileContext(
 
 export function getAgentContext(projectRoot: string): AgentContext {
 	const mustflow = readTomlTableIfExists(projectRoot, MUSTFLOW_RELATIVE_PATH);
-	const preferences = readTomlTableIfExists(projectRoot, PREFERENCES_RELATIVE_PATH);
+	const preferences = readEffectivePreferencesToml(projectRoot);
 	const authority = isRecord(mustflow?.authority) ? mustflow.authority : undefined;
 	const capabilities = isRecord(mustflow?.capabilities) ? mustflow.capabilities : undefined;
 	const readOrder = mustflow ? readStringArray(mustflow, 'read_order') ?? [] : [];

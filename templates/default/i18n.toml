@@ -10,12 +10,12 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 20
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 20, status = "current" }
-translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 11, status = "needs_review" }
-translations.es = { path = "locales/es/AGENTS.md", source_revision = 11, status = "needs_review" }
-translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 11, status = "needs_review" }
-translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 11, status = "needs_review" }
+revision = 21
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 21, status = "current" }
+translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 21, status = "needs_review" }
+translations.es = { path = "locales/es/AGENTS.md", source_revision = 21, status = "needs_review" }
+translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 21, status = "needs_review" }
+translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 21, status = "needs_review" }
 
 [documents."context.index"]
 source = "locales/en/.mustflow/context/INDEX.md"
@@ -40,7 +40,7 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 28
+revision = 29
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }

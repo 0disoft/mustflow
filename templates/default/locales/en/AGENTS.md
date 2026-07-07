@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 20
+revision: 21
 lifecycle: user-editable
 authority: binding
 ---
@@ -57,6 +57,11 @@ mustflow-managed details are under `.mustflow/`.
   and command specification.
 - Preferences in `.mustflow/config/preferences.toml` have lower priority than direct user
   instructions and existing project style.
+- If this repository is a child repository without its own `.mustflow/config/preferences.toml`,
+  inherit the nearest parent mustflow root's preferences as defaults. This includes `[git]`,
+  `[git.commit_message]`, `[release.versioning]`, verification, testing, language, reporting, and
+  other preference sections. Child-local preferences override parent preferences field by field.
+  Never inherit `.mustflow/config/commands.toml`; command authority remains repository-local.
 - When code, templates, schemas, CLI behavior, package metadata, user-visible docs, installation
   output, or tests change, check `[release.versioning]` in `.mustflow/config/preferences.toml`
   before the final report. Version files may be changed only according to those preferences:
@@ -115,6 +120,9 @@ mustflow-managed details are under `.mustflow/`.
   Follow the stricter rule.
 - When navigating to a nested repository, reread that repository's `AGENTS.md` and
   `.mustflow/config/*.toml` before editing.
+- If the nested repository has no local preferences file, apply the nearest parent mustflow
+  preferences as inherited defaults while still following the nested repository's `AGENTS.md` and
+  command contract.
 - In repository farms, prefer each child repository's own command contract for repository-owned
   commands. If the parent root intentionally orchestrates children, split parent-owned commands
   into repo-named fragments under `.mustflow/config/commands/`; use

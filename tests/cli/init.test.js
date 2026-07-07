@@ -174,6 +174,8 @@ test('installs Korean workflow documents with canonical English skills when requ
 
 		assert.match(agents, /locale: ko/);
 		assert.match(agents, /## 읽는 순서/);
+		assert.match(agents, /가장 가까운 상위 mustflow 루트의 선호 설정을 기본값으로 상속합니다/);
+		assert.match(agents, /\.mustflow\/config\/commands\.toml`은 절대 상속하지 않습니다/);
 		assert.match(agents, /auto_bump = true/);
 		assert.match(agents, /require_user_confirmation = false/);
 		assert.doesNotMatch(agents, /명시적으로 요청하지 않았다면 버전 파일을\s+바꾸지 않습니다/);
@@ -282,7 +284,7 @@ test('applies safe preference overrides from repeated set options', async () => 
 			'--set',
 			'git.auto_commit=true',
 			'--set',
-			'git.auto_push=false',
+			'git.auto_push=true',
 			'--set=git.commit_message.language=pt-BR',
 			'--set=git.commit_message.style=gitmoji',
 			'--set',
@@ -327,7 +329,7 @@ test('applies safe preference overrides from repeated set options', async () => 
 		const preferences = readText(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'));
 
 		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_commit = true/);
-		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_push = false/);
+		assert.match(preferences, /\[git\]\n(?:.*\n)*?auto_push = true/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?style = "gitmoji"/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?language = "pt-BR"/);
 		assert.match(preferences, /\[git\.commit_message\]\n(?:.*\n)*?max_suggestions = 4/);
@@ -358,7 +360,7 @@ test('applies safe preference overrides from repeated set options', async () => 
 
 test('rejects unsupported init preference overrides', async () => {
 	const invalidOverrides = [
-		['git.auto_push=true', /Invalid value for git\.auto_push: true/],
+		['git.auto_push=yes', /Invalid value for git\.auto_push: yes/],
 		['git.commit_message.style=emoji', /Invalid value for git\.commit_message\.style: emoji/],
 		['git.commit_message.max_suggestions=6', /Invalid value for git\.commit_message\.max_suggestions: 6/],
 		['git.commit_message.include_body=sometimes', /Invalid value for git\.commit_message\.include_body: sometimes/],

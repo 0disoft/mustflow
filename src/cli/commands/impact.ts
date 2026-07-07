@@ -1,7 +1,7 @@
 import { createChangeClassificationReport, type ChangeClassificationReport } from '../../core/change-classification.js';
+import { readEffectivePreferencesToml } from '../../core/preferences.js';
 import { summarizeVersionImpact, type VersionImpactSummary } from '../../core/version-impact.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
-import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { requireGitChangedFiles } from '../lib/git-changes.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
@@ -13,7 +13,6 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readMustflowTomlFile } from '../lib/toml.js';
 import {
 	detectVersionSources,
 	releaseVersioningIsEnabled,
@@ -75,15 +74,6 @@ function parseImpactArgs(args: readonly string[]): ParsedImpactArgs {
 	};
 }
 
-function readPreferences(projectRoot: string): TomlTable | undefined {
-	try {
-		const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
-		return isRecord(preferences) ? preferences : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
 function createImpactOutput(projectRoot: string, parsed: ParsedImpactArgs): ImpactOutput {
 	const source = parsed.changed ? 'changed' : 'paths';
 	const files = parsed.changed ? requireGitChangedFiles(projectRoot) : parsed.paths;
@@ -96,7 +86,7 @@ function createImpactOutput(projectRoot: string, parsed: ParsedImpactArgs): Impa
 		mustflow_root: projectRoot,
 		source,
 		files: classificationReport.files,
-		versioning_enabled: releaseVersioningIsEnabled(readPreferences(projectRoot)),
+		versioning_enabled: releaseVersioningIsEnabled(readEffectivePreferencesToml(projectRoot)),
 		version_sources: versionSources,
 		classification_summary: classificationReport.summary,
 		version_impact: summarizeVersionImpact(classificationReport, versionSources),

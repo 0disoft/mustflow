@@ -501,8 +501,10 @@ test('security flow review traces source-to-sink security boundaries', () => {
 		'privacy_change',
 		'data_change',
 		'test_change',
+		'docs_change',
 		'package_metadata_change',
 		'release_risk',
+		'unknown_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/security-flow-review\/SKILL\.md"/u);
 	assert.match(manifest, /"security-flow-review"/u);

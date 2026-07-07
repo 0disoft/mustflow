@@ -368,7 +368,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
 		i18n,
-		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 28/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 29/u,
 	);
 	assert.match(
 		i18n,

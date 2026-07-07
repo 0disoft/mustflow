@@ -41,6 +41,7 @@ Los detalles gestionados por mustflow se encuentran en `.mustflow/`.
 - Usa `mf doctor` o `mf doctor --json` para una revisión de salud de solo lectura antes de cambios amplios.  
 - `mf context --json` puede ayudar con orientación legible por máquina, pero no reemplaza las reglas ni la especificación de comandos.  
 - Las preferencias en `.mustflow/config/preferences.toml` tienen menor prioridad que las instrucciones directas del usuario y el estilo existente del proyecto.  
+- Si este repositorio es un repositorio hijo sin su propio `.mustflow/config/preferences.toml`, hereda como valores predeterminados las preferencias del mustflow root padre más cercano. Esto incluye `[git]`, `[git.commit_message]`, `[release.versioning]`, verification, testing, language, reporting y otras secciones de preferencias. Las preferencias locales del repositorio hijo sobrescriben las del padre campo por campo. No heredes nunca `.mustflow/config/commands.toml`; la autoridad de comandos sigue siendo local del repositorio.
 - Cuando cambies código, plantillas, esquemas, comportamiento de CLI, metadatos de paquete, documentación visible para usuarios, salida de instalación o pruebas, revisa `[release.versioning]` en `.mustflow/config/preferences.toml` antes del informe final. Los archivos de versión solo pueden modificarse según esas preferencias: aplica el aumento automático cuando `auto_bump = true` y `require_user_confirmation = false`; en caso contrario, sugiere el aumento o pide confirmación antes de editar según la configuración. No asumas que la fuente de versión es `package.json`; localiza la fuente propia del repositorio antes de sugerir o editar versiones.  
 - Los archivos de contexto en `.mustflow/context/` explican la dirección del proyecto y las convenciones del dominio. Trátalos como contexto específico de la tarea, no como sustituto de código, pruebas, comandos o instrucciones del usuario.  
 - Si existe `DESIGN.md`, léelo solo para tareas de interfaz, diseño visual, maquetación, tokens de diseño o accesibilidad. No crees un `DESIGN.md` si no existe.  
@@ -57,6 +58,7 @@ Los detalles gestionados por mustflow se encuentran en `.mustflow/`.
 - Si hay conflicto entre reglas de flujo, estilo, pruebas o comandos, sigue el `AGENTS.md` del repositorio hijo y `.mustflow/config/commands.toml`.  
 - Las reglas de seguridad sobre secretos, privacidad, comandos destructivos y rutas permitidas de edición son acumulativas. Aplica la regla más estricta.  
 - Al entrar en un repositorio anidado, vuelve a leer su `AGENTS.md` y `.mustflow/config/*.toml` antes de editar.  
+- Si el repositorio anidado no tiene un archivo local de preferences, aplica las preferences del mustflow padre más cercano como valores heredados mientras sigues obedeciendo el `AGENTS.md` y el command contract del repositorio anidado.
 - No edites fuera del repositorio hijo seleccionado salvo solicitud explícita.  
 
 ## Compatibilidad con Instrucciones del Host

@@ -241,7 +241,7 @@ const VERIFICATION_SELECTION_BOOLEAN_FIELDS = new Set([
 const TEST_AUTHORING_BOOLEAN_FIELDS = new Set(['prefer_existing_tests', 'require_new_test_rationale']);
 
 function createPreferenceOverride(key: string, value: string, reporter: Reporter, lang: CliLang): PreferenceOverride | undefined {
-	if (key === 'git.auto_stage' || key === 'git.auto_commit') {
+	if (key === 'git.auto_stage' || key === 'git.auto_commit' || key === 'git.auto_push') {
 		const parsed = parseBoolean(value);
 
 		if (parsed === undefined) {
@@ -254,20 +254,6 @@ function createPreferenceOverride(key: string, value: string, reporter: Reporter
 			section: 'git',
 			field: key.slice('git.'.length),
 			renderedValue: String(parsed),
-		};
-	}
-
-	if (key === 'git.auto_push') {
-		if (value !== 'false') {
-			reporter.stderr(t(lang, 'init.error.invalidPreferenceValue', { key, value }));
-			return undefined;
-		}
-
-		return {
-			key,
-			section: 'git',
-			field: 'auto_push',
-			renderedValue: 'false',
 		};
 	}
 

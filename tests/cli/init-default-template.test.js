@@ -157,6 +157,10 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'schemas')), false);
 		assert.equal(existsSync(path.join(projectPath, 'REPO_MAP.md')), false);
 
+		const installedAgents = readText(path.join(projectPath, 'AGENTS.md'));
+		assert.match(installedAgents, /inherit the nearest parent mustflow root's preferences as defaults/);
+		assert.match(installedAgents, /Never inherit `\.mustflow\/config\/commands\.toml`/);
+
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);
 		assert.match(gitignore, /\.mustflow\/cache\//);

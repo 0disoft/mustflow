@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 28
+revision: 29
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -28,7 +28,7 @@ mustflow documents have specific, narrow roles. Do not move a rule into a lower-
 | `.mustflow/docs/agent-workflow.md` | Shared workflow policy for reading, editing, verifying, reporting, and failure handling. | Expands `AGENTS.md`; does not define executable commands. | mustflow-owned Markdown. |
 | `.mustflow/config/mustflow.toml` | Machine-readable workflow configuration, document roots, protection, budget, approval, retention, and refresh settings. | Configuration source for mustflow behavior. | mustflow-owned TOML. |
 | `.mustflow/config/commands.toml` | Command intent contract. | Sole source granting project command execution through configured intents. | Repository-local TOML, edited when command contracts change. |
-| `.mustflow/config/preferences.toml` | Repository-level defaults for style, language, Git suggestions, testing tendency, verification selection, and version-impact handling. | Lower-authority preferences; not permissions. | Repository-local TOML, user-customizable. |
+| `.mustflow/config/preferences.toml` | Repository-level defaults for style, language, Git suggestions, testing tendency, verification selection, and version-impact handling. | Lower-authority preferences; not permissions. Child repositories without local preferences may inherit the nearest parent mustflow preferences as defaults. | Repository-local TOML, user-customizable. |
 | `.mustflow/context/INDEX.md` | Router for task-specific context files. | Selects optional context only; not a policy manual. | mustflow-owned Markdown. |
 | `.mustflow/context/PROJECT.md` | Cautious project facts, unknowns, and domain conventions. | Contextual reference below user instructions, code, tests, commands, and configured policies. | User-editable context. |
 | `.mustflow/skills/router.toml` | Stable compact route taxonomy and fallback rules for prompt-cache-friendly first-pass skill selection. | Selection kernel only; procedure detail remains in `SKILL.md`. | mustflow-owned TOML. |
@@ -98,6 +98,12 @@ Treat user instructions, local files, command contracts, and generated reports a
 - Direct user instructions take priority.
 - The nearest `AGENTS.md` takes precedence over broader parent rules.
 - `.mustflow/config/preferences.toml` contains defaults, not mandatory requirements.
+- If a child repository has no local `.mustflow/config/preferences.toml`, apply the nearest parent
+  mustflow root's preferences as inherited defaults. Inherited preferences include `[git]`,
+  `[git.commit_message]`, `[release.versioning]`, verification, testing, language, reporting, and
+  other preference sections. Child-local preference values override inherited values field by field.
+- Never inherit `.mustflow/config/commands.toml`; command execution authority stays with the nearest
+  repository command contract.
 - Generated files such as `REPO_MAP.md`, `.mustflow/cache/**`, and `.mustflow/state/**` may become stale.
 - Compacted summaries are derived representations of state. Current code, configuration, command records, and current user instructions override them.
 
@@ -136,7 +142,7 @@ Do not collapse every instruction into a single priority list. Resolve conflicts
 - Repository work rules: use the nearest `AGENTS.md` plus `.mustflow/config/*.toml`.
 - Command execution: `.mustflow/config/commands.toml` is the project command contract.
 - Verification evidence: `mf run` receipts and current files outrank direct host shell output.
-- Context and preferences: `.mustflow/context/*`, `preferences.toml`, and generated maps are lower-authority defaults.
+- Context and preferences: `.mustflow/context/*`, local or inherited `preferences.toml`, and generated maps are lower-authority defaults.
 - Session and cache state: host summaries, `.mustflow/cache/**`, and `.mustflow/state/**` never override current files or current user instructions.
 
 Allowed action sets narrow by intersection. Denied actions, approval requirements, privacy rules, and destructive-command rules accumulate. When the effective rule is unclear, stop and report the conflict instead of guessing.
@@ -214,7 +220,7 @@ Git operations that modify state or history are denied by default.
 - `git.auto_commit = false`: do not commit without a user request.
 - `git.auto_push = false`: do not push without a user request.
 
-These values are repository preferences, not permissions. They do not override direct user instructions, `.mustflow/config/commands.toml`, or approval policy in `.mustflow/config/mustflow.toml`. In particular, `git.auto_commit = true` does not grant push permission, and `git.auto_push = true` cannot be enabled through `mf init`.
+These values are repository preferences, not permissions. They do not override direct user instructions, `.mustflow/config/commands.toml`, or approval policy in `.mustflow/config/mustflow.toml`. In particular, `git.auto_commit = true` does not grant push permission, and `git.auto_push = true` still requires an explicit user request and any host approval required for push operations.
 
 ## Version Impact Policy
 

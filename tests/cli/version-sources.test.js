@@ -73,6 +73,33 @@ test('prints detected template version source as json', async () => {
 	}
 });
 
+test('inherits release versioning preferences from a parent mustflow root', async () => {
+	const projectPath = createVersionSourcesProject();
+	const childPath = path.join(projectPath, 'projects', 'child');
+
+	try {
+		mkdirSync(path.join(childPath, '.mustflow', 'config'), { recursive: true });
+		writeFileSync(path.join(childPath, 'AGENTS.md'), '# Child fixture\n');
+		writeFileSync(path.join(childPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+		writeFileSync(path.join(childPath, 'package.json'), '{"name":"child","version":"0.1.0"}\n');
+
+		const result = await runCli(childPath, ['version-sources', '--json']);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0);
+		assert.equal(report.mustflow_root, childPath);
+		assert.equal(report.versioning_enabled, true);
+		assert.deepEqual(report.sources, [
+			{
+				path: 'package.json',
+				kind: 'package_manifest',
+			},
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints package manifest version sources without assuming package json only', async () => {
 	const projectPath = createVersionSourcesProject();
 

@@ -225,7 +225,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	}
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 28/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 29/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
 });

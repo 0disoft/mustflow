@@ -1,16 +1,10 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-
 import {
 	lintCommandContract,
 	type ContractLintReport,
 	type ContractLintSuggestion,
 } from '../../core/contract-lint.js';
-import {
-	isRecord,
-	readCommandContract,
-	type TomlTable,
-} from '../../core/config-loading.js';
+import { readCommandContract } from '../../core/config-loading.js';
+import { readEffectivePreferencesToml } from '../../core/preferences.js';
 import { releaseVersioningIsEnabled } from '../../core/version-sources.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -22,7 +16,6 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readMustflowTomlFile } from '../lib/toml.js';
 
 const ONBOARD_COMMANDS_SCHEMA_VERSION = '1';
 const COMMAND_CONTRACT_PATH = '.mustflow/config/commands.toml';
@@ -76,17 +69,6 @@ export function getOnboardHelp(lang: CliLang = 'en'): string {
 	);
 }
 
-function readPreferences(projectRoot: string): TomlTable | undefined {
-	const preferencesPath = path.join(projectRoot, '.mustflow', 'config', 'preferences.toml');
-
-	if (!existsSync(preferencesPath)) {
-		return undefined;
-	}
-
-	const preferences = readMustflowTomlFile(projectRoot, '.mustflow/config/preferences.toml');
-	return isRecord(preferences) ? preferences : undefined;
-}
-
 function countSuggestionsByKind(
 	suggestions: readonly ContractLintSuggestion[],
 	sourceKind: ContractLintSuggestion['sourceKind'],
@@ -113,7 +95,7 @@ function createOnboardCommandsOutput(projectRoot: string): OnboardCommandsOutput
 	const report: ContractLintReport = lintCommandContract(readCommandContract(projectRoot), {
 		suggest: true,
 		projectRoot,
-		releaseVersioningEnabled: releaseVersioningIsEnabled(readPreferences(projectRoot)),
+		releaseVersioningEnabled: releaseVersioningIsEnabled(readEffectivePreferencesToml(projectRoot)),
 	});
 	const suggestions = report.suggestions ?? [];
 

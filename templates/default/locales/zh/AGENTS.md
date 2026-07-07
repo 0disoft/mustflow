@@ -40,6 +40,7 @@ authority: binding
 - 大范围修改前，应使用 `mf doctor` 或 `mf doctor --json` 进行只读健康检查。  
 - `mf context --json` 提供机器可读的方向信息，但不能替代规则和命令规范。  
 - `.mustflow/config/preferences.toml` 中的偏好优先级低于用户直接指令及项目既有风格。  
+- 如果本仓库是没有自己的 `.mustflow/config/preferences.toml` 的子仓库，则把最近的父级 mustflow 根目录中的 preferences 作为默认值继承。继承范围包括 `[git]`、`[git.commit_message]`、`[release.versioning]`、verification、testing、language、reporting 以及其他 preference section。子仓库本地 preference 按字段覆盖父级默认值。绝不要继承 `.mustflow/config/commands.toml`；命令权限仍然是仓库本地的 command contract。
 - 当代码、模板、schema、CLI 行为、包元数据、用户可见文档、安装输出或测试发生变更时，需在最终报告前检查 `.mustflow/config/preferences.toml` 中的 `[release.versioning]`。  
   版本文件只能按偏好修改：当 `auto_bump = true` 且 `require_user_confirmation = false` 时，自动升级版本；否则应按配置建议升级或编辑前请求确认。  
   不得假设版本来源为 `package.json`，应先定位仓库自身版本来源。  
@@ -58,6 +59,7 @@ authority: binding
 - 工作流、风格、测试或命令规则冲突时，遵循子仓库的 `AGENTS.md` 和 `.mustflow/config/commands.toml`。  
 - 针对 secrets、隐私、破坏性命令和允许编辑路径的安全规则为累加，执行更严格的规则。  
 - 进入嵌套仓库时，编辑前应重新阅读该仓库的 `AGENTS.md` 和 `.mustflow/config/*.toml`。  
+- 如果嵌套仓库没有本地 preferences 文件，在继续遵循该仓库 `AGENTS.md` 和 command contract 的同时，使用最近父级 mustflow preferences 作为继承默认值。
 - 未经明确请求，不得编辑所选子仓库之外的内容。  
 
 ## 宿主专用指令兼容性

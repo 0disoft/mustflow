@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
+import { readEffectivePreferencesToml } from './preferences.js';
 import type { ScriptCheckFinding, ScriptCheckStatus } from './script-check-result.js';
 import {
 	detectVersionSources,
@@ -59,22 +58,6 @@ function sha256(value: string): string {
 	return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
-function readPreferences(projectRoot: string, issues: string[]): TomlTable | undefined {
-	const preferencesPath = path.join(projectRoot, ...REPO_VERSION_SOURCE_PREFERENCES_PATH.split('/'));
-	if (!existsSync(preferencesPath)) {
-		return undefined;
-	}
-
-	try {
-		const parsed = readMustflowOwnedTomlFile(projectRoot, REPO_VERSION_SOURCE_PREFERENCES_PATH);
-		return isRecord(parsed) ? parsed : undefined;
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		issues.push(`Could not read ${REPO_VERSION_SOURCE_PREFERENCES_PATH}: ${message}`);
-		return undefined;
-	}
-}
-
 function countSources(sources: readonly VersionSource[]): RepoVersionSourceCounts {
 	return {
 		sources: sources.length,
@@ -98,7 +81,13 @@ function createInputHash(reportInput: {
 export function inspectRepoVersionSource(projectRoot: string): RepoVersionSourceReport {
 	const root = path.resolve(projectRoot);
 	const issues: string[] = [];
-	const preferences = readPreferences(root, issues);
+	let preferences;
+	try {
+		preferences = readEffectivePreferencesToml(root);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		issues.push(`Could not read local or inherited ${REPO_VERSION_SOURCE_PREFERENCES_PATH}: ${message}`);
+	}
 	const versioningEnabled = releaseVersioningIsEnabled(preferences);
 	const sources = detectVersionSources(root);
 	const findings: RepoVersionSourceFinding[] = [];

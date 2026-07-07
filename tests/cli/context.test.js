@@ -171,6 +171,46 @@ destructive = false
 	}
 });
 
+test('inherits effective policy preferences from a parent mustflow root', () => {
+	const projectPath = createTempProject();
+	const childPath = path.join(projectPath, 'projects', 'child');
+
+	try {
+		initProject(projectPath);
+
+		const parentPreferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
+		const parentPreferences = readFileSync(parentPreferencesPath, 'utf8')
+			.replace('auto_commit = false', 'auto_commit = true')
+			.replace('auto_push = false', 'auto_push = true');
+		writeFileSync(parentPreferencesPath, parentPreferences);
+		mkdirSync(path.join(childPath, '.mustflow', 'config'), { recursive: true });
+		writeFileSync(path.join(childPath, 'AGENTS.md'), '# Child fixture\n');
+		writeFileSync(path.join(childPath, '.mustflow', 'config', 'mustflow.toml'), 'version = 1\n');
+
+		const inheritedResult = runCli(childPath, ['context', '--json']);
+		const inheritedContext = JSON.parse(inheritedResult.stdout);
+
+		assert.equal(inheritedResult.status, 0, inheritedResult.stderr || inheritedResult.stdout);
+		assert.equal(inheritedContext.mustflow_root, childPath);
+		assert.equal(inheritedContext.effective_policy.auto_commit, true);
+		assert.equal(inheritedContext.effective_policy.auto_push, true);
+
+		writeFileSync(
+			path.join(childPath, '.mustflow', 'config', 'preferences.toml'),
+			'[git]\nauto_push = false\n',
+		);
+
+		const overrideResult = runCli(childPath, ['context', '--json']);
+		const overrideContext = JSON.parse(overrideResult.stdout);
+
+		assert.equal(overrideResult.status, 0, overrideResult.stderr || overrideResult.stdout);
+		assert.equal(overrideContext.effective_policy.auto_commit, true);
+		assert.equal(overrideContext.effective_policy.auto_push, false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('prints cache-profile context without volatile stable-prefix fields', () => {
 	const projectPath = createTempProject();
 
