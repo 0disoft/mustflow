@@ -97,6 +97,22 @@ test('ops analyzer groups operations by test file and operation', () => {
 				['tests/cli/slow.test.js', 'fixture_copy', 50],
 			],
 		);
+		assert.deepEqual(
+			report.operation_totals.map((row) => [row.operation, row.total_ms, row.count]),
+			[
+				['cli_spawn', 120, 2],
+				['fixture_copy', 50, 1],
+				['fixture_rm', 5, 1],
+			],
+		);
+		assert.deepEqual(report.hotspots.cli_spawn.map((row) => [row.test_file, row.total_ms]), [
+			['tests/cli/slow.test.js', 100],
+			['tests/cli/fast.test.js', 20],
+		]);
+		assert.deepEqual(report.hotspots.fixture_copy.map((row) => [row.test_file, row.failed]), [
+			['tests/cli/slow.test.js', 1],
+		]);
+		assert.deepEqual(report.hotspots.fixture_rm.map((row) => [row.test_file, row.total_ms]), [['unknown', 5]]);
 	} finally {
 		rmSync(tempRoot, { recursive: true, force: true });
 	}

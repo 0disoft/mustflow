@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const defaultOpsDir = path.join(repoRoot, '.mustflow', 'cache', 'test-ops');
+const defaultHotspotOperations = ['cli_spawn', 'fixture_copy', 'fixture_rm'];
+const defaultHotspotLimit = 20;
 
 function readInputPaths() {
 	const args = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
@@ -101,6 +103,7 @@ function readRecords(paths) {
 function buildReport(records, inputPaths) {
 	const byTest = new Map();
 	const byTestAndOperation = new Map();
+	const byOperation = new Map();
 
 	for (const record of records) {
 		const testFile = record.test_file ?? 'unknown';
@@ -108,6 +111,10 @@ function buildReport(records, inputPaths) {
 		const testBucket = byTest.get(testFile) ?? createBucket();
 		byTest.set(testFile, testBucket);
 		addRecord(testBucket, record);
+
+		const globalOperationBucket = byOperation.get(operation) ?? createBucket();
+		byOperation.set(operation, globalOperationBucket);
+		addRecord(globalOperationBucket, record);
 
 		const key = `${testFile}\0${operation}`;
 		const operationBucket = byTestAndOperation.get(key) ?? createBucket();
@@ -134,7 +141,27 @@ function buildReport(records, inputPaths) {
 		})
 		.sort((left, right) => right.total_ms - left.total_ms || left.test_file.localeCompare(right.test_file));
 
-	return { files: inputPaths, record_count: records.length, tests, operations };
+	const operationTotals = [...byOperation.entries()]
+		.map(([operation, bucket]) => ({
+			operation,
+			...finalizeBucket(bucket),
+		}))
+		.sort((left, right) => right.total_ms - left.total_ms || left.operation.localeCompare(right.operation));
+	const hotspots = Object.fromEntries(
+		defaultHotspotOperations.map((operation) => [
+			operation,
+			operations.filter((row) => row.operation === operation).slice(0, defaultHotspotLimit),
+		]),
+	);
+
+	return {
+		files: inputPaths,
+		record_count: records.length,
+		tests,
+		operation_totals: operationTotals,
+		operations,
+		hotspots,
+	};
 }
 
 function printText(report) {
@@ -151,6 +178,38 @@ function printText(report) {
 			`failed=${row.failed}`,
 		];
 		console.log(`${metrics.join(' ')} ${row.test_file}`);
+	}
+
+	console.log('');
+	console.log('Slowest operation types:');
+
+	for (const row of report.operation_totals) {
+		const metrics = [
+			`${String(row.total_ms).padStart(10)} ms total`,
+			`${String(row.count).padStart(5)} ops`,
+			`p95=${String(row.p95_ms).padStart(8)}`,
+			`max=${String(row.max_ms).padStart(8)}`,
+			`failed=${row.failed}`,
+		];
+		console.log(`${metrics.join(' ')} ${row.operation}`);
+	}
+
+	console.log('');
+	for (const operation of defaultHotspotOperations) {
+		console.log(`Top tests for ${operation}:`);
+
+		for (const row of report.hotspots[operation]) {
+			const metrics = [
+				`${String(row.total_ms).padStart(10)} ms total`,
+				`${String(row.count).padStart(5)} ops`,
+				`p95=${String(row.p95_ms).padStart(8)}`,
+				`max=${String(row.max_ms).padStart(8)}`,
+				`failed=${row.failed}`,
+			];
+			console.log(`${metrics.join(' ')} ${row.test_file}`);
+		}
+
+		console.log('');
 	}
 
 	console.log('');

@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
@@ -11,6 +11,7 @@ import {
 	profileOrderingSummary,
 	readProfileTimingEvidence,
 } from './lib/test-ordering.mjs';
+import { buildFreshnessReport as readBuildFreshnessReport } from './lib/build-freshness.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -65,6 +66,7 @@ function parseRunnerArgs(args) {
 		listOnly: false,
 		listBatchPath: undefined,
 		buildRunner: undefined,
+		buildPolicy: 'never',
 	};
 	let modeWasSet = false;
 
@@ -82,6 +84,13 @@ function parseRunnerArgs(args) {
 
 		if (arg === '--build') {
 			parsed.buildRunner ??= 'bun';
+			parsed.buildPolicy = 'always';
+			continue;
+		}
+
+		if (arg === '--build=auto') {
+			parsed.buildRunner ??= 'bun';
+			parsed.buildPolicy = 'auto';
 			continue;
 		}
 
@@ -92,6 +101,7 @@ function parseRunnerArgs(args) {
 				process.exit(2);
 			}
 			parsed.buildRunner = runner;
+			parsed.buildPolicy = 'always';
 			continue;
 		}
 
@@ -258,6 +268,29 @@ function runBuild(buildRunner) {
 	}
 }
 
+function runBuildIfNeeded(buildRunner, buildPolicy, freshnessReport) {
+	if (buildPolicy === 'never') {
+		return;
+	}
+
+	if (buildPolicy === 'auto') {
+		if (freshnessReport.fresh) {
+			console.log(
+				`Auto build skipped: ${path.relative(repoRoot, freshnessReport.distCliPath).replaceAll('\\', '/')} is fresh for changed build inputs.`,
+			);
+			return;
+		}
+
+		const detail =
+			freshnessReport.reason === 'missing_dist'
+				? 'dist/cli/index.js is missing'
+				: `stale or deleted changed files: ${freshnessReport.staleFiles.join(', ')}`;
+		console.log(`Auto build required: ${detail}.`);
+	}
+
+	runBuild(buildRunner);
+}
+
 function parseChangedFilesOverride() {
 	const rawValue = process.env.MUSTFLOW_TEST_CHANGED_FILES;
 	if (!rawValue) {
@@ -292,18 +325,6 @@ function changedFiles() {
 }
 
 const currentChangedFiles = changedFiles();
-const cachedModeUnsafeRules = [
-	/^src\//u,
-	/^tsconfig(?:\..*)?\.json$/u,
-];
-
-function compiledOutputPathForSource(relativePath) {
-	if (!relativePath.startsWith('src/') || !relativePath.endsWith('.ts')) {
-		return undefined;
-	}
-
-	return path.join(repoRoot, ...relativePath.replace(/^src\//u, 'dist/').replace(/\.ts$/u, '.js').split('/'));
-}
 
 function hasRelatedReleaseChanges() {
 	return hasRelatedReleaseChangesForFiles(currentChangedFiles);
@@ -312,7 +333,7 @@ function hasRelatedReleaseChanges() {
 const suites = suitesForChangedFiles(currentChangedFiles);
 
 const runnerArgs = parseRunnerArgs(process.argv.slice(2));
-const { mode, listOnly, listBatchPath, buildRunner } = runnerArgs;
+const { mode, listOnly, listBatchPath, buildRunner, buildPolicy } = runnerArgs;
 const selected = suites[mode];
 
 if (!selected) {
@@ -543,7 +564,8 @@ const releaseTestRunnerLock = !listOnly || buildRunner ? acquireTestRunnerLock()
 if (releaseTestRunnerLock) {
 	registerTestRunnerLockRelease(releaseTestRunnerLock);
 }
-runBuild(buildRunner);
+const buildFreshness = readBuildFreshnessReport(repoRoot, currentChangedFiles, { distCliPath: distCliEntrypoint });
+runBuildIfNeeded(buildRunner, listOnly && buildPolicy === 'auto' ? 'never' : buildPolicy, buildFreshness);
 
 function normalizeChangedFiles(files) {
 	if (!Array.isArray(files)) {
@@ -605,7 +627,9 @@ function assertCachedModeSafe() {
 		return;
 	}
 
-	if (!existsSync(distCliEntrypoint)) {
+	const freshnessReport = readBuildFreshnessReport(repoRoot, currentChangedFiles, { distCliPath: distCliEntrypoint });
+
+	if (freshnessReport.reason === 'missing_dist') {
 		console.error(
 			[
 				'Cached test mode precondition failed: dist/cli/index.js does not exist.',
@@ -617,26 +641,14 @@ function assertCachedModeSafe() {
 		process.exit(2);
 	}
 
-	const unsafeFiles = currentChangedFiles.filter((file) => cachedModeUnsafeRules.some((rule) => rule.test(file)));
-	const distMtimeMs = statSync(distCliEntrypoint).mtimeMs;
-	const staleFiles = unsafeFiles.filter((file) => {
-		const fullPath = path.join(repoRoot, ...file.split('/'));
-		if (!existsSync(fullPath)) {
-			const compiledOutputPath = compiledOutputPathForSource(file);
-			return !compiledOutputPath || existsSync(compiledOutputPath);
-		}
-
-		return statSync(fullPath).mtimeMs > distMtimeMs;
-	});
-
-	if (staleFiles.length > 0) {
+	if (freshnessReport.staleFiles.length > 0) {
 		console.error(
 			[
 				'Cached test mode precondition failed: dist/ is older than changed TypeScript source or compiler configuration.',
 				'Cached mode does not rebuild dist/ before running tests.',
 				'Fallback intent: mf run test_related',
 				`Artifact: ${path.relative(repoRoot, distCliEntrypoint).replaceAll('\\', '/')}`,
-				`Stale or deleted changed files: ${staleFiles.join(', ')}`,
+				`Stale or deleted changed files: ${freshnessReport.staleFiles.join(', ')}`,
 			].join('\n'),
 		);
 		process.exit(2);

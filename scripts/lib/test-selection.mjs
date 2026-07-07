@@ -188,6 +188,7 @@ export function createTestSelection(allCliTests) {
 		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/audit-related-selection\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/analyze-test-ops\.mjs$/u, tests: ['test-ops-profiler.test.js'] },
+		{ match: /^scripts\/lib\/build-freshness\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/lib\/test-selection\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/lib\/test-ordering\.mjs$/u, tests: testSelectionTests },
 		{ match: /^src\/cli\/index\.ts$/u, tests: ['router.test.js', 'workflow.test.js'] },

@@ -127,6 +127,7 @@ export const precomputedSelectionRequests = [
 	{ mode: 'related', changedFiles: ['scripts/run-cli-tests.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/audit-related-selection.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/analyze-test-ops.mjs'] },
+	{ mode: 'related', changedFiles: ['scripts/lib/build-freshness.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/lib/test-selection.mjs'] },
 	{ mode: 'related', changedFiles: ['scripts/lib/test-ordering.mjs'] },
 	{ mode: 'related-cached', changedFiles: ['src/core/line-endings.ts'] },

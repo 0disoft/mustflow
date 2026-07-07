@@ -1,6 +1,7 @@
 import {
 	assert,
 	ciWorkflow,
+	cliBuildFreshness,
 	cliPath,
 	cliTestOrdering,
 	cliTestRunner,
@@ -244,8 +245,11 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /const suites = suitesForChangedFiles\(currentChangedFiles\);/u);
 	assert.match(cliTestSelection, /'related-cached': relatedTestsForFiles\(files\)/u);
 	assert.match(cliTestSelection, /'related-profile': relatedTestsForFiles\(files, \{ fallbackTests: \[\] \}\)/u);
-	assert.match(cliTestRunner, /cachedModeUnsafeRules/u);
-	assert.match(cliTestRunner, /compiledOutputPathForSource/u);
+	assert.match(cliTestRunner, /buildPolicy/u);
+	assert.match(cliTestRunner, /--build=auto/u);
+	assert.match(cliTestRunner, /function runBuildIfNeeded/u);
+	assert.match(cliBuildFreshness, /defaultUnsafeBuildInputRules/u);
+	assert.match(cliBuildFreshness, /compiledOutputPathForSource/u);
 	assert.match(cliTestRunner, /function runProfiledTests\(\)/u);
 	assert.match(cliTestRunner, /function acquireTestRunnerLock\(\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_RUNNER_LOCK_DIR/u);

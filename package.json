@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.114.5",
+  "version": "2.114.6",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -29,7 +29,7 @@
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json",
     "test": "bun run test:full",
     "test:fast": "node scripts/run-cli-tests.mjs --build fast",
-    "test:related": "node scripts/run-cli-tests.mjs --build related",
+    "test:related": "node scripts/run-cli-tests.mjs --build=auto related",
     "test:related:cached": "node scripts/run-cli-tests.mjs related-cached",
     "test:related:profile": "node scripts/run-cli-tests.mjs --build related-profile",
     "test:cli": "node scripts/run-cli-tests.mjs --build cli",

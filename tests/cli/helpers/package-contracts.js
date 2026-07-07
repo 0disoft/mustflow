@@ -11,6 +11,7 @@ export const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'packa
 export const templateManifest = readFileSync(path.join(projectRoot, 'templates', 'default', 'manifest.toml'), 'utf8');
 export const templateCommandContract = readFileSync(path.join(projectRoot, 'templates', 'default', 'common', '.mustflow', 'config', 'commands.toml'), 'utf8');
 export const cliTestRunner = readFileSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), 'utf8');
+export const cliBuildFreshness = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'build-freshness.mjs'), 'utf8');
 export const cliTestOrdering = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-ordering.mjs'), 'utf8');
 export const cliTestSelection = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-selection.mjs'), 'utf8');
 export const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');

@@ -38,6 +38,8 @@ import {
 	uniqueSorted,
 	writeFileSync,
 } from './helpers/test-selection-contracts.js';
+import { utimesSync } from 'node:fs';
+import { buildFreshnessReport } from '../../scripts/lib/build-freshness.mjs';
 
 test('profile timing order runs known slow tests first and keeps unknown tests stable', () => {
 	const testPaths = [
@@ -203,6 +205,46 @@ test('related cached list mirrors related selection without requiring a fresh di
 	assert.deepEqual(relatedCached.selection_reasons, related.selection_reasons);
 });
 
+test('build freshness report detects missing stale fresh and deleted-source dist states', () => {
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-build-freshness-'));
+	const distCliPath = path.join(tempRoot, 'dist', 'cli', 'index.js');
+	const sourcePath = path.join(tempRoot, 'src', 'core', 'example.ts');
+	const compiledPath = path.join(tempRoot, 'dist', 'core', 'example.js');
+	const older = new Date('2026-01-01T00:00:00.000Z');
+	const newer = new Date('2026-01-02T00:00:00.000Z');
+
+	try {
+		assert.equal(buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath }).reason, 'missing_dist');
+
+		mkdirSync(path.dirname(distCliPath), { recursive: true });
+		mkdirSync(path.dirname(sourcePath), { recursive: true });
+		writeFileSync(distCliPath, 'export {};\n');
+		writeFileSync(sourcePath, 'export {};\n');
+		utimesSync(distCliPath, older, older);
+		utimesSync(sourcePath, newer, newer);
+
+		let report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
+		assert.equal(report.fresh, false);
+		assert.equal(report.reason, 'stale_inputs');
+		assert.deepEqual(report.staleFiles, ['src/core/example.ts']);
+
+		utimesSync(sourcePath, older, older);
+		report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
+		assert.equal(report.fresh, true);
+		assert.equal(report.reason, 'fresh');
+		assert.deepEqual(report.staleFiles, []);
+
+		rmSync(sourcePath, { force: true });
+		mkdirSync(path.dirname(compiledPath), { recursive: true });
+		writeFileSync(compiledPath, 'export {};\n');
+		report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
+		assert.equal(report.fresh, false);
+		assert.deepEqual(report.staleFiles, ['src/core/example.ts']);
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
+});
+
 test('related cached execution refuses stale dist for deleted TypeScript sources', () => {
 	const changedFile = 'src/core/deleted-cached-fixture.ts';
 	const staleOutputPath = path.join(projectRoot, 'dist', 'core', 'deleted-cached-fixture.js');
@@ -322,4 +364,11 @@ test('full-auto keeps the same coverage surface as the full suite', () => {
 		assert.equal(fullAuto.selected.includes(testName), true);
 	}
 	assert.equal(fullAuto.selected.includes('package-template.test.js'), true);
+});
+
+test('build freshness helper changes route through test selection runner contracts', () => {
+	const report = selectRelated(['scripts/lib/build-freshness.mjs']);
+
+	assert.equal(report.selected.includes('test-selection-runner-contracts.test.js'), true);
+	assert.equal(report.selected.includes('test-selection-related-contracts.test.js'), true);
 });
