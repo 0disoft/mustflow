@@ -51,6 +51,14 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(localSkill, /outbox-driven invalidation/u);
 	assert.match(localSkill, /version compare/u);
 	assert.match(localSkill, /CAS/u);
+	assert.match(localSkill, /stale by the time the result applies/u);
+	assert.match(localSkill, /Request coalescing is not obsolete-request discard/u);
+	assert.match(localSkill, /partial entity overwrite/u);
+	assert.match(localSkill, /summary response should not erase fields/u);
+	assert.match(localSkill, /Optimistic state needs a before snapshot/u);
+	assert.match(localSkill, /localStorage, IndexedDB, service workers/u);
+	assert.match(localSkill, /SSR hydration payloads/u);
+	assert.match(localSkill, /multi-tab, multi-device/u);
 	assert.match(localSkill, /List caches/u);
 	assert.match(localSkill, /cursor keys/u);
 	assert.match(localSkill, /snapshot token/u);
@@ -66,6 +74,11 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(localSkill, /tenant/u);
 	assert.match(localSkill, /status-code/u);
 	assert.match(localSkill, /miss cost/u);
+	assert.match(localSkill, /fetchedAt/u);
+	assert.match(localSkill, /lastInvalidatedAt/u);
+	assert.match(localSkill, /lastMutationId/u);
+	assert.match(localSkill, /isOptimistic/u);
+	assert.match(localSkill, /isHydrated/u);
 	assert.match(localSkill, /value size/u);
 	assert.match(localSkill, /eviction policy/u);
 	assert.match(localSkill, /TTL-less keys/u);
@@ -99,7 +112,7 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('quadratic scan review catches disguised pairwise scans and indexable joins', () => {
@@ -236,6 +249,9 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /shared state/u);
+	assert.match(localSkill, /Preserve the incident file/u);
+	assert.match(localSkill, /random seed/u);
+	assert.match(localSkill, /worker or thread count/u);
 	assert.match(localSkill, /check-then-act/u);
 	assert.match(localSkill, /read-modify-write/u);
 	assert.match(localSkill, /stale read/u);
@@ -252,6 +268,11 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(localSkill, /conditional updates/u);
 	assert.match(localSkill, /unique constraint/u);
 	assert.match(localSkill, /distributed locks/u);
+	assert.match(localSkill, /fencing tokens/u);
+	assert.match(localSkill, /processing, succeeded, failed, cancelled, or dead/u);
+	assert.match(localSkill, /duplicate arriving while the first attempt is still processing/u);
+	assert.match(localSkill, /Business idempotency keys/u);
+	assert.match(localSkill, /per-key serialization/u);
 	assert.match(localSkill, /atomic create/u);
 	assert.match(localSkill, /outbox/u);
 	assert.match(localSkill, /Queue consumers/u);
@@ -265,6 +286,9 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(localSkill, /Object pooling/u);
 	assert.match(localSkill, /Fake immutable/u);
 	assert.match(localSkill, /`sleep`-based race tests/u);
+	assert.match(localSkill, /Shake the schedule, not only the load/u);
+	assert.match(localSkill, /happens-before logs/u);
+	assert.match(localSkill, /race detectors, thread sanitizers/u);
 	assert.match(localSkill, /log order/iu);
 	assert.match(localSkill, /state-machine review/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/u);
@@ -287,7 +311,7 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/race-condition-review\/SKILL\.md"/u);
 	assert.match(manifest, /"race-condition-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 3/u);
 });
 
 test('async timing boundary review replaces arbitrary waits with completion signals', () => {
@@ -322,7 +346,16 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 	assert.match(localSkill, /bounded polling/u);
 	assert.match(localSkill, /The awaited Promise must represent the real work/u);
 	assert.match(localSkill, /Define "once" by scope/u);
+	assert.match(localSkill, /Guard stale async results before they apply/u);
+	assert.match(localSkill, /generation, version, etag, sequence/u);
+	assert.match(localSkill, /cancellation as a result state/u);
+	assert.match(localSkill, /operation id, attempt, causation id/u);
+	assert.match(localSkill, /scheduled, running, succeeded, failed, cancelled, and dead/u);
+	assert.match(localSkill, /outbox-style publication/u);
+	assert.match(localSkill, /inbox or dedupe/u);
+	assert.match(localSkill, /per-key serialization/u);
 	assert.match(localSkill, /fake timers/u);
+	assert.match(localSkill, /response reorder, duplicate, drop, timeout, late success/u);
 	assert.match(localSkill, /completion signal cannot be identified/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/async-timing-boundary-review\/SKILL\.md/u);
 	assert.match(skillIndex, /tuned millisecond value/u);
@@ -354,7 +387,7 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 		);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 2/u);
 });
 
 test('concurrency invariant review checks time-order ownership and primitive discipline', () => {
@@ -382,7 +415,9 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(localSkill, /lock identity/u);
 	assert.match(localSkill, /lock scope/u);
 	assert.match(localSkill, /lock-order table/u);
+	assert.match(localSkill, /runtime lock-order graph/u);
 	assert.match(localSkill, /condition variable/u);
+	assert.match(localSkill, /generation counters/u);
 	assert.match(localSkill, /lost notification/u);
 	assert.match(localSkill, /spurious wakeup/u);
 	assert.match(localSkill, /`AtomicBoolean closed`/u);
@@ -403,10 +438,14 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(localSkill, /scheduler/u);
 	assert.match(localSkill, /shutdown/u);
 	assert.match(localSkill, /permits must release/u);
+	assert.match(localSkill, /deadlocks and starvation as wait-for systems/u);
+	assert.match(localSkill, /wait-for graph/u);
+	assert.match(localSkill, /thread-pool starvation/u);
 	assert.match(localSkill, /Thread-local context is hidden global state/u);
 	assert.match(localSkill, /every `await`/u);
 	assert.match(localSkill, /`Thread\.sleep\(100\)` is not deterministic proof/u);
 	assert.match(localSkill, /barriers, latches, fake schedulers, deterministic executors/u);
+	assert.match(localSkill, /record\/replay, profiler, and kernel-scheduler diagnostics/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/u);
 	assert.match(skillIndex, /concurrency-invariant triage for shared ownership/u);
 	assert.match(skillIndex, /condition-variable `while` predicates/u);
@@ -427,5 +466,5 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(manifest, /"\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md"/u);
 	assert.match(manifest, /"concurrency-invariant-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 2/u);
 });

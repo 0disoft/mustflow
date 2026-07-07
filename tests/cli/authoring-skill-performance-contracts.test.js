@@ -39,6 +39,12 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(localSkill, /shared_ptr/u);
 	assert.match(localSkill, /Rc/u);
 	assert.match(localSkill, /weak references/u);
+	assert.match(localSkill, /first invalid access/u);
+	assert.match(localSkill, /first sanitizer/u);
+	assert.match(localSkill, /watchpoint, reverse-debugging, core dump/u);
+	assert.match(localSkill, /Separate diagnostic build axes/u);
+	assert.match(localSkill, /dangling references as ownership failures/u);
+	assert.match(localSkill, /Preserve production crash evidence/u);
 	assert.match(localSkill, /finalizers/u);
 	assert.match(localSkill, /repeated-lifecycle proof/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md/u);
@@ -60,7 +66,7 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(manifest, /"\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md"/u);
 	assert.match(manifest, /"memory-lifetime-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 2/u);
 });
 
 test('desktop memory footprint review separates resident numbers from owned memory', () => {

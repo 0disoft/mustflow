@@ -2,7 +2,7 @@
 mustflow_doc: skill.memory-lifetime-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: memory-lifetime-review
@@ -59,6 +59,7 @@ The question is not only "where was it allocated?" The stronger review question 
 - Retainer graph: the longer-lived owner, the shorter-lived object, the reference path between them, and the expected point where that reference should be severed.
 - Repetition path: repeated requests, screen open/close, route changes, tab switches, reconnects, retries, scheduled runs, test cases, or long-running sessions that can accumulate retained state.
 - Error and success paths: normal completion, early return, partial read, cancellation, timeout, retry, exception, unmount, shutdown, and dependency failure behavior.
+- Diagnostic evidence for native or low-level memory faults: first sanitizer or memory-checker report, invalid write/read address, watchpoint condition, allocator or quarantine behavior, fuzzing input, core dump, symbols, build id, shared library list, and configured or manual diagnostic boundary.
 - Relevant command-intent contract entries for tests, builds, docs, release checks, and mustflow validation.
 
 <!-- mustflow-section: preconditions -->
@@ -116,8 +117,21 @@ The question is not only "where was it allocated?" The stronger review question 
     - C and C++: ownership transfer must be explicit across raw pointers, containers, callbacks, and failure paths; `shared_ptr` cycles need `weak_ptr` or a different ownership shape.
     - Rust: `Rc`, `Arc`, `RefCell`, task handles, channels, and cycles can leak even when memory safety is preserved; use weak ownership or explicit shutdown when ownership is not truly shared.
     - Python: weak references are useful for caches and observer maps, but not as a substitute for a clear lifetime owner; check global dicts, LRU caches, callbacks, generators, files, and async tasks.
-11. Reject finalizers as the main plan. Finalizers, destructors, drop hooks, or weak callbacks can be last-resort diagnostics or safety nets, but the review should still identify deterministic cleanup for resources and reference removal.
-12. Add a repeated-lifecycle proof when feasible. Prefer a focused test or probe that repeats the risky lifecycle, then asserts listener count, registry size, cache size, goroutine/task completion, handle closure, queue depth, or retained object count. If heap snapshots, leak profilers, sanitizer runs, or platform-specific diagnostics are not configured intents, report them as manual evidence gaps instead of running raw commands.
+11. For native or low-level memory corruption, chase the first invalid access instead of the crash line.
+    - Treat the crash line as a victim until the first invalid write, invalid read, use-after-free, double free, uninitialized value, or ownership violation is identified.
+    - Prefer the first sanitizer, memory-checker, or watchpoint report over later cascade failures.
+    - Use watchpoint, reverse-debugging, core dump, symbol, build-id, allocator, quarantine, or memory-poison evidence only through configured or manual diagnostics; do not infer raw commands from tool names.
+12. Separate diagnostic build axes when they exist.
+    - ASan/UBSan/LSan, TSan, MSan, release-with-asserts, debug allocator, guard-page allocator, hardware tagging, and fuzzing-with-sanitizers expose different bug classes and usually should be reported as separate configured or manual evidence surfaces.
+    - Do not claim memory-corruption proof from a normal unit test unless it actually exercises the ownership and lifetime boundary.
+13. Treat dangling references as ownership failures.
+    - Ask which owner promised the object would remain alive across async callbacks, observer lists, event buses, lambda captures, coroutines, workers, caches, intrusive lists, and queues.
+    - Prefer stable handles, owner id plus generation id, unregister-on-drop or RAII boundaries, weak-reference lock windows, and queueing copied identifiers instead of raw object pointers or references when local style supports them.
+14. Preserve production crash evidence when reproduction is unavailable.
+    - Core dump, exact binary, symbols, build id, shared library list, process maps, allocator state, failing input, and deployment version can be the only evidence for a memory fault.
+    - If those artifacts are unavailable or manual-only, report that boundary instead of implying the crash was diagnosed from logs alone.
+15. Reject finalizers as the main plan. Finalizers, destructors, drop hooks, or weak callbacks can be last-resort diagnostics or safety nets, but the review should still identify deterministic cleanup for resources and reference removal.
+16. Add a repeated-lifecycle proof when feasible. Prefer a focused test or probe that repeats the risky lifecycle, then asserts listener count, registry size, cache size, goroutine/task completion, handle closure, queue depth, or retained object count. If heap snapshots, leak profilers, sanitizer runs, memory-checker runs, fuzzers, core dump inspection, or platform-specific diagnostics are not configured intents, report them as manual evidence gaps instead of running raw commands.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -126,6 +140,7 @@ The question is not only "where was it allocated?" The stronger review question 
 - Long-lived owners no longer retain short-lived objects beyond their intended lifecycle, or the remaining retention is intentional and bounded.
 - Caches, queues, registries, debug stores, and logging or telemetry buffers have capacity, eviction, truncation, or copied-value boundaries where they can grow.
 - Async, stream, worker, goroutine, thread, and native-resource paths have deterministic cancellation, close, shutdown, or release behavior where the platform supports it.
+- Native or low-level memory fault analysis names the first invalid access evidence or reports the missing diagnostic boundary instead of blaming the final crash line.
 - Tests or configured verification cover the highest-risk repeated lifecycle when feasible.
 
 <!-- mustflow-section: verification -->
@@ -162,6 +177,7 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Retainer paths found or ruled out
 - Long-lived owners and short-lived objects checked
 - Timers, listeners, subscriptions, streams, workers, goroutines, threads, native handles, caches, queues, registries, closures, and logs checked where relevant
+- First invalid access, diagnostic build axis, dangling ownership, fuzzing or core-dump evidence where relevant
 - Cleanup symmetry changes made or recommended
 - Repeated-lifecycle proof: configured, manual-only, missing, or not applicable
 - Command intents run

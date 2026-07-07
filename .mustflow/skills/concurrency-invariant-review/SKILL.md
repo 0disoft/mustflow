@@ -2,7 +2,7 @@
 mustflow_doc: skill.concurrency-invariant-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: concurrency-invariant-review
@@ -59,6 +59,7 @@ The review question is not "is the code correct in this order?" The stronger que
 - Invariant: the business or data fact that must remain true across multiple fields, rows, messages, callbacks, operations, or lifecycle states.
 - Time-order points: `await`, I/O, DB calls, callbacks, event listeners, plugin hooks, logging, metrics, lock release, condition wait, notify, retry, timeout, queue ack, scheduler tick, cancellation, shutdown, close, send, and publication.
 - Synchronization evidence: exact lock identity, lock order, condition predicate, atomic memory-ordering story, transaction isolation, row lock, unique constraint, fencing token, idempotency record, queue dedupe, or deterministic test harness.
+- Failure evidence for timing bugs: incident file, wait-for graph, lock-order graph, happens-before handoff logs, generation counters, pool saturation, and configured or manual sanitizer, detector, record/replay, profiler, or kernel-tracing evidence when available.
 - Runtime and deployment shape: single thread, worker pool, process pool, multi-instance service, distributed cache, database, queue, scheduler, coroutine runtime, or reactive runtime.
 
 <!-- mustflow-section: preconditions -->
@@ -102,9 +103,11 @@ The review question is not "is the code correct in this order?" The stronger que
    - Record nested acquisition order such as `account lock -> ledger lock -> notification lock`.
    - Reject paths that acquire the same pair in reverse order unless the runtime and lock type make that impossible.
    - Check reentrant callbacks and external code called under a lock for hidden reacquisition.
+   - When local instrumentation exists, prefer a runtime lock-order graph that records edges from already-held locks to newly acquired locks and fails on cycles.
 7. Check condition variables and notifications by state, not signal.
     - A condition variable wait should be inside a loop that rechecks the predicate.
     - The loop must tolerate spurious wakeup, another waiter consuming the work first, and notifications that arrive before this worker starts waiting.
+    - Prefer generation counters or versioned predicates when the same event can be missed, duplicated, delayed, or consumed by another waiter.
     - `notify` and state changes should happen under the same synchronization boundary.
     - A lost notification is possible when code trusts the signal instead of a persistent state predicate.
 8. Check atomics, memory visibility, and CAS.
@@ -136,21 +139,27 @@ The review question is not "is the code correct in this order?" The stronger que
     - Shutdown should define stop-accepting, drain, cancel, flush, close, and in-flight side-effect ownership.
     - `closed = true` is not enough if futures, workers, sockets, buffers, queues, or async continuations keep running.
     - Mutexes, semaphores, read-write locks, connection checkouts, rate-limit tokens, and permits must release on every exception path.
-15. Check thread-local and async context.
+15. Check deadlocks and starvation as wait-for systems.
+    - A thread stack dump alone is not enough. Build a wait-for graph that connects threads, locks, condition variables, futures, queues, pool workers, callbacks, and external waits.
+    - Separate lock-order deadlock, lost notification, callback reentry, sync-over-async, and thread-pool starvation; a saturated pool can freeze progress without any mutex cycle.
+    - Record executor queue length, active worker count, blocked worker count, work-stealing or scheduler state, and blocking waits inside worker pools when local evidence exists.
+16. Check thread-local and async context.
     - Thread-local context is hidden global state in thread pools.
     - Clear request, tenant, auth, transaction, and locale context before the thread is reused.
     - Async, coroutine, virtual-thread, and reactive runtimes can break assumptions that thread-local state follows logical work.
     - Treat every `await` as a point where the world can change before the continuation resumes.
-16. Check concurrency tests as evidence, not decoration.
+17. Check concurrency tests as evidence, not decoration.
     - `Thread.sleep(100)` is not deterministic proof.
     - Prefer barriers, latches, fake schedulers, deterministic executors, controlled promises, transactional fixtures, version assertions, queue dedupe fixtures, and explicit interleaving tests.
     - Use stress or repeated tests only as supplementary evidence when deterministic ordering is unavailable.
+    - Treat sanitizer, detector, model-checker, record/replay, profiler, and kernel-scheduler diagnostics as configured or manual evidence only; report them when useful but unavailable.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Shared state, owners, invariants, and time-order points are named or missing evidence is reported.
 - Locks, atomics, conditions, transactions, distributed leases, queues, schedulers, shutdown, thread-local context, async yields, collections, caches, and tests are checked where relevant.
+- Deadlock, starvation, lost-notification, and lock-order claims are backed by wait-for, lock-order, generation, pool, or configured/manual diagnostic evidence when relevant.
 - The chosen fix or recommendation preserves the whole invariant, not just one field or one method call.
 - Deterministic evidence covers the highest-risk interleaving when the repository has a configured way to exercise it.
 
@@ -186,6 +195,7 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 - Invariant and time-order table reviewed
 - Check-then-act and read-modify-write findings
 - Lock identity, lock scope, lock order, condition variable, atomics, memory visibility, CAS ABA, publication, immutability, collections, cache, database, distributed lock, idempotency, queue duplicate, state transition, scheduler, shutdown, resource release, thread-local, async `await`, and test-evidence checks where relevant
+- Wait-for graph, lock-order graph, generation counter, pool-starvation, and configured/manual diagnostic evidence where relevant
 - Concurrency fixes made or recommended
 - Tests or verification evidence
 - Command intents run

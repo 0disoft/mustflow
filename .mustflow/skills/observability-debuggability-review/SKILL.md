@@ -2,7 +2,7 @@
 mustflow_doc: skill.observability-debuggability-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: observability-debuggability-review
@@ -94,79 +94,88 @@ The review question is not "does the code emit telemetry?" It is "when this path
    - List logs, metrics, traces, spans, events, audit entries, alerts, dashboards, runbooks, and exporter self-metrics touched by the path.
    - Mark each signal as symptom, cause evidence, correlation evidence, saturation evidence, recovery evidence, or noise.
    - A success-only log is not enough; failure classification and missing-work evidence matter more.
-3. Check metrics for numerator and denominator.
+3. Prefer trace-first diagnosis for distributed or cross-boundary failures.
+   - Compare normal and failing trace trees before reading only the final error log.
+   - Look for the first divergence in span order, missing span, retry branch, cache hit or miss, DB call count, dependency latency, worker shard, feature flag, release id, queue age, or pool wait.
+   - Logs should explain branch decisions inside that trace; metrics should show whether the incident is isolated or systemic.
+4. Align trace, log, and profiler evidence on one time axis when timing or ordering may matter.
+   - Trace evidence identifies the affected request, job, message, or operation.
+   - Profiler evidence identifies what the process was doing during the same window: CPU, wall wait, lock contention, allocation, GC, or pool wait.
+   - Do not treat a slow span as self-explanatory until the same window's process, pool, dependency, and queue evidence have been checked where available.
+5. Check metrics for numerator and denominator.
    - Error counters need total attempt counters so an operator can compute rates.
    - Cache hits need total lookups, fill errors, stale-served counts, origin latency, and eviction or lock-wait evidence when cache correctness matters.
    - Rate limits need allowed, blocked, shadow-blocked, delayed, retry-after, policy, and key-type evidence rather than only `rate_limited_total`.
-4. Reject average-only latency.
+6. Reject average-only latency.
    - Prefer histograms or equivalent distribution evidence for p95, p99, and tail behavior.
    - Separate success latency from error latency; fast failures should not make the service look healthy.
    - Label outcome and status class with bounded cardinality where the local metric system supports it.
-5. Protect metric cardinality.
+7. Protect metric cardinality.
    - Do not put raw URL paths, query strings, user ids, order ids, emails, message ids, idempotency keys, exception messages, SQL text, or arbitrary provider codes into metric labels.
    - Use route templates, dependency names, operation names, status classes, bounded reason enums, policy names, and feature flag names.
    - Keep high-cardinality fields in traces, structured events, audit records, or sampled logs when they are safe and needed for narrowing.
-6. Check trace and log correlation.
+8. Check trace and log correlation.
    - Logs should include trace id and span id, or the local equivalent, when distributed tracing exists.
    - Spans should include dependency name, operation name, route template, outcome, safe error type, retry attempt, timeout or cancellation class, and release or environment attributes when useful.
    - If a log line cannot be joined to a request, job, message, or batch run, it is weak incident evidence.
-7. Check async and queue context propagation.
+9. Check async and queue context propagation.
    - HTTP to worker, queue, stream, pub/sub, webhook, cron, and batch boundaries should propagate or intentionally fork trace context.
    - Producers should inject safe context into messages when the system needs end-to-end diagnosis; consumers should extract it before doing work.
    - A new trace at the worker boundary can be correct only when the handoff is intentionally modeled and linked by message, job, or causation id.
-8. Separate attempt from operation.
+10. Separate attempt from operation.
    - Retries should expose each dependency attempt and the final logical operation result.
    - A final success after two failed attempts is a business success and a dependency warning.
    - Record attempt number, max attempts, retry decision, delay, retry-after use, dependency name, and final exhaustion reason with bounded labels.
-9. Classify timeout, cancellation, and deadline.
+11. Classify timeout, cancellation, and deadline.
    - User cancellation, upstream deadline, server timeout, dependency timeout, pool acquire timeout, queue visibility expiry, and shutdown cancellation are different events.
    - Do not merge all of them into one generic error metric or log reason.
    - Preserve cancellation semantics without turning intentional caller cancellation into a dependency incident.
-10. Review external dependency spans and metrics.
+12. Review external dependency spans and metrics.
     - `GET https://api.vendor.example` is not enough; add a stable dependency name and operation name.
     - Track attempts, latency distribution, status class, retryable decision, timeout class, circuit-open decisions, and provider request id when safe.
     - Keep provider host, endpoint, and response details out of metric labels when they are unbounded or sensitive.
-11. Review database and transaction evidence.
+13. Review database and transaction evidence.
     - Avoid raw SQL in logs and telemetry where it can contain personal data or secrets.
     - Prefer query name, table or collection, operation, rows returned, rows affected, duration, timeout class, and safe error category.
     - Transaction flows should expose begin, commit, rollback, retry, after-commit side effects, external-call-before-commit risk, and compensation or reconciliation evidence when relevant.
-12. Review idempotency and partial-success evidence.
+14. Review idempotency and partial-success evidence.
     - Payment, order, entitlement, file, webhook, queue, and batch paths need idempotency key, dedupe key, message id, request id, attempt, side-effect state, and unknown-outcome markers where safe.
     - Ask where evidence remains when DB write succeeds but event publish fails, provider call succeeds but local state fails, cache write succeeds but origin rollback happens, or compensation fails.
     - Metrics and logs should distinguish attempt, success, failure, compensation, retry exhausted, and unknown outcome.
-13. Review queue, stream, and batch signals.
+15. Review queue, stream, and batch signals.
     - Consumers need queue delay or message age, processing duration, inflight count, ack or commit failures, redelivery count, retry count, DLQ count, poison reason, and oldest message age where supported.
     - Batch jobs need last success timestamp, last completion timestamp, duration, processed count, failed count, skipped count, and stale-job alert evidence.
     - Silent pipelines need heartbeat or synthetic item evidence when "no input" can look like success.
-14. Review pools and saturation.
+16. Review pools and saturation.
     - CPU can be low while worker, thread, DB connection, HTTP connection, queue, semaphore, or rate-limit pools are saturated.
     - Track active, max, queued, queue wait, acquire duration, timeout count, rejection count, and per-dependency pool names with bounded labels.
     - Missing saturation evidence should downgrade performance and reliability claims.
-15. Review feature, config, release, and migration attribution.
+17. Review feature, config, release, and migration attribution.
     - Logs, traces, and metrics should carry service version, git sha or release id, deployment environment, region, schema or migration version, config version, and relevant feature flag or experiment variant when local policy allows.
     - If a 5 percent feature flag cohort can fail separately, the telemetry must let operators split healthy and broken cohorts.
-16. Check alert and runbook usefulness.
+18. Check alert and runbook usefulness.
     - Every new critical metric should answer what panel, alert, or runbook sentence it supports.
     - Pager alerts should indicate user impact or clear operator action, not only "a counter changed."
     - Logs that page humans should have matching counters or rates so operators can see when the event started and how fast it is happening.
-17. Check telemetry self-observability.
+19. Check telemetry self-observability.
     - Exporters, collectors, custom metric collectors, log sinks, trace queues, and sampling pipelines need dropped, failed, queued, scrape error, and export latency evidence when they can blind operators.
     - If telemetry failure can hide product failure, treat missing self-metrics as an operational risk.
-18. Check signal pipeline loss and read-path visibility.
+20. Check signal pipeline loss and read-path visibility.
     - Compare produced, accepted, exported, stored, and query-visible signal counts when the path depends on logs, metrics, traces, or events for diagnosis.
     - Use canary events or synthetic heartbeats when "no telemetry" could mean no traffic, collector failure, broken parser, dropped queue, retention gap, or dashboard read failure.
     - Track event timestamp versus observed timestamp, queue oldest age, DLQ oldest age, parser or mapping failures by service and version, and duplicate or sequence-gap evidence.
     - Separate telemetry write-path health from read-path health. A sink can store data that dashboards cannot query, and dashboards can be healthy while new signals are not arriving.
     - If collector, sink, dashboard, or production telemetry checks are outside repository commands, report the manual-only boundary.
-19. Check sampling policy.
+21. Check sampling policy.
     - Head sampling can drop rare errors and slow traces.
     - Error, slow, retry-exhausted, high-latency, partial-success, DLQ, and compensation-failure traces often need keep rules, tail sampling, or explicit event evidence.
+    - If a rare failure can be sampled out, require fallback event logs for key span boundaries, duration, outcome, reason, tenant or job slice, feature flag, and deployment version.
     - If sampling is outside the repository, report the manual-only evidence boundary instead of assuming critical traces are retained.
-20. Check privacy before telemetry leaves the process.
+22. Check privacy before telemetry leaves the process.
     - Redact or classify tokens, passwords, authorization headers, cookies, raw bodies, emails, phone numbers, payment data, personal identifiers, prompt text, confidential document text, provider payloads, and full SQL before logger, metric, trace, baggage, or exporter entry.
     - Baggage should be small, safe, low-lifetime, and intentional. Do not use it as a general request metadata bag.
     - Report sink-side masking as insufficient when sensitive data can already leave the process unredacted.
-21. Require telemetry tests or contract evidence where feasible.
+23. Require telemetry tests or contract evidence where feasible.
     - Good tests assert stable event names, bounded label values, denominator counters, trace-context propagation, redaction, sampling flags, feature flag attributes, release attributes, and failure-category mapping.
     - Source-level guards can prevent raw URL or user id metric labels when runtime telemetry tests are not available.
     - If dashboards, alerts, production traces, or load evidence are manual-only, complete available checks and report the evidence gap.
@@ -176,6 +185,7 @@ The review question is not "does the code emit telemetry?" It is "when this path
 
 - The changed path has an incident question, signal ledger, metric model, trace and log correlation model, telemetry pipeline survival boundary, cardinality boundary, privacy boundary, and evidence level.
 - Missing denominators, average-only latency, success-only logs, uncorrelated logs, raw URL labels, raw user labels, raw SQL telemetry, lost async trace context, attempt and operation collapse, generic timeout or cancellation buckets, missing dependency names, missing queue age, missing batch last-success timestamp, missing pool saturation, missing release attribution, decorative metrics, unsafe baggage, telemetry self-blindness, and sampling that drops critical failures are fixed or reported.
+- Normal-versus-failing trace comparisons and trace/log/profiler time-axis alignment are used or reported as unavailable when timing, ordering, retry, queue, pool, or dependency behavior is the likely cause.
 - Observability claims are backed by configured tests, schema or fixture evidence, local telemetry conventions, dashboard or alert files, static review evidence, or labeled as manual-only or missing.
 
 <!-- mustflow-section: verification -->
@@ -208,7 +218,7 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 ## Output Format
 
 - Observability boundary reviewed
-- Incident question, signal ledger, metric model, trace and log correlation, cardinality, identity propagation, attempts versus operation, timeout or cancellation classification, external dependency, DB and transaction, idempotency and partial success, queue or batch, cache, pool saturation, rate limit, feature or release attribution, alert or runbook, telemetry self-observability, signal pipeline survival, sampling, privacy, and test evidence findings
+- Incident question, signal ledger, normal-versus-failing trace comparison, trace/log/profiler time-axis alignment, metric model, trace and log correlation, cardinality, identity propagation, attempts versus operation, timeout or cancellation classification, external dependency, DB and transaction, idempotency and partial success, queue or batch, cache, pool saturation, rate limit, feature or release attribution, alert or runbook, telemetry self-observability, signal pipeline survival, sampling, privacy, and test evidence findings
 - Observability fixes made or recommended
 - Evidence level: configured-test evidence, telemetry fixture evidence, dashboard or alert file evidence, static review risk, manual-only, missing, or not applicable
 - Command intents run

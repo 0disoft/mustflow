@@ -224,7 +224,7 @@ translations = {}
 [documents."skill.memory-lifetime-review"]
 source = "locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.desktop-memory-footprint-review"]
@@ -380,7 +380,7 @@ translations = {}
 [documents."skill.cache-integrity-review"]
 source = "locales/en/.mustflow/skills/cache-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.quadratic-scan-review"]
@@ -398,19 +398,19 @@ translations = {}
 [documents."skill.race-condition-review"]
 source = "locales/en/.mustflow/skills/race-condition-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.async-timing-boundary-review"]
 source = "locales/en/.mustflow/skills/async-timing-boundary-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.concurrency-invariant-review"]
 source = "locales/en/.mustflow/skills/concurrency-invariant-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.failure-integrity-review"]
@@ -422,13 +422,13 @@ translations = {}
 [documents."skill.backend-log-evidence-review"]
 source = "locales/en/.mustflow/skills/backend-log-evidence-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.observability-debuggability-review"]
 source = "locales/en/.mustflow/skills/observability-debuggability-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.incident-triage-review"]
@@ -1116,7 +1116,7 @@ translations = {}
 [documents."skill.repro-first-debug"]
 source = "locales/en/.mustflow/skills/repro-first-debug/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.source-freshness-check"]

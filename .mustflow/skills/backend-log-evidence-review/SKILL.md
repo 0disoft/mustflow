@@ -2,7 +2,7 @@
 mustflow_doc: skill.backend-log-evidence-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: backend-log-evidence-review
@@ -56,7 +56,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
 
 - Backend path under review: request route, command handler, worker, scheduler, webhook, migration, script, repository method, or external adapter.
 - Event contract: stable `event_name`, event family, `message` as secondary prose, schema version, severity or level, event timestamp, observed timestamp when collection delay matters, service or resource identity, environment, region, service version, and release or git SHA already available.
-- Correlation model: request id, trace id, span id, correlation id, causation id, job id, message id, batch run id, tenant id, user or actor id, resource id, provider request id, and safe business identifiers already available.
+- Correlation model: request id, trace id, span id, correlation id, causation id, job id, message id, batch run id, tenant id, user or actor id, resource id, provider request id, attempt, feature flag, deployment version, and safe business identifiers already available.
 - Request lifecycle evidence: start log, finish log, status code or result type, outcome, reason code, duration measured from a monotonic clock when possible, main operation name, important input identifiers, and final resource identifiers.
 - Error evidence: thrown errors, catches, wrappers, causes, stack preservation, error categories, public versus internal messages, and log boundary ownership.
 - Decision evidence: branches, early returns, validation failures, auth decisions, feature flags, state transitions, cache paths, retry decisions, timeout classes, and fallback decisions.
@@ -93,6 +93,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
    - Treat logs as event records. Require a stable `event_name`; keep human prose in `message` as secondary, not as the alert or dashboard contract.
    - Keep event names stable and moderately broad: use `auth.login.failed` plus fields such as `failure_reason`, `client_type`, and `identity_provider` instead of encoding every attribute into the name.
    - Check schema version, severity or level, event timestamp, observed timestamp when useful, service name, service version, git SHA or release id, environment, region, and resource identity when local conventions expose them.
+   - For hard failures, prefer a diagnostic envelope that can be joined across logs, traces, profiler windows, queues, DB writes, cache keys, external dependency calls, feature flags, and deployment versions.
 2. Check request start logs.
    - A route-only log is weak evidence.
    - Require safe fields such as request id, trace id, span id, correlation id, tenant id, actor or user id when allowed, operation name, route template, route pattern instead of full URL, query key summary or query hash, and key resource identifiers.
@@ -170,7 +171,11 @@ The review question is: "If this backend path fails, times out, retries, silentl
     - Queue size alone is weak. Check queue utilization, oldest queued event age, enqueue failures, exporter failures, receiver refusals, DLQ size, and DLQ oldest age.
     - Parser failures, mapping conflicts, multiline splits, log rotation, container restart, pod deletion, disk buffer exhaustion, and retention or rollover drift can silently erase the evidence operators think they have.
     - If pipeline checks require live collectors, sinks, dashboards, or production search, report them as manual-only instead of claiming log evidence survived.
-19. Require evidence.
+19. Compare normal and failing event trails when a path is hard to localize.
+    - Treat the final error log as the place the failure surfaced, not automatically as the cause.
+    - If a successful and failing execution are available, compare first divergence in event name, span order, cache hit or miss, DB row count, retry branch, queue shard, external latency, feature flag, release id, and actor or tenant slice.
+    - When trace data is sampled out, require fallback log evidence for major span boundaries, operation duration, outcome, reason code, and correlation ids.
+20. Require evidence.
     - Prefer focused tests, log fixtures, snapshot assertions, redaction tests, source-level guards, or local logger contract tests for stable event names and fields.
     - Prefer tests that pin `event_name`, schema version, required fields, redaction, bounded reason codes, and message-independent query fields rather than exact prose.
     - If logs depend on runtime middleware, production log routing, sink configuration, or manual log search outside the repository, report that evidence as manual-only.
@@ -183,6 +188,7 @@ The review question is: "If this backend path fails, times out, retries, silentl
 - Missing start or finish logs, message-only contracts, unstable event names, missing schema version, missing trace or span id, missing correlation or causation id, string-only errors, lost causes, missing external-call before and after logs, raw provider body logs, missing affected-row counts, invisible transaction or state transitions, silent early returns, attempt-free retries, duration-free timeouts, enqueue or consume gaps, broken async correlation, empty batch summaries, missing auth or validation reasons, ordinary logs for audit events, cache or lock blind spots, idempotency ambiguity, feature flag opacity, release or config opacity, secret-bearing config logs, migration `done` logs, swallowed async errors, all-info or all-error severity, duplicate error spam, prose-only messages, high-cardinality indexed fields, log injection exposure, unsafe sampling, and missing identifiers are fixed or reported.
 - Named review smells such as broken async request id, auth or validation failures, cache hits or misses, lock acquisition, idempotency outcomes, config startup summaries, release and migration event gaps, migration dry-run and apply logs, message-based dashboards, prose-only log, and sink-side-only masking are fixed or reported when present.
 - Log changes are backed by local logger conventions, tests, fixtures, source review evidence, or labeled as manual-only or missing.
+- Hard-failure log evidence can be joined with trace, profiler, queue, DB, cache, dependency, feature flag, and deployment context when those surfaces exist.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -215,6 +221,7 @@ Prefer the narrowest configured checks that cover the changed logging contract a
 
 - Backend log boundary reviewed
 - Reconstruction question, event contract, request lifecycle, correlation and causation, error and cause preservation, external API, database write, transaction, state transition, early return, retry, timeout, queue or async handoff, batch or migration, audit, auth, validation, cache, lock, idempotency, feature flag, release, config, pipeline survival, level ownership, structure, cardinality, sampling, log-injection safety, redaction, and test evidence findings
+- Diagnostic envelope and normal-versus-failing event trail findings
 - Log fixes made or recommended
 - Evidence level: configured-test evidence, log fixture evidence, source review evidence, manual-only, missing, or not applicable
 - Command intents run

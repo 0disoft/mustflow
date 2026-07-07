@@ -578,9 +578,24 @@ test('repro-first debug skill keeps diagnosis loop boundaries explicit', () => {
 
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /three to five plausible hypotheses/u);
+	assert.match(localSkill, /Reject symptom-cover patches/u);
+	assert.match(localSkill, /broken invariant and first divergence/u);
+	assert.match(localSkill, /normal-versus-failing trace comparison/u);
+	assert.match(localSkill, /Diagnostic evidence packet/u);
+	assert.match(localSkill, /Runtime state snapshot evidence/u);
+	assert.match(localSkill, /make the next failure leave evidence/u);
+	assert.match(localSkill, /pre-failure ring buffers/u);
+	assert.match(localSkill, /last-known-good and first-failed/u);
+	assert.match(localSkill, /Search stable constants, error strings, DB column names/u);
+	assert.match(localSkill, /Start from exits and writers/u);
+	assert.match(localSkill, /DB triggers, queues, cron, imports, and admin panels as code/u);
+	assert.match(localSkill, /fixed seeds, fake clocks, forced interleavings/u);
+	assert.match(localSkill, /Minimize production data into a safe fixture/u);
+	assert.match(localSkill, /define the "fixed" metric before claiming success/u);
 	assert.match(localSkill, /unique marker/u);
 	assert.match(localSkill, /Re-run the original reproduction path/u);
 	assert.match(localSkill, /Temporary instrumentation and debug output are removed/u);
+	assert.match(localSkill, /Symptom-cover patches are rejected/u);
 	assert.match(skillIndex, /hypotheses, observations, fix, original reproduction rerun/u);
 });
 

@@ -101,6 +101,10 @@ test('observability debuggability review catches incident evidence gaps', () => 
 	assert.match(localSkill, /incident narrowing evidence/u);
 	assert.match(localSkill, /Incident question/u);
 	assert.match(localSkill, /Signal inventory/u);
+	assert.match(localSkill, /trace-first diagnosis/u);
+	assert.match(localSkill, /normal and failing trace trees/u);
+	assert.match(localSkill, /trace, log, and profiler evidence/u);
+	assert.match(localSkill, /same window's process, pool, dependency, and queue evidence/u);
 	assert.match(localSkill, /Metric model/u);
 	assert.match(localSkill, /Trace and event model/u);
 	assert.match(localSkill, /Log model/u);
@@ -129,6 +133,7 @@ test('observability debuggability review catches incident evidence gaps', () => 
 	assert.match(localSkill, /alert and runbook usefulness/u);
 	assert.match(localSkill, /telemetry self-observability/u);
 	assert.match(localSkill, /Head sampling can drop rare errors/u);
+	assert.match(localSkill, /fallback event logs for key span boundaries/u);
 	assert.match(localSkill, /Baggage should be small, safe, low-lifetime/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md/u);
 	assert.match(skillIndex, /observability-debuggability triage/u);
@@ -153,7 +158,7 @@ test('observability debuggability review catches incident evidence gaps', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md"/u);
 	assert.match(manifest, /"observability-debuggability-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.observability-debuggability-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.observability-debuggability-review"\][\s\S]*?revision = 3/u);
 });
 
 test('incident triage review narrows outages by evidence elimination', () => {
@@ -516,6 +521,9 @@ test('backend log evidence review reconstructs backend request and job paths', (
 	assert.match(localSkill, /stable `event_name`/u);
 	assert.match(localSkill, /schema version/u);
 	assert.match(localSkill, /correlation and causation/u);
+	assert.match(localSkill, /diagnostic envelope/u);
+	assert.match(localSkill, /normal and failing event trails/u);
+	assert.match(localSkill, /trace data is sampled out/i);
 	assert.match(localSkill, /message-based dashboards/u);
 	assert.match(localSkill, /high-cardinality indexed fields/u);
 	assert.match(localSkill, /log injection exposure/u);
@@ -562,5 +570,5 @@ test('backend log evidence review reconstructs backend request and job paths', (
 	assert.match(manifest, /"\.mustflow\/skills\/backend-log-evidence-review\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-log-evidence-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.backend-log-evidence-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.backend-log-evidence-review"\][\s\S]*?revision = 4/u);
 });
