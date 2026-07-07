@@ -790,7 +790,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 category = "data_external"
 route_type = "primary"
 priority = 75
-applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk"]
+applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."dependency-reality-check"]
 category = "data_external"
@@ -814,7 +814,7 @@ applies_to_reasons = ["code_change", "public_api_change", "test_change", "docs_c
 category = "data_external"
 route_type = "adjunct"
 priority = 65
-applies_to_reasons = ["code_change", "security_change", "migration_change"]
+applies_to_reasons = ["code_change", "security_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."adapter-boundary"]
 category = "data_external"
@@ -886,7 +886,7 @@ applies_to_reasons = ["test_change"]
 category = "security_privacy"
 route_type = "primary"
 priority = 30
-applies_to_reasons = ["security_change", "privacy_change"]
+applies_to_reasons = ["security_change", "privacy_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."secret-exposure-response"]
 category = "security_privacy"
@@ -934,7 +934,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "publi
 category = "security_privacy"
 route_type = "adjunct"
 priority = 76
-applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "package_metadata_change", "release_risk"]
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."security-regression-tests"]
 category = "security_privacy"

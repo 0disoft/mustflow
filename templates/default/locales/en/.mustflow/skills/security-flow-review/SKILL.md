@@ -2,11 +2,11 @@
 mustflow_doc: skill.security-flow-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: security-flow-review
-description: Apply this skill when code is created, changed, reviewed, or reported and security review needs source-to-sink tracing across authorization, object ownership, tenant scoping, IDOR or BOLA risk, mass assignment, admin-only surfaces, cache keys, exports, injection-like inputs, ORM raw paths, SSRF, file upload and extraction, path traversal, XSS, CSRF, OAuth, reset tokens, JWTs, cookies, cryptography, logs, fail-open error handling, async jobs, race conditions, or supply-chain and CI/CD paths.
+description: Apply this skill when code is created, changed, reviewed, or reported and security review needs source-to-sink tracing across authorization, object ownership, tenant scoping, IDOR or BOLA risk, mass assignment, admin-only surfaces, cache keys, exports, injection-like inputs, ORM raw paths, SSRF, file upload and extraction, path traversal, development server file serving, privileged test or browser UI APIs, XSS, CSRF, OAuth, reset tokens, JWTs, cookies, cryptography, logs, fail-open error handling, async jobs, race conditions, or supply-chain and CI/CD paths.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -42,7 +42,8 @@ changes, and where can data or authority leak?"
 
 - Code review, implementation, or report work touches routes, handlers, services, repositories,
   resolvers, jobs, workers, admin tools, exports, imports, caches, files, external fetchers,
-  OAuth callbacks, tokens, cookies, logs, CI workflows, package metadata, or dependency execution.
+  OAuth callbacks, tokens, cookies, logs, CI workflows, package metadata, development servers,
+  test UI servers, browser-mode tooling, preview servers, or dependency execution.
 - A feature accepts an identifier, URL, filename, path, HTML, Markdown, sort key, filter, field list,
   status, role, price, entitlement, tenant id, organization id, user id, or client-provided state.
 - The suspected issue may be BOLA, IDOR, missing authorization, tenant leak, mass assignment,
@@ -76,7 +77,8 @@ changes, and where can data or authority leak?"
 - Read and write surfaces: list, detail, count, export, download, search, stats, update, delete,
   approve, invite, upload, webhook, callback, job, and admin paths.
 - Framework or platform escape hatches: raw query APIs, shell wrappers, HTML escape bypasses, file
-  APIs, URL fetchers, parser options, cache behavior, token libraries, and CI/package lifecycle hooks.
+  APIs, URL fetchers, parser options, cache behavior, token libraries, development-server host and
+  filesystem policies, privileged test UI APIs, and CI/package lifecycle hooks.
 - Existing tests, denial cases, scanner findings, security docs, command intent entries, and any
   missing context that blocks a confident conclusion.
 
@@ -172,6 +174,11 @@ changes, and where can data or authority leak?"
     - Locale files, templates, themes, attachments, logs, static proxies, backup restore, plugin
       loaders, model loaders, and generated state all need real-path containment after symlinks and
       normalization.
+    - For framework file-serving and dev-server APIs, trace URL path, query string, raw path,
+      decoded path, normalized path, denied path, and final opened file as separate values. Windows
+      alternate data streams, device namespace prefixes, 8.3 short names, mixed separators, and
+      trailing dot or space aliases can make a lexical allow/deny check protect a different name
+      than the operating system opens.
 16. Trace browser-code execution contexts.
     - XSS can enter through Markdown, rich text, translations, email templates, chart labels, admin
       dashboards, CSV exports, hydration data, JSON-in-script blocks, and framework escape hatches.
@@ -213,6 +220,11 @@ changes, and where can data or authority leak?"
     - Dependency manifests, lockfiles, postinstall scripts, codegen, Docker base images, GitHub
       Actions permissions, workflow triggers, artifact upload, CI secrets, package publish identity,
       Terraform modules, Helm charts, and deployment scripts can execute or leak authority.
+    - Treat exposed dev servers and test UIs as execution surfaces when they can rerun tests, write
+      snapshots or source files, save attachments, read arbitrary files, or execute browser-mode
+      commands. Binding such a server to `0.0.0.0`, a LAN host, a tunnel, a container-published
+      port, or a remote workspace turns local convenience APIs into remote authority unless explicit
+      read-only, no-write, and no-exec gates are enforced.
 25. Convert the finding into the smallest defensive action.
     - Fix the owner closest to the sink when the boundary is clear.
     - If evidence is incomplete, report the exact unverified source, sink, actor, resource, tenant,
@@ -229,6 +241,8 @@ changes, and where can data or authority leak?"
   wording.
 - Security-sensitive caches, workers, queues, logs, tokens, files, browser renderers, and CI/CD paths
   are either checked or explicitly reported as outside the current evidence.
+- Development-server and test-UI file read, write, rerun, attachment, snapshot, and execute surfaces
+  are checked when the dependency, config, or scanner finding points at them.
 - Any concrete security bug fix has denial-case or invariant evidence, or the missing test surface is
   reported.
 
@@ -272,6 +286,7 @@ Prefer the narrowest configured test intent that proves the reviewed defensive b
 - Authorization and ownership notes
 - Input, file, network, browser, token, cookie, crypto, log, fail-open, async, race, cache, and
   supply-chain findings when relevant
+- Development-server and test-UI exposure findings when relevant
 - Fixes made or recommendation
 - Tests, denial cases, or invariant evidence
 - Command intents run

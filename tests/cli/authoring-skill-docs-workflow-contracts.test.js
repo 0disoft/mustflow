@@ -464,7 +464,7 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(dependencySkill, /archive extraction, subprocess handling, async lifecycle/u);
 
 	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 5/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 6/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
 });
 

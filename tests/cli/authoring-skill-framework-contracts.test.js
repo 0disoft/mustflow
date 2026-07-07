@@ -103,7 +103,7 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 		),
 	);
 	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 6/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
 });
 

@@ -2,11 +2,11 @@
 mustflow_doc: skill.dependency-upgrade-review
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-upgrade-review
-description: Apply this skill when dependency versions, lockfiles, package manager metadata, security advisory fixes, generated dependency outputs, runtime engine constraints, Python runtime support, peer dependency contracts, framework plugins, TypeScript compiler tracks, CI actions, Docker base images, or toolchain versions are upgraded, downgraded, pinned, widened, regenerated, reviewed, or reported.
+description: Apply this skill when dependency versions, lockfiles, package manager metadata, security advisory fixes, vulnerability scanner alerts, generated dependency outputs, runtime engine constraints, Python runtime support, peer dependency contracts, framework plugins, dev servers, test runners, TypeScript compiler tracks, CI actions, Docker base images, or toolchain versions are upgraded, downgraded, pinned, widened, regenerated, reviewed, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -56,6 +56,7 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - Ecosystem and package manager: JavaScript or TypeScript, Python, Go, Rust, JVM, .NET, Ruby, PHP, Swift, Docker, CI actions, or another declared system.
 - Package declarations, lockfiles, workspace files, runtime-version files, package-manager config, toolchain files, CI/Docker files, generated outputs, and command contract entries.
 - Release notes, migration notes, changelog, advisory range, fixed range, compatibility notes, or local issue evidence when available from approved context.
+- Advisory exploit preconditions, including operating system, host binding, public network exposure, dev-server mode, privileged UI/API flags, protocol peer role, unauthenticated reachability, and whether the affected package runs in production, CI, development, containers, or remote workspaces.
 - Impacted runtime paths, build paths, test paths, generated clients, mocks, fixtures, docs examples, deployment images, and package publish output.
 
 <!-- mustflow-section: preconditions -->
@@ -93,9 +94,11 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 8. For security upgrades, keep the patch narrow. Identify advisory id, affected range, fixed range, direct or transitive path, exploit-relevant code path, minimum patched version, scanner recheck, and whether stricter validation, escaping, TLS, redirect, auth, or parser behavior can break callers.
    - For lockfile-only or transitive vulnerability alerts, do not treat the lockfile line as the root cause. Trace the vulnerable package back to the direct dependency or framework plugin that resolves it, then update the narrowest parent version, override, or package-manager resolution that satisfies the fixed range.
    - After regenerating the lockfile, confirm the old vulnerable version is absent from the resolved graph and that any override is recorded in the manifest rather than hidden as unexplained lockfile churn.
+   - For devDependency advisories, decide whether the affected tool ever binds to a non-localhost host, runs in a container with published ports, serves worktree files, exposes a browser or test UI, accepts remote API tokens, writes source or snapshot files, reruns tests, or executes project code. A devDependency can still be security-sensitive when it is reachable from another machine or CI/preview surface.
+   - For protocol and crypto dependency advisories, classify whether the package acts as client, server, agent, parser, verifier, or keyring. Check unauthenticated reachability, panic or assertion behavior, attacker-controlled key sizes, packet or frame ordering, unsolicited responses, and resource exhaustion before reducing the finding to "DoS only".
 9. Review the lockfile as a graph, not a blob. Check direct and transitive replacements, newly introduced packages, removed packages, optional/platform packages, source URLs, integrity or checksum changes, peer resolution, engine requirements, native prebuilds, and postinstall or lifecycle scripts.
 10. Review runtime boundaries that dependency upgrades commonly break: ESM/CJS and package `type`, `exports` and conditional exports, browser/node/edge conditions, Node engine support, Python dependency markers and extras, Go module path changes, Cargo feature unification, native builds, SSR/client split, WebView/native split, and generated client or SDK types.
-11. Treat framework, plugin, code generator, formatter, linter, bundler, ORM, protobuf, OpenAPI, GraphQL, database driver, and test-runner upgrades as behavior changes when their output, config schema, plugin API, CLI flags, or generated code can change.
+11. Treat framework, plugin, code generator, formatter, linter, bundler, ORM, protobuf, OpenAPI, GraphQL, database driver, dev-server, browser-test, and test-runner upgrades as behavior changes when their output, config schema, plugin API, CLI flags, file-serving policy, privileged UI gates, or generated code can change.
 12. For Python runtime upgrades, treat `requires-python`, CI matrices, base images, dependency markers, wheels, packaging output, standard-library API availability, and security-default changes as one compatibility contract. Review version-gated standard-library usage and changed defaults before assuming the upgrade is only a dependency resolution change.
 13. For Python upgrades that adopt newer standard-library behavior, call out affected paths such as archive extraction, subprocess handling, async lifecycle, import/resource loading, typing surfaces, data-class shapes, and diagnostic flags. Keep fallbacks or compatibility wording when the repository still supports older interpreters.
 14. For TypeScript upgrades, classify the compiler track explicitly: TS6 stable API track through `@typescript/typescript6` and `tsc6`, TS7 RC compiler track through `typescript@rc` and `tsc`, TS7 nightly track through `@typescript/native-preview` and `tsgo`, future TS7 stable track through the stable `typescript` package, editor extension preview, or framework-owned wrapper. Do not treat a nightly package as a stable replacement for the `typescript` package unless the repository policy says so.
@@ -116,6 +119,7 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - Python runtime upgrades classify standard-library availability, changed defaults, packaging output, and security-behavior impact.
 - TypeScript compiler-track changes distinguish TS6 stable API compatibility, TS7 RC compiler verification, TS7 nightly comparison work, and future TS7 stable adoption.
 - Security fixes are narrow unless the user explicitly accepted a broader modernization.
+- Advisory exploit preconditions are checked against local scripts, config, CI, containers, remote workspaces, and docs before an alert is dismissed as development-only or unreachable.
 - Tests and scanners were not weakened to pass the upgrade.
 
 <!-- mustflow-section: verification -->
@@ -158,6 +162,7 @@ Prefer the narrowest configured intent that proves the actual upgraded dependenc
 - Python runtime, standard-library, packaging, and changed-default risks when relevant
 - TypeScript compiler-track, RC, nightly, and API compatibility risks when relevant
 - Security advisory and fixed-range notes when relevant
+- Exploit preconditions, dev-server exposure, protocol role, and scanner recheck notes when relevant
 - Surfaces synchronized
 - Command intents run
 - Skipped dependency checks and reasons

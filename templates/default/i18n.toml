@@ -595,7 +595,7 @@ translations = {}
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.version-freshness-check"]
@@ -679,7 +679,7 @@ translations = {}
 [documents."skill.security-flow-review"]
 source = "locales/en/.mustflow/skills/security-flow-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.config-env-change"]
@@ -961,7 +961,7 @@ translations = {}
 [documents."skill.cross-platform-filesystem-safety"]
 source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.pure-core-imperative-shell"]
@@ -1164,7 +1164,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 23
+revision = 24
 translations = {}
 
 [documents."skill.security-regression-tests"]
