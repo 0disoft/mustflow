@@ -290,6 +290,8 @@ mf run mustflow_update_apply
 | `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
 | `mf context --json` | Print read order, command rules, context trust metadata, available capabilities, prompt-cache bundles, and recent run summary as JSON. |
 | `mf skill route` | Resolve compact skill route candidates from task text, paths, and reasons before reading selected skill documents. |
+| `mf skill outdated` | Check installed external skills against their saved upstream provenance, report file hash drift, and refresh the local update-check timestamp without writing skill files. |
+| `mf skill update <skill-name>\|--all` | Refresh installed external skills from their saved provenance source, refusing to overwrite local drift. Use `--dry-run` to preview and refresh the update-check timestamp. |
 | `mf map --stdout` | Print the current mustflow root map to stdout. |
 | `mf map --write` | Create or update `REPO_MAP.md`. |
 | `mf flow --stdout` | Print the current mustflow root design-flow map to stdout. |

@@ -52,8 +52,9 @@ function jsonResponse(value, status = 200) {
 	};
 }
 
-function createMockFetch() {
-	const skillBody = [
+function createMockFetch(options = {}) {
+	const includeScript = options.includeScript ?? true;
+	const skillBody = options.skillBody ?? [
 		'---',
 		'mustflow_doc: skill.concurrency-review',
 		'locale: en',
@@ -92,6 +93,9 @@ function createMockFetch() {
 		}
 
 		if (value.includes('/contents/review/concurrency/scripts?ref=main')) {
+			if (!includeScript) {
+				return jsonResponse({ message: 'not found' }, 404);
+			}
 			return jsonResponse([
 				{
 					type: 'file',
@@ -102,6 +106,9 @@ function createMockFetch() {
 		}
 
 		if (value.includes('/contents/review/concurrency/scripts/inspect.sh?ref=main')) {
+			if (!includeScript) {
+				return jsonResponse({ message: 'not found' }, 404);
+			}
 			return jsonResponse({
 				type: 'file',
 				name: 'inspect.sh',
@@ -202,6 +209,226 @@ test('external skill import installs under external-skills and route resolver ca
 	}
 });
 
+test('external skill outdated detects upstream file hash changes', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const {
+			createExternalSkillImportReport,
+			createExternalSkillUpdateReminder,
+			createExternalSkillUpdateReport,
+		} = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch({ includeScript: false }),
+			},
+		);
+
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'outdated',
+			fetch: createMockFetch({
+				includeScript: false,
+				skillBody: [
+					'---',
+					'name: concurrency-review',
+					'description: Review updated parallel work boundaries.',
+					'---',
+					'# Concurrency Review',
+					'',
+					'Updated upstream guidance.',
+					'',
+				].join('\n'),
+			}),
+			now: new Date('2026-07-07T00:00:00.000Z'),
+		});
+		const statePath = path.join(projectPath, '.mustflow', 'state', 'external-skills', 'update-check.json');
+
+		assert.equal(report.ok, true);
+		assert.equal(report.action, 'outdated');
+		assert.equal(report.mode, 'check');
+		assert.equal(report.status, 'checked');
+		assert.equal(report.wrote_files, false);
+		assert.equal(report.check_state.state_path, '.mustflow/state/external-skills/update-check.json');
+		assert.equal(report.check_state.stale_after_days, 7);
+		assert.equal(report.check_state.checked_at, '2026-07-07T00:00:00.000Z');
+		assert.equal(report.check_state.previous_checked_at, null);
+		assert.equal(report.check_state.next_check_due_at, '2026-07-14T00:00:00.000Z');
+		assert.equal(report.check_state.stale_before_command, true);
+		assert.equal(report.skills.length, 1);
+		assert.equal(report.skills[0].status, 'outdated');
+		assert.deepEqual(report.skills[0].changed_files.map((file) => file.relative_path), ['SKILL.md']);
+		assert.equal(JSON.parse(readFileSync(statePath, 'utf8')).last_checked_at, '2026-07-07T00:00:00.000Z');
+		assert.equal(createExternalSkillUpdateReminder(projectPath, new Date('2026-07-08T00:00:00.000Z')), null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill update reminder appears after seven days without checks', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const {
+			createExternalSkillImportReport,
+			createExternalSkillUpdateReminder,
+			createExternalSkillUpdateReport,
+		} = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch({ includeScript: false }),
+			},
+		);
+
+		assert.match(
+			createExternalSkillUpdateReminder(projectPath, new Date('2026-07-07T00:00:00.000Z')),
+			/mf skill outdated --json/u,
+		);
+
+		await createExternalSkillUpdateReport(projectPath, {
+			action: 'outdated',
+			fetch: createMockFetch({ includeScript: false }),
+			now: new Date('2026-07-07T00:00:00.000Z'),
+		});
+
+		assert.equal(createExternalSkillUpdateReminder(projectPath, new Date('2026-07-13T23:59:59.000Z')), null);
+		assert.match(
+			createExternalSkillUpdateReminder(projectPath, new Date('2026-07-14T00:00:00.000Z')),
+			/Last checked: 2026-07-07T00:00:00.000Z/u,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill update refreshes installed files from provenance source', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch({ includeScript: false }),
+			},
+		);
+
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'update',
+			skillNames: ['concurrency-review'],
+			fetch: createMockFetch({
+				includeScript: false,
+				skillBody: [
+					'---',
+					'name: concurrency-review',
+					'description: Review updated parallel work boundaries.',
+					'---',
+					'# Concurrency Review',
+					'',
+					'Updated upstream guidance.',
+					'',
+				].join('\n'),
+			}),
+		});
+
+		const skillPath = path.join(projectPath, '.mustflow', 'external-skills', 'concurrency-review', 'SKILL.md');
+		const provenancePath = path.join(
+			projectPath,
+			'.mustflow',
+			'external-skills',
+			'concurrency-review',
+			'mustflow-skill-source.json',
+		);
+
+		assert.equal(report.ok, true);
+		assert.equal(report.action, 'update');
+		assert.equal(report.mode, 'install');
+		assert.equal(report.status, 'updated');
+		assert.equal(report.wrote_files, true);
+		assert.equal(report.skills[0].status, 'updated');
+		assert.match(readFileSync(skillPath, 'utf8'), /Updated upstream guidance/u);
+		const provenance = JSON.parse(readFileSync(provenancePath, 'utf8'));
+		assert.equal(provenance.kind, 'external_skill_source');
+		assert.equal(provenance.files[0].relative_path, 'SKILL.md');
+		assert.equal(provenance.files[0].sha256, report.skills[0].remote_files[0].sha256);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill update refuses to overwrite local drift', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch({ includeScript: false }),
+			},
+		);
+
+		const skillPath = path.join(projectPath, '.mustflow', 'external-skills', 'concurrency-review', 'SKILL.md');
+		writeFileSync(skillPath, `${readFileSync(skillPath, 'utf8')}\nLocal edit.\n`);
+
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'update',
+			skillNames: ['concurrency-review'],
+			fetch: createMockFetch({ includeScript: false }),
+		});
+
+		assert.equal(report.ok, false);
+		assert.equal(report.status, 'rejected');
+		assert.equal(report.wrote_files, false);
+		assert.match(report.issues.join('\n'), /local file drift/u);
+		assert.match(readFileSync(skillPath, 'utf8'), /Local edit/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill update refuses to delete extra local files', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch({ includeScript: false }),
+			},
+		);
+
+		const extraPath = path.join(projectPath, '.mustflow', 'external-skills', 'concurrency-review', 'notes.md');
+		writeFileSync(extraPath, 'local note\n');
+
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'update',
+			skillNames: ['concurrency-review'],
+			fetch: createMockFetch({ includeScript: false }),
+		});
+
+		assert.equal(report.ok, false);
+		assert.equal(report.status, 'rejected');
+		assert.equal(report.skills[0].status, 'rejected');
+		assert.match(report.issues.join('\n'), /local file drift: notes\.md/u);
+		assert.equal(existsSync(extraPath), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('external skill import dry-run with trusted scripts previews command contract without granting authority', async () => {
 	const projectPath = createTempProject();
 
@@ -290,6 +517,64 @@ test('external skill import with trusted scripts creates command contract fragme
 		assert.match(commandFragment, /network = true/u);
 		assert.match(commandFragment, /destructive = true/u);
 		assert.match(readFileSync(provenancePath, 'utf8'), /"script_trust"/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill update with trusted scripts reuses existing command contract fragment', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createTempCommandContract(projectPath);
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch(),
+				trustScripts: true,
+			},
+		);
+
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'update',
+			skillNames: ['concurrency-review'],
+			fetch: createMockFetch({
+				skillBody: [
+					'---',
+					'name: concurrency-review',
+					'description: Review updated parallel work boundaries.',
+					'---',
+					'# Concurrency Review',
+					'',
+					'Updated upstream guidance.',
+					'',
+				].join('\n'),
+			}),
+			trustScripts: true,
+		});
+
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const commandFragmentPath = path.join(
+			projectPath,
+			'.mustflow',
+			'config',
+			'commands',
+			'external-skills-concurrency-review.toml',
+		);
+		const includeMatches = readFileSync(commandsPath, 'utf8').match(/"commands\/external-skills-concurrency-review\.toml"/gu) ?? [];
+
+		assert.equal(report.ok, true);
+		assert.equal(report.status, 'updated');
+		assert.equal(report.skills[0].script_trust.status, 'trusted');
+		assert.equal(report.skills[0].wrote_files, true);
+		assert.equal(includeMatches.length, 1);
+		assert.match(
+			readFileSync(commandFragmentPath, 'utf8'),
+			/\[intents\.external_skill_concurrency_review_inspect\]/u,
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

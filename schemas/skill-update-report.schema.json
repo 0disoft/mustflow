@@ -1,0 +1,256 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/skill-update-report.schema.json",
+  "title": "mustflow skill update report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "command",
+    "action",
+    "ok",
+    "mode",
+    "status",
+    "check_state",
+    "skills",
+    "warnings",
+    "issues",
+    "wrote_files"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "skill_update_report" },
+    "command": { "const": "skill" },
+    "action": { "type": "string", "enum": ["outdated", "update"] },
+    "ok": { "type": "boolean" },
+    "mode": { "type": "string", "enum": ["check", "dry_run", "install"] },
+    "status": { "type": "string", "enum": ["checked", "preview", "updated", "rejected"] },
+    "check_state": { "$ref": "#/$defs/checkState" },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skill" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "wrote_files": { "type": "boolean" }
+  },
+  "$defs": {
+    "checkState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_path",
+        "stale_after_days",
+        "checked_at",
+        "previous_checked_at",
+        "next_check_due_at",
+        "stale_before_command"
+      ],
+      "properties": {
+        "state_path": { "const": ".mustflow/state/external-skills/update-check.json" },
+        "stale_after_days": { "const": 7 },
+        "checked_at": { "type": "string" },
+        "previous_checked_at": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "next_check_due_at": { "type": "string" },
+        "stale_before_command": { "type": "boolean" }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skill_name",
+        "ok",
+        "status",
+        "source",
+        "target",
+        "current_files",
+        "remote_files",
+        "changed_files",
+        "warnings",
+        "issues",
+        "wrote_files"
+      ],
+      "properties": {
+        "skill_name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "ok": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["current", "outdated", "updated", "rejected"] },
+        "source": {
+          "oneOf": [
+            { "$ref": "#/$defs/source" },
+            { "type": "null" }
+          ]
+        },
+        "target": { "$ref": "#/$defs/target" },
+        "current_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/file" }
+        },
+        "remote_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/file" }
+        },
+        "changed_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/fileChange" }
+        },
+        "script_trust": { "$ref": "#/$defs/scriptTrust" },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "wrote_files": { "type": "boolean" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_url", "host", "owner", "repo", "ref", "skill_path", "source_url"],
+      "properties": {
+        "input_url": { "type": "string" },
+        "host": { "type": "string", "enum": ["github.com", "raw.githubusercontent.com"] },
+        "owner": { "type": "string" },
+        "repo": { "type": "string" },
+        "ref": { "type": "string" },
+        "skill_path": { "type": "string" },
+        "source_url": { "type": "string" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "skill_name", "skill_dir", "provenance_path"],
+      "properties": {
+        "root": { "const": ".mustflow/external-skills" },
+        "skill_name": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "skill_dir": { "type": "string", "pattern": "^\\.mustflow/external-skills/[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "provenance_path": {
+          "type": "string",
+          "pattern": "^\\.mustflow/external-skills/[a-z0-9]+(?:-[a-z0-9]+)*/mustflow-skill-source\\.json$"
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "kind", "bytes", "sha256"],
+      "properties": {
+        "relative_path": { "type": "string" },
+        "kind": { "type": "string", "enum": ["skill", "asset", "reference", "script"] },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "fileChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relative_path", "status", "current_sha256", "remote_sha256"],
+      "properties": {
+        "relative_path": { "type": "string" },
+        "status": { "type": "string", "enum": ["added", "modified", "removed"] },
+        "current_sha256": {
+          "oneOf": [
+            { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "remote_sha256": {
+          "oneOf": [
+            { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "scriptTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested",
+        "status",
+        "grants_command_authority",
+        "command_contract_path",
+        "include_entry",
+        "fragment_path",
+        "intents"
+      ],
+      "properties": {
+        "requested": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["not_requested", "no_scripts", "planned", "trusted"] },
+        "grants_command_authority": { "type": "boolean" },
+        "command_contract_path": {
+          "oneOf": [
+            { "const": ".mustflow/config/commands.toml" },
+            { "type": "null" }
+          ]
+        },
+        "include_entry": {
+          "oneOf": [
+            { "type": "string", "pattern": "^commands/external-skills-[a-z0-9]+(?:-[a-z0-9]+)*\\.toml$" },
+            { "type": "null" }
+          ]
+        },
+        "fragment_path": {
+          "oneOf": [
+            { "type": "string", "pattern": "^\\.mustflow/config/commands/external-skills-[a-z0-9]+(?:-[a-z0-9]+)*\\.toml$" },
+            { "type": "null" }
+          ]
+        },
+        "intents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/trustedScriptIntent" }
+        }
+      }
+    },
+    "trustedScriptIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "script_path",
+        "argv",
+        "run_policy",
+        "network",
+        "destructive",
+        "approval_required"
+      ],
+      "properties": {
+        "intent": { "type": "string", "pattern": "^external_skill_[A-Za-z0-9_-]+$" },
+        "script_path": { "type": "string", "pattern": "^scripts/.+$" },
+        "argv": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string" }
+        },
+        "run_policy": { "const": "agent_allowed" },
+        "network": { "const": true },
+        "destructive": { "const": true },
+        "approval_required": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "network_access" },
+            { "const": "destructive_command" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  }
+}

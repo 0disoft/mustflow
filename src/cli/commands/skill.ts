@@ -19,8 +19,11 @@ import {
 import { resolveSkillRoutes } from '../../core/skill-route-resolution.js';
 import {
 	createExternalSkillImportReport,
+	createExternalSkillUpdateReminder,
+	createExternalSkillUpdateReport,
 	type ExternalSkillImportReport,
 	type ExternalSkillImportMode,
+	type ExternalSkillUpdateReport,
 } from '../lib/external-skill-import.js';
 
 const SKILL_OPTIONS = [
@@ -31,6 +34,7 @@ const SKILL_OPTIONS = [
 	{ name: '--max-candidates', kind: 'string' },
 	{ name: '--install', kind: 'boolean' },
 	{ name: '--dry-run', kind: 'boolean' },
+	{ name: '--all', kind: 'boolean' },
 	{ name: '--name', kind: 'string' },
 	{ name: '--ref', kind: 'string' },
 	{ name: '--trust-scripts', kind: 'boolean' },
@@ -40,12 +44,14 @@ interface ParsedSkillArgs {
 	readonly json: boolean;
 	readonly action: string | null;
 	readonly sourceUrl: string | null;
+	readonly skillNames: readonly string[];
 	readonly taskText: string | null;
 	readonly paths: readonly string[];
 	readonly reasons: readonly string[];
 	readonly maxCandidates: number | undefined;
 	readonly install: boolean;
 	readonly dryRun: boolean;
+	readonly all: boolean;
 	readonly name: string | null;
 	readonly ref: string | null;
 	readonly trustScripts: boolean;
@@ -66,12 +72,15 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: 'route', description: 'Resolve installed skill route candidates' },
 				{ label: 'import <github-url>', description: 'Preview or install an external SKILL.md under .mustflow/external-skills/' },
+				{ label: 'outdated [skill-name...]', description: 'Check installed external skills for upstream file changes' },
+				{ label: 'update <skill-name>|--all', description: 'Refresh installed external skills from their saved provenance source' },
 				{ label: '--task <text>', description: 'Task text used for route scoring' },
 				{ label: '--path <path>', description: 'Changed or expected path; may be repeated' },
 				{ label: '--reason <reason>', description: 'Classification or verification reason; may be repeated' },
 				{ label: '--max-candidates <count>', description: 'Maximum candidates to return, from 1 to 10' },
 				{ label: '--dry-run', description: 'Preview an external skill import without writing files; default for import' },
 				{ label: '--install', description: 'Install an external skill after previewing the same source' },
+				{ label: '--all', description: 'Select every installed external skill for outdated or update checks' },
 				{ label: '--name <slug>', description: 'Override the installed external skill directory name' },
 				{ label: '--ref <ref>', description: 'Override the GitHub ref used for import' },
 				{ label: '--trust-scripts', description: 'Create command-contract intents for imported scripts; requires --install to write them' },
@@ -83,6 +92,9 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 				'mf skill route --reason docs_change --path docs-site/src/content/docs/en/commands/context.md',
 				'mf skill import https://github.com/example/agent-skills/tree/main/review/security --dry-run --json',
 				'mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --install',
+				'mf skill outdated --json',
+				'mf skill update concurrency-review --dry-run --json',
+				'mf skill update --all --trust-scripts',
 			],
 			exitCodes: [
 				{ label: '0', description: 'Skill route candidates were resolved' },
@@ -114,12 +126,14 @@ function parseSkillArgs(args: readonly string[]): ParsedSkillArgs {
 		json: hasParsedCliOption(parsed, '--json'),
 		action: parsed.positionals[0] ?? null,
 		sourceUrl: parsed.positionals[1] ?? null,
+		skillNames: parsed.positionals.slice(1),
 		taskText: getParsedCliStringOption(parsed, '--task'),
 		paths: getParsedCliStringOptions(parsed, '--path'),
 		reasons: getParsedCliStringOptions(parsed, '--reason'),
 		maxCandidates: parseMaxCandidates(getParsedCliStringOption(parsed, '--max-candidates')),
 		install: hasParsedCliOption(parsed, '--install'),
 		dryRun: hasParsedCliOption(parsed, '--dry-run'),
+		all: hasParsedCliOption(parsed, '--all'),
 		name: getParsedCliStringOption(parsed, '--name'),
 		ref: getParsedCliStringOption(parsed, '--ref'),
 		trustScripts: hasParsedCliOption(parsed, '--trust-scripts'),
@@ -157,7 +171,7 @@ function createSkillRouteScriptPackSuggestions(
 	};
 }
 
-function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang): string {
+function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang, warnings: readonly string[] = []): string {
 	const lines = [
 		'mustflow skill route',
 		`${t(lang, 'label.mustflowRoot')}: ${resolveMustflowRoot()}`,
@@ -189,6 +203,55 @@ function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang): string
 		'Source files',
 		...report.source_files.map((sourceFile) => `- ${sourceFile}`),
 	);
+	if (warnings.length > 0) {
+		lines.push('', 'Warnings', ...warnings.map((warning) => `- ${warning}`));
+	}
+	return lines.join('\n');
+}
+
+function renderSkillUpdateReport(report: ExternalSkillUpdateReport): string {
+	const lines = [
+		`mustflow skill ${report.action}`,
+		`status: ${report.status}`,
+		`mode: ${report.mode}`,
+		`wrote_files: ${String(report.wrote_files)}`,
+		'',
+		'Skills',
+	];
+
+	if (report.skills.length === 0) {
+		lines.push('- none');
+	} else {
+		for (const skill of report.skills) {
+			lines.push(
+				`- ${skill.skill_name}: ${skill.status}`,
+				`  source: ${skill.source?.source_url ?? 'none'}`,
+				`  target: ${skill.target.skill_dir}`,
+				`  changed_files: ${String(skill.changed_files.length)}`,
+			);
+			for (const changedFile of skill.changed_files) {
+				lines.push(
+					`  - ${changedFile.relative_path}: ${changedFile.status}`,
+					`    current: ${changedFile.current_sha256 ?? 'none'}`,
+					`    remote: ${changedFile.remote_sha256 ?? 'none'}`,
+				);
+			}
+			if (skill.issues.length > 0) {
+				for (const issue of skill.issues) {
+					lines.push(`  issue: ${issue}`);
+				}
+			}
+		}
+	}
+
+	if (report.warnings.length > 0) {
+		lines.push('', 'Warnings', ...report.warnings.map((warning) => `- ${warning}`));
+	}
+
+	if (report.issues.length > 0) {
+		lines.push('', 'Issues', ...report.issues.map((issue) => `- ${issue}`));
+	}
+
 	return lines.join('\n');
 }
 
@@ -260,7 +323,12 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		return 1;
 	}
 
-	if (parsed.action !== 'route' && parsed.action !== 'import') {
+	if (
+		parsed.action !== 'route' &&
+		parsed.action !== 'import' &&
+		parsed.action !== 'outdated' &&
+		parsed.action !== 'update'
+	) {
 		printUsageError(
 			reporter,
 			t(lang, parsed.action ? 'cli.error.unexpectedArgument' : 'cli.error.missingValue', {
@@ -314,6 +382,46 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		return report.ok ? 0 : 1;
 	}
 
+	if (parsed.action === 'outdated' || parsed.action === 'update') {
+		if (parsed.action === 'outdated' && (parsed.install || parsed.dryRun)) {
+			printUsageError(
+				reporter,
+				t(lang, 'cli.error.unexpectedValue', { option: '--install/--dry-run' }),
+				'mf skill --help',
+				getSkillHelp(lang),
+				lang,
+			);
+			return 1;
+		}
+
+		if (parsed.action === 'update' && parsed.install) {
+			printUsageError(
+				reporter,
+				t(lang, 'cli.error.unexpectedValue', { option: '--install' }),
+				'mf skill --help',
+				getSkillHelp(lang),
+				lang,
+			);
+			return 1;
+		}
+
+		const report = await createExternalSkillUpdateReport(resolveMustflowRoot(), {
+			action: parsed.action,
+			mode: parsed.action === 'outdated' ? 'check' : parsed.dryRun ? 'dry_run' : 'install',
+			skillNames: parsed.skillNames,
+			all: parsed.all,
+			trustScripts: parsed.trustScripts,
+		});
+
+		if (parsed.json) {
+			reporter.stdout(JSON.stringify(report, null, 2));
+		} else {
+			reporter.stdout(renderSkillUpdateReport(report));
+		}
+
+		return report.ok ? 0 : 1;
+	}
+
 	if (Number.isNaN(parsed.maxCandidates)) {
 		printUsageError(
 			reporter,
@@ -343,6 +451,7 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		return 0;
 	}
 
-	reporter.stdout(renderSkillRouteReport(report, lang));
+	const updateReminder = createExternalSkillUpdateReminder(mustflowRoot);
+	reporter.stdout(renderSkillRouteReport(report, lang, updateReminder ? [updateReminder] : []));
 	return 0;
 }

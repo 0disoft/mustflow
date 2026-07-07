@@ -274,7 +274,7 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		id: 'skill',
 		usage: 'mf skill',
 		summaryKey: 'command.skill.summary',
-		contract: commandContract(TEXT_JSON_OUTPUT, ['skill-route-report', 'skill-import-report']),
+		contract: commandContract(TEXT_JSON_OUTPUT, ['skill-route-report', 'skill-import-report', 'skill-update-report']),
 		loadRunner: async () => (await import('../commands/skill.js')).runSkill,
 	},
 	{

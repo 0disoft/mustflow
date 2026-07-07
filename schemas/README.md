@@ -195,6 +195,10 @@ Current schemas:
 - `skill-import-report.schema.json`: output of `mf skill import <github-url> --json`, containing
   GitHub source provenance, target `.mustflow/external-skills/<name>/` paths, imported file hashes,
   warnings for inert external scripts, rejection issues, and whether files were written
+- `skill-update-report.schema.json`: output of
+  `mf skill outdated --json` and `mf skill update <skill-name>|--all --json`, containing saved
+  external-skill provenance, current and remote file hashes, changed-file summaries, local-drift
+  rejection issues, script-trust status, last update-check state, and whether skill files were written
 - `route-fixture.schema.json`: parsed `.mustflow/skills/route-fixtures.json`, containing strict
   skill-route golden cases with required and forbidden route expectations
 - `latest-run-pointer.schema.json`: `.mustflow/state/runs/latest.json` when `mf verify` writes a

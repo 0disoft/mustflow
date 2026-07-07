@@ -696,6 +696,15 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'skill-update-report',
+		schemaFile: 'skill-update-report.schema.json',
+		producer: 'mf skill outdated --json / mf skill update <skill-name>|--all --json',
+		packaged: true,
+		documented: true,
+		installedCommand: ['mf', 'skill', 'outdated', '--json'],
+		expectedExitCodes: [0, 1],
+	},
+	{
 		id: 'route-fixture',
 		schemaFile: 'route-fixture.schema.json',
 		producer: 'parsed .mustflow/skills/route-fixtures.json',

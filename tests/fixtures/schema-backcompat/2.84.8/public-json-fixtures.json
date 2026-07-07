@@ -3798,6 +3798,80 @@
       }
     },
     {
+      "id": "skill-update-report",
+      "schema_file": "skill-update-report.schema.json",
+      "producer": "mf skill outdated --json / mf skill update <skill-name>|--all --json",
+      "fixture": {
+        "schema_version": "1",
+        "kind": "skill_update_report",
+        "command": "skill",
+        "action": "outdated",
+        "ok": true,
+        "mode": "check",
+        "status": "checked",
+        "check_state": {
+          "state_path": ".mustflow/state/external-skills/update-check.json",
+          "stale_after_days": 7,
+          "checked_at": "2026-07-07T00:00:00.000Z",
+          "previous_checked_at": "2026-06-29T00:00:00.000Z",
+          "next_check_due_at": "2026-07-14T00:00:00.000Z",
+          "stale_before_command": true
+        },
+        "skills": [
+          {
+            "skill_name": "security-review",
+            "ok": true,
+            "status": "outdated",
+            "source": {
+              "input_url": "https://github.com/example/agent-skills/blob/main/review/security/SKILL.md",
+              "host": "github.com",
+              "owner": "example",
+              "repo": "agent-skills",
+              "ref": "main",
+              "skill_path": "review/security",
+              "source_url": "https://github.com/example/agent-skills/blob/main/review/security/SKILL.md"
+            },
+            "target": {
+              "root": ".mustflow/external-skills",
+              "skill_name": "security-review",
+              "skill_dir": ".mustflow/external-skills/security-review",
+              "provenance_path": ".mustflow/external-skills/security-review/mustflow-skill-source.json"
+            },
+            "current_files": [
+              {
+                "relative_path": "SKILL.md",
+                "kind": "skill",
+                "bytes": 128,
+                "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "remote_files": [
+              {
+                "relative_path": "SKILL.md",
+                "kind": "skill",
+                "bytes": 144,
+                "sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              }
+            ],
+            "changed_files": [
+              {
+                "relative_path": "SKILL.md",
+                "status": "modified",
+                "current_sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "remote_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              }
+            ],
+            "warnings": [],
+            "issues": [],
+            "wrote_files": false
+          }
+        ],
+        "warnings": [],
+        "issues": [],
+        "wrote_files": false
+      }
+    },
+    {
       "id": "test-selection",
       "schema_file": "test-selection.schema.json",
       "producer": "parsed .mustflow/config/test-selection.toml",

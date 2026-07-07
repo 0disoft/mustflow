@@ -1,4 +1,4 @@
-import { existsSync, renameSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -17,10 +17,13 @@ const EXTERNAL_SKILL_ROOT = '.mustflow/external-skills';
 const PROVENANCE_FILE = 'mustflow-skill-source.json';
 const COMMANDS_CONFIG_PATH = '.mustflow/config/commands.toml';
 const COMMAND_FRAGMENT_DIRECTORY = '.mustflow/config/commands';
+const EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH = '.mustflow/state/external-skills/update-check.json';
 const DEFAULT_GITHUB_REF = 'HEAD';
 const MAX_IMPORTED_FILES = 40;
 const MAX_TOTAL_BYTES = 512 * 1024;
 const MAX_FILE_BYTES = 256 * 1024;
+const UPDATE_CHECK_STALE_AFTER_DAYS = 7;
+const UPDATE_CHECK_STALE_AFTER_MS = UPDATE_CHECK_STALE_AFTER_DAYS * 24 * 60 * 60 * 1000;
 const ALLOWED_SUPPORT_DIRECTORIES = new Set(['assets', 'references', 'scripts']);
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const GITHUB_NAME_PATTERN = /^[A-Za-z0-9_.-]+$/u;
@@ -28,6 +31,9 @@ const GITHUB_NAME_PATTERN = /^[A-Za-z0-9_.-]+$/u;
 export type ExternalSkillImportMode = 'dry_run' | 'install';
 export type ExternalSkillFileKind = 'skill' | 'asset' | 'reference' | 'script';
 export type ExternalSkillImportStatus = 'preview' | 'installed' | 'rejected';
+export type ExternalSkillUpdateMode = 'check' | 'dry_run' | 'install';
+export type ExternalSkillUpdateStatus = 'current' | 'outdated' | 'updated' | 'rejected';
+export type ExternalSkillFileChangeStatus = 'added' | 'modified' | 'removed';
 
 export interface ExternalSkillImportSource {
 	readonly input_url: string;
@@ -90,12 +96,68 @@ export interface ExternalSkillImportReport {
 	readonly wrote_files: boolean;
 }
 
+export interface ExternalSkillFileChange {
+	readonly relative_path: string;
+	readonly status: ExternalSkillFileChangeStatus;
+	readonly current_sha256: string | null;
+	readonly remote_sha256: string | null;
+}
+
+export interface ExternalSkillUpdateItem {
+	readonly skill_name: string;
+	readonly ok: boolean;
+	readonly status: ExternalSkillUpdateStatus;
+	readonly source: ExternalSkillImportSource | null;
+	readonly target: ExternalSkillImportTarget;
+	readonly current_files: readonly ExternalSkillImportedFile[];
+	readonly remote_files: readonly ExternalSkillImportedFile[];
+	readonly changed_files: readonly ExternalSkillFileChange[];
+	readonly script_trust?: ExternalSkillScriptTrust;
+	readonly warnings: readonly string[];
+	readonly issues: readonly string[];
+	readonly wrote_files: boolean;
+}
+
+export interface ExternalSkillUpdateReport {
+	readonly schema_version: '1';
+	readonly kind: 'skill_update_report';
+	readonly command: 'skill';
+	readonly action: 'outdated' | 'update';
+	readonly ok: boolean;
+	readonly mode: ExternalSkillUpdateMode;
+	readonly status: 'checked' | 'preview' | 'updated' | 'rejected';
+	readonly check_state: ExternalSkillUpdateCheckState;
+	readonly skills: readonly ExternalSkillUpdateItem[];
+	readonly warnings: readonly string[];
+	readonly issues: readonly string[];
+	readonly wrote_files: boolean;
+}
+
+export interface ExternalSkillUpdateCheckState {
+	readonly state_path: typeof EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH;
+	readonly stale_after_days: typeof UPDATE_CHECK_STALE_AFTER_DAYS;
+	readonly checked_at: string;
+	readonly previous_checked_at: string | null;
+	readonly next_check_due_at: string;
+	readonly stale_before_command: boolean;
+}
+
 export interface ExternalSkillImportOptions {
 	readonly mode: ExternalSkillImportMode;
 	readonly name?: string | null;
 	readonly ref?: string | null;
 	readonly trustScripts?: boolean;
 	readonly fetch?: typeof fetch;
+}
+
+export interface ExternalSkillUpdateOptions {
+	readonly action: 'outdated' | 'update';
+	readonly mode?: ExternalSkillUpdateMode;
+	readonly skillNames?: readonly string[];
+	readonly all?: boolean;
+	readonly trustScripts?: boolean;
+	readonly fetch?: typeof fetch;
+	readonly now?: Date;
 }
 
 interface ParsedExternalSkillUrl {
@@ -126,6 +188,21 @@ interface ExternalSkillFrontmatterParts {
 	readonly name: string | null;
 	readonly description: string | null;
 	readonly body: string;
+}
+
+interface ExternalSkillProvenance {
+	readonly schema_version: '1';
+	readonly kind: 'external_skill_source';
+	readonly source: ExternalSkillImportSource;
+	readonly files: readonly ExternalSkillImportedFile[];
+	readonly script_trust?: ExternalSkillScriptTrust;
+	readonly warnings?: readonly string[];
+}
+
+interface ExternalSkillUpdateCheckStateFile {
+	readonly schema_version: '1';
+	readonly kind: 'external_skill_update_check_state';
+	readonly last_checked_at: string;
 }
 
 function normalizeRef(ref: string | null | undefined): string {
@@ -560,6 +637,267 @@ function createTarget(skillName: string): ExternalSkillImportTarget {
 	};
 }
 
+function sourceToParsed(source: ExternalSkillImportSource): ParsedExternalSkillUrl {
+	return {
+		host: source.host,
+		owner: source.owner,
+		repo: source.repo,
+		ref: source.ref,
+		skillPath: source.skill_path,
+		sourceUrl: source.source_url,
+	};
+}
+
+function provenancePathForSkill(skillName: string): string {
+	return `${EXTERNAL_SKILL_ROOT}/${skillName}/${PROVENANCE_FILE}`;
+}
+
+function readJsonFile(projectRoot: string, relativePath: string, maxBytes = 512 * 1024): unknown {
+	const content = readUtf8FileInsideWithoutSymlinks(
+		projectRoot,
+		path.join(projectRoot, ...relativePath.split('/')),
+		{ maxBytes },
+	);
+	return JSON.parse(content) as unknown;
+}
+
+function assertExternalSkillSource(value: unknown, skillName: string): ExternalSkillProvenance {
+	if (!value || typeof value !== 'object') {
+		throw new Error(`External skill provenance is not an object: ${skillName}`);
+	}
+
+	const record = value as Partial<ExternalSkillProvenance>;
+	if (record.schema_version !== '1' || record.kind !== 'external_skill_source') {
+		throw new Error(`External skill provenance has an unsupported shape: ${skillName}`);
+	}
+	if (!record.source || typeof record.source !== 'object') {
+		throw new Error(`External skill provenance is missing source metadata: ${skillName}`);
+	}
+	if (!Array.isArray(record.files)) {
+		throw new Error(`External skill provenance is missing file hashes: ${skillName}`);
+	}
+
+	return record as ExternalSkillProvenance;
+}
+
+function installedExternalSkillNames(projectRoot: string): string[] {
+	const rootPath = path.join(projectRoot, ...EXTERNAL_SKILL_ROOT.split('/'));
+	if (!existsSync(rootPath)) {
+		return [];
+	}
+
+	return readdirSync(rootPath, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.filter((name) => SLUG_PATTERN.test(name) && existsSync(path.join(rootPath, name, PROVENANCE_FILE)))
+		.sort((left, right) => left.localeCompare(right));
+}
+
+function readExternalSkillProvenance(projectRoot: string, skillName: string): ExternalSkillProvenance {
+	return assertExternalSkillSource(readJsonFile(projectRoot, provenancePathForSkill(skillName)), skillName);
+}
+
+function readExternalSkillUpdateCheckStateFile(projectRoot: string): ExternalSkillUpdateCheckStateFile | null {
+	const statePath = path.join(projectRoot, ...EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH.split('/'));
+	if (!existsSync(statePath)) {
+		return null;
+	}
+
+	try {
+		const value = readJsonFile(projectRoot, EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH, 64 * 1024);
+		if (!value || typeof value !== 'object') {
+			return null;
+		}
+
+		const record = value as Partial<ExternalSkillUpdateCheckStateFile>;
+		if (
+			record.schema_version !== '1' ||
+			record.kind !== 'external_skill_update_check_state' ||
+			typeof record.last_checked_at !== 'string' ||
+			Number.isNaN(Date.parse(record.last_checked_at))
+		) {
+			return null;
+		}
+
+		return {
+			schema_version: '1',
+			kind: 'external_skill_update_check_state',
+			last_checked_at: record.last_checked_at,
+		};
+	} catch {
+		return null;
+	}
+}
+
+function createExternalSkillUpdateCheckState(projectRoot: string, now: Date): ExternalSkillUpdateCheckState {
+	const previous = readExternalSkillUpdateCheckStateFile(projectRoot);
+	const checkedAt = now.toISOString();
+	const nextCheckDueAt = new Date(now.getTime() + UPDATE_CHECK_STALE_AFTER_MS).toISOString();
+	const previousTime = previous ? Date.parse(previous.last_checked_at) : Number.NaN;
+	const hasInstalledExternalSkills = installedExternalSkillNames(projectRoot).length > 0;
+	const staleBeforeCommand = hasInstalledExternalSkills && (
+		!previous ||
+		Number.isNaN(previousTime) ||
+		now.getTime() - previousTime >= UPDATE_CHECK_STALE_AFTER_MS
+	);
+
+	return {
+		state_path: EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH,
+		stale_after_days: UPDATE_CHECK_STALE_AFTER_DAYS,
+		checked_at: checkedAt,
+		previous_checked_at: previous?.last_checked_at ?? null,
+		next_check_due_at: nextCheckDueAt,
+		stale_before_command: staleBeforeCommand,
+	};
+}
+
+function writeExternalSkillUpdateCheckState(projectRoot: string, checkedAt: string): void {
+	writeJsonFileInsideWithoutSymlinks(
+		projectRoot,
+		path.join(projectRoot, ...EXTERNAL_SKILL_UPDATE_CHECK_STATE_PATH.split('/')),
+		{
+			schema_version: '1',
+			kind: 'external_skill_update_check_state',
+			last_checked_at: checkedAt,
+		},
+	);
+}
+
+export function createExternalSkillUpdateReminder(projectRoot: string, now: Date = new Date()): string | null {
+	const hasInstalledExternalSkills = installedExternalSkillNames(projectRoot).length > 0;
+	if (!hasInstalledExternalSkills) {
+		return null;
+	}
+
+	const previous = readExternalSkillUpdateCheckStateFile(projectRoot);
+	const previousTime = previous ? Date.parse(previous.last_checked_at) : Number.NaN;
+	if (previous && !Number.isNaN(previousTime) && now.getTime() - previousTime < UPDATE_CHECK_STALE_AFTER_MS) {
+		return null;
+	}
+
+	return `External skill update check is stale; run mf skill outdated --json or mf skill update --all --dry-run --json. Last checked: ${previous?.last_checked_at ?? 'never'}.`;
+}
+
+function readInstalledRelativeFilePaths(projectRoot: string, target: ExternalSkillImportTarget): readonly string[] {
+	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
+	const pending: readonly string[] = [''];
+	const files: string[] = [];
+	const stack = [...pending];
+
+	while (stack.length > 0) {
+		const relativeDirectory = stack.pop() ?? '';
+		const absoluteDirectory = relativeDirectory
+			? path.join(targetPath, ...relativeDirectory.split('/'))
+			: targetPath;
+		const entries = readdirSync(absoluteDirectory, { withFileTypes: true })
+			.sort((left, right) => left.name.localeCompare(right.name));
+
+		for (const entry of entries) {
+			const relativePath = relativeDirectory ? `${relativeDirectory}/${entry.name}` : entry.name;
+			if (relativePath === PROVENANCE_FILE) {
+				continue;
+			}
+			if (entry.isDirectory()) {
+				stack.push(relativePath);
+				continue;
+			}
+			files.push(relativePath);
+			if (files.length > MAX_IMPORTED_FILES) {
+				throw new Error(`External skill ${target.skill_name} exceeds ${MAX_IMPORTED_FILES} installed files.`);
+			}
+		}
+	}
+
+	return files.sort((left, right) => left.localeCompare(right));
+}
+
+function readInstalledFileReports(
+	projectRoot: string,
+	target: ExternalSkillImportTarget,
+	provenanceFiles: readonly ExternalSkillImportedFile[],
+): readonly ExternalSkillImportedFile[] {
+	return provenanceFiles.map((file) => {
+		const relativePath = `${target.skill_dir}/${file.relative_path}`;
+		const content = readUtf8FileInsideWithoutSymlinks(
+			projectRoot,
+			path.join(projectRoot, ...relativePath.split('/')),
+			{ maxBytes: MAX_FILE_BYTES },
+		);
+		return {
+			relative_path: file.relative_path,
+			kind: file.kind,
+			bytes: Buffer.byteLength(content, 'utf8'),
+			sha256: hashContent(content),
+		};
+	});
+}
+
+function collectFileChanges(
+	currentFiles: readonly ExternalSkillImportedFile[],
+	remoteFiles: readonly ExternalSkillImportedFile[],
+): readonly ExternalSkillFileChange[] {
+	const currentByPath = new Map(currentFiles.map((file) => [file.relative_path, file]));
+	const remoteByPath = new Map(remoteFiles.map((file) => [file.relative_path, file]));
+	const paths = [...new Set([...currentByPath.keys(), ...remoteByPath.keys()])].sort((left, right) => left.localeCompare(right));
+	const changes: ExternalSkillFileChange[] = [];
+
+	for (const relativePath of paths) {
+		const current = currentByPath.get(relativePath);
+		const remote = remoteByPath.get(relativePath);
+		if (!current && remote) {
+			changes.push({
+				relative_path: relativePath,
+				status: 'added',
+				current_sha256: null,
+				remote_sha256: remote.sha256,
+			});
+			continue;
+		}
+		if (current && !remote) {
+			changes.push({
+				relative_path: relativePath,
+				status: 'removed',
+				current_sha256: current.sha256,
+				remote_sha256: null,
+			});
+			continue;
+		}
+		if (current && remote && current.sha256 !== remote.sha256) {
+			changes.push({
+				relative_path: relativePath,
+				status: 'modified',
+				current_sha256: current.sha256,
+				remote_sha256: remote.sha256,
+			});
+		}
+	}
+
+	return changes;
+}
+
+function localDriftIssues(
+	skillName: string,
+	provenanceFiles: readonly ExternalSkillImportedFile[],
+	installedFiles: readonly ExternalSkillImportedFile[],
+	installedRelativeFilePaths: readonly string[],
+): readonly string[] {
+	const provenanceByPath = new Map(provenanceFiles.map((file) => [file.relative_path, file]));
+	const provenancePaths = new Set(provenanceFiles.map((file) => file.relative_path));
+	const issues: string[] = [];
+	for (const installed of installedFiles) {
+		const provenance = provenanceByPath.get(installed.relative_path);
+		if (!provenance || provenance.sha256 !== installed.sha256) {
+			issues.push(`External skill ${skillName} has local file drift: ${installed.relative_path}`);
+		}
+	}
+	for (const relativePath of installedRelativeFilePaths) {
+		if (!provenancePaths.has(relativePath)) {
+			issues.push(`External skill ${skillName} has local file drift: ${relativePath}`);
+		}
+	}
+	return issues;
+}
+
 function scriptNameForIntent(relativePath: string): string {
 	const basename = path.posix.basename(relativePath);
 	const withoutExtension = basename.replace(/\.[^.]+$/u, '');
@@ -610,6 +948,7 @@ function createScriptTrust(
 	files: readonly ExternalSkillImportedFile[],
 	trustScripts: boolean,
 	mode: ExternalSkillImportMode,
+	existingTrust?: ExternalSkillScriptTrust,
 ): ExternalSkillScriptTrust {
 	const scripts = files.filter((file) => file.kind === 'script');
 	if (!trustScripts) {
@@ -645,7 +984,7 @@ function createScriptTrust(
 		throw new Error(`External skill trusted script intents contain a duplicate name: ${duplicateIntent}`);
 	}
 
-	validateTrustedScriptCommandPlan(projectRoot, includeEntry, fragmentPath, intents);
+	validateTrustedScriptCommandPlan(projectRoot, includeEntry, fragmentPath, intents, existingTrust);
 
 	return {
 		requested: true,
@@ -675,20 +1014,32 @@ function validateTrustedScriptCommandPlan(
 	includeEntry: string,
 	fragmentPath: string,
 	intents: readonly ExternalSkillTrustedScriptIntent[],
+	existingTrust?: ExternalSkillScriptTrust,
 ): void {
 	const existingIncludes = new Set(readCommandContractIncludePaths(projectRoot).map((entry) =>
 		entry.replace(/^\.mustflow\/config\//u, ''),
 	));
-	if (existingIncludes.has(includeEntry)) {
+	const fragmentExists = existsSync(path.join(projectRoot, ...fragmentPath.split('/')));
+	const mayReuseExistingPlan =
+		existingTrust?.grants_command_authority === true &&
+		existingTrust.include_entry === includeEntry &&
+		existingTrust.fragment_path === fragmentPath &&
+		existingIncludes.has(includeEntry) &&
+		fragmentExists;
+	const reusableIntentNames = new Set(
+		mayReuseExistingPlan ? existingTrust.intents.map((intent) => intent.intent) : [],
+	);
+
+	if (existingIncludes.has(includeEntry) && !mayReuseExistingPlan) {
 		throw new Error(`External skill trusted script command include already exists: ${includeEntry}`);
 	}
-	if (existsSync(path.join(projectRoot, ...fragmentPath.split('/')))) {
+	if (fragmentExists && !mayReuseExistingPlan) {
 		throw new Error(`External skill trusted script command fragment already exists: ${fragmentPath}`);
 	}
 
 	const contract = readCommandContract(projectRoot);
 	for (const intent of intents) {
-		if (Object.prototype.hasOwnProperty.call(contract.intents, intent.intent)) {
+		if (Object.prototype.hasOwnProperty.call(contract.intents, intent.intent) && !reusableIntentNames.has(intent.intent)) {
 			throw new Error(`External skill trusted script intent already exists in command contract: ${intent.intent}`);
 		}
 	}
@@ -780,6 +1131,13 @@ function updateCommandIncludeText(content: string, includeEntry: string): string
 		throw new Error(`[include].files in ${COMMANDS_CONFIG_PATH} must be a TOML array`);
 	}
 
+	const existingValues = lines
+		.slice(filesLineIndex + 1, closingLineIndex)
+		.flatMap((line) => [...line.matchAll(/"([^"]+)"/gu)].map((match) => match[1]));
+	if (existingValues.includes(includeEntry)) {
+		return lines.join('\n');
+	}
+
 	lines.splice(closingLineIndex, 0, includeLine);
 	return lines.join('\n');
 }
@@ -860,6 +1218,60 @@ function writeImportedSkillFiles(
 	}
 }
 
+function writeUpdatedSkillFiles(
+	projectRoot: string,
+	target: ExternalSkillImportTarget,
+	source: ExternalSkillImportSource,
+	files: readonly LoadedExternalSkillFile[],
+	fileReport: readonly ExternalSkillImportedFile[],
+	warnings: readonly string[],
+	scriptTrust: ExternalSkillScriptTrust,
+): void {
+	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
+	if (!existsSync(targetPath)) {
+		throw new Error(`External skill is not installed: ${target.skill_dir}`);
+	}
+
+	const timestamp = Date.now();
+	const tempSkillDir = `${EXTERNAL_SKILL_ROOT}/.${target.skill_name}.update-${process.pid}-${timestamp}`;
+	const backupSkillDir = `${EXTERNAL_SKILL_ROOT}/.${target.skill_name}.backup-${process.pid}-${timestamp}`;
+	const tempPath = path.join(projectRoot, ...tempSkillDir.split('/'));
+	const backupPath = path.join(projectRoot, ...backupSkillDir.split('/'));
+	const tempSkillPath = path.join(tempPath, 'SKILL.md');
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, tempSkillPath, { allowMissingLeaf: true });
+
+	try {
+		for (const file of files) {
+			writeUtf8FileInsideWithoutSymlinks(
+				projectRoot,
+				path.join(projectRoot, ...tempSkillDir.split('/'), ...file.relativePath.split('/')),
+				file.content,
+			);
+		}
+
+		writeJsonFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, ...tempSkillDir.split('/'), PROVENANCE_FILE), {
+			schema_version: '1',
+			kind: 'external_skill_source',
+			source,
+			files: fileReport,
+			script_trust: scriptTrust,
+			warnings,
+		});
+
+		renameSync(targetPath, backupPath);
+		renameSync(tempPath, targetPath);
+		rmSync(backupPath, { recursive: true, force: true });
+	} catch (error) {
+		rmSync(tempPath, { recursive: true, force: true });
+		if (!existsSync(targetPath) && existsSync(backupPath)) {
+			renameSync(backupPath, targetPath);
+		} else {
+			rmSync(backupPath, { recursive: true, force: true });
+		}
+		throw error;
+	}
+}
+
 function rejectionReport(mode: ExternalSkillImportMode, issue: string): ExternalSkillImportReport {
 	return {
 		schema_version: '1',
@@ -875,6 +1287,232 @@ function rejectionReport(mode: ExternalSkillImportMode, issue: string): External
 		warnings: [],
 		issues: [issue],
 		wrote_files: false,
+	};
+}
+
+function rejectedUpdateItem(skillName: string, issue: string): ExternalSkillUpdateItem {
+	return {
+		skill_name: skillName,
+		ok: false,
+		status: 'rejected',
+		source: null,
+		target: createTarget(skillName),
+		current_files: [],
+		remote_files: [],
+		changed_files: [],
+		warnings: [],
+		issues: [issue],
+		wrote_files: false,
+	};
+}
+
+async function createExternalSkillUpdateItem(
+	projectRoot: string,
+	skillName: string,
+	options: Required<Pick<ExternalSkillUpdateOptions, 'action'>> & Pick<ExternalSkillUpdateOptions, 'mode' | 'trustScripts' | 'fetch'>,
+): Promise<ExternalSkillUpdateItem> {
+	const target = createTarget(skillName);
+	try {
+		const provenance = readExternalSkillProvenance(projectRoot, skillName);
+		const fetchImpl = options.fetch ?? globalThis.fetch;
+		if (typeof fetchImpl !== 'function') {
+			throw new Error('This runtime does not provide fetch.');
+		}
+
+		const installedRelativeFilePaths = readInstalledRelativeFilePaths(projectRoot, target);
+		const installedFiles = readInstalledFileReports(projectRoot, target, provenance.files);
+		const driftIssues = localDriftIssues(skillName, provenance.files, installedFiles, installedRelativeFilePaths);
+		if (driftIssues.length > 0) {
+			return {
+				skill_name: skillName,
+				ok: false,
+				status: 'rejected',
+				source: provenance.source,
+				target,
+				current_files: installedFiles,
+				remote_files: [],
+				changed_files: [],
+				script_trust: provenance.script_trust,
+				warnings: [],
+				issues: driftIssues,
+				wrote_files: false,
+			};
+		}
+
+		const remoteSourceFiles = await loadExternalSkillFiles(fetchImpl, sourceToParsed(provenance.source));
+		const normalizedRemoteFiles = normalizeImportedSkillFiles(remoteSourceFiles);
+		const remoteReports = fileReports(normalizedRemoteFiles);
+		const changedFiles = collectFileChanges(provenance.files, remoteReports);
+		const mode = options.mode ?? (options.action === 'outdated' ? 'check' : 'install');
+		const trustScripts = options.action === 'update' && options.trustScripts === true;
+		const hasScriptFiles = remoteReports.some((file) => file.kind === 'script');
+
+		if (
+			options.action === 'update' &&
+			mode === 'install' &&
+			hasScriptFiles &&
+			provenance.script_trust?.grants_command_authority === true &&
+			!trustScripts
+		) {
+			return {
+				skill_name: skillName,
+				ok: false,
+				status: 'rejected',
+				source: provenance.source,
+				target,
+				current_files: installedFiles,
+				remote_files: remoteReports,
+				changed_files: changedFiles,
+				script_trust: provenance.script_trust,
+				warnings: [],
+				issues: [`External skill ${skillName} has trusted scripts; rerun update with --trust-scripts to refresh script files.`],
+				wrote_files: false,
+			};
+		}
+
+		const scriptTrust = createScriptTrust(
+			projectRoot,
+			target,
+			remoteReports,
+			trustScripts,
+			mode === 'install' ? 'install' : 'dry_run',
+			provenance.script_trust,
+		);
+		const warnings = [
+			...(changedFiles.length === 0 ? ['External skill is already current.'] : []),
+			...(hasScriptFiles && scriptTrust.status !== 'trusted'
+				? ['Imported scripts are inert reference files; mustflow does not grant command authority for external scripts.']
+				: []),
+			...(scriptTrust.status === 'trusted'
+				? ['Imported scripts were trusted by request; mustflow created command-contract intents gated by network and destructive approvals.']
+				: []),
+			...(scriptTrust.status === 'planned'
+				? ['Imported scripts would be trusted by request during install; dry-run only reports the command-contract plan.']
+				: []),
+			'External skills are untrusted until the agent reads and evaluates the selected SKILL.md.',
+		];
+
+		if (options.action === 'update' && mode === 'install' && changedFiles.length > 0) {
+			writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust);
+			writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust);
+		}
+
+		return {
+			skill_name: skillName,
+			ok: true,
+			status: options.action === 'update' && mode === 'install' && changedFiles.length > 0
+				? 'updated'
+				: changedFiles.length > 0
+					? 'outdated'
+					: 'current',
+			source: provenance.source,
+			target,
+			current_files: installedFiles,
+			remote_files: remoteReports,
+			changed_files: changedFiles,
+			script_trust: scriptTrust,
+			warnings,
+			issues: [],
+			wrote_files: options.action === 'update' && mode === 'install' && changedFiles.length > 0,
+		};
+	} catch (error) {
+		return rejectedUpdateItem(skillName, error instanceof Error ? error.message : String(error));
+	}
+}
+
+function selectedExternalSkillNames(projectRoot: string, options: ExternalSkillUpdateOptions): readonly string[] {
+	if (options.all === true || (options.action === 'outdated' && (!options.skillNames || options.skillNames.length === 0))) {
+		return installedExternalSkillNames(projectRoot);
+	}
+
+	return [...new Set(options.skillNames ?? [])].sort((left, right) => left.localeCompare(right));
+}
+
+export async function createExternalSkillUpdateReport(
+	projectRoot: string,
+	options: ExternalSkillUpdateOptions,
+): Promise<ExternalSkillUpdateReport> {
+	const action = options.action;
+	const mode = action === 'outdated' ? 'check' : options.mode ?? 'install';
+	const checkState = createExternalSkillUpdateCheckState(projectRoot, options.now ?? new Date());
+	const warnings: string[] = [];
+	const issues: string[] = [];
+
+	if (action === 'update' && options.all !== true && (!options.skillNames || options.skillNames.length === 0)) {
+		issues.push('mf skill update requires a skill name or --all.');
+	}
+	if (options.all === true && options.skillNames && options.skillNames.length > 0) {
+		issues.push(`mf skill ${action} accepts either --all or skill names, not both.`);
+	}
+	if (action === 'update' && options.skillNames && options.skillNames.length > 1 && options.all !== true) {
+		issues.push('mf skill update accepts one skill name at a time unless --all is used.');
+	}
+
+	const requestedNames = selectedExternalSkillNames(projectRoot, options);
+	for (const skillName of requestedNames) {
+		if (!SLUG_PATTERN.test(skillName)) {
+			issues.push(`Invalid external skill name: ${skillName}`);
+		}
+	}
+
+	if (issues.length > 0) {
+		return {
+			schema_version: '1',
+			kind: 'skill_update_report',
+			command: 'skill',
+			action,
+			ok: false,
+			mode,
+			status: 'rejected',
+			check_state: checkState,
+			skills: [],
+			warnings,
+			issues,
+			wrote_files: false,
+		};
+	}
+
+	const installedNames = new Set(installedExternalSkillNames(projectRoot));
+	const missingNames = requestedNames.filter((name) => !installedNames.has(name));
+	const existingNames = requestedNames.filter((name) => installedNames.has(name));
+	const skills: ExternalSkillUpdateItem[] = [
+		...missingNames.map((name) => rejectedUpdateItem(name, `External skill is not installed: ${name}`)),
+	];
+
+	for (const skillName of existingNames) {
+		skills.push(await createExternalSkillUpdateItem(projectRoot, skillName, {
+			action,
+			mode,
+			trustScripts: options.trustScripts,
+			fetch: options.fetch,
+		}));
+	}
+
+	if (installedNames.size > 0 || requestedNames.length > 0) {
+		writeExternalSkillUpdateCheckState(projectRoot, checkState.checked_at);
+	}
+
+	const wroteFiles = skills.some((skill) => skill.wrote_files);
+	const ok = skills.every((skill) => skill.ok);
+	return {
+		schema_version: '1',
+		kind: 'skill_update_report',
+		command: 'skill',
+		action,
+		ok,
+		mode,
+		status: ok
+			? wroteFiles
+				? 'updated'
+				: mode === 'dry_run'
+					? 'preview'
+					: 'checked'
+			: 'rejected',
+		check_state: checkState,
+		skills,
+		warnings,
+		issues: skills.flatMap((skill) => skill.issues),
+		wrote_files: wroteFiles,
 	};
 }
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -170,6 +170,36 @@ test('prints a compact text skill route report', () => {
 		assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
 		assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
 		assert.match(result.stdout, /\.mustflow\/skills\/\*\/SKILL\.md/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('prints external skill update reminder in text skill route output when checks are stale', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillDirectory = path.join(projectPath, '.mustflow', 'external-skills', 'concurrency-review');
+		mkdirSync(skillDirectory, { recursive: true });
+		writeFileSync(path.join(skillDirectory, 'mustflow-skill-source.json'), '{}\n');
+
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Update public docs',
+			'--path',
+			'docs-site/src/content/docs/en/commands/context.md',
+			'--reason',
+			'docs_change',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Warnings/);
+		assert.match(result.stdout, /External skill update check is stale/u);
+		assert.match(result.stdout, /mf skill outdated --json/u);
+		assert.match(result.stdout, /Last checked: never/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
