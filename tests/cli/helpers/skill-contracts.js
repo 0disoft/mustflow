@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
-const skillsIndexRevision = 224;
+const skillsIndexRevision = 226;
 
 export function readText(relativePath) {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');

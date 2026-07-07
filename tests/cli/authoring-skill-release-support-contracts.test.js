@@ -310,9 +310,9 @@ test('API, pipeline, auth, Docker, search, vector, and RAG triage skills stay te
 		['auth-flow-triage', 1],
 		['ci-pipeline-triage', 2],
 		['docker-runtime-triage', 1],
-		['search-index-integrity-review', 1],
-		['vector-search-integrity-review', 1],
-		['rag-pipeline-triage', 1],
+		['search-index-integrity-review', 3],
+		['vector-search-integrity-review', 4],
+		['rag-pipeline-triage', 3],
 	]) {
 		const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
 		const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
@@ -384,12 +384,25 @@ assert.match(routes, /\[routes\."api-failure-triage"\]\r?\ncategory = "bug_failu
 	assert.match(searchSkill, /read and write aliases/u);
 	assert.match(searchSkill, /direct search, backend API, and UI output/u);
 	assert.match(searchSkill, /mappings and analyzers/u);
+	assert.match(searchSkill, /metadata taxonomy/u);
+	assert.match(searchSkill, /metadata key budget/u);
+	assert.match(searchSkill, /controlled vocabulary/u);
+	assert.match(searchSkill, /Treat tags as filter conditions/u);
+	assert.match(searchSkill, /Split metadata by job/u);
+	assert.match(searchSkill, /LLM-visible metadata separate from search\/filter metadata/u);
+	assert.match(searchSkill, /Separate path hints from state fields/u);
+	assert.match(searchSkill, /File names are human hints; stable ids are machine keys/u);
+	assert.match(searchSkill, /negative metadata and lifecycle filters/u);
+	assert.match(searchSkill, /exact keyword fields/u);
+	assert.match(searchSkill, /source maps and freshness fields/u);
+	assert.match(searchSkill, /query, miss, and click logs/u);
 	assert.match(searchSkill, /golden-set/u);
 	assert.match(searchSkill, /shard fan-out/u);
 	assert.match(searchSkill, /refresh visibility/u);
 	assert.match(searchSkill, /Use vector-search-integrity-review first/u);
 	assert.match(skillIndex, /search-index-integrity-review/u);
 	assert.match(skillIndex, /source-to-search and query-contract evidence/u);
+	assert.match(skillIndex, /metadata taxonomy, negative metadata, exact keyword fields/u);
 	assert.match(routes, /\[routes\."search-index-integrity-review"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
 
 	const vectorSkill = readText('.mustflow/skills/vector-search-integrity-review/SKILL.md');
@@ -397,18 +410,46 @@ assert.match(routes, /\[routes\."api-failure-triage"\]\r?\ncategory = "bug_failu
 	assert.match(vectorSkill, /exact search with approximate search/u);
 	assert.match(vectorSkill, /recall at k/u);
 	assert.match(vectorSkill, /metadata indexes/u);
+	assert.match(vectorSkill, /original, index, prompt, and embedding text/u);
+	assert.match(vectorSkill, /chunk graph and recursive retrieval shape/u);
+	assert.match(vectorSkill, /parent document genealogy/u);
+	assert.match(vectorSkill, /Stable\s+ids must survive renames/u);
+	assert.match(vectorSkill, /contextual retrieval headers/u);
+	assert.match(vectorSkill, /synthetic question fields/u);
+	assert.match(vectorSkill, /LLM-visible metadata distinct/u);
+	assert.match(vectorSkill, /exact product codes, API names, error codes/u);
+	assert.match(vectorSkill, /Tiny chunks that lose the subject/u);
+	assert.match(vectorSkill, /content hash, embedding hash/u);
+	assert.match(vectorSkill, /RRF or MMR settings/u);
 	assert.match(vectorSkill, /pre-rerank and post-rerank/u);
 	assert.match(vectorSkill, /rag-pipeline-triage first/u);
 	assert.match(skillIndex, /vector-search-integrity-review/u);
 	assert.match(skillIndex, /retrieval-contract review/u);
+	assert.match(skillIndex, /contextual headers, synthetic questions, chunk text variants/u);
 	assert.match(routes, /\[routes\."vector-search-integrity-review"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
 	const ragSkill = readText('.mustflow/skills/rag-pipeline-triage/SKILL.md');
 	assert.match(ragSkill, /RAG Pipeline Triage/u);
 	assert.match(ragSkill, /no retrieval, current retrieved context/u);
 	assert.match(ragSkill, /human-selected gold context/u);
+	assert.match(ragSkill, /original, index, and prompt text/u);
+	assert.match(ragSkill, /source id, stable doc id, chunk id/u);
+	assert.match(ragSkill, /single chunk can stand on its own/u);
+	assert.match(ragSkill, /Review headings as coordinates/u);
+	assert.match(ragSkill, /For code corpora, preserve structure/u);
+	assert.match(ragSkill, /For table, slide, and PDF corpora/u);
+	assert.match(ragSkill, /source maps and chunk graph/u);
+	assert.match(ragSkill, /document identity and lifecycle/u);
+	assert.match(ragSkill, /what the document can answer/u);
+	assert.match(ragSkill, /source_of_truth/u);
+	assert.match(ragSkill, /context precision/u);
+	assert.match(ragSkill, /faithfulness/u);
+	assert.match(ragSkill, /document graph/u);
+	assert.match(ragSkill, /ACL before retrieval/u);
+	assert.match(ragSkill, /metadata completeness, ACL inheritance/u);
 	assert.match(ragSkill, /Retrieved text is data, not authority/u);
 	assert.match(skillIndex, /rag-pipeline-triage/u);
 	assert.match(skillIndex, /knowledge-base answer, grounded chat/u);
+	assert.match(skillIndex, /document metadata, frontmatter schema, source maps, heading paths/u);
 	assert.match(routes, /\[routes\."rag-pipeline-triage"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u);
 	assertSkillsIndexRevision(i18n);
 });

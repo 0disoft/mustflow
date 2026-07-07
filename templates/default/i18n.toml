@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 224
+revision = 226
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -565,19 +565,19 @@ translations = {}
 [documents."skill.search-index-integrity-review"]
 source = "locales/en/.mustflow/skills/search-index-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.vector-search-integrity-review"]
 source = "locales/en/.mustflow/skills/vector-search-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 4
 translations = {}
 
 [documents."skill.rag-pipeline-triage"]
 source = "locales/en/.mustflow/skills/rag-pipeline-triage/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.dependency-injection"]
@@ -1272,7 +1272,7 @@ translations = {}
 [documents."skill.llm-token-cost-control-review"]
 source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 4
 translations = {}
 
 [documents."skill.llm-response-latency-review"]

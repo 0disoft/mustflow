@@ -2,11 +2,11 @@
 mustflow_doc: skill.vector-search-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: vector-search-integrity-review
-description: Apply this skill when vector search, semantic search, RAG retrieval mechanics, embeddings, vector databases, ANN indexes, exact versus approximate search, filters, metadata payloads, namespaces, tenants, named vectors, hybrid search, reranking, recall, latency, quantization, HNSW, IVF, pgvector, Qdrant, Milvus, Weaviate, OpenSearch kNN, or retrieval golden-set behavior is created, changed, reviewed, or failing. Use rag-pipeline-triage first when a RAG failure is not yet localized to retrieval versus parsing, context assembly, prompt, generation, citation, or answerability.
+description: Apply this skill when vector search, semantic search, RAG retrieval mechanics, embeddings, vector databases, ANN indexes, exact versus approximate search, filters, metadata payloads, chunk text variants, namespaces, tenants, named vectors, hybrid search, reranking, recall, latency, quantization, HNSW, IVF, pgvector, Qdrant, Milvus, Weaviate, OpenSearch kNN, or retrieval golden-set behavior is created, changed, reviewed, or failing. Use rag-pipeline-triage first when a RAG failure is not yet localized to retrieval versus parsing, context assembly, prompt, generation, citation, or answerability.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -68,13 +68,16 @@ filters, reranking, and latency evidence all agree for the same query contract.
 - Retrieval symptom classification: ingestion missing, write not visible, wrong results, empty
   results, low recall, tenant leak, duplicate chunks, stale deletes, slow search, reranker drift, or
   generated answer drift.
-- Query contract ledger: query text or safe fixture id, embedding model and revision, preprocessing
-  version, vector dimension, vector norm, metric, collection, namespace, tenant, named vector,
-  filters, `top_k`, candidate count, consistency level, ANN parameters, hybrid weights, and reranker
-  settings.
-- Ingestion ledger: source id, chunk id, deterministic vector id, embedding version, payload shape,
-  write count, unique id count, direct lookup count, indexed count, deleted or tombstoned count, and
-  visibility lag.
+- Query contract ledger: query text or safe fixture id, query family, embedding model and revision,
+  preprocessing version, chunker version, contextual header policy, synthetic question policy,
+  vector dimension, vector norm, metric, collection, namespace, tenant, named vector, metadata
+  payload fields and types, ACL prefilter, filters, `top_k`, candidate count, consistency level,
+  ANN parameters, hybrid weights, MMR or fusion settings, and reranker settings.
+- Ingestion ledger: source id, stable doc id, chunk id, parent document genealogy, deterministic
+  vector id, original text hash, index text, prompt text, embedding text, contextual header, title,
+  heading path, document type, status, authority, aliases, exact keywords, synthetic questions,
+  embedding version, content hash, embedding hash, payload shape, write count, unique id count,
+  direct lookup count, indexed count, deleted or tombstoned count, and visibility lag.
 - Quality ledger: golden queries, expected ids, acceptable alternatives, exact-search result,
   ANN result, recall at k, MRR, empty rate, duplicate rate, filtered result count, and before/after
   comparison.
@@ -95,10 +98,12 @@ filters, reranking, and latency evidence all agree for the same query contract.
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
-- Add or tighten embedding versioning, preprocessing versioning, vector validation, deterministic
-  IDs, namespace or tenant selection, metadata indexes, filter construction, exact-search checks,
-  ANN parameters, reranker candidate counts, golden-set tests, metrics, docs, fixtures, and
-  retrieval contract tests.
+- Add or tighten embedding versioning, preprocessing and chunker versioning, vector validation,
+  deterministic IDs, contextual retrieval headers, synthetic question fields,
+  original/index/prompt/embedding text separation, namespace or tenant selection, metadata payload
+  field typing, metadata indexes, ACL prefilter construction, exact-search checks, ANN parameters,
+  hybrid score ledgers, RRF or MMR settings, reranker candidate counts, golden-set tests, metrics,
+  docs, fixtures, and retrieval contract tests.
 - Add focused synthetic fixtures that encode expected retrieval behavior, filtered retrieval,
   tenant separation, duplicate handling, and exact-versus-ANN comparison.
 - Do not change embedding models, rebuild large indexes, tune ANN parameters, disable filters, widen
@@ -116,38 +121,56 @@ filters, reranking, and latency evidence all agree for the same query contract.
    all-zero vectors, extreme norms, and model or preprocessing version mismatches.
 4. Keep embedding model identity exact. Model name alone is not enough; include revision, tokenizer,
    pooling, prefix policy, max length, HTML cleanup, chunking, and normalization.
-5. Compare exact search with approximate search on the same query and filter. If exact search is
+5. Separate original, index, prompt, and embedding text. Original text is the citation source,
+   index text may include titles, aliases, contextual retrieval summaries, and generated questions,
+   prompt text is the compact model payload, and embedding text is the vector input. Do not collapse
+   these fields unless the product intentionally accepts that tradeoff.
+6. Check chunk graph and recursive retrieval shape. Source ids, parent document ids, parent chunk
+   ids, previous and next chunk ids, section paths, summary layers, and contextual retrieval
+   headers should be available when small chunks need larger context for answer generation. Stable
+   ids must survive renames, storage moves, and reindex jobs so citations, deletes, feedback logs,
+   and eval sets keep the same lineage.
+7. Check chunk size and overlap as quality levers, not defaults. Tiny chunks that lose the subject,
+   huge chunks that average unrelated meanings, and large overlap that fills top-k with duplicates
+   each need separate recall and diversity evidence.
+8. Validate contextual headers and synthetic questions. Headers should disambiguate product,
+   version, document status, authority, section, and entity; synthetic questions should reflect real
+   user phrasing without being cited as original source. Keep original, enriched retrieval text, and
+   LLM-visible metadata distinct so search bait does not become generated evidence.
+9. Compare exact search with approximate search on the same query and filter. If exact search is
    wrong, stop tuning ANN and inspect embeddings, preprocessing, metric, payload, and expectations.
-6. Compare filter-free search, filter-only count, filtered exact search, and filtered ANN search.
+10. Compare filter-free search, filter-only count, filtered exact search, and filtered ANN search.
    Empty filtered results often mean filter construction, metadata typing, payload indexing, or
    post-filter candidate loss rather than bad embeddings.
-7. Confirm collection, namespace, tenant, alias, and named vector. Directly inspect the problem id
+11. Confirm collection, namespace, tenant, alias, and named vector. Directly inspect the problem id
    or safe synthetic id in the same search surface the app uses.
-8. Check deterministic upsert ids. Source id, chunk index, tenant, and embedding version should not
+12. Check deterministic upsert ids. Source id, chunk index, tenant, and embedding version should not
    accidentally duplicate chunks or overwrite all chunks with one id.
-9. Separate write success from search visibility. Check direct lookup, exact search, ANN search,
+13. Separate write success from search visibility. Check direct lookup, exact search, ANN search,
    indexed count, consistency, segment state, and visibility lag.
-10. Check deletes and updates. Deletion marks, tombstones, compaction, vacuum, stale segments, and
+14. Check deletes and updates. Deletion marks, tombstones, compaction, vacuum, stale segments, and
     old chunks can keep appearing after API success.
-11. Review metric and normalization. Cosine, dot product, and L2 are different contracts unless
+15. Review metric and normalization. Cosine, dot product, and L2 are different contracts unless
     the vectors are intentionally normalized and the index operator matches.
-12. Tune ANN only after the exact and filter contracts are correct. Evaluate recall and p95 latency
+16. Tune ANN only after the exact and filter contracts are correct. Evaluate recall and p95 latency
     across parameter sweeps instead of changing one value blindly.
-13. Treat build-time index parameters as recall ceilings. If search-time parameters cannot recover
+17. Treat build-time index parameters as recall ceilings. If search-time parameters cannot recover
     recall, the index may need rebuild policy, not a larger query knob.
-14. Review quantization and rescoring. Compare full-precision exact results with compressed-index
+18. Review quantization and rescoring. Compare full-precision exact results with compressed-index
     candidates and confirm enough candidates reach full-precision reranking.
-15. For hybrid search, store dense score, sparse or keyword score, normalized score, fusion method,
-    and final score. Do not add incompatible raw scores directly without a deliberate combiner.
-16. For reranking, record pre-rerank and post-rerank ids and ranks. If the right document never
+19. For hybrid search, store dense score, sparse or keyword score, normalized score, fusion method,
+    RRF or MMR settings when used, and final score. Do not add incompatible raw scores directly
+    without a deliberate combiner. Preserve exact product codes, API names, error codes, ticket IDs,
+    and dates in lexical fields instead of smoothing them into natural-language embedding text.
+20. For reranking, record pre-rerank and post-rerank ids and ranks. If the right document never
     enters the candidate set, the reranker cannot recover it.
-17. Avoid deep ANN pagination as a product contract. Use cursor, filters, grouping, or ordinary
+21. Avoid deep ANN pagination as a product contract. Use cursor, filters, grouping, or ordinary
     sorted indexes for deep browsing instead of pretending vector search has cheap random offsets.
-18. Split cold and warm latency, server search time and client wait, vector DB time and reranker
+22. Split cold and warm latency, server search time and client wait, vector DB time and reranker
     time, and single-query latency from concurrent load.
-19. Inspect shard, replica, segment, compaction, flush, indexing, memory, disk, and cache state when
+23. Inspect shard, replica, segment, compaction, flush, indexing, memory, disk, and cache state when
     p99 or intermittent quality varies across nodes.
-20. Add a golden-set gate when the project has a test surface. Include easy, hard, filtered,
+24. Add a golden-set gate when the project has a test surface. Include easy, hard, filtered,
     tenant-scoped, rare-name, synonym, short-query, long-query, and sparse-data cases.
 
 <!-- mustflow-section: postconditions -->
@@ -155,6 +178,10 @@ filters, reranking, and latency evidence all agree for the same query contract.
 
 - The retrieval symptom, query contract, ingestion contract, quality ledger, performance ledger, and
   privacy boundary are explicit.
+- Original/index/prompt/embedding text separation, stable source/doc/chunk ids, parent document
+  genealogy, payload field typing, ACL prefiltering, contextual headers, synthetic questions,
+  chunk graph, content hashes, embedding hashes, exact lexical safeguards, and hybrid or rerank
+  ledgers are explicit where relevant.
 - Exact search, ANN, filters, metadata, namespaces, tenants, named vectors, IDs, deletes, metric,
   normalization, quantization, hybrid search, reranking, shards, consistency, and latency are fixed
   or reported where relevant.
@@ -199,8 +226,8 @@ of inventing live diagnostics.
 - Vector search integrity reviewed
 - Retrieval symptom, query contract, ingestion ledger, quality ledger, performance ledger, and
   privacy boundary
-- Exact versus ANN, filter, metadata, namespace, tenant, id, delete, metric, normalization,
-  quantization, hybrid, reranker, shard, consistency, and latency findings
+- Exact versus ANN, filter, metadata, text-variant, namespace, tenant, id, delete, metric,
+  normalization, quantization, hybrid, MMR, reranker, shard, consistency, and latency findings
 - Fix applied or recommended
 - Evidence level: golden-set evidence, configured-test evidence, static review risk, manual-only,
   missing, or not applicable

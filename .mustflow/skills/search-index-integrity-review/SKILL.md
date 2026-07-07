@@ -2,11 +2,11 @@
 mustflow_doc: skill.search-index-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: search-index-integrity-review
-description: Apply this skill when keyword search, full-text search, Elasticsearch, OpenSearch, Lucene-style indexes, search APIs, indexing pipelines, aliases, bulk indexing, refresh visibility, analyzers, mappings, synonyms, autocomplete, pagination, shard failures, search quality, or search performance are created, changed, reviewed, or failing. Use vector-search-integrity-review first for vector-only or semantic retrieval mechanics, and use rag-pipeline-triage first when a RAG failure is not yet localized to search retrieval.
+description: Apply this skill when keyword search, full-text search, Elasticsearch, OpenSearch, Lucene-style indexes, search APIs, indexing pipelines, source maps, metadata taxonomy, aliases, bulk indexing, refresh visibility, analyzers, mappings, synonyms, autocomplete, pagination, shard failures, search quality, or search performance are created, changed, reviewed, or failing. Use vector-search-integrity-review first for vector-only or semantic retrieval mechanics, and use rag-pipeline-triage first when a RAG failure is not yet localized to search retrieval.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -55,7 +55,13 @@ The core question is whether a source record can be changed, accepted by the ind
 - Symptom classification: source not indexed, write not visible, wrong alias, partial shard result, wrong exact match, wrong full-text match, ranking drift, zero results, stale delete, tenant leak, autocomplete failure, deep-page failure, slow query, bulk rejection, mapping conflict, or UI/API mismatch.
 - Source-to-search ledger: source id, tenant, category, status, update time, indexing request time, bulk item result, indexed document id, direct lookup result, first search-visible time, rank, delete or tombstone state, and visibility lag.
 - Query contract ledger: user-facing API path, direct search request, API-transformed request, UI result shaping, index or alias, tenant and permission filters, analyzed fields, exact fields, sort, pagination mode, source fields, highlight fields, cache state, and expected result ids.
-- Index contract ledger: read alias, write alias, index templates, mappings, analyzers, normalizers, synonym sets, dynamic mapping policy, refresh policy, shard and replica plan, segment or merge state, disk watermark risk, and rollover or reindex status.
+- Index contract ledger: read alias, write alias, index templates, mappings, analyzers, normalizers,
+  exact id fields, exact keyword fields, facet fields, filter-only metadata, embedding-header
+  metadata, citation metadata, negative metadata, taxonomy fields, controlled vocabulary, metadata
+  key budget, stable source id, document id, chunk id when applicable, alias or synonym tables,
+  source-map fields, published/effective/indexed/verified dates, version fields, content hash,
+  schema version, index version, dynamic mapping policy, refresh policy, shard and replica plan,
+  segment or merge state, disk watermark risk, and rollover or reindex status.
 - Quality ledger: representative queries, expected results, acceptable alternatives, zero-result expectations, Precision@K, Recall@K, MRR or ranking metric, before/after comparison, click or behavior metric limitations, and golden-set fixture status.
 - Performance ledger: cold and warm latency, p50, p95, p99, search server time, API time, UI time, query phase, fetch phase, response size, shard fan-out, thread-pool active/queue/rejected, slow-log or query-profile evidence, cache hit or miss, and retry behavior.
 - Privacy ledger: raw query text, document text, tenant ids, user ids, behavior analytics, search logs, highlights, and whether evidence can be stored safely as synthetic fixtures, ids, hashes, summaries, or aggregate metrics.
@@ -71,7 +77,12 @@ The core question is whether a source record can be changed, accepted by the ind
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
-- Add or tighten search canaries, indexing ledgers, bulk item error handling, alias checks, mapping and analyzer fixtures, exact-versus-full-text tests, tenant and permission filter tests, golden-set tests, synonym regression tests, pagination guards, query fingerprint metrics, search latency metrics, docs, and directly synchronized templates.
+- Add or tighten search canaries, indexing ledgers, bulk item error handling, alias checks, mapping
+  and analyzer fixtures, metadata taxonomy checks, frontmatter schema checks,
+  controlled-vocabulary fixtures, exact-keyword fixtures, negative-metadata filters,
+  exact-versus-full-text tests, tenant and permission filter tests, golden-set tests, synonym
+  regression tests, pagination guards, query and miss-log metrics, search latency metrics, docs,
+  and directly synchronized templates.
 - Add focused synthetic fixtures that encode expected exact search, full-text search, analyzer behavior, synonym behavior, filtered search, tenant isolation, zero-result behavior, pagination stability, and ranking order.
 - Do not change analyzer, synonym, refresh, alias, shard, cache, or ranking settings blindly. First preserve source-to-search, query-contract, quality, and performance evidence.
 - Do not force every write to refresh immediately unless the product contract explicitly needs synchronous visibility and the indexing cost is accepted.
@@ -108,31 +119,64 @@ The core question is whether a source record can be changed, accepted by the ind
 9. Inspect mappings and analyzers before changing queries.
    - IDs, emails, status codes, tags, and exact filters usually need keyword-like fields.
    - Human text usually needs text analysis. Use analyzer evidence or fixtures to prove tokenization for punctuation, case, hyphen, Korean spacing, product codes, and mixed alphanumeric text.
-10. Review synonym and ranking changes against a golden set.
+10. Review metadata taxonomy and controlled vocabulary.
+    - Distinguish filter fields, facet fields, ranking fields, display fields, and source-map fields.
+    - Canonical keys, aliases, synonyms, old names, and related terms should be explicit so free-form tags do not become five spellings of the same concept.
+    - Treat tags as filter conditions, not vibes. Reject values such as important, misc, final, or
+      reference unless they have a controlled, queryable meaning.
+    - Keep the metadata key set small enough that writers can fill it consistently; separate a
+      core filter set from optional enrichment instead of accepting unbounded ad hoc keys.
+11. Split metadata by job.
+    - Filter metadata should be typed and exact; context headers should help lexical and semantic
+      recall; citation metadata should point back to source spans.
+    - Do not put every metadata key into analyzed text. Select title, section, entity, date, type,
+      and other disambiguators; keep volatile, private, or filter-only fields out of recall text.
+    - Keep LLM-visible metadata separate from search/filter metadata when the index feeds RAG.
+      Operational paths, ACL fields, tenant IDs, and internal ids should not become answer text
+      unless they change citation, permission, or disambiguation.
+12. Separate path hints from state fields.
+    - Paths may encode tenant, visibility, lifecycle, source, language, or date for operations, but
+      `status`, `is_current`, `effective_from`, `effective_to`, `published_at`, `indexed_at`,
+      `last_verified_at`, `version`, and `revision` should remain first-class filter fields.
+    - File names are human hints; stable ids are machine keys. Renames, storage moves, and reindex
+      jobs should not break citations, deletes, feedback logs, or eval sets.
+13. Review negative metadata and lifecycle filters.
+    - Visibility, audience, jurisdiction exclusions, draft/deprecated state, retention, and security
+      class are search correctness gates, not decoration.
+    - A good search result that should not have been eligible is a security or product bug.
+14. Preserve source maps and freshness fields.
+    - Store document id, chunk id when applicable, file or URL, section anchor, line or page span, content hash, schema or index version, and last indexed time so stale or unsupported results can be traced.
+15. Review exact keyword fields separately from analyzed text.
+    - Error codes, API paths, legal references, ticket ids, SKU values, class or function names, and
+      deprecated names need exact or keyword search coverage even when semantic retrieval exists.
+16. Review synonym and ranking changes against a golden set.
     - Synonyms can improve one query and break many others.
     - Compare representative queries before and after; include zero-result, typo, ambiguous, category, brand, long natural-language, and high-value queries.
-11. Explain surprising ranks only for bounded cases.
+17. Use query, miss, and click logs as improvement evidence without leaking raw private text.
+    - Track query family, normalized terms, filters, zero-result rate, clicked ids, used chunks, fallback reason, and answer success where safe.
+    - Do not turn private queries or highlights into fixtures unless they are redacted or synthetic.
+18. Explain surprising ranks only for bounded cases.
     - Inspect why one expected document ranked below another for a small failing sample.
     - Do not enable expensive explain or profile behavior for broad production traffic.
-12. Separate query, fetch, API, and UI latency.
+19. Separate query, fetch, API, and UI latency.
     - p50, p95, and p99 must be grouped by search type, index, route, role, tenant class, and query fingerprint where safe.
     - Fetch time, source size, highlight fields, nested fields, and response shaping can dominate score calculation.
-13. Fingerprint query shapes.
+20. Fingerprint query shapes.
     - Remove raw IDs, dates, user text, and tenant secrets before grouping.
     - Store query family, index, role, shard count, cache state, source fields, sort, and filter shape so one feature cannot hide across millions of unique queries.
-14. Check shard fan-out, thread pools, segments, cache, and disk.
+21. Check shard fan-out, thread pools, segments, cache, and disk.
     - Search across hundreds of tiny shards, stale segments, merge backlog, cold caches, search queue rejections, hot shards, and disk watermarks can look like application bugs.
     - Separate cold and warm measurements; cached benchmarks are not full search evidence.
-15. Review refresh and visibility policy.
+22. Review refresh and visibility policy.
     - Indexing success is not search visibility.
     - Use synchronous visibility only for writes whose user contract needs it; otherwise define acceptable visibility lag and measure it.
-16. Review pagination and result payloads.
+23. Review pagination and result payloads.
     - Avoid deep offset pagination as a default product contract.
     - Use stable tie-breakers for cursor-like pagination, and limit source fields and highlights to what the UI needs.
-17. Keep vector and hybrid boundaries explicit.
+24. Keep vector and hybrid boundaries explicit.
     - If dense vectors, ANN, reranking, hybrid score fusion, or Recall@K drives the failure, switch to `vector-search-integrity-review` for that slice.
     - If the bug is ordinary keyword indexing, alias, analyzer, source filtering, or shard partials, keep this skill as the primary route.
-18. Define numeric SLOs and destructive drills when in scope.
+25. Define numeric SLOs and destructive drills when in scope.
     - Useful examples include indexing-to-search-visible p95, search p99, zero-result rate, partial shard failure rate, top-result duplication, golden-set metric, bulk item failure rate, and reindex reconciliation lag.
     - Live node kills, disk pressure, alias mistakes, mapping conflicts, and mass reindex drills are manual unless the command contract declares them.
 
@@ -140,6 +184,10 @@ The core question is whether a source record can be changed, accepted by the ind
 ## Postconditions
 
 - The search symptom, source-to-search ledger, query contract, index contract, quality ledger, performance ledger, and privacy boundary are explicit.
+- Metadata taxonomy, metadata key budget, schema versions, stable source/doc/chunk ids, canonical
+  keys, aliases, exact keyword fields, filter-only versus LLM-visible metadata, lifecycle and
+  effective-date fields, negative metadata, source maps, index version, content hash, query logs,
+  and miss logs are explicit where relevant.
 - Bulk item errors, source/index reconciliation, direct lookup, exact search, full-text search, aliases, partial shards, API/UI transformation, mappings, analyzers, synonyms, ranking, pagination, source payload, shard fan-out, thread-pool pressure, cache state, refresh visibility, segments, disk, and SLO evidence are fixed or reported where relevant.
 - Search claims are backed by configured tests, fixtures, golden-set evidence, static review, safe canary evidence, or labeled manual-only or missing.
 
@@ -173,7 +221,9 @@ Prefer the narrowest configured tests that cover search contract, tenant isolati
 
 - Search index integrity reviewed
 - Symptom, source-to-search ledger, query contract, index contract, quality ledger, performance ledger, and privacy boundary
-- Bulk, reconciliation, lookup, exact/full-text, alias, shard, API/UI, mapping, analyzer, synonym, ranking, pagination, payload, shard fan-out, thread-pool, cache, refresh, segment, disk, and SLO findings
+- Bulk, reconciliation, lookup, exact/full-text, alias, shard, API/UI, mapping, analyzer, taxonomy,
+  source-map, synonym, ranking, pagination, payload, query-log, shard fan-out, thread-pool, cache,
+  refresh, segment, disk, and SLO findings
 - Fix applied or recommended
 - Evidence level: canary evidence, golden-set evidence, configured-test evidence, static review risk, manual-only, missing, or not applicable
 - Command intents run

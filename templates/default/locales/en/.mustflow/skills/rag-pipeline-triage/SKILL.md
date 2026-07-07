@@ -2,11 +2,11 @@
 mustflow_doc: skill.rag-pipeline-triage
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: rag-pipeline-triage
-description: Apply this skill when a RAG, knowledge-base answer, grounded chat, citation answer, retrieval-augmented support bot, or document QA flow is wrong, stale, unsupported, slow, leaking data, over-refusing, or not yet localized to ingestion, parsing, chunking, retrieval, filtering, reranking, context assembly, prompt construction, generation, citation validation, or answerability boundaries.
+description: Apply this skill when a RAG, knowledge-base answer, grounded chat, citation answer, retrieval-augmented support bot, or document QA flow is wrong, stale, unsupported, slow, leaking data, over-refusing, or not yet localized to ingestion, parsing, document metadata, source maps, chunking, retrieval, filtering, reranking, context assembly, prompt construction, generation, citation validation, or answerability boundaries.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -46,6 +46,9 @@ survive filtering and context assembly, and constrain the answer?"
   generation, validators, citations, answerability, or access control.
 - A review would otherwise tune the model, top-k, chunk size, reranker, or prompt before proving
   which RAG layer failed.
+- A document corpus, frontmatter contract, search index, chunk schema, ACL model, or prompt-packing
+  rule is being reviewed because token bloat, retrieval misses, stale context, or unsupported
+  citations may come from poor document structure rather than model behavior.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -70,9 +73,14 @@ survive filtering and context assembly, and constrain the answer?"
   context, filters, embedding model version, index version, candidate ids and scores, reranker
   output, final context ids and order, prompt version, model version, answer, citations, validators,
   latency, and cost when safe.
-- Source ledger: authoritative source availability, parsed text, chunk boundaries, metadata, title,
-  section path, version, effective dates, stale or deleted documents, duplicates, and conflicting
-  sources.
+- Source ledger: authoritative source availability, original text, parsed text, index text,
+  prompt text, source id, stable doc id, chunk id, parent document genealogy, chunk boundaries,
+  frontmatter or metadata schema, document type, status, authority, source-of-truth flag, title,
+  aliases, exact keywords, synthetic questions, negative metadata, heading path, breadcrumb ids or
+  text, source map, parent and adjacent chunks, section or document summaries, routing summaries,
+  lifecycle owner, version, revision, supersedes or superseded-by links, content hash, index
+  freshness, published and effective dates, stale or deleted documents, duplicates, and
+  conflicting sources.
 - Comparison ledger: no-retrieval answer, retrieved-context answer, human-selected gold-context
   answer, exact or keyword search result, vector search result, hybrid result, and expected
   answerability state.
@@ -93,10 +101,11 @@ survive filtering and context assembly, and constrain the answer?"
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
 
-- Add or tighten trace fields, fixture queries, parsing checks, chunk metadata, duplicate or stale
-  source handling, retrieval comparisons, filter checks, context-packing rules, prompt source
-  separation, citation validators, answerability states, dirty eval fixtures, metrics, docs, and
-  directly synchronized templates.
+- Add or tighten trace fields, fixture queries, parsing checks, semantic or structure-aware chunking,
+  chunk metadata, frontmatter schemas, source maps, parent-child or adjacent chunk links,
+  ACL-prefilter checks, duplicate or stale source handling, retrieval comparisons, filter checks,
+  context-packing rules, prompt source separation, citation validators, answerability states, dirty
+  eval fixtures, metrics, docs, and directly synchronized templates.
 - Add safe synthetic fixtures for missing-doc, correct-doc-unused, stale-doc, conflicting-doc,
   unauthorized-doc, exact-id, keyword, vector, hybrid, reranker, citation, and abstain behavior.
 - Do not change models, re-embed data, rebuild production indexes, widen access filters, disable
@@ -117,34 +126,74 @@ survive filtering and context assembly, and constrain the answer?"
    headers, footers, and OCR can be broken even when the original file looks correct.
 5. Inspect chunk boundaries and metadata. Verify title, parent section, version, dates, audience,
    product, source authority, and neighboring context survive into chunks or parent retrieval.
-6. Compare source versions and deletes. Duplicates, obsolete documents, tombstones, and conflicting
+6. Check whether a single chunk can stand on its own. Each answerable chunk should carry enough
+   product, feature, version, lifecycle, and heading context that retrieval does not depend on the
+   model guessing the missing subject from a previous chunk.
+7. Review headings as coordinates. Generic headings such as overview, details, or notes are weak
+   retrieval features; heading paths and breadcrumbs should name the product, workflow, rule, and
+   exception boundary that make the chunk answerable.
+8. Separate original, index, and prompt text. The original span is evidence, enriched index text is
+   search bait, and prompt text is the compact model payload. Do not cite generated summaries,
+   aliases, or synonym-expanded text as if they were original source.
+9. Check source maps and chunk graph. Verify file path or URL, section anchor, line or page span,
+   content hash, parent chunk, previous chunk, next chunk, and summary layer can lead back to the
+   source without loading the whole corpus.
+10. Check document identity and lifecycle before merging evidence. Keep `source_id`, `doc_id`, and
+    `chunk_id` distinct; preserve rename-stable ids, `doc_type`, `status`, `authority`,
+    `source_of_truth`, `supersedes`, `superseded_by`, `valid_until`, and effective-date fields so
+    stale, draft, example, discussion, and canonical documents are not averaged into one answer.
+11. Treat summaries as routers, not proof. A summary should carry what the document can answer,
+    what it cannot answer, entities, decisions, exceptions, related docs, deprecated content,
+    conditions, actions, numbers, and exact source coordinates; if it ages separately from the
+    source, classify the failure as stale entrance metadata before changing retrieval settings.
+12. Check exact keywords and aliases. Error codes, SKU values, API paths, function names, legal
+    references, old product names, and user slang should be searchable without relying on embeddings.
+13. For code corpora, preserve structure. Function, class, import, caller, callee, type, test, and
+    config-key boundaries should guide chunks; fixed line-count slicing that cuts through symbols is
+    retrieval damage, not neutral preprocessing.
+14. For table, slide, and PDF corpora, preserve record shape. Row, column, unit, plan, page, and
+    figure context should be repeated in parsed/index text so a number is not retrieved without its
+    meaning.
+15. Check rules beside exceptions. If prohibitions, limits, or jurisdiction exclusions live far away
+    from the rule they modify, context assembly may retrieve only the rule and miss the exception.
+16. Check ACL before retrieval. Tenant, visibility, sensitivity, retention, and user or group access
+   must be inherited from documents to chunks and applied before candidate text reaches the model.
+17. Compare source versions and deletes. Duplicates, obsolete documents, tombstones, and conflicting
    effective dates must not be silently mixed into one answer.
-7. Run the isolation comparison when evidence is available: no retrieval, current retrieved context,
+   Preserve conflicting sources with their priority, status, and effective date instead of
+   smoothing them into a synthesized rule.
+18. Run the isolation comparison when evidence is available: no retrieval, current retrieved context,
    and human-selected gold context. Gold-context failure points to generation or prompt; current
    context failure with gold success points to retrieval or context assembly.
-8. Compare keyword, vector, hybrid, and exact-id retrieval by data shape. IDs, error codes, SKUs,
+19. Compare keyword, vector, hybrid, and exact-id retrieval by data shape. IDs, error codes, SKUs,
    names, dates, and numbers need exact or lexical safeguards; semantic questions may need vector or
    hybrid retrieval.
-9. Check filters before blaming embeddings. Record pre-filter candidate count, post-filter count,
+20. Check filters before blaming embeddings. Record pre-filter candidate count, post-filter count,
    tenant and permission filters, metadata types, time zones, empty arrays, case sensitivity, and
    stale policy copies.
-10. Check reranker candidate starvation. If the correct source never enters the candidate set, the
+21. Check reranker candidate starvation. If the correct source never enters the candidate set, the
     reranker cannot fix it. If it enters and then drops, inspect reranker inputs and scoring.
-11. Check context assembly. Verify `top_k`, score thresholds, source order, truncation, deduping,
+22. Check context assembly. Verify `top_k`, score thresholds, source order, truncation, deduping,
     conflict handling, source authority, and whether important evidence is buried or cut off.
-12. Check prompt construction. User input, retrieved text, examples, tool observations, and system or
+23. Check prompt construction. User input, retrieved text, examples, tool observations, and system or
     developer instructions must remain separated. Retrieved text is data, not authority.
-13. Check answerability and abstain behavior. Track no-evidence, low-confidence, conflicting-source,
+24. Check answerability and abstain behavior. Track no-evidence, low-confidence, conflicting-source,
     stale-source, access-denied, tool-failed, and needs-human states separately.
-14. Validate citations claim-by-claim. A citation id proves nothing unless the cited chunk supports
+25. Validate citations claim-by-claim. A citation id proves nothing unless the cited chunk supports
     the specific generated claim.
-15. Measure each layer separately. Track parsing success, index freshness, Recall@k, MRR or nDCG,
-    rerank survival, context token budget, answer accuracy, citation accuracy, abstain accuracy,
-    access leaks, and retrieval/rerank/generation latency and cost.
-16. Use dirty eval cases from real failures. Include typos, abbreviations, multilingual questions,
+26. Measure each layer separately. Track parsing success, metadata completeness, ACL inheritance,
+    index freshness, hit rate, Recall@k, MRR, precision, nDCG, rerank survival, context precision,
+    context recall, faithfulness, groundedness, answer relevance, context token budget, answer
+    accuracy, citation accuracy, abstain accuracy, access leaks, and retrieval/rerank/generation
+    latency and cost.
+27. Check the document graph for multi-hop questions. PRDs, ADRs, issues, code modules, runbooks,
+    changelogs, incidents, and meeting notes should link decisions, implementation, ownership,
+    exceptions, and follow-up operations instead of forcing retrieval to infer relationships from
+    nearby words.
+28. Use dirty eval cases from real failures. Include typos, abbreviations, multilingual questions,
     unanswerable questions, date-sensitive questions, similar names, product codes, multi-hop
     questions, unauthorized documents, stale documents, and conflicting documents.
-17. Apply the smallest localized fix and switch to the narrower matching skill for retrieval,
+29. Apply the smallest localized fix and switch to the narrower matching skill for retrieval,
     hallucination control, prompt contract, token cost, latency, access control, or prompt-injection
     defense once the boundary is known.
 
@@ -155,6 +204,11 @@ survive filtering and context assembly, and constrain the answer?"
   reranking, context assembly, prompt construction, generation, citation validation, answerability,
   access control, or a named evidence gap.
 - Trace, source, comparison, eval, metric, and privacy ledgers are explicit where relevant.
+- Document metadata, frontmatter schema, stable source/doc/chunk ids, document type, status,
+  authority, source-of-truth, effective dates, supersession links, heading paths, source maps, ACL
+  inheritance, original/index/prompt text separation, exact keywords, aliases, negative metadata,
+  routing summaries, summary layers, chunk adjacency, document graph links, and index freshness are
+  explicit where relevant.
 - Model, prompt, chunk, top-k, reranker, or index changes are justified by layer evidence rather than
   by general "RAG quality" claims.
 

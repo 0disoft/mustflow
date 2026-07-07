@@ -26,7 +26,7 @@ import {
 } from './helpers/package-contracts.js';
 
 test('package metadata is ready for public npm publishing', () => {
-	assert.equal(packageJson.version, '2.112.13');
+	assert.equal(packageJson.version, '2.112.14');
 	assert.equal(packageJson.license, 'MIT-0');
 	assert.equal(packageJson.homepage, 'https://0disoft.github.io/mustflow/');
 	assert.deepEqual(packageJson.repository, {

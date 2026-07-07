@@ -319,6 +319,16 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(localSkill, /Cache ledger/u);
 	assert.match(localSkill, /stable prefix boundary/u);
 	assert.match(localSkill, /prompt version hash/u);
+	assert.match(localSkill, /document metadata/u);
+	assert.match(localSkill, /source maps/u);
+	assert.match(localSkill, /summary layers/u);
+	assert.match(localSkill, /chunk token counts/u);
+	assert.match(localSkill, /output-changing test/u);
+	assert.match(localSkill, /authority lanes/u);
+	assert.match(localSkill, /block role tags/u);
+	assert.match(localSkill, /filter-only versus\s+LLM-visible/u);
+	assert.match(localSkill, /question-specific evidence cards/u);
+	assert.match(localSkill, /state snapshots plus deltas/u);
 	assert.match(localSkill, /volatile IDs, dates, random values/u);
 	assert.match(localSkill, /previous_response_id/u);
 	assert.match(localSkill, /provider conversation state/u);
@@ -329,6 +339,13 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(localSkill, /app-level caching/u);
 	assert.match(localSkill, /Trim chat history by state/u);
 	assert.match(localSkill, /Shrink RAG by evidence span/u);
+	assert.match(localSkill, /Compress for the current question/u);
+	assert.match(localSkill, /Use evidence cards before raw chunks/u);
+	assert.match(localSkill, /Convert repetitive prose to structured slots/u);
+	assert.match(localSkill, /Separate original, index, and prompt text/u);
+	assert.match(localSkill, /search\/filter metadata separate from LLM-visible metadata/u);
+	assert.match(localSkill, /Pack by references before raw text/u);
+	assert.match(localSkill, /Evaluate compression as loss/u);
 	assert.match(localSkill, /Tool descriptions and JSON schemas/u);
 	assert.match(localSkill, /Route before calling the expensive model/u);
 	assert.match(localSkill, /Budget reasoning and output together/u);
@@ -341,9 +358,14 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(localSkill, /prompt_cache_audit/u);
 	assert.match(localSkill, /static layout evidence rather than provider billing proof/u);
 	assert.match(localSkill, /input tokens, cached tokens, output tokens, reasoning tokens/u);
+	assert.match(localSkill, /corpus version, index version, source hash/u);
+	assert.match(localSkill, /answer exactness, citation recall, numeric accuracy/u);
 	assert.match(localSkill, /source-freshness-check/u);
 	assert.match(localSkill, /sensitive prompt or user data/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md/u);
+	assert.match(skillIndex, /prompt packing, document metadata, source maps/u);
+	assert.match(skillIndex, /question-scoped compression, evidence cards/u);
+	assert.match(skillIndex, /original\/index\/prompt text separation/u);
 	assert.match(skillIndex, /prompt-cache prefix drift/u);
 	assert.match(skillIndex, /prompt_cache_audit/u);
 	assert.match(skillIndex, /remaining token-cost risk/u);
@@ -352,7 +374,7 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 4/u);
 });
 
 test('LLM response latency review keeps first useful output measurable', () => {

@@ -406,7 +406,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-07T02:38:58.408Z"
+last_touched_at = "2026-07-07T07:38:38.931Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -441,6 +441,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.871Z"
 last_touched_at = "2026-06-25T14:29:46.176Z"
+
+[[documents]]
+path = ".mustflow/skills/llm-token-cost-control-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-07T07:07:08.896Z"
+last_touched_at = "2026-07-07T07:38:38.957Z"
 
 [[documents]]
 path = ".mustflow/skills/memory-lifetime-review/SKILL.md"
@@ -560,7 +568,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.893Z"
-last_touched_at = "2026-06-25T14:29:46.204Z"
+last_touched_at = "2026-07-07T07:38:38.975Z"
 
 [[documents]]
 path = ".mustflow/skills/react-code-change/SKILL.md"
@@ -608,7 +616,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:26:29.333Z"
-last_touched_at = "2026-06-25T14:29:46.212Z"
+last_touched_at = "2026-07-07T07:38:39.005Z"
 
 [[documents]]
 path = ".mustflow/skills/security-flow-review/SKILL.md"
@@ -730,7 +738,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:50:32.648Z"
-last_touched_at = "2026-06-25T14:29:46.225Z"
+last_touched_at = "2026-07-07T07:38:39.020Z"
 
 [[documents]]
 path = ".mustflow/skills/version-freshness-check/SKILL.md"
@@ -1528,7 +1536,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-07T02:38:58.448Z"
+last_touched_at = "2026-07-07T07:38:39.036Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/java-code-change/SKILL.md"
@@ -1561,6 +1569,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.959Z"
 last_touched_at = "2026-06-25T14:29:46.289Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-07T07:07:08.948Z"
+last_touched_at = "2026-07-07T07:38:39.052Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md"
@@ -1680,7 +1696,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:09:09.977Z"
-last_touched_at = "2026-06-25T14:29:46.314Z"
+last_touched_at = "2026-07-07T07:38:39.065Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/react-code-change/SKILL.md"
@@ -1728,7 +1744,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T10:26:29.443Z"
-last_touched_at = "2026-06-25T14:29:46.321Z"
+last_touched_at = "2026-07-07T07:38:39.077Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/security-flow-review/SKILL.md"
@@ -1840,7 +1856,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-25T09:50:32.720Z"
-last_touched_at = "2026-06-25T14:29:46.333Z"
+last_touched_at = "2026-07-07T07:38:39.094Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
