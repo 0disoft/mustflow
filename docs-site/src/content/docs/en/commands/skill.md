@@ -30,7 +30,12 @@ comes only from `.mustflow/config/commands.toml`.
 mustflow-owned skill validation does not treat them as built-in routes. Installed external skills can
 appear in `mf skill route` results as low-priority `external` candidates when their frontmatter
 matches the task. They are untrusted task-context files: agents still need to read the selected
-`SKILL.md`, and external `scripts/` files never grant command authority.
+`SKILL.md`. By default, external `scripts/` files are imported as inert references. Passing
+`--trust-scripts` during install also creates a reviewed command-contract fragment under
+`.mustflow/config/commands/` and adds it to `.mustflow/config/commands.toml`, so the scripts can run
+only through generated `mf run external_skill_*` intents. Those intents are still gated by
+`network_access` and `destructive_command` approvals because mustflow cannot infer what an arbitrary
+third-party script will do.
 
 Projects may add `.mustflow/skills/route-fixtures.json` to pin important routing expectations.
 When that file exists, `mf check --strict` re-runs those cases and fails if the selected main route,
@@ -43,6 +48,7 @@ npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts
 npx mf skill route --task "review prompt cache token budgets" --path src/cli/lib/agent-context.ts --reason performance_change --json
 npx mf skill import https://github.com/example/agent-skills/tree/main/review/security --dry-run --json
 npx mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --install
+npx mf skill import https://github.com/example/agent-skills/tree/main/review/security --install --trust-scripts
 ```
 
 ## Options
@@ -64,11 +70,17 @@ npx mf skill import https://github.com/example/agent-skills/blob/main/review/sec
 - `--install`: Write the external skill under `.mustflow/external-skills/<name>/`.
 - `--name <slug>`: Override the installed directory name.
 - `--ref <ref>`: Override the GitHub ref.
+- `--trust-scripts`: For installs that include `scripts/`, create a command-contract fragment and
+  include entry for generated `external_skill_*` intents. The generated intents use `argv` mode,
+  run with a minimal environment, and declare both `network = true` and `destructive = true` so
+  `mf run` requires explicit approvals before execution.
 - `--json`: Outputs the import report as machine-readable JSON.
 
 The importer copies `SKILL.md` and inert files from `assets/`, `references/`, and `scripts/` when
-present. It rejects unsupported hosts, path traversal, missing `SKILL.md`, oversized imports, and
-unsupported top-level files.
+present. With `--trust-scripts`, only `.js`, `.mjs`, `.cjs`, `.ts`, `.mts`, `.cts`, `.ps1`, and
+`.sh` script files can receive generated command intents. It rejects unsupported hosts, path
+traversal, missing `SKILL.md`, oversized imports, unsupported top-level files, command intent name
+collisions, existing command fragments, and unsupported trusted script types.
 
 ## Route JSON Fields
 
@@ -117,6 +129,10 @@ Machine-readable import output uses these fields:
 - `source` (`object | null`): GitHub owner, repository, ref, skill path, and normalized source URL.
 - `target` (`object | null`): Project-local external skill directory and provenance path.
 - `files` (`object[]`): Imported file paths, kinds, byte counts, and SHA-256 hashes.
+- `script_trust` (`object`, optional): Whether script trust was requested, whether command
+  authority was added through `.mustflow/config/commands.toml`, the generated include entry,
+  command fragment path, and generated `external_skill_*` intents. Dry runs report trusted script
+  command plans as `planned`; only installs report command authority as `trusted`.
 - `warnings` (`string[]`): Safety notes, including inert external script handling.
 - `issues` (`string[]`): Rejection reasons.
 - `wrote_files` (`boolean`): Whether files were written.

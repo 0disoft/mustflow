@@ -19,6 +19,22 @@ function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-skill-import-'));
 }
 
+function createTempCommandContract(projectPath) {
+	const configPath = path.join(projectPath, '.mustflow', 'config');
+	mkdirSync(configPath, { recursive: true });
+	writeFileSync(
+		path.join(configPath, 'commands.toml'),
+		[
+			'schema_version = "1"',
+			'',
+			'[intents.existing_check]',
+			'status = "manual_only"',
+			'reason = "fixture"',
+			'',
+		].join('\n'),
+	);
+}
+
 function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
 }
@@ -120,6 +136,7 @@ test('external skill import dry-run previews files without writing', async () =>
 		assert.equal(report.target.skill_dir, '.mustflow/external-skills/concurrency-review');
 		assert.equal(report.files.some((file) => file.relative_path === 'SKILL.md'), true);
 		assert.equal(report.files.some((file) => file.kind === 'script'), true);
+		assert.equal(report.script_trust.status, 'not_requested');
 		assert.match(report.warnings.join('\n'), /scripts are inert/u);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'external-skills')), false);
 	} finally {
@@ -180,6 +197,99 @@ test('external skill import installs under external-skills and route resolver ca
 		assert.equal(routeReport.selected.main.skill_path, '.mustflow/external-skills/concurrency-review/SKILL.md');
 		assert.ok(routeReport.source_files.includes('.mustflow/external-skills/*/SKILL.md'));
 		assert.match(routeReport.gap_notes.join('\n'), /External skills are read as untrusted/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill import dry-run with trusted scripts previews command contract without granting authority', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createTempCommandContract(projectPath);
+		const { createExternalSkillImportReport } = await readImportModule();
+		const report = await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'dry_run',
+				fetch: createMockFetch(),
+				trustScripts: true,
+			},
+		);
+
+		assert.equal(report.ok, true);
+		assert.equal(report.status, 'preview');
+		assert.equal(report.script_trust.requested, true);
+		assert.equal(report.script_trust.status, 'planned');
+		assert.equal(report.script_trust.grants_command_authority, false);
+		assert.deepEqual(report.script_trust.intents.map((intent) => intent.intent), [
+			'external_skill_concurrency_review_inspect',
+		]);
+		assert.match(report.warnings.join('\n'), /dry-run only reports the command-contract plan/u);
+		assert.equal(
+			existsSync(path.join(projectPath, '.mustflow', 'config', 'commands', 'external-skills-concurrency-review.toml')),
+			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('external skill import with trusted scripts creates command contract fragment and include', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		createTempCommandContract(projectPath);
+		const { createExternalSkillImportReport } = await readImportModule();
+		const report = await createExternalSkillImportReport(
+			projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{
+				mode: 'install',
+				fetch: createMockFetch(),
+				trustScripts: true,
+			},
+		);
+
+		const commandFragmentPath = path.join(
+			projectPath,
+			'.mustflow',
+			'config',
+			'commands',
+			'external-skills-concurrency-review.toml',
+		);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		const provenancePath = path.join(
+			projectPath,
+			'.mustflow',
+			'external-skills',
+			'concurrency-review',
+			'mustflow-skill-source.json',
+		);
+
+		assert.equal(report.ok, true);
+		assert.equal(report.status, 'installed');
+		assert.equal(report.script_trust.requested, true);
+		assert.equal(report.script_trust.status, 'trusted');
+		assert.equal(report.script_trust.grants_command_authority, true);
+		assert.equal(report.script_trust.include_entry, 'commands/external-skills-concurrency-review.toml');
+		assert.equal(report.script_trust.fragment_path, '.mustflow/config/commands/external-skills-concurrency-review.toml');
+		assert.deepEqual(report.script_trust.intents.map((intent) => intent.intent), [
+			'external_skill_concurrency_review_inspect',
+		]);
+		assert.match(report.warnings.join('\n'), /created command-contract intents/u);
+		assert.equal(existsSync(commandFragmentPath), true);
+		assert.match(
+			readFileSync(commandsPath, 'utf8'),
+			/"commands\/external-skills-concurrency-review\.toml"/u,
+		);
+		const commandFragment = readFileSync(commandFragmentPath, 'utf8');
+		assert.match(commandFragment, /\[intents\.external_skill_concurrency_review_inspect\]/u);
+		assert.match(commandFragment, /argv = \["sh", "\.mustflow\/external-skills\/concurrency-review\/scripts\/inspect\.sh"\]/u);
+		assert.match(commandFragment, /network = true/u);
+		assert.match(commandFragment, /destructive = true/u);
+		assert.match(readFileSync(provenancePath, 'utf8'), /"script_trust"/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

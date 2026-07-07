@@ -3,13 +3,20 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import {
+	readCommandContract,
+	readCommandContractIncludePaths,
+} from '../../core/config-loading.js';
+import {
 	ensureFileTargetInsideWithoutSymlinks,
+	readUtf8FileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
 	writeUtf8FileInsideWithoutSymlinks,
 } from '../../core/safe-filesystem.js';
 
 const EXTERNAL_SKILL_ROOT = '.mustflow/external-skills';
 const PROVENANCE_FILE = 'mustflow-skill-source.json';
+const COMMANDS_CONFIG_PATH = '.mustflow/config/commands.toml';
+const COMMAND_FRAGMENT_DIRECTORY = '.mustflow/config/commands';
 const DEFAULT_GITHUB_REF = 'HEAD';
 const MAX_IMPORTED_FILES = 40;
 const MAX_TOTAL_BYTES = 512 * 1024;
@@ -46,6 +53,26 @@ export interface ExternalSkillImportTarget {
 	readonly provenance_path: string;
 }
 
+export interface ExternalSkillTrustedScriptIntent {
+	readonly intent: string;
+	readonly script_path: string;
+	readonly argv: readonly string[];
+	readonly run_policy: 'agent_allowed';
+	readonly network: true;
+	readonly destructive: true;
+	readonly approval_required: readonly ['network_access', 'destructive_command'];
+}
+
+export interface ExternalSkillScriptTrust {
+	readonly requested: boolean;
+	readonly status: 'not_requested' | 'no_scripts' | 'planned' | 'trusted';
+	readonly grants_command_authority: boolean;
+	readonly command_contract_path: typeof COMMANDS_CONFIG_PATH | null;
+	readonly include_entry: string | null;
+	readonly fragment_path: string | null;
+	readonly intents: readonly ExternalSkillTrustedScriptIntent[];
+}
+
 export interface ExternalSkillImportReport {
 	readonly schema_version: '1';
 	readonly kind: 'skill_import_report';
@@ -57,6 +84,7 @@ export interface ExternalSkillImportReport {
 	readonly source: ExternalSkillImportSource | null;
 	readonly target: ExternalSkillImportTarget | null;
 	readonly files: readonly ExternalSkillImportedFile[];
+	readonly script_trust?: ExternalSkillScriptTrust;
 	readonly warnings: readonly string[];
 	readonly issues: readonly string[];
 	readonly wrote_files: boolean;
@@ -66,6 +94,7 @@ export interface ExternalSkillImportOptions {
 	readonly mode: ExternalSkillImportMode;
 	readonly name?: string | null;
 	readonly ref?: string | null;
+	readonly trustScripts?: boolean;
 	readonly fetch?: typeof fetch;
 }
 
@@ -237,6 +266,10 @@ function sanitizeSkillName(value: string): string {
 		.replace(/[^a-z0-9]+/gu, '-')
 		.replace(/^-+|-+$/gu, '')
 		.replace(/-{2,}/gu, '-');
+}
+
+function commandSafeSegment(value: string): string {
+	return sanitizeSkillName(value).replace(/-/gu, '_');
 }
 
 function readFrontmatterScalar(content: string, key: string): string | null {
@@ -527,6 +560,256 @@ function createTarget(skillName: string): ExternalSkillImportTarget {
 	};
 }
 
+function scriptNameForIntent(relativePath: string): string {
+	const basename = path.posix.basename(relativePath);
+	const withoutExtension = basename.replace(/\.[^.]+$/u, '');
+	const sanitized = commandSafeSegment(withoutExtension);
+
+	if (!sanitized) {
+		throw new Error(`External script path cannot be converted to a safe intent name: ${relativePath}`);
+	}
+
+	return sanitized;
+}
+
+function trustedScriptArgv(skillName: string, scriptPath: string): readonly string[] {
+	const extension = path.posix.extname(scriptPath).toLowerCase();
+	const projectScriptPath = `${EXTERNAL_SKILL_ROOT}/${skillName}/${scriptPath}`;
+
+	if (['.js', '.mjs', '.cjs'].includes(extension)) {
+		return ['node', projectScriptPath];
+	}
+	if (['.ts', '.mts', '.cts'].includes(extension)) {
+		return ['bun', projectScriptPath];
+	}
+	if (extension === '.ps1') {
+		return ['pwsh', '-NoProfile', '-File', projectScriptPath];
+	}
+	if (extension === '.sh') {
+		return ['sh', projectScriptPath];
+	}
+
+	throw new Error(`External script import cannot create a trusted command intent for unsupported script type: ${scriptPath}`);
+}
+
+function createTrustedScriptIntent(skillName: string, scriptPath: string): ExternalSkillTrustedScriptIntent {
+	return {
+		intent: `external_skill_${commandSafeSegment(skillName)}_${scriptNameForIntent(scriptPath)}`,
+		script_path: scriptPath,
+		argv: trustedScriptArgv(skillName, scriptPath),
+		run_policy: 'agent_allowed',
+		network: true,
+		destructive: true,
+		approval_required: ['network_access', 'destructive_command'],
+	};
+}
+
+function createScriptTrust(
+	projectRoot: string,
+	target: ExternalSkillImportTarget,
+	files: readonly ExternalSkillImportedFile[],
+	trustScripts: boolean,
+	mode: ExternalSkillImportMode,
+): ExternalSkillScriptTrust {
+	const scripts = files.filter((file) => file.kind === 'script');
+	if (!trustScripts) {
+		return {
+			requested: false,
+			status: 'not_requested',
+			grants_command_authority: false,
+			command_contract_path: null,
+			include_entry: null,
+			fragment_path: null,
+			intents: [],
+		};
+	}
+
+	if (scripts.length === 0) {
+		return {
+			requested: true,
+			status: 'no_scripts',
+			grants_command_authority: false,
+			command_contract_path: null,
+			include_entry: null,
+			fragment_path: null,
+			intents: [],
+		};
+	}
+
+	const fragmentName = `external-skills-${target.skill_name}.toml`;
+	const includeEntry = `commands/${fragmentName}`;
+	const fragmentPath = `${COMMAND_FRAGMENT_DIRECTORY}/${fragmentName}`;
+	const intents = scripts.map((script) => createTrustedScriptIntent(target.skill_name, script.relative_path));
+	const duplicateIntent = findDuplicate(intents.map((intent) => intent.intent));
+	if (duplicateIntent) {
+		throw new Error(`External skill trusted script intents contain a duplicate name: ${duplicateIntent}`);
+	}
+
+	validateTrustedScriptCommandPlan(projectRoot, includeEntry, fragmentPath, intents);
+
+	return {
+		requested: true,
+		status: mode === 'install' ? 'trusted' : 'planned',
+		grants_command_authority: mode === 'install',
+		command_contract_path: COMMANDS_CONFIG_PATH,
+		include_entry: includeEntry,
+		fragment_path: fragmentPath,
+		intents,
+	};
+}
+
+function findDuplicate(values: readonly string[]): string | null {
+	const seen = new Set<string>();
+	for (const value of values) {
+		if (seen.has(value)) {
+			return value;
+		}
+		seen.add(value);
+	}
+
+	return null;
+}
+
+function validateTrustedScriptCommandPlan(
+	projectRoot: string,
+	includeEntry: string,
+	fragmentPath: string,
+	intents: readonly ExternalSkillTrustedScriptIntent[],
+): void {
+	const existingIncludes = new Set(readCommandContractIncludePaths(projectRoot).map((entry) =>
+		entry.replace(/^\.mustflow\/config\//u, ''),
+	));
+	if (existingIncludes.has(includeEntry)) {
+		throw new Error(`External skill trusted script command include already exists: ${includeEntry}`);
+	}
+	if (existsSync(path.join(projectRoot, ...fragmentPath.split('/')))) {
+		throw new Error(`External skill trusted script command fragment already exists: ${fragmentPath}`);
+	}
+
+	const contract = readCommandContract(projectRoot);
+	for (const intent of intents) {
+		if (Object.prototype.hasOwnProperty.call(contract.intents, intent.intent)) {
+			throw new Error(`External skill trusted script intent already exists in command contract: ${intent.intent}`);
+		}
+	}
+}
+
+function renderTomlString(value: string): string {
+	return JSON.stringify(value);
+}
+
+function renderTomlStringArray(values: readonly string[]): string {
+	return `[${values.map(renderTomlString).join(', ')}]`;
+}
+
+function renderTrustedScriptCommandFragment(
+	target: ExternalSkillImportTarget,
+	source: ExternalSkillImportSource,
+	scriptTrust: ExternalSkillScriptTrust,
+): string {
+	const lines = [
+		`# Generated by mf skill import --trust-scripts for external skill ${JSON.stringify(target.skill_name)}.`,
+		`# Source: ${source.source_url}`,
+		'# These intents execute imported external script files. They are agent-runnable only through mf run,',
+		'# and remain gated by network_access and destructive_command approvals.',
+		'',
+	];
+
+	for (const intent of scriptTrust.intents) {
+		lines.push(
+			`[intents.${intent.intent}]`,
+			'status = "configured"',
+			'lifecycle = "oneshot"',
+			'run_policy = "agent_allowed"',
+			`description = ${renderTomlString(`Run trusted external skill script ${intent.script_path} from ${target.skill_name}.`)}`,
+			`argv = ${renderTomlStringArray(intent.argv)}`,
+			'cwd = "."',
+			'timeout_seconds = 300',
+			'stdin = "closed"',
+			'success_exit_codes = [0]',
+			'writes = []',
+			'network = true',
+			'destructive = true',
+			'env_policy = "minimal"',
+			'',
+		);
+	}
+
+	return lines.join('\n');
+}
+
+function updateCommandIncludeText(content: string, includeEntry: string): string {
+	const normalizedContent = content.replace(/\r\n?/gu, '\n');
+	const lines = normalizedContent.split('\n');
+	const includeLineIndex = lines.findIndex((line) => /^\s*\[include\]\s*$/u.test(line));
+	const includeLine = `  ${renderTomlString(includeEntry)},`;
+
+	if (includeLineIndex < 0) {
+		const separator = normalizedContent.endsWith('\n') ? '' : '\n';
+		return `${normalizedContent}${separator}\n[include]\nfiles = [\n${includeLine}\n]\n`;
+	}
+
+	const nextSectionIndex = lines.findIndex((line, index) => index > includeLineIndex && /^\s*\[[^\]]+\]\s*$/u.test(line));
+	const sectionEnd = nextSectionIndex < 0 ? lines.length : nextSectionIndex;
+	const filesLineIndex = lines.findIndex((line, index) =>
+		index > includeLineIndex &&
+		index < sectionEnd &&
+		/^\s*files\s*=\s*\[/u.test(line),
+	);
+
+	if (filesLineIndex < 0) {
+		lines.splice(includeLineIndex + 1, 0, 'files = [', includeLine, ']');
+		return lines.join('\n');
+	}
+
+	if (lines[filesLineIndex].includes(']')) {
+		const existingValues = [...lines[filesLineIndex].matchAll(/"([^"]+)"/gu)].map((match) => match[1]);
+		const values = [...new Set([...existingValues, includeEntry])].sort((left, right) => left.localeCompare(right));
+		lines.splice(
+			filesLineIndex,
+			1,
+			'files = [',
+			...values.map((entry) => `  ${renderTomlString(entry)},`),
+			']',
+		);
+		return lines.join('\n');
+	}
+
+	const closingLineIndex = lines.findIndex((line, index) => index > filesLineIndex && index < sectionEnd && /^\s*\]\s*$/u.test(line));
+	if (closingLineIndex < 0) {
+		throw new Error(`[include].files in ${COMMANDS_CONFIG_PATH} must be a TOML array`);
+	}
+
+	lines.splice(closingLineIndex, 0, includeLine);
+	return lines.join('\n');
+}
+
+function writeTrustedScriptCommandContract(
+	projectRoot: string,
+	target: ExternalSkillImportTarget,
+	source: ExternalSkillImportSource,
+	scriptTrust: ExternalSkillScriptTrust,
+): void {
+	if (scriptTrust.status !== 'trusted' || !scriptTrust.fragment_path || !scriptTrust.include_entry) {
+		return;
+	}
+
+	const fragmentContent = renderTrustedScriptCommandFragment(target, source, scriptTrust);
+	writeUtf8FileInsideWithoutSymlinks(
+		projectRoot,
+		path.join(projectRoot, ...scriptTrust.fragment_path.split('/')),
+		fragmentContent,
+	);
+
+	const commandsPath = path.join(projectRoot, ...COMMANDS_CONFIG_PATH.split('/'));
+	const commandsContent = readUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, { maxBytes: 256 * 1024 });
+	writeUtf8FileInsideWithoutSymlinks(
+		projectRoot,
+		commandsPath,
+		updateCommandIncludeText(commandsContent, scriptTrust.include_entry),
+	);
+}
+
 function writeImportedSkillFiles(
 	projectRoot: string,
 	target: ExternalSkillImportTarget,
@@ -534,6 +817,7 @@ function writeImportedSkillFiles(
 	files: readonly LoadedExternalSkillFile[],
 	fileReport: readonly ExternalSkillImportedFile[],
 	warnings: readonly string[],
+	scriptTrust: ExternalSkillScriptTrust,
 ): void {
 	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
 	const skillPath = path.join(targetPath, 'SKILL.md');
@@ -566,6 +850,7 @@ function writeImportedSkillFiles(
 			kind: 'external_skill_source',
 			source,
 			files: fileReport,
+			script_trust: scriptTrust,
 			warnings,
 		});
 		renameSync(tempPath, targetPath);
@@ -613,15 +898,31 @@ export async function createExternalSkillImportReport(
 		const source = externalSkillSourceFromParsed(inputUrl, parsed);
 		const files = normalizeImportedSkillFiles(sourceFiles);
 		const reports = fileReports(files);
+		const scriptTrust = createScriptTrust(projectRoot, target, reports, options.trustScripts === true, mode);
 		const warnings = [
-			...(reports.some((file) => file.kind === 'script')
+			...(reports.some((file) => file.kind === 'script') && scriptTrust.status !== 'trusted'
 				? ['Imported scripts are inert reference files; mustflow does not grant command authority for external scripts.']
+				: []),
+			...(scriptTrust.status === 'trusted'
+				? ['Imported scripts were trusted by request; mustflow created command-contract intents gated by network and destructive approvals.']
+				: []),
+			...(scriptTrust.status === 'planned'
+				? ['Imported scripts would be trusted by request during install; dry-run only reports the command-contract plan.']
 				: []),
 			'External skills are untrusted until the agent reads and evaluates the selected SKILL.md.',
 		];
 
 		if (mode === 'install') {
-			writeImportedSkillFiles(projectRoot, target, source, files, reports, warnings);
+			try {
+				writeImportedSkillFiles(projectRoot, target, source, files, reports, warnings, scriptTrust);
+				writeTrustedScriptCommandContract(projectRoot, target, source, scriptTrust);
+			} catch (error) {
+				rmSync(path.join(projectRoot, ...target.skill_dir.split('/')), { recursive: true, force: true });
+				if (scriptTrust.fragment_path) {
+					rmSync(path.join(projectRoot, ...scriptTrust.fragment_path.split('/')), { force: true });
+				}
+				throw error;
+			}
 		}
 
 		return {
@@ -635,6 +936,7 @@ export async function createExternalSkillImportReport(
 			source,
 			target,
 			files: reports,
+			script_trust: scriptTrust,
 			warnings,
 			issues: [],
 			wrote_files: mode === 'install',

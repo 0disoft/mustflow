@@ -43,6 +43,7 @@
       "type": "array",
       "items": { "$ref": "#/$defs/file" }
     },
+    "script_trust": { "$ref": "#/$defs/scriptTrust" },
     "warnings": {
       "type": "array",
       "items": { "type": "string" }
@@ -91,6 +92,80 @@
         "kind": { "type": "string", "enum": ["skill", "asset", "reference", "script"] },
         "bytes": { "type": "integer", "minimum": 0 },
         "sha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+      }
+    },
+    "scriptTrust": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested",
+        "status",
+        "grants_command_authority",
+        "command_contract_path",
+        "include_entry",
+        "fragment_path",
+        "intents"
+      ],
+      "properties": {
+        "requested": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["not_requested", "no_scripts", "planned", "trusted"] },
+        "grants_command_authority": { "type": "boolean" },
+        "command_contract_path": {
+          "oneOf": [
+            { "const": ".mustflow/config/commands.toml" },
+            { "type": "null" }
+          ]
+        },
+        "include_entry": {
+          "oneOf": [
+            { "type": "string", "pattern": "^commands/external-skills-[a-z0-9]+(?:-[a-z0-9]+)*\\.toml$" },
+            { "type": "null" }
+          ]
+        },
+        "fragment_path": {
+          "oneOf": [
+            { "type": "string", "pattern": "^\\.mustflow/config/commands/external-skills-[a-z0-9]+(?:-[a-z0-9]+)*\\.toml$" },
+            { "type": "null" }
+          ]
+        },
+        "intents": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/trustedScriptIntent" }
+        }
+      }
+    },
+    "trustedScriptIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intent",
+        "script_path",
+        "argv",
+        "run_policy",
+        "network",
+        "destructive",
+        "approval_required"
+      ],
+      "properties": {
+        "intent": { "type": "string", "pattern": "^external_skill_[A-Za-z0-9_-]+$" },
+        "script_path": { "type": "string", "pattern": "^scripts/.+$" },
+        "argv": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string" }
+        },
+        "run_policy": { "const": "agent_allowed" },
+        "network": { "const": true },
+        "destructive": { "const": true },
+        "approval_required": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "network_access" },
+            { "const": "destructive_command" }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
       }
     }
   }

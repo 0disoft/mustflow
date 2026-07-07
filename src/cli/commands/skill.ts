@@ -33,6 +33,7 @@ const SKILL_OPTIONS = [
 	{ name: '--dry-run', kind: 'boolean' },
 	{ name: '--name', kind: 'string' },
 	{ name: '--ref', kind: 'string' },
+	{ name: '--trust-scripts', kind: 'boolean' },
 ] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedSkillArgs {
@@ -47,6 +48,7 @@ interface ParsedSkillArgs {
 	readonly dryRun: boolean;
 	readonly name: string | null;
 	readonly ref: string | null;
+	readonly trustScripts: boolean;
 	readonly error?: ReturnType<typeof parseCliOptions>['error'];
 }
 
@@ -72,6 +74,7 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 				{ label: '--install', description: 'Install an external skill after previewing the same source' },
 				{ label: '--name <slug>', description: 'Override the installed external skill directory name' },
 				{ label: '--ref <ref>', description: 'Override the GitHub ref used for import' },
+				{ label: '--trust-scripts', description: 'Create command-contract intents for imported scripts; requires --install to write them' },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
@@ -119,6 +122,7 @@ function parseSkillArgs(args: readonly string[]): ParsedSkillArgs {
 		dryRun: hasParsedCliOption(parsed, '--dry-run'),
 		name: getParsedCliStringOption(parsed, '--name'),
 		ref: getParsedCliStringOption(parsed, '--ref'),
+		trustScripts: hasParsedCliOption(parsed, '--trust-scripts'),
 		error: parsed.error,
 	};
 }
@@ -208,6 +212,22 @@ function renderSkillImportReport(report: ExternalSkillImportReport): string {
 		}
 	}
 
+	if (report.script_trust) {
+		lines.push(
+			'',
+			'Script trust',
+			`- requested: ${String(report.script_trust.requested)}`,
+			`- status: ${report.script_trust.status}`,
+			`- command authority: ${String(report.script_trust.grants_command_authority)}`,
+		);
+		if (report.script_trust.fragment_path) {
+			lines.push(`- command fragment: ${report.script_trust.fragment_path}`);
+		}
+		for (const intent of report.script_trust.intents) {
+			lines.push(`- intent: ${intent.intent}`);
+		}
+	}
+
 	if (report.warnings.length > 0) {
 		lines.push('', 'Warnings', ...report.warnings.map((warning) => `- ${warning}`));
 	}
@@ -282,6 +302,7 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 			mode,
 			name: parsed.name,
 			ref: parsed.ref,
+			trustScripts: parsed.trustScripts,
 		});
 
 		if (parsed.json) {
