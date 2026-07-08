@@ -25,6 +25,10 @@ JSON 출력에는 `read_plan`도 포함됩니다. 호스트 통합은 이 계획
 동작하면서도, skill 작성자는 resolver 코드를 바꾸지 않고 metadata 수정만으로 routing 정밀도를
 높일 수 있습니다.
 
+route card는 route metadata의 `route_dependencies`도 노출합니다. 호스트는
+`requires_skills`, `suggests_adjuncts`, `conflicts_with`, `unlocks_on`을 사용해 확장 skill
+index를 읽지 않고도 필요한 adjunct skill을 추가하거나 충돌 route 가지를 피할 수 있습니다.
+
 JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
 skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
 않으며, 호출자가 저장소 명령 계약 안에서 검토할 수 있는 선택적 helper만 알려줍니다.
@@ -73,7 +77,8 @@ npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts
 - `candidates[].matched_dimensions` (`string[]`): `reason`, `path_skill_hint`,
   `pattern_signal`, `negative_signal`처럼 후보 매칭에 기여한 결정적 차원입니다.
 - `candidates[].route_card` (`object`): prompt 조립용 compact route metadata입니다.
-  fallback 전용 index 정책과 동점 해소용 `Use When` / `Do Not Use When` excerpt 참조를 포함합니다.
+  fallback 전용 index 정책, route dependency, 동점 해소용 `Use When` / `Do Not Use When` excerpt
+  참조를 포함합니다.
 - `read_plan` (`object`): 캐시 친화적인 프롬프트 조립을 위한 stable kernel 파일, 선택된
   skill 경로, 후보 skill 경로, fallback route metadata, expanded-index fallback 규칙,
   기본적으로 피해야 하는 파일, 선택 제한입니다.

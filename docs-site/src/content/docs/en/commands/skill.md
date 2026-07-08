@@ -26,6 +26,10 @@ Pattern tie-break signals come from route metadata under `.mustflow/skills/route
 letting skill authors improve routing precision by editing metadata instead of changing resolver
 code.
 
+Route cards also expose `route_dependencies` from route metadata. Hosts can use
+`requires_skills`, `suggests_adjuncts`, `conflicts_with`, and `unlocks_on` to add bounded adjunct
+reads or avoid conflicting route branches without loading the expanded skill index.
+
 JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
 route input and selected skill candidates. These suggestions do not run scripts or grant command
 authority; they only name optional helpers the caller may inspect under the repository command
@@ -113,7 +117,8 @@ Machine-readable output uses these fields:
 - `candidates[].matched_dimensions` (`string[]`): Deterministic dimensions that contributed to the
   match, such as `reason`, `path_skill_hint`, `pattern_signal`, or `negative_signal`.
 - `candidates[].route_card` (`object`): Compact route metadata for prompt assembly, including
-  fallback-only index policy and `Use When` / `Do Not Use When` excerpt references for tie-breaking.
+  fallback-only index policy, route dependencies, and `Use When` / `Do Not Use When` excerpt
+  references for tie-breaking.
 - `read_plan` (`object`): Stable kernel files, selected and candidate skill paths, fallback route
   metadata, expanded-index fallback rules, avoid-by-default files, and selection limits for
   cache-friendly prompt assembly.

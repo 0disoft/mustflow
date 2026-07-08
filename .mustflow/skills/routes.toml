@@ -61,6 +61,9 @@ route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change"]
 
+[routes."strategy-pattern".dependencies]
+conflicts_with = ["state-machine-pattern"]
+
 [routes."strategy-pattern".contexts]
 file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
 layers = ["domain", "service", "policy", "pricing", "permission", "provider_selection"]
@@ -111,11 +114,24 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
+[routes."public-json-contract-change".dependencies]
+suggests_adjuncts = ["cli-output-contract-review", "completion-evidence-gate"]
+unlocks_on = [
+  { signal = "machine_output_changed", skill = "cli-output-contract-review" },
+  { signal = "schema_or_fixture_changed", skill = "completion-evidence-gate" },
+]
+
 [routes."completion-evidence-gate"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 85
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
+
+[routes."completion-evidence-gate".dependencies]
+suggests_adjuncts = ["next-action-menu"]
+unlocks_on = [
+  { signal = "concrete_followup_exists", skill = "next-action-menu" },
+]
 
 [routes."next-action-menu"]
 category = "workflow_contracts"
@@ -165,6 +181,9 @@ category = "architecture_patterns"
 route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."state-machine-pattern".dependencies]
+conflicts_with = ["strategy-pattern"]
 
 [routes."state-machine-pattern".contexts]
 file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]

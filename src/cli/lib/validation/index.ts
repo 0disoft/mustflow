@@ -1299,6 +1299,55 @@ function readSkillRouteMetadataContexts(
 	};
 }
 
+function readSkillRouteUnlockRules(
+	value: unknown,
+	label: string,
+	issues: CheckIssue[],
+): SkillRouteMetadata['dependencies']['unlocksOn'] {
+	if (value === undefined) {
+		return [];
+	}
+
+	if (!Array.isArray(value) || value.some((entry) => !isRecord(entry))) {
+		pushStrictIssue(issues, `${label} must be an array of TOML tables`);
+		return [];
+	}
+
+	return value
+		.map((entry, index) => {
+			const signal = typeof entry.signal === 'string' ? entry.signal.trim() : '';
+			const skill = typeof entry.skill === 'string' ? entry.skill.trim() : '';
+			if (!/^[a-z][a-z0-9_-]*$/u.test(signal)) {
+				pushStrictIssue(issues, `${label}[${index}].signal must use lowercase slug text`);
+			}
+			if (!/^[a-z][a-z0-9-]*$/u.test(skill)) {
+				pushStrictIssue(issues, `${label}[${index}].skill must be a skill folder name`);
+			}
+
+			return { signal, skill };
+		})
+		.filter((entry) => entry.signal && entry.skill);
+}
+
+function readSkillRouteMetadataDependencies(
+	value: unknown,
+	label: string,
+	issues: CheckIssue[],
+): SkillRouteMetadata['dependencies'] {
+	if (value !== undefined && !isRecord(value)) {
+		pushStrictIssue(issues, `${label}.dependencies must be a TOML table`);
+	}
+
+	const dependencies = isRecord(value) ? value : {};
+
+	return {
+		requiresSkills: readOptionalSlugArray(dependencies.requires_skills, `${label}.dependencies.requires_skills`, issues),
+		suggestsAdjuncts: readOptionalSlugArray(dependencies.suggests_adjuncts, `${label}.dependencies.suggests_adjuncts`, issues),
+		conflictsWith: readOptionalSlugArray(dependencies.conflicts_with, `${label}.dependencies.conflicts_with`, issues),
+		unlocksOn: readSkillRouteUnlockRules(dependencies.unlocks_on, `${label}.dependencies.unlocks_on`, issues),
+	};
+}
+
 function validateSkillRouteMetadataTable(
 	skillName: string,
 	route: TomlTable,
@@ -1318,6 +1367,7 @@ function validateSkillRouteMetadataTable(
 		issues,
 	);
 	const contexts = readSkillRouteMetadataContexts(route.contexts, label, issues);
+	const dependencies = readSkillRouteMetadataDependencies(route.dependencies, label, issues);
 
 	if (!category) {
 		pushStrictIssue(issues, `${label}.category must be one of ${[...ALLOWED_SKILL_ROUTE_CATEGORIES].join(', ')}`);
@@ -1350,6 +1400,7 @@ function validateSkillRouteMetadataTable(
 		priority: route.priority,
 		mutuallyExclusiveWith,
 		contexts,
+		dependencies,
 	};
 }
 
@@ -1435,6 +1486,50 @@ function validateSkillRouteMetadataAlignment(
 				pushStrictWarning(
 					issues,
 					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" lists "${otherSkillName}" as mutually exclusive but the reverse route does not`,
+				);
+			}
+		}
+
+		for (const requiredSkill of route.dependencies.requiresSkills) {
+			if (requiredSkill === skillName) {
+				pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" cannot require itself`);
+			} else if (!metadata.has(requiredSkill)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" requires unknown route "${requiredSkill}"`,
+				);
+			}
+		}
+
+		for (const adjunctSkill of route.dependencies.suggestsAdjuncts) {
+			if (adjunctSkill === skillName) {
+				pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" cannot suggest itself as an adjunct`);
+			} else if (!metadata.has(adjunctSkill)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" suggests unknown adjunct route "${adjunctSkill}"`,
+				);
+			}
+		}
+
+		for (const conflictingSkill of route.dependencies.conflictsWith) {
+			if (conflictingSkill === skillName) {
+				pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" cannot conflict with itself`);
+			} else if (!metadata.has(conflictingSkill)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" conflicts with unknown route "${conflictingSkill}"`,
+				);
+			}
+		}
+
+		for (const unlockRule of route.dependencies.unlocksOn) {
+			if (unlockRule.skill === skillName) {
+				pushStrictIssue(issues, `${SKILL_ROUTES_METADATA_PATH} route "${skillName}" cannot unlock itself`);
+			} else if (!metadata.has(unlockRule.skill)) {
+				pushStrictIssue(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" unlocks unknown route "${unlockRule.skill}" on signal "${unlockRule.signal}"`,
 				);
 			}
 		}

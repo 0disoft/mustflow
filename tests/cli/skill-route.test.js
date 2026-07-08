@@ -67,10 +67,15 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.equal(report.selected.main.route_card.source, 'route_metadata_and_skill_frontmatter');
 		assert.equal(report.selected.main.route_card.index_read_policy, 'fallback_only');
 		assert.deepEqual(report.selected.main.route_card.matched_dimensions, report.selected.main.matched_dimensions);
+		assert.deepEqual(report.selected.main.route_card.route_dependencies.requires_skills, []);
+		assert.deepEqual(report.selected.main.route_card.route_dependencies.suggests_adjuncts, []);
+		assert.deepEqual(report.selected.main.route_card.route_dependencies.conflicts_with, []);
+		assert.deepEqual(report.selected.main.route_card.route_dependencies.unlocks_on, []);
 		assert.equal(report.selected.main.route_card.use_when_excerpt.source_path, report.selected.main.skill_path);
 		assert.equal(report.selected.main.route_card.use_when_excerpt.section, 'use-when');
 		assert.equal(report.selected.main.route_card.do_not_use_excerpt.section, 'do-not-use-when');
 		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('Use When')));
+		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('route_dependencies')));
 		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('INDEX.md')));
 		assert.ok(report.candidates.length <= 5);
 		assert.equal(report.read_plan.selection_limits.candidates, 5);
@@ -151,8 +156,40 @@ test('uses pattern signal route cards to break same-priority architecture route 
 		assert.ok(strategy.score_breakdown.negative_signal_penalty < 0);
 	}
 	assert.equal(stateMachine.route_card.index_read_policy, 'fallback_only');
+	assert.deepEqual(stateMachine.route_card.route_dependencies.conflicts_with, ['strategy-pattern']);
 	assert.equal(stateMachine.route_card.use_when_excerpt.section, 'use-when');
 	assert.equal(stateMachine.route_card.do_not_use_excerpt.section, 'do-not-use-when');
+});
+
+test('surfaces route dependency metadata in compact route cards', () => {
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Change public JSON schema output fixtures and CLI machine-readable output',
+		'--path',
+		'schemas/skill-route-report.schema.json',
+		'--reason',
+		'public_api_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const report = JSON.parse(result.stdout);
+	const publicJson = report.candidates.find((candidate) => candidate.skill === 'public-json-contract-change');
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.ok(publicJson, report.candidates.map((candidate) => candidate.skill).join(', '));
+	assert.deepEqual(publicJson.route_card.route_dependencies.requires_skills, []);
+	assert.deepEqual(publicJson.route_card.route_dependencies.suggests_adjuncts, [
+		'cli-output-contract-review',
+		'completion-evidence-gate',
+	]);
+	assert.deepEqual(publicJson.route_card.route_dependencies.conflicts_with, []);
+	assert.deepEqual(publicJson.route_card.route_dependencies.unlocks_on, [
+		{ signal: 'machine_output_changed', skill: 'cli-output-contract-review' },
+		{ signal: 'schema_or_fixture_changed', skill: 'completion-evidence-gate' },
+	]);
 });
 
 test('keeps LLM token cost routes discoverable without reading the full index in the prompt', () => {

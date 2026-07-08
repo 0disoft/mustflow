@@ -22,6 +22,15 @@ export interface SkillRouteMetadata {
 		readonly positiveTerms: readonly string[];
 		readonly negativeTerms: readonly string[];
 	};
+	readonly dependencies: {
+		readonly requiresSkills: readonly string[];
+		readonly suggestsAdjuncts: readonly string[];
+		readonly conflictsWith: readonly string[];
+		readonly unlocksOn: readonly {
+			readonly signal: string;
+			readonly skill: string;
+		}[];
+	};
 }
 
 export interface CheckOptions {

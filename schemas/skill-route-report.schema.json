@@ -384,6 +384,7 @@
             "index_read_policy",
             "compact_fields",
             "matched_dimensions",
+            "route_dependencies",
             "use_when_excerpt",
             "do_not_use_excerpt",
             "read_strategy"
@@ -411,6 +412,7 @@
                 ]
               }
             },
+            "route_dependencies": { "$ref": "#/$defs/routeDependencies" },
             "use_when_excerpt": { "$ref": "#/$defs/routeExcerptReference" },
             "do_not_use_excerpt": { "$ref": "#/$defs/routeExcerptReference" },
             "read_strategy": {
@@ -424,6 +426,38 @@
           "type": "array",
           "items": { "type": "string" }
         }
+      }
+    },
+    "routeDependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requires_skills", "suggests_adjuncts", "conflicts_with", "unlocks_on"],
+      "properties": {
+        "requires_skills": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggests_adjuncts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conflicts_with": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unlocks_on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/routeUnlockRule" }
+        }
+      }
+    },
+    "routeUnlockRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signal", "skill"],
+      "properties": {
+        "signal": { "type": "string" },
+        "skill": { "type": "string" }
       }
     },
     "routeExcerptReference": {

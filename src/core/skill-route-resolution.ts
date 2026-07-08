@@ -72,11 +72,24 @@ export interface SkillRouteExcerptReference {
 	readonly read_when: readonly string[];
 }
 
+export interface SkillRouteUnlockRule {
+	readonly signal: string;
+	readonly skill: string;
+}
+
+export interface SkillRouteDependencies {
+	readonly requires_skills: readonly string[];
+	readonly suggests_adjuncts: readonly string[];
+	readonly conflicts_with: readonly string[];
+	readonly unlocks_on: readonly SkillRouteUnlockRule[];
+}
+
 export interface SkillRouteCard {
 	readonly source: 'route_metadata_and_skill_frontmatter';
 	readonly index_read_policy: 'fallback_only';
 	readonly compact_fields: readonly string[];
 	readonly matched_dimensions: readonly string[];
+	readonly route_dependencies: SkillRouteDependencies;
 	readonly use_when_excerpt: SkillRouteExcerptReference;
 	readonly do_not_use_excerpt: SkillRouteExcerptReference;
 	readonly read_strategy: readonly string[];
@@ -147,6 +160,7 @@ interface SkillRouteMetadata {
 	readonly appliesToReasons: readonly string[];
 	readonly mutuallyExclusiveWith: readonly string[];
 	readonly signalProfile: RouteSignalProfile;
+	readonly dependencies: SkillRouteDependencies;
 }
 
 interface SkillFrontmatterSummary {
@@ -159,6 +173,13 @@ interface RouteSignalProfile {
 	readonly positiveTerms: readonly string[];
 	readonly negativeTerms: readonly string[];
 }
+
+const EMPTY_ROUTE_DEPENDENCIES: SkillRouteDependencies = {
+	requires_skills: [],
+	suggests_adjuncts: [],
+	conflicts_with: [],
+	unlocks_on: [],
+};
 
 const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
 	primary: 18,
@@ -264,6 +285,37 @@ function readRouteSignalProfile(route: TomlTable): RouteSignalProfile {
 	};
 }
 
+function readRouteUnlockRules(table: TomlTable): SkillRouteUnlockRule[] {
+	const value = table.unlocks_on;
+	if (!Array.isArray(value)) {
+		return [];
+	}
+
+	return value
+		.filter(isRecord)
+		.map((entry) => {
+			return {
+				signal: typeof entry.signal === 'string' ? entry.signal.trim() : '',
+				skill: typeof entry.skill === 'string' ? entry.skill.trim() : '',
+			};
+		})
+		.filter((entry) => entry.signal && entry.skill);
+}
+
+function readRouteDependencies(route: TomlTable): SkillRouteDependencies {
+	const dependencies = route.dependencies;
+	if (!isRecord(dependencies)) {
+		return EMPTY_ROUTE_DEPENDENCIES;
+	}
+
+	return {
+		requires_skills: readStringArrayFromTable(dependencies, 'requires_skills'),
+		suggests_adjuncts: readStringArrayFromTable(dependencies, 'suggests_adjuncts'),
+		conflicts_with: readStringArrayFromTable(dependencies, 'conflicts_with'),
+		unlocks_on: readRouteUnlockRules(dependencies),
+	};
+}
+
 function readFrontmatterBlock(content: string): string[] {
 	if (!content.startsWith('---')) {
 		return [];
@@ -355,6 +407,7 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 				appliesToReasons: readStringArrayFromTable(route, 'applies_to_reasons'),
 				mutuallyExclusiveWith: readStringArrayFromTable(route, 'mutually_exclusive_with'),
 				signalProfile: readRouteSignalProfile(route),
+				dependencies: readRouteDependencies(route),
 			});
 		}
 	} catch {
@@ -510,7 +563,11 @@ function createExcerptReference(skillPath: string, section: 'use-when' | 'do-not
 	};
 }
 
-function createRouteCard(skillPath: string, matchedDimensions: readonly string[]): SkillRouteCard {
+function createRouteCard(
+	skillPath: string,
+	matchedDimensions: readonly string[],
+	routeDependencies: SkillRouteDependencies,
+): SkillRouteCard {
 	return {
 		source: 'route_metadata_and_skill_frontmatter',
 		index_read_policy: 'fallback_only',
@@ -525,13 +582,16 @@ function createRouteCard(skillPath: string, matchedDimensions: readonly string[]
 			'score_breakdown',
 			'selection_reasons',
 			'verification_intents',
+			'route_dependencies',
 		],
 		matched_dimensions: matchedDimensions,
+		route_dependencies: routeDependencies,
 		use_when_excerpt: createExcerptReference(skillPath, 'use-when'),
 		do_not_use_excerpt: createExcerptReference(skillPath, 'do-not-use-when'),
 		read_strategy: [
 			'Read the selected SKILL.md before editing matching scope.',
 			'For close ties, compare only Use When and Do Not Use When excerpts before loading full competing skills.',
+			'Use route_dependencies to add required or suggested adjunct skill reads without loading the expanded index.',
 			'Keep .mustflow/skills/INDEX.md out of the prompt unless route metadata and excerpts are insufficient.',
 		],
 	};
@@ -630,7 +690,7 @@ function createCandidate(
 		score_breakdown: breakdown,
 		selection_reasons: selectionReasons,
 		matched_dimensions: matchedDimensions,
-		route_card: createRouteCard(route.skillPath, matchedDimensions),
+		route_card: createRouteCard(route.skillPath, matchedDimensions, metadata.dependencies),
 		verification_intents: route.commandIntents,
 	};
 }
@@ -766,6 +826,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 						positiveTerms: [],
 						negativeTerms: [],
 					},
+					dependencies: EMPTY_ROUTE_DEPENDENCIES,
 				},
 				taskTerms,
 				pathTerms,

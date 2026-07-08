@@ -93,6 +93,42 @@ test('architecture pattern routes carry data-driven context signals', () => {
 	);
 });
 
+test('route metadata can declare checked skill dependencies', () => {
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+
+	assert.equal(routes, templateRoutes);
+	const publicJsonDependenciesPattern = [
+		'\\[routes\\."public-json-contract-change"\\.dependencies\\]',
+		'suggests_adjuncts = \\["cli-output-contract-review", "completion-evidence-gate"\\]',
+		'signal = "machine_output_changed"',
+		'skill = "cli-output-contract-review"',
+	].join('[\\s\\S]*?');
+	const completionEvidenceDependenciesPattern = [
+		'\\[routes\\."completion-evidence-gate"\\.dependencies\\]',
+		'suggests_adjuncts = \\["next-action-menu"\\]',
+		'signal = "concrete_followup_exists"',
+		'skill = "next-action-menu"',
+	].join('[\\s\\S]*?');
+
+	assert.match(
+		routes,
+		new RegExp(publicJsonDependenciesPattern, 'u'),
+	);
+	assert.match(
+		routes,
+		new RegExp(completionEvidenceDependenciesPattern, 'u'),
+	);
+	assert.match(
+		routes,
+		/\[routes\."state-machine-pattern"\.dependencies\][\s\S]*?conflicts_with = \["strategy-pattern"\]/u,
+	);
+	assert.match(
+		routes,
+		/\[routes\."strategy-pattern"\.dependencies\][\s\S]*?conflicts_with = \["state-machine-pattern"\]/u,
+	);
+});
+
 test('skill route metadata covers declared trigger axes for integration and framework skills', () => {
 	const routes = readText('.mustflow/skills/routes.toml');
 	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
