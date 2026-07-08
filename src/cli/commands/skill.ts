@@ -59,6 +59,11 @@ interface ParsedSkillArgs {
 }
 
 type SkillRouteReport = ReturnType<typeof resolveSkillRoutes>;
+type SkillRouteCandidate = SkillRouteReport['candidates'][number];
+interface SkillRouteDependencyRead {
+	readonly candidate: SkillRouteCandidate;
+	readonly reason: string;
+}
 type SkillRouteScriptPackSuggestions = Pick<
 	ScriptPackSuggestionReport,
 	'status' | 'input' | 'analyzed_paths' | 'suggestions' | 'issues'
@@ -171,7 +176,31 @@ function createSkillRouteScriptPackSuggestions(
 	};
 }
 
+function routeDependencyReason(candidate: SkillRouteCandidate): string | null {
+	return candidate.selection_reasons.find((reason) => reason.startsWith('route_dependency:')) ?? null;
+}
+
+function conflictHintCandidates(report: SkillRouteReport): SkillRouteCandidate[] {
+	const candidates = [
+		...(report.selected.main ? [report.selected.main] : []),
+		...report.selected.adjuncts,
+		...report.candidates,
+	];
+	const seenSkills = new Set<string>();
+	return candidates.filter((candidate) => {
+		if (seenSkills.has(candidate.skill) || candidate.route_card.route_dependencies.conflicts_with.length === 0) {
+			return false;
+		}
+		seenSkills.add(candidate.skill);
+		return true;
+	});
+}
+
 function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang, warnings: readonly string[] = []): string {
+	const dependencyReads = report.selected.adjuncts
+		.map((candidate) => ({ candidate, reason: routeDependencyReason(candidate) }))
+		.filter((entry): entry is SkillRouteDependencyRead => entry.reason !== null);
+	const conflictHints = conflictHintCandidates(report);
 	const lines = [
 		'mustflow skill route',
 		`${t(lang, 'label.mustflowRoot')}: ${resolveMustflowRoot()}`,
@@ -190,6 +219,28 @@ function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang, warning
 				`  path: ${candidate.skill_path}`,
 				`  reasons: ${candidate.selection_reasons.join(', ') || t(lang, 'value.none')}`,
 				`  matched_dimensions: ${candidate.matched_dimensions.join(', ') || t(lang, 'value.none')}`,
+			);
+		}
+	}
+
+	if (dependencyReads.length > 0) {
+		lines.push('', 'Dependency reads');
+		for (const { candidate, reason } of dependencyReads) {
+			lines.push(
+				`- ${candidate.skill}`,
+				`  reason: ${reason}`,
+				`  path: ${candidate.skill_path}`,
+			);
+		}
+	}
+
+	if (conflictHints.length > 0) {
+		lines.push('', 'Conflict hints');
+		for (const candidate of conflictHints) {
+			lines.push(
+				`- ${candidate.skill}`,
+				`  conflicts_with: ${candidate.route_card.route_dependencies.conflicts_with.join(', ')}`,
+				`  path: ${candidate.skill_path}`,
 			);
 		}
 	}

@@ -50,7 +50,9 @@ export type CheckIssueId =
 	| 'mustflow.skill.route_metadata_missing_document'
 	| 'mustflow.skill.route_metadata_category_mismatch'
 	| 'mustflow.skill.route_metadata_unknown_reference'
+	| 'mustflow.skill.route_metadata_invalid_dependency'
 	| 'mustflow.skill.route_metadata_asymmetric_exclusion'
+	| 'mustflow.skill.route_metadata_asymmetric_conflict'
 	| 'mustflow.skill.route_fixture_invalid'
 	| 'mustflow.skill.route_fixture_mismatch'
 	| 'mustflow.skill.template_profile_empty_category'
@@ -89,6 +91,20 @@ export interface CheckIssueInput {
 	readonly severity?: 'error' | 'warning';
 	readonly message: string;
 }
+
+const ROUTE_METADATA_UNKNOWN_REFERENCE_PATTERN = new RegExp(
+	'^Strict: \\.mustflow\\/skills\\/routes\\.toml route "[^"]+" ' +
+		'(?:references unknown mutually exclusive route|requires unknown route|' +
+		'suggests unknown adjunct route|conflicts with unknown route|unlocks unknown route) ' +
+		'"[^"]+"(?: on signal "[^"]+")?$',
+	'u',
+);
+const ROUTE_METADATA_INVALID_DEPENDENCY_PATTERN = new RegExp(
+	'^Strict: \\.mustflow\\/skills\\/routes\\.toml route "[^"]+" ' +
+		'(?:suggests adjunct|unlocks on signal "[^"]+") route "[^"]+" ' +
+		'must point to an adjunct route, found "[^"]+"$',
+	'u',
+);
 
 const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.command_contract.intent_table_missing', /^Missing \[intents\] table in \.mustflow\/config\/commands\.toml$/u],
@@ -150,8 +166,13 @@ const CHECK_ISSUE_ID_RULES: readonly [CheckIssueId, RegExp][] = [
 	['mustflow.skill.route_metadata_unlisted', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" is not listed in \.mustflow\/skills\/INDEX\.md$/u],
 	['mustflow.skill.route_metadata_missing_document', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" points to a missing skill document$/u],
 	['mustflow.skill.route_metadata_category_mismatch', /^Strict: \.mustflow\/skills\/INDEX\.md route "[^"]+" must appear under the .+ category section from \.mustflow\/skills\/routes\.toml$/u],
-	['mustflow.skill.route_metadata_unknown_reference', /^Strict: \.mustflow\/skills\/routes\.toml route "[^"]+" references unknown mutually exclusive route "[^"]+"$/u],
+	[
+		'mustflow.skill.route_metadata_unknown_reference',
+		ROUTE_METADATA_UNKNOWN_REFERENCE_PATTERN,
+	],
+	['mustflow.skill.route_metadata_invalid_dependency', ROUTE_METADATA_INVALID_DEPENDENCY_PATTERN],
 	['mustflow.skill.route_metadata_asymmetric_exclusion', /^Strict warning: \.mustflow\/skills\/routes\.toml route "[^"]+" lists "[^"]+" as mutually exclusive but the reverse route does not$/u],
+	['mustflow.skill.route_metadata_asymmetric_conflict', /^Strict warning: \.mustflow\/skills\/routes\.toml route "[^"]+" conflicts with "[^"]+" but the reverse route does not$/u],
 	['mustflow.skill.route_fixture_invalid', /^Strict: \.mustflow\/skills\/route-fixtures\.json (?:must|is not valid JSON|cases\[\d+\])/u],
 	['mustflow.skill.route_fixture_mismatch', /^Strict: Skill route fixture "[^"]+" (?:expected|forbids)/u],
 	['mustflow.skill.template_profile_empty_category', /^Strict: template profile "[^"]+" (?:skill index category ".+" has no route rows|route category gate references ".+" without route rows)$/u],

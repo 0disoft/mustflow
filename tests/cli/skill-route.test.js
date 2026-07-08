@@ -260,33 +260,55 @@ test('keeps LLM token cost routes discoverable without reading the full index in
 });
 
 test('prints a compact text skill route report', () => {
-	const projectPath = createTempProject();
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Change public JSON schema output fixtures and CLI machine-readable output',
+		'--path',
+		'schemas/skill-route-report.schema.json',
+		'--reason',
+		'public_api_change',
+		'--max-candidates',
+		'1',
+	]);
 
-	try {
-		initProject(projectPath);
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.match(result.stdout, /mustflow skill route/);
+	assert.match(result.stdout, /selected_main: public-json-contract-change/);
+	assert.match(result.stdout, /selected_adjuncts: cli-output-contract-review, completion-evidence-gate/);
+	assert.match(result.stdout, /Candidates/);
+	assert.match(result.stdout, /Dependency reads/);
+	assert.match(result.stdout, /- cli-output-contract-review[\s\S]*?route_dependency:suggested_by:public-json-contract-change/u);
+	assert.match(result.stdout, /- completion-evidence-gate[\s\S]*?route_dependency:suggested_by:public-json-contract-change/u);
+	assert.match(result.stdout, /Read plan/);
+	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/public-json-contract-change\/SKILL\.md/);
+	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/cli-output-contract-review\/SKILL\.md/);
+	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/completion-evidence-gate\/SKILL\.md/);
+	assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
+	assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
+	assert.match(result.stdout, /\.mustflow\/skills\/\*\/SKILL\.md/);
+});
 
-		const result = runCli(projectPath, [
-			'skill',
-			'route',
-			'--task',
-			'Update public docs',
-			'--path',
-			'docs-site/src/content/docs/en/commands/context.md',
-			'--reason',
-			'docs_change',
-		]);
+test('prints route conflict hints in text skill route output', () => {
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Refactor state-machine-pattern status phase transitions, allowed lifecycle states, and irreversible history handling',
+		'--path',
+		'.mustflow/skills/state-machine-pattern/SKILL.md',
+		'--reason',
+		'code_change',
+		'--max-candidates',
+		'10',
+	]);
 
-		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.match(result.stdout, /mustflow skill route/);
-		assert.match(result.stdout, /selected_main:/);
-		assert.match(result.stdout, /Candidates/);
-		assert.match(result.stdout, /Read plan/);
-		assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
-		assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
-		assert.match(result.stdout, /\.mustflow\/skills\/\*\/SKILL\.md/);
-	} finally {
-		removeTempProject(projectPath);
-	}
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.match(result.stdout, /selected_main: state-machine-pattern/);
+	assert.match(result.stdout, /Conflict hints/);
+	assert.match(result.stdout, /- state-machine-pattern[\s\S]*?conflicts_with: strategy-pattern/u);
+	assert.match(result.stdout, /path: \.mustflow\/skills\/state-machine-pattern\/SKILL\.md/);
 });
 
 test('prints external skill update reminder in text skill route output when checks are stale', () => {

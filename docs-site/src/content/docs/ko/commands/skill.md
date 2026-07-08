@@ -30,6 +30,10 @@ route card는 route metadata의 `route_dependencies`도 노출합니다. resolve
 `selected.adjuncts`와 `read_plan.selected_skill_paths`에 반영합니다. 그래서 호스트는 확장
 skill index를 읽지 않고도 필요한 adjunct skill을 추가하거나 충돌 route 가지를 피할 수 있습니다.
 
+사람이 읽는 text 출력은 선택된 route dependency read와 conflict hint를 별도 섹션으로 보여줍니다.
+그래서 `--json`을 쓰지 않는 호출자도 왜 추가 skill을 읽어야 하는지, 어떤 route와 충돌하는지 볼 수
+있습니다.
+
 JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
 skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
 않으며, 호출자가 저장소 명령 계약 안에서 검토할 수 있는 선택적 helper만 알려줍니다.

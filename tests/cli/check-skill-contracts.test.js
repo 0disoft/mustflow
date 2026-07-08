@@ -275,6 +275,61 @@ test('strict check fails skill route metadata drift', () => {
 	}
 });
 
+test('strict check fails invalid skill route dependency semantics', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const routes = readText(routesPath).concat(
+			[
+				'',
+				'[routes."code-review".dependencies]',
+				'suggests_adjuncts = ["small-service-platform-architecture-review"]',
+				'conflicts_with = ["small-service-platform-architecture-review"]',
+				'unlocks_on = [{ signal = "semantic_drift", skill = "small-service-platform-architecture-review" }]',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(routesPath, routes);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+		const expectedSuggestIssue = [
+			'Strict: .mustflow/skills/routes.toml route "code-review"',
+			' suggests adjunct route "small-service-platform-architecture-review"',
+			' must point to an adjunct route, found "primary"',
+		].join('');
+		const expectedUnlockIssue = [
+			'Strict: .mustflow/skills/routes.toml route "code-review"',
+			' unlocks on signal "semantic_drift" route "small-service-platform-architecture-review"',
+			' must point to an adjunct route, found "primary"',
+		].join('');
+		const expectedConflictWarning = [
+			'Strict warning: .mustflow/skills/routes.toml route "code-review"',
+			' conflicts with "small-service-platform-architecture-review"',
+			' but the reverse route does not',
+		].join('');
+
+		assert.equal(result.status, 1);
+		assert.ok(
+			check.issues.some((issue) => issue === expectedSuggestIssue),
+		);
+		assert.ok(
+			check.issues.some((issue) => issue === expectedUnlockIssue),
+		);
+		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_invalid_dependency');
+		assertHasIssueDetail(
+			check,
+			'mustflow.skill.route_metadata_asymmetric_conflict',
+			expectedConflictWarning,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check fails skill route category section drift', () => {
 	const projectPath = createTempProject();
 

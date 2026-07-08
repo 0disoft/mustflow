@@ -1453,6 +1453,27 @@ function readSkillRouteMetadata(projectRoot: string, issues: CheckIssue[]): Map<
 	return metadata;
 }
 
+function validateAdjunctRouteDependency(
+	metadata: Map<string, SkillRouteMetadata>,
+	issues: CheckIssue[],
+	skillName: string,
+	targetSkill: string,
+	relation: string,
+): void {
+	const targetRoute = metadata.get(targetSkill);
+	if (!targetRoute || targetRoute.routeType === 'adjunct') {
+		return;
+	}
+
+	pushStrictIssue(
+		issues,
+		[
+			`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" ${relation} route "${targetSkill}"`,
+			` must point to an adjunct route, found "${targetRoute.routeType ?? 'unknown'}"`,
+		].join(''),
+	);
+}
+
 function validateSkillRouteMetadataAlignment(
 	metadata: Map<string, SkillRouteMetadata>,
 	routeSkillNames: ReadonlySet<string>,
@@ -1509,6 +1530,8 @@ function validateSkillRouteMetadataAlignment(
 					issues,
 					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" suggests unknown adjunct route "${adjunctSkill}"`,
 				);
+			} else {
+				validateAdjunctRouteDependency(metadata, issues, skillName, adjunctSkill, 'suggests adjunct');
 			}
 		}
 
@@ -1520,6 +1543,11 @@ function validateSkillRouteMetadataAlignment(
 					issues,
 					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" conflicts with unknown route "${conflictingSkill}"`,
 				);
+			} else if (!metadata.get(conflictingSkill)?.dependencies.conflictsWith.includes(skillName)) {
+				pushStrictWarning(
+					issues,
+					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" conflicts with "${conflictingSkill}" but the reverse route does not`,
+				);
 			}
 		}
 
@@ -1530,6 +1558,14 @@ function validateSkillRouteMetadataAlignment(
 				pushStrictIssue(
 					issues,
 					`${SKILL_ROUTES_METADATA_PATH} route "${skillName}" unlocks unknown route "${unlockRule.skill}" on signal "${unlockRule.signal}"`,
+				);
+			} else {
+				validateAdjunctRouteDependency(
+					metadata,
+					issues,
+					skillName,
+					unlockRule.skill,
+					`unlocks on signal "${unlockRule.signal}"`,
 				);
 			}
 		}

@@ -31,6 +31,9 @@ Route cards also expose `route_dependencies` from route metadata. The resolver a
 building `selected.adjuncts` and `read_plan.selected_skill_paths`, so hosts can add bounded adjunct
 reads or avoid conflicting route branches without loading the expanded skill index.
 
+Human text output prints selected route dependency reads and conflict hints as separate sections.
+This keeps the prompt-assembly reason visible even when the caller is not using `--json`.
+
 JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
 route input and selected skill candidates. These suggestions do not run scripts or grant command
 authority; they only name optional helpers the caller may inspect under the repository command
