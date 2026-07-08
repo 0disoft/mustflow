@@ -350,6 +350,8 @@
             "reason_match": { "type": "number" },
             "task_text_match": { "type": "number" },
             "path_match": { "type": "number" },
+            "pattern_signal_match": { "type": "number" },
+            "negative_signal_penalty": { "type": "number" },
             "route_type_weight": { "type": "number" },
             "priority_weight": { "type": "number" }
           }
@@ -358,9 +360,83 @@
           "type": "array",
           "items": { "type": "string" }
         },
+        "matched_dimensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "reason",
+              "task_terms",
+              "path_terms",
+              "path_skill_hint",
+              "pattern_signal",
+              "negative_signal",
+              "route_type",
+              "priority"
+            ]
+          }
+        },
+        "route_card": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "index_read_policy",
+            "compact_fields",
+            "matched_dimensions",
+            "use_when_excerpt",
+            "do_not_use_excerpt",
+            "read_strategy"
+          ],
+          "properties": {
+            "source": { "const": "route_metadata_and_skill_frontmatter" },
+            "index_read_policy": { "const": "fallback_only" },
+            "compact_fields": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "matched_dimensions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "reason",
+                  "task_terms",
+                  "path_terms",
+                  "path_skill_hint",
+                  "pattern_signal",
+                  "negative_signal",
+                  "route_type",
+                  "priority"
+                ]
+              }
+            },
+            "use_when_excerpt": { "$ref": "#/$defs/routeExcerptReference" },
+            "do_not_use_excerpt": { "$ref": "#/$defs/routeExcerptReference" },
+            "read_strategy": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        },
         "verification_intents": {
           "type": "array",
           "items": { "type": "string" }
+        }
+      }
+    },
+    "routeExcerptReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "section", "read_when"],
+      "properties": {
+        "source_path": { "type": "string" },
+        "section": { "type": "string", "enum": ["use-when", "do-not-use-when"] },
+        "read_when": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
         }
       }
     },

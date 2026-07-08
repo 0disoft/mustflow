@@ -15,6 +15,11 @@ JSON 출력에는 `read_plan`도 포함됩니다. 호스트 통합은 이 계획
 읽고, `.mustflow/skills/INDEX.md`는 보고서가 fallback 이유를 제시할 때만 읽는 식으로
 프롬프트를 조립할 수 있습니다.
 
+각 후보에는 간결한 `route_card`도 포함됩니다. 이 카드는 후보가 어떤 차원에서 맞았는지,
+확장 index는 fallback 전용이라는 정책, 선택된 skill의 `Use When` / `Do Not Use When` excerpt
+참조를 제공합니다. 호스트 통합은 이 참조로 동점 후보를 먼저 좁힌 뒤, 필요한 경우에만
+경쟁 `SKILL.md` 전체나 확장 index를 읽을 수 있습니다.
+
 JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
 skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
 않으며, 호출자가 저장소 명령 계약 안에서 검토할 수 있는 선택적 helper만 알려줍니다.
@@ -60,6 +65,10 @@ npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts
 - `selected.main` (`object | null`): 가장 높은 점수의 primary 또는 authoring route입니다.
 - `selected.adjuncts` (`object[]`): 같은 category에서 호환되는 adjunct route를 최대 두 개까지 보여줍니다.
 - `candidates` (`object[]`): 점수 분해와 선택 이유를 포함한 route 후보 목록입니다.
+- `candidates[].matched_dimensions` (`string[]`): `reason`, `path_skill_hint`,
+  `pattern_signal`, `negative_signal`처럼 후보 매칭에 기여한 결정적 차원입니다.
+- `candidates[].route_card` (`object`): prompt 조립용 compact route metadata입니다.
+  fallback 전용 index 정책과 동점 해소용 `Use When` / `Do Not Use When` excerpt 참조를 포함합니다.
 - `read_plan` (`object`): 캐시 친화적인 프롬프트 조립을 위한 stable kernel 파일, 선택된
   skill 경로, 후보 skill 경로, fallback route metadata, expanded-index fallback 규칙,
   기본적으로 피해야 하는 파일, 선택 제한입니다.

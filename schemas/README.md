@@ -189,9 +189,9 @@ Current schemas:
   candidates from direct imports, importers, same-basename siblings, parent configuration files, and
   package boundaries for source-oriented repository navigation
 - `skill-route-report.schema.json`: output of `mf skill route --json`, containing compact route
-  candidates, selected main and adjunct skills, score breakdowns, route read plans, source route
-  shards, and optional read-only script-pack helper suggestions without granting command authority
-  or replacing selected `SKILL.md` reads
+  candidates, selected main and adjunct skills, score breakdowns, route cards, route read plans,
+  source route shards, and optional read-only script-pack helper suggestions without granting command
+  authority or replacing selected `SKILL.md` reads
 - `skill-import-report.schema.json`: output of `mf skill import <github-url> --json`, containing
   GitHub source provenance, target `.mustflow/external-skills/<name>/` paths, imported file hashes,
   warnings for inert external scripts, rejection issues, and whether files were written

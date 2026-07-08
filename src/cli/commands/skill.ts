@@ -189,6 +189,7 @@ function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang, warning
 				`- ${candidate.skill} (${candidate.route_type}, score ${candidate.score.toFixed(1)})`,
 				`  path: ${candidate.skill_path}`,
 				`  reasons: ${candidate.selection_reasons.join(', ') || t(lang, 'value.none')}`,
+				`  matched_dimensions: ${candidate.matched_dimensions.join(', ') || t(lang, 'value.none')}`,
 			);
 		}
 	}

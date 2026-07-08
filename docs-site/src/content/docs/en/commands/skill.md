@@ -16,6 +16,11 @@ keep `.mustflow/skills/router.toml` in the stable prefix, load selected `SKILL.m
 context, and treat `.mustflow/skills/INDEX.md` as a fallback-only file unless the report names a
 fallback reason.
 
+Each candidate also includes a compact `route_card`. The card names the matched dimensions, the
+fallback-only index policy, and the selected skill's `Use When` / `Do Not Use When` excerpt
+references. Host integrations can use those excerpt references to break close route ties before
+loading full competing `SKILL.md` files or the expanded index.
+
 JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
 route input and selected skill candidates. These suggestions do not run scripts or grant command
 authority; they only name optional helpers the caller may inspect under the repository command
@@ -100,6 +105,10 @@ Machine-readable output uses these fields:
 - `selected.main` (`object | null`): Highest ranked primary or authoring route.
 - `selected.adjuncts` (`object[]`): Up to two compatible adjunct routes from the same category.
 - `candidates` (`object[]`): Ranked candidate routes, each with score breakdown and selection reasons.
+- `candidates[].matched_dimensions` (`string[]`): Deterministic dimensions that contributed to the
+  match, such as `reason`, `path_skill_hint`, `pattern_signal`, or `negative_signal`.
+- `candidates[].route_card` (`object`): Compact route metadata for prompt assembly, including
+  fallback-only index policy and `Use When` / `Do Not Use When` excerpt references for tie-breaking.
 - `read_plan` (`object`): Stable kernel files, selected and candidate skill paths, fallback route
   metadata, expanded-index fallback rules, avoid-by-default files, and selection limits for
   cache-friendly prompt assembly.

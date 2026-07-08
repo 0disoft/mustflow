@@ -62,6 +62,16 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.ok(report.selected.main.score > 0);
 		assert.ok(report.selected.main.score_breakdown.reason_match > 0);
 		assert.ok(report.selected.main.score_breakdown.task_text_match > 0);
+		assert.ok(report.selected.main.matched_dimensions.includes('reason'));
+		assert.ok(report.selected.main.matched_dimensions.includes('path_skill_hint'));
+		assert.equal(report.selected.main.route_card.source, 'route_metadata_and_skill_frontmatter');
+		assert.equal(report.selected.main.route_card.index_read_policy, 'fallback_only');
+		assert.deepEqual(report.selected.main.route_card.matched_dimensions, report.selected.main.matched_dimensions);
+		assert.equal(report.selected.main.route_card.use_when_excerpt.source_path, report.selected.main.skill_path);
+		assert.equal(report.selected.main.route_card.use_when_excerpt.section, 'use-when');
+		assert.equal(report.selected.main.route_card.do_not_use_excerpt.section, 'do-not-use-when');
+		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('Use When')));
+		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('INDEX.md')));
 		assert.ok(report.candidates.length <= 5);
 		assert.equal(report.read_plan.selection_limits.candidates, 5);
 		assert.equal(report.read_plan.selection_limits.main, 1);
@@ -102,6 +112,47 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 	} finally {
 		removeTempProject(projectPath);
 	}
+});
+
+test('uses pattern signal route cards to break same-priority architecture route ties', () => {
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Refactor state-machine-pattern status phase transitions, allowed lifecycle states, and irreversible history handling',
+		'--path',
+		'.mustflow/skills/state-machine-pattern/SKILL.md',
+		'--reason',
+		'code_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const report = JSON.parse(result.stdout);
+	const stateMachine = report.candidates.find((candidate) => candidate.skill === 'state-machine-pattern');
+	const strategy = report.candidates.find((candidate) => candidate.skill === 'strategy-pattern');
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.equal(report.selected.main.skill, 'state-machine-pattern');
+	assert.ok(stateMachine, report.candidates.map((candidate) => candidate.skill).join(', '));
+	assert.ok(stateMachine.matched_dimensions.includes('pattern_signal'));
+	assert.ok(stateMachine.selection_reasons.some((reason) => reason.startsWith('pattern_terms:')));
+	assert.ok(stateMachine.score_breakdown.pattern_signal_match > 0);
+	assert.ok(
+		report.candidates
+			.filter((candidate) => ['command-pattern', 'facade-pattern', 'strategy-pattern'].includes(candidate.skill))
+			.every((candidate) => stateMachine.score > candidate.score),
+		report.candidates
+			.map((candidate) => `${candidate.skill}:${candidate.score}`)
+			.join(', '),
+	);
+	if (strategy) {
+		assert.ok(strategy.matched_dimensions.includes('negative_signal'));
+		assert.ok(strategy.score_breakdown.negative_signal_penalty < 0);
+	}
+	assert.equal(stateMachine.route_card.index_read_policy, 'fallback_only');
+	assert.equal(stateMachine.route_card.use_when_excerpt.section, 'use-when');
+	assert.equal(stateMachine.route_card.do_not_use_excerpt.section, 'do-not-use-when');
 });
 
 test('keeps LLM token cost routes discoverable without reading the full index in the prompt', () => {

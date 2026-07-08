@@ -16,6 +16,10 @@ const DEFAULT_MAX_CANDIDATES = 5;
 const DEFAULT_MAX_MAIN = 1;
 const DEFAULT_MAX_ADJUNCTS = 2;
 const PATH_SKILL_HINT_SCORE = 25;
+const PATTERN_SIGNAL_TERM_SCORE = 12;
+const PATTERN_SIGNAL_MAX_SCORE = 48;
+const NEGATIVE_SIGNAL_TERM_PENALTY = -25;
+const NEGATIVE_SIGNAL_MAX_PENALTY = -75;
 const DOCS_TREE_MARKDOWN_PATH_PATTERN =
 	/(?:^|\/)(?:docs|docs-site|documentation|\.mustflow\/docs|\.mustflow\/context)\/.+\.(?:md|mdx)$/u;
 const ROOT_DOCUMENT_BASENAMES = [
@@ -56,8 +60,26 @@ export interface SkillRouteScoreBreakdown {
 	readonly reason_match: number;
 	readonly task_text_match: number;
 	readonly path_match: number;
+	readonly pattern_signal_match: number;
+	readonly negative_signal_penalty: number;
 	readonly route_type_weight: number;
 	readonly priority_weight: number;
+}
+
+export interface SkillRouteExcerptReference {
+	readonly source_path: string;
+	readonly section: 'use-when' | 'do-not-use-when';
+	readonly read_when: readonly string[];
+}
+
+export interface SkillRouteCard {
+	readonly source: 'route_metadata_and_skill_frontmatter';
+	readonly index_read_policy: 'fallback_only';
+	readonly compact_fields: readonly string[];
+	readonly matched_dimensions: readonly string[];
+	readonly use_when_excerpt: SkillRouteExcerptReference;
+	readonly do_not_use_excerpt: SkillRouteExcerptReference;
+	readonly read_strategy: readonly string[];
 }
 
 export interface SkillRouteResolvedCandidate {
@@ -71,6 +93,8 @@ export interface SkillRouteResolvedCandidate {
 	readonly score: number;
 	readonly score_breakdown: SkillRouteScoreBreakdown;
 	readonly selection_reasons: readonly string[];
+	readonly matched_dimensions: readonly string[];
+	readonly route_card: SkillRouteCard;
 	readonly verification_intents: readonly string[];
 }
 
@@ -129,6 +153,34 @@ interface SkillFrontmatterSummary {
 	readonly description: string | null;
 	readonly commandIntents: readonly string[];
 }
+
+interface RouteSignalProfile {
+	readonly positiveTerms: readonly string[];
+	readonly negativeTerms: readonly string[];
+}
+
+const ROUTE_SIGNAL_PROFILES: Readonly<Record<string, RouteSignalProfile>> = {
+	'command-pattern': {
+		positiveTerms: ['audit', 'command', 'durable', 'execute', 'idempotency', 'mutation', 'queue', 'redo', 'retry', 'transaction', 'undo'],
+		negativeTerms: ['facade', 'pricing', 'provider', 'state', 'strategy', 'transition', 'variant'],
+	},
+	'composition-over-inheritance': {
+		positiveTerms: ['class', 'composition', 'delegate', 'delegation', 'extend', 'inheritance', 'mixin', 'subclass'],
+		negativeTerms: ['command', 'facade', 'state', 'strategy'],
+	},
+	'facade-pattern': {
+		positiveTerms: ['coordinate', 'coordination', 'facade', 'orchestrate', 'orchestration', 'simplify', 'subsystem', 'wrapper'],
+		negativeTerms: ['algorithm', 'state', 'strategy', 'transition', 'variant'],
+	},
+	'state-machine-pattern': {
+		positiveTerms: ['allowed', 'history', 'irreversible', 'lifecycle', 'phase', 'state', 'status', 'transition', 'workflow'],
+		negativeTerms: ['algorithm', 'pricing', 'provider', 'strategy', 'variant', 'wrapper'],
+	},
+	'strategy-pattern': {
+		positiveTerms: ['algorithm', 'branch', 'discount', 'plan', 'policy', 'pricing', 'provider', 'region', 'selection', 'strategy', 'switch', 'variant'],
+		negativeTerms: ['adapter', 'audit', 'history', 'idempotency', 'lifecycle', 'phase', 'protocol', 'retry', 'state', 'status', 'transaction', 'transition'],
+	},
+};
 
 const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
 	primary: 18,
@@ -432,6 +484,14 @@ function countMatches(needles: readonly string[], haystack: readonly string[]): 
 	return needles.filter((needle) => haystackSet.has(needle)).length;
 }
 
+function collectMatchedTerms(needles: readonly string[], haystack: readonly string[]): string[] {
+	const haystackSet = new Set(haystack);
+
+	return [...new Set(needles.filter((needle) => haystackSet.has(needle)))].sort((left, right) =>
+		left.localeCompare(right),
+	);
+}
+
 function routeTextTerms(route: SkillIndexRoute, skillName: string): string[] {
 	return tokenize([
 		skillName,
@@ -442,6 +502,77 @@ function routeTextTerms(route: SkillIndexRoute, skillName: string): string[] {
 		route.expectedOutput,
 		route.skillPath,
 	].join(' '));
+}
+
+function createExcerptReference(skillPath: string, section: 'use-when' | 'do-not-use-when'): SkillRouteExcerptReference {
+	return {
+		source_path: skillPath,
+		section,
+		read_when: [
+			'candidate scores tie within the same route category',
+			'matched dimensions are too broad to choose a single skill',
+			'task language overlaps a listed negative or conflicting signal',
+		],
+	};
+}
+
+function createRouteCard(skillPath: string, matchedDimensions: readonly string[]): SkillRouteCard {
+	return {
+		source: 'route_metadata_and_skill_frontmatter',
+		index_read_policy: 'fallback_only',
+		compact_fields: [
+			'skill',
+			'skill_path',
+			'trigger',
+			'category',
+			'route_type',
+			'priority',
+			'applies_to_reasons',
+			'score_breakdown',
+			'selection_reasons',
+			'verification_intents',
+		],
+		matched_dimensions: matchedDimensions,
+		use_when_excerpt: createExcerptReference(skillPath, 'use-when'),
+		do_not_use_excerpt: createExcerptReference(skillPath, 'do-not-use-when'),
+		read_strategy: [
+			'Read the selected SKILL.md before editing matching scope.',
+			'For close ties, compare only Use When and Do Not Use When excerpts before loading full competing skills.',
+			'Keep .mustflow/skills/INDEX.md out of the prompt unless route metadata and excerpts are insufficient.',
+		],
+	};
+}
+
+function createPatternSignalBreakdown(
+	skill: string,
+	taskTerms: readonly string[],
+	pathTerms: readonly string[],
+): {
+	readonly positiveMatches: readonly string[];
+	readonly negativeMatches: readonly string[];
+	readonly patternScore: number;
+	readonly negativePenalty: number;
+} {
+	const profile = ROUTE_SIGNAL_PROFILES[skill];
+	if (!profile) {
+		return {
+			positiveMatches: [],
+			negativeMatches: [],
+			patternScore: 0,
+			negativePenalty: 0,
+		};
+	}
+
+	const inputTerms = [...new Set([...taskTerms, ...pathTerms])];
+	const positiveMatches = collectMatchedTerms(profile.positiveTerms, inputTerms);
+	const negativeMatches = collectMatchedTerms(profile.negativeTerms, inputTerms);
+
+	return {
+		positiveMatches,
+		negativeMatches,
+		patternScore: Math.min(positiveMatches.length * PATTERN_SIGNAL_TERM_SCORE, PATTERN_SIGNAL_MAX_SCORE),
+		negativePenalty: Math.max(negativeMatches.length * NEGATIVE_SIGNAL_TERM_PENALTY, NEGATIVE_SIGNAL_MAX_PENALTY),
+	};
 }
 
 function createCandidate(
@@ -458,19 +589,38 @@ function createCandidate(
 	const taskMatches = countMatches(taskTerms, terms);
 	const pathMatches = countMatches(pathTerms, terms);
 	const pathSkillHintMatched = pathSkillHints.has(skill);
+	const patternSignals = createPatternSignalBreakdown(skill, taskTerms, pathTerms);
 	const breakdown = {
 		reason_match: matchedReasons.length * 35,
 		task_text_match: taskMatches * 6,
 		path_match: pathMatches * 6 + (pathSkillHintMatched ? PATH_SKILL_HINT_SCORE : 0),
+		pattern_signal_match: patternSignals.patternScore,
+		negative_signal_penalty: patternSignals.negativePenalty,
 		route_type_weight: ROUTE_TYPE_WEIGHTS[metadata.routeType] ?? 0,
 		priority_weight: Math.max(0, Math.min(metadata.priority, 100)) / 5,
 	} satisfies SkillRouteScoreBreakdown;
 	const score = Object.values(breakdown).reduce((total, value) => total + value, 0);
+	const matchedDimensions = [
+		...(matchedReasons.length > 0 ? ['reason'] : []),
+		...(taskMatches > 0 ? ['task_terms'] : []),
+		...(pathMatches > 0 ? ['path_terms'] : []),
+		...(pathSkillHintMatched ? ['path_skill_hint'] : []),
+		...(patternSignals.positiveMatches.length > 0 ? ['pattern_signal'] : []),
+		...(patternSignals.negativeMatches.length > 0 ? ['negative_signal'] : []),
+		...(metadata.routeType !== 'unknown' ? ['route_type'] : []),
+		...(metadata.priority > 0 ? ['priority'] : []),
+	];
 	const selectionReasons = [
 		...matchedReasons.map((reason) => `reason:${reason}`),
 		...(taskMatches > 0 ? [`task_terms:${taskMatches}`] : []),
 		...(pathMatches > 0 ? [`path_terms:${pathMatches}`] : []),
 		...(pathSkillHintMatched ? [`path_skill_hint:${skill}`] : []),
+		...(patternSignals.positiveMatches.length > 0
+			? [`pattern_terms:${patternSignals.positiveMatches.join('|')}`]
+			: []),
+		...(patternSignals.negativeMatches.length > 0
+			? [`negative_terms:${patternSignals.negativeMatches.join('|')}`]
+			: []),
 		`route_type:${metadata.routeType}`,
 		`priority:${metadata.priority}`,
 	];
@@ -486,6 +636,8 @@ function createCandidate(
 		score,
 		score_breakdown: breakdown,
 		selection_reasons: selectionReasons,
+		matched_dimensions: matchedDimensions,
+		route_card: createRouteCard(route.skillPath, matchedDimensions),
 		verification_intents: route.commandIntents,
 	};
 }
