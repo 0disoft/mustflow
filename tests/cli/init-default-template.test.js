@@ -160,6 +160,9 @@ test('copies the default agent workflow into an empty project', () => {
 		const installedAgents = readText(path.join(projectPath, 'AGENTS.md'));
 		assert.match(installedAgents, /inherit the nearest parent mustflow root's preferences as defaults/);
 		assert.match(installedAgents, /Never inherit `\.mustflow\/config\/commands\.toml`/);
+		assert.match(installedAgents, /shared\s+workspace skill registry/);
+		assert.match(installedAgents, /They do not override the nested\s+repository's `AGENTS\.md`, command contract/);
+		assert.match(installedAgents, /do not treat that absence as meaning no applicable workspace-level skill exists/);
 
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);

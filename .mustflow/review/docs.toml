@@ -818,7 +818,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-04T12:39:37.110Z"
-last_touched_at = "2026-07-05T05:47:37.795Z"
+last_touched_at = "2026-07-08T22:11:01.986Z"
 
 [[documents]]
 path = "CHANGELOG.md"
@@ -1968,7 +1968,31 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-04T12:39:37.190Z"
-last_touched_at = "2026-07-06T01:57:16.391Z"
+last_touched_at = "2026-07-08T22:11:02.002Z"
+
+[[documents]]
+path = "templates/default/locales/es/AGENTS.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-08T22:11:02.011Z"
+last_touched_at = "2026-07-08T22:11:02.011Z"
+
+[[documents]]
+path = "templates/default/locales/fr/AGENTS.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-08T22:11:02.020Z"
+last_touched_at = "2026-07-08T22:11:02.020Z"
+
+[[documents]]
+path = "templates/default/locales/hi/AGENTS.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-08T22:11:02.030Z"
+last_touched_at = "2026-07-08T22:11:02.030Z"
 
 [[documents]]
 path = "templates/default/locales/ko/AGENTS.md"
@@ -1976,4 +2000,12 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-04T12:39:37.203Z"
-last_touched_at = "2026-07-06T01:57:16.400Z"
+last_touched_at = "2026-07-08T22:11:02.039Z"
+
+[[documents]]
+path = "templates/default/locales/zh/AGENTS.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-08T22:11:02.048Z"
+last_touched_at = "2026-07-08T22:11:02.048Z"

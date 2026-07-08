@@ -10,12 +10,12 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 21
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 21, status = "current" }
-translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 21, status = "needs_review" }
-translations.es = { path = "locales/es/AGENTS.md", source_revision = 21, status = "needs_review" }
-translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 21, status = "needs_review" }
-translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 21, status = "needs_review" }
+revision = 22
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 22, status = "current" }
+translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 22, status = "needs_review" }
+translations.es = { path = "locales/es/AGENTS.md", source_revision = 22, status = "needs_review" }
+translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 22, status = "needs_review" }
+translations.hi = { path = "locales/hi/AGENTS.md", source_revision = 22, status = "needs_review" }
 
 [documents."context.index"]
 source = "locales/en/.mustflow/context/INDEX.md"

@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 10
+revision: 11
 lifecycle: user-editable
 authority: binding
 ---
@@ -59,6 +59,9 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - secrets, गोपनीयता, destructive commands, और अनुमत संपादन मार्गों के सुरक्षा नियम संचयी होते हैं। अधिक सख्त नियम अपनाएं।  
 - nested रिपॉजिटरी में जाने पर संपादन से पहले उसका `AGENTS.md` और `.mustflow/config/*.toml` फिर से पढ़ें।  
 - यदि nested repository में local preferences file नहीं है, तो nested repository के `AGENTS.md` और command contract का पालन करते हुए निकटतम parent mustflow preferences को inherited defaults के रूप में लागू करें।
+- जब यह mustflow root nested repositories के लिए workspace के रूप में उपयोग हो, तो इस root के `.mustflow/skills/` router, routes, index, और installed `SKILL.md` files को shared workspace skill registry मानें। nested repository की local routing files के साथ इस shared registry को भी task procedures चुनने के लिए देखें।
+- Shared workspace skills केवल procedure guidance देती हैं। वे nested repository के `AGENTS.md`, command contract, edit scope, safety rules, या source of truth को override नहीं करतीं।
+- यदि किसी nested repository में local skill index नहीं है या वह अलग local agent convention उपयोग करती है, तो यह न मानें कि कोई workspace-level skill लागू नहीं है; child-repository authority को local रखते हुए shared workspace registry देखें।
 - स्पष्ट अनुरोध के बिना चुनी हुई child रिपॉजिटरी के बाहर संपादन न करें।  
 
 ## होस्ट-विशिष्ट निर्देश अनुकूलता

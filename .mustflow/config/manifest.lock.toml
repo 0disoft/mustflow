@@ -9,7 +9,7 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:5047be562c688b7637848a8c1a4346a1805c7af6a4a96b6db93c724767cb3932"
+content_hash = "sha256:1fc6cc5c7119189c188168c2662acd034291cbc0a1d7cba5a15be53f061ed60d"
 
 [files.".mustflow/config/commands.toml"]
 source = "repository"

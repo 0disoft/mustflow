@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 19
+revision: 20
 lifecycle: user-editable
 authority: binding
 ---
@@ -114,6 +114,15 @@ mustflow-managed details are under `.mustflow/`.
 - If the nested repository has no local preferences file, apply the nearest parent mustflow
   preferences as inherited defaults while still following the nested repository's `AGENTS.md` and
   command contract.
+- When this mustflow root is used as a workspace for nested repositories, treat this root's
+  `.mustflow/skills/` router, routes, index, and installed `SKILL.md` files as a shared
+  workspace skill registry. Check the shared registry for task procedures in addition to the
+  nested repository's local routing files.
+- Shared workspace skills provide procedure guidance only. They do not override the nested
+  repository's `AGENTS.md`, command contract, edit scope, safety rules, or source of truth.
+- If a nested repository lacks a local skill index or uses a different local agent convention,
+  do not treat that absence as meaning no applicable workspace-level skill exists; consult the
+  shared workspace registry while keeping child-repository authority local.
 - Do not edit outside the selected child repository unless explicitly requested.
 
 ## Host-Specific Instruction Compatibility

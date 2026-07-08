@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 10
+revision: 11
 lifecycle: user-editable
 authority: binding
 ---
@@ -60,6 +60,9 @@ authority: binding
 - 针对 secrets、隐私、破坏性命令和允许编辑路径的安全规则为累加，执行更严格的规则。  
 - 进入嵌套仓库时，编辑前应重新阅读该仓库的 `AGENTS.md` 和 `.mustflow/config/*.toml`。  
 - 如果嵌套仓库没有本地 preferences 文件，在继续遵循该仓库 `AGENTS.md` 和 command contract 的同时，使用最近父级 mustflow preferences 作为继承默认值。
+- 当此 mustflow root 被用作嵌套仓库的 workspace 时，应将此 root 下 `.mustflow/skills/` 的 router、routes、index 以及已安装的 `SKILL.md` 文件视为 shared workspace skill registry。除嵌套仓库的本地 routing 文件外，也要检查该共享 registry 来选择任务流程。
+- Shared workspace skills 只提供流程指导，不会覆盖嵌套仓库的 `AGENTS.md`、command contract、编辑范围、安全规则或事实来源。
+- 如果嵌套仓库没有本地 skill index，或使用不同的本地 agent convention，不要因此认定没有适用的 workspace-level skill；在保持子仓库权限本地化的前提下检查 shared workspace registry。
 - 未经明确请求，不得编辑所选子仓库之外的内容。  
 
 ## 宿主专用指令兼容性
