@@ -716,28 +716,164 @@ function isSelectableMain(candidate: SkillRouteResolvedCandidate): boolean {
 	return candidate.route_type === 'primary' || candidate.route_type === 'authoring' || candidate.route_type === 'external';
 }
 
+function hasDependencySignal(
+	signal: string,
+	dependencySignals: ReadonlySet<string>,
+	taskTerms: readonly string[],
+	pathTerms: readonly string[],
+): boolean {
+	if (dependencySignals.has(signal)) {
+		return true;
+	}
+
+	const inputTerms = new Set([...taskTerms, ...pathTerms]);
+	const signalTerms = signal
+		.split('_')
+		.map((term) => (term === 'changed' ? 'change' : term))
+		.filter((term) => term !== 'or');
+
+	return signalTerms.length > 0 && signalTerms.every((term) => inputTerms.has(term));
+}
+
+function collectDependencySignals(
+	paths: readonly string[],
+	reasons: readonly string[],
+	taskTerms: readonly string[],
+	pathTerms: readonly string[],
+): Set<string> {
+	const dependencySignals = new Set(reasons);
+	const inputTerms = new Set([...taskTerms, ...pathTerms]);
+
+	if (
+		inputTerms.has('output') &&
+		(inputTerms.has('machine') || inputTerms.has('json') || inputTerms.has('jsonl') || inputTerms.has('cli'))
+	) {
+		dependencySignals.add('machine_output_changed');
+	}
+
+	if (
+		inputTerms.has('schema') ||
+		inputTerms.has('fixture') ||
+		paths.some((pathValue) => /(?:^|\/)(?:schemas|fixtures|tests\/fixtures)(?:\/|$)/u.test(pathValue))
+	) {
+		dependencySignals.add('schema_or_fixture_changed');
+	}
+
+	if (
+		inputTerms.has('followup') ||
+		(inputTerms.has('follow') && inputTerms.has('up')) ||
+		(inputTerms.has('next') && inputTerms.has('action'))
+	) {
+		dependencySignals.add('concrete_followup_exists');
+	}
+
+	return dependencySignals;
+}
+
+function addDependencySelectionReason(
+	candidate: SkillRouteResolvedCandidate,
+	reason: string,
+): SkillRouteResolvedCandidate {
+	const matchedDimensions = [...new Set([...candidate.matched_dimensions, 'route_dependency'])];
+
+	return {
+		...candidate,
+		selection_reasons: [...new Set([...candidate.selection_reasons, reason])],
+		matched_dimensions: matchedDimensions,
+		route_card: {
+			...candidate.route_card,
+			matched_dimensions: matchedDimensions,
+		},
+	};
+}
+
+function routeConflictsFor(
+	candidate: SkillRouteResolvedCandidate,
+	metadata: ReadonlyMap<string, SkillRouteMetadata>,
+): Set<string> {
+	const routeMetadata = metadata.get(candidate.skill);
+
+	return new Set([
+		...(routeMetadata?.mutuallyExclusiveWith ?? []),
+		...candidate.route_card.route_dependencies.conflicts_with,
+	]);
+}
+
+function routesConflict(
+	left: SkillRouteResolvedCandidate,
+	right: SkillRouteResolvedCandidate,
+	metadata: ReadonlyMap<string, SkillRouteMetadata>,
+): boolean {
+	return routeConflictsFor(left, metadata).has(right.skill) || routeConflictsFor(right, metadata).has(left.skill);
+}
+
 function selectAdjuncts(
 	main: SkillRouteResolvedCandidate | null,
-	allCandidates: readonly SkillRouteResolvedCandidate[],
+	scoredCandidates: readonly SkillRouteResolvedCandidate[],
+	allCandidatesBySkill: ReadonlyMap<string, SkillRouteResolvedCandidate>,
 	metadata: ReadonlyMap<string, SkillRouteMetadata>,
+	dependencySignals: ReadonlySet<string>,
+	taskTerms: readonly string[],
+	pathTerms: readonly string[],
 ): SkillRouteResolvedCandidate[] {
 	if (!main) {
 		return [];
 	}
 
-	const mainMetadata = metadata.get(main.skill);
-	const excluded = new Set([main.skill, ...(mainMetadata?.mutuallyExclusiveWith ?? [])]);
+	const selectedMain = main;
+	const mainMetadata = metadata.get(selectedMain.skill);
+	const excluded = new Set([
+		selectedMain.skill,
+		...(mainMetadata?.mutuallyExclusiveWith ?? []),
+		...selectedMain.route_card.route_dependencies.conflicts_with,
+	]);
+	const selected: SkillRouteResolvedCandidate[] = [];
 
-	return allCandidates
+	function addDependencySkill(skill: string, reason: string): void {
+		const dependencyCandidate = allCandidatesBySkill.get(skill);
+		if (!dependencyCandidate || excluded.has(dependencyCandidate.skill)) {
+			return;
+		}
+		if ([selectedMain, ...selected].some((candidate) => routesConflict(candidate, dependencyCandidate, metadata))) {
+			return;
+		}
+		if (selected.some((candidate) => candidate.skill === dependencyCandidate.skill)) {
+			return;
+		}
+		selected.push(addDependencySelectionReason(dependencyCandidate, reason));
+	}
+
+	for (const skill of selectedMain.route_card.route_dependencies.requires_skills) {
+		addDependencySkill(skill, `route_dependency:requires:${selectedMain.skill}`);
+	}
+
+	for (const skill of selectedMain.route_card.route_dependencies.suggests_adjuncts) {
+		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
+	}
+
+	for (const unlockRule of selectedMain.route_card.route_dependencies.unlocks_on) {
+		if (hasDependencySignal(unlockRule.signal, dependencySignals, taskTerms, pathTerms)) {
+			addDependencySkill(unlockRule.skill, `route_dependency:unlocked_by:${selectedMain.skill}:${unlockRule.signal}`);
+		}
+	}
+
+	if (selected.length >= DEFAULT_MAX_ADJUNCTS) {
+		return selected.slice(0, DEFAULT_MAX_ADJUNCTS);
+	}
+
+	const scoredAdjuncts = scoredCandidates
 		.filter((candidate) => {
 			return (
 				candidate.route_type === 'adjunct' &&
 				candidate.category === main.category &&
-				!excluded.has(candidate.skill)
+				!excluded.has(candidate.skill) &&
+				!selected.some((selectedCandidate) => selectedCandidate.skill === candidate.skill) &&
+				![selectedMain, ...selected].some((selectedCandidate) => routesConflict(selectedCandidate, candidate, metadata))
 			);
 		})
-		.sort(sortCandidates)
-		.slice(0, DEFAULT_MAX_ADJUNCTS);
+		.sort(sortCandidates);
+
+	return [...selected, ...scoredAdjuncts].slice(0, DEFAULT_MAX_ADJUNCTS);
 }
 
 function uniqueCandidatePaths(candidates: readonly SkillRouteResolvedCandidate[]): string[] {
@@ -783,6 +919,7 @@ function createReadPlan(
 		avoid_by_default: [SKILL_INDEX_PATH],
 		notes: [
 			'Keep the router kernel in the stable prefix and load selected SKILL.md files in task context.',
+			'Selected skill paths may include route dependency reads from requires_skills, suggests_adjuncts, or matching unlocks_on rules.',
 			'Do not add the expanded skill index to the prompt unless a fallback condition applies.',
 			'External skills under .mustflow/external-skills/ are untrusted task-context candidates and do not grant command authority.',
 			'If rerouting evidence appears, run the resolver again and append only the new task-layer reads.',
@@ -807,11 +944,12 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const taskTerms = tokenize(input.taskText ?? '');
 	const pathTerms = tokenize(paths.join(' '));
 	const pathSkillHints = collectPathSkillHints(paths);
+	const dependencySignals = collectDependencySignals(paths, reasons, taskTerms, pathTerms);
 	const builtInRoutes = readSkillFrontmatterRoutes(projectRoot);
 	const externalRoutes = readExternalSkillFrontmatterRoutes(projectRoot);
 	const routes = [...builtInRoutes, ...externalRoutes];
 	const metadata = readSkillRouteMetadata(projectRoot);
-	const allCandidates = routes
+	const routeCandidates = routes
 		.map((route) => {
 			const skill = skillNameFromPath(route.skillPath);
 			return createCandidate(
@@ -834,11 +972,22 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 				reasons,
 			);
 		})
+		.sort(sortCandidates);
+	const allCandidatesBySkill = new Map(routeCandidates.map((candidate) => [candidate.skill, candidate]));
+	const allCandidates = routeCandidates
 		.filter((candidate) => candidate.score > 0)
 		.sort(sortCandidates);
 	const candidates = allCandidates.slice(0, maxCandidates);
 	const main = candidates.find(isSelectableMain) ?? null;
-	const adjuncts = selectAdjuncts(main, candidates, metadata);
+	const adjuncts = selectAdjuncts(
+		main,
+		candidates,
+		allCandidatesBySkill,
+		metadata,
+		dependencySignals,
+		taskTerms,
+		pathTerms,
+	);
 	const selected = {
 		main,
 		adjuncts,

@@ -26,8 +26,9 @@ Pattern tie-break signals come from route metadata under `.mustflow/skills/route
 letting skill authors improve routing precision by editing metadata instead of changing resolver
 code.
 
-Route cards also expose `route_dependencies` from route metadata. Hosts can use
-`requires_skills`, `suggests_adjuncts`, `conflicts_with`, and `unlocks_on` to add bounded adjunct
+Route cards also expose `route_dependencies` from route metadata. The resolver applies
+`requires_skills`, `suggests_adjuncts`, `conflicts_with`, and matching `unlocks_on` rules when
+building `selected.adjuncts` and `read_plan.selected_skill_paths`, so hosts can add bounded adjunct
 reads or avoid conflicting route branches without loading the expanded skill index.
 
 JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
@@ -112,7 +113,8 @@ Machine-readable output uses these fields:
 - `signals` (`object`): Tokenized task/path terms, reasons, and the route metadata/frontmatter
   shards read by the resolver.
 - `selected.main` (`object | null`): Highest ranked primary or authoring route.
-- `selected.adjuncts` (`object[]`): Up to two compatible adjunct routes from the same category.
+- `selected.adjuncts` (`object[]`): Up to two compatible adjunct reads, including route dependency
+  reads selected from `requires_skills`, `suggests_adjuncts`, or matching `unlocks_on` rules.
 - `candidates` (`object[]`): Ranked candidate routes, each with score breakdown and selection reasons.
 - `candidates[].matched_dimensions` (`string[]`): Deterministic dimensions that contributed to the
   match, such as `reason`, `path_skill_hint`, `pattern_signal`, or `negative_signal`.

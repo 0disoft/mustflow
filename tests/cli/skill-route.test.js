@@ -172,13 +172,15 @@ test('surfaces route dependency metadata in compact route cards', () => {
 		'--reason',
 		'public_api_change',
 		'--max-candidates',
-		'10',
+		'1',
 		'--json',
 	]);
 	const report = JSON.parse(result.stdout);
 	const publicJson = report.candidates.find((candidate) => candidate.skill === 'public-json-contract-change');
 
 	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.equal(report.candidates.length, 1);
+	assert.equal(report.selected.main.skill, 'public-json-contract-change');
 	assert.ok(publicJson, report.candidates.map((candidate) => candidate.skill).join(', '));
 	assert.deepEqual(publicJson.route_card.route_dependencies.requires_skills, []);
 	assert.deepEqual(publicJson.route_card.route_dependencies.suggests_adjuncts, [
@@ -190,6 +192,30 @@ test('surfaces route dependency metadata in compact route cards', () => {
 		{ signal: 'machine_output_changed', skill: 'cli-output-contract-review' },
 		{ signal: 'schema_or_fixture_changed', skill: 'completion-evidence-gate' },
 	]);
+	assert.deepEqual(
+		report.selected.adjuncts.map((candidate) => candidate.skill),
+		['cli-output-contract-review', 'completion-evidence-gate'],
+	);
+	assert.ok(
+		report.selected.adjuncts.every((candidate) => candidate.matched_dimensions.includes('route_dependency')),
+	);
+	assert.ok(
+		report.selected.adjuncts.every((candidate) =>
+			candidate.selection_reasons.some((reason) => reason.startsWith('route_dependency:')),
+		),
+	);
+	assert.deepEqual(report.read_plan.selected_skill_paths, [
+		'.mustflow/skills/public-json-contract-change/SKILL.md',
+		'.mustflow/skills/cli-output-contract-review/SKILL.md',
+		'.mustflow/skills/completion-evidence-gate/SKILL.md',
+	]);
+	assert.deepEqual(report.read_plan.candidate_skill_paths, [
+		'.mustflow/skills/public-json-contract-change/SKILL.md',
+	]);
+	assert.ok(
+		report.read_plan.notes.some((note) => note.includes('route dependency reads')),
+		report.read_plan.notes.join('\n'),
+	);
 });
 
 test('keeps LLM token cost routes discoverable without reading the full index in the prompt', () => {

@@ -25,9 +25,10 @@ JSON 출력에는 `read_plan`도 포함됩니다. 호스트 통합은 이 계획
 동작하면서도, skill 작성자는 resolver 코드를 바꾸지 않고 metadata 수정만으로 routing 정밀도를
 높일 수 있습니다.
 
-route card는 route metadata의 `route_dependencies`도 노출합니다. 호스트는
-`requires_skills`, `suggests_adjuncts`, `conflicts_with`, `unlocks_on`을 사용해 확장 skill
-index를 읽지 않고도 필요한 adjunct skill을 추가하거나 충돌 route 가지를 피할 수 있습니다.
+route card는 route metadata의 `route_dependencies`도 노출합니다. resolver는
+`requires_skills`, `suggests_adjuncts`, `conflicts_with`, 일치하는 `unlocks_on` 규칙을
+`selected.adjuncts`와 `read_plan.selected_skill_paths`에 반영합니다. 그래서 호스트는 확장
+skill index를 읽지 않고도 필요한 adjunct skill을 추가하거나 충돌 route 가지를 피할 수 있습니다.
 
 JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
 skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
@@ -72,7 +73,9 @@ npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts
 - `signals` (`object`): 토큰화된 작업·경로 용어, 이유, resolver가 읽은 route metadata와
   frontmatter shard입니다.
 - `selected.main` (`object | null`): 가장 높은 점수의 primary 또는 authoring route입니다.
-- `selected.adjuncts` (`object[]`): 같은 category에서 호환되는 adjunct route를 최대 두 개까지 보여줍니다.
+- `selected.adjuncts` (`object[]`): `requires_skills`, `suggests_adjuncts`, 일치하는
+  `unlocks_on` 규칙에서 선택된 route dependency read를 포함해 호환되는 adjunct read를 최대 두
+  개까지 보여줍니다.
 - `candidates` (`object[]`): 점수 분해와 선택 이유를 포함한 route 후보 목록입니다.
 - `candidates[].matched_dimensions` (`string[]`): `reason`, `path_skill_hint`,
   `pattern_signal`, `negative_signal`처럼 후보 매칭에 기여한 결정적 차원입니다.
