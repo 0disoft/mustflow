@@ -20,6 +20,11 @@ JSON 출력에는 `read_plan`도 포함됩니다. 호스트 통합은 이 계획
 참조를 제공합니다. 호스트 통합은 이 참조로 동점 후보를 먼저 좁힌 뒤, 필요한 경우에만
 경쟁 `SKILL.md` 전체나 확장 index를 읽을 수 있습니다.
 
+패턴 동점 해소 신호는 `.mustflow/skills/routes.toml`의 `contexts.positive_terms`,
+`contexts.negative_terms` 같은 route metadata에서 옵니다. 이렇게 하면 resolver는 결정적으로
+동작하면서도, skill 작성자는 resolver 코드를 바꾸지 않고 metadata 수정만으로 routing 정밀도를
+높일 수 있습니다.
+
 JSON 출력에는 `script_pack_suggestions`도 포함될 수 있습니다. 이 값은 route 입력과 선택된
 skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 실행하지 않고 명령 권한도 주지
 않으며, 호출자가 저장소 명령 계약 안에서 검토할 수 있는 선택적 helper만 알려줍니다.

@@ -14,6 +14,14 @@ export interface SkillRouteMetadata {
 	readonly routeType?: string;
 	readonly priority?: unknown;
 	readonly mutuallyExclusiveWith: readonly string[];
+	readonly contexts: {
+		readonly fileTypes: readonly string[];
+		readonly frameworks: readonly string[];
+		readonly layers: readonly string[];
+		readonly patternCategories: readonly string[];
+		readonly positiveTerms: readonly string[];
+		readonly negativeTerms: readonly string[];
+	};
 }
 
 export interface CheckOptions {

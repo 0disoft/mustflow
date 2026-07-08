@@ -48,17 +48,38 @@ route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change"]
 
+[routes."composition-over-inheritance".contexts]
+file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
+layers = ["domain", "service", "model"]
+pattern_categories = ["delegation", "class_hierarchy"]
+positive_terms = ["class", "composition", "delegate", "delegation", "extend", "inheritance", "mixin", "subclass"]
+negative_terms = ["command", "facade", "state", "strategy"]
+
 [routes."strategy-pattern"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change"]
 
+[routes."strategy-pattern".contexts]
+file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
+layers = ["domain", "service", "policy", "pricing", "permission", "provider_selection"]
+pattern_categories = ["variant_selection", "algorithm_policy", "branch_extraction"]
+positive_terms = ["algorithm", "branch", "discount", "plan", "policy", "pricing", "provider", "region", "selection", "strategy", "switch", "variant"]
+negative_terms = ["adapter", "audit", "history", "idempotency", "lifecycle", "phase", "protocol", "retry", "state", "status", "transaction", "transition"]
+
 [routes."command-pattern"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."command-pattern".contexts]
+file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
+layers = ["application", "service", "workflow", "queue", "mutation"]
+pattern_categories = ["durable_mutation", "undo_redo", "transaction_command"]
+positive_terms = ["audit", "command", "durable", "execute", "idempotency", "mutation", "queue", "redo", "retry", "transaction", "undo"]
+negative_terms = ["facade", "pricing", "provider", "state", "strategy", "transition", "variant"]
 
 [routes."command-contract-authoring"]
 category = "workflow_contracts"
@@ -126,6 +147,13 @@ route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change"]
 
+[routes."facade-pattern".contexts]
+file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
+layers = ["application", "service", "orchestration", "integration"]
+pattern_categories = ["subsystem_simplification", "orchestration_boundary"]
+positive_terms = ["coordinate", "coordination", "facade", "orchestrate", "orchestration", "simplify", "subsystem", "wrapper"]
+negative_terms = ["algorithm", "state", "strategy", "transition", "variant"]
+
 [routes."pure-core-imperative-shell"]
 category = "architecture_patterns"
 route_type = "primary"
@@ -137,6 +165,13 @@ category = "architecture_patterns"
 route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."state-machine-pattern".contexts]
+file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
+layers = ["domain", "workflow", "lifecycle", "state"]
+pattern_categories = ["state_transition", "lifecycle_model", "allowed_action"]
+positive_terms = ["allowed", "history", "irreversible", "lifecycle", "phase", "state", "status", "transition", "workflow"]
+negative_terms = ["algorithm", "pricing", "provider", "strategy", "variant", "wrapper"]
 
 [routes."result-option"]
 category = "architecture_patterns"

@@ -64,6 +64,35 @@ test('skill route selection convention treats authoring as a main route', () => 
 	);
 });
 
+test('architecture pattern routes carry data-driven context signals', () => {
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+
+	assert.equal(routes, templateRoutes);
+	for (const routeName of [
+		'composition-over-inheritance',
+		'strategy-pattern',
+		'command-pattern',
+		'facade-pattern',
+		'state-machine-pattern',
+	]) {
+		const routeContext = routes.match(
+			new RegExp(`\\[routes\\."${routeName}"\\.contexts\\]([\\s\\S]*?)(?=\\n\\[routes\\."|$)`, 'u'),
+		)?.[1];
+		assert.ok(routeContext, routeName);
+		assert.match(routeContext, /positive_terms = \[[^\]]+\]/u, `${routeName} should declare positive_terms`);
+		assert.match(routeContext, /negative_terms = \[[^\]]+\]/u, `${routeName} should declare negative_terms`);
+	}
+	assert.match(
+		routes,
+		/\[routes\."state-machine-pattern"\.contexts\][\s\S]*?positive_terms = \[[^\]]*"lifecycle"[\s\S]*?"transition"[\s\S]*?\]/u,
+	);
+	assert.match(
+		routes,
+		/\[routes\."strategy-pattern"\.contexts\][\s\S]*?negative_terms = \[[^\]]*"state"[\s\S]*?"transition"[\s\S]*?\]/u,
+	);
+});
+
 test('skill route metadata covers declared trigger axes for integration and framework skills', () => {
 	const routes = readText('.mustflow/skills/routes.toml');
 	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');

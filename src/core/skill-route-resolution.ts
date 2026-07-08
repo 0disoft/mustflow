@@ -146,6 +146,7 @@ interface SkillRouteMetadata {
 	readonly priority: number;
 	readonly appliesToReasons: readonly string[];
 	readonly mutuallyExclusiveWith: readonly string[];
+	readonly signalProfile: RouteSignalProfile;
 }
 
 interface SkillFrontmatterSummary {
@@ -158,29 +159,6 @@ interface RouteSignalProfile {
 	readonly positiveTerms: readonly string[];
 	readonly negativeTerms: readonly string[];
 }
-
-const ROUTE_SIGNAL_PROFILES: Readonly<Record<string, RouteSignalProfile>> = {
-	'command-pattern': {
-		positiveTerms: ['audit', 'command', 'durable', 'execute', 'idempotency', 'mutation', 'queue', 'redo', 'retry', 'transaction', 'undo'],
-		negativeTerms: ['facade', 'pricing', 'provider', 'state', 'strategy', 'transition', 'variant'],
-	},
-	'composition-over-inheritance': {
-		positiveTerms: ['class', 'composition', 'delegate', 'delegation', 'extend', 'inheritance', 'mixin', 'subclass'],
-		negativeTerms: ['command', 'facade', 'state', 'strategy'],
-	},
-	'facade-pattern': {
-		positiveTerms: ['coordinate', 'coordination', 'facade', 'orchestrate', 'orchestration', 'simplify', 'subsystem', 'wrapper'],
-		negativeTerms: ['algorithm', 'state', 'strategy', 'transition', 'variant'],
-	},
-	'state-machine-pattern': {
-		positiveTerms: ['allowed', 'history', 'irreversible', 'lifecycle', 'phase', 'state', 'status', 'transition', 'workflow'],
-		negativeTerms: ['algorithm', 'pricing', 'provider', 'strategy', 'variant', 'wrapper'],
-	},
-	'strategy-pattern': {
-		positiveTerms: ['algorithm', 'branch', 'discount', 'plan', 'policy', 'pricing', 'provider', 'region', 'selection', 'strategy', 'switch', 'variant'],
-		negativeTerms: ['adapter', 'audit', 'history', 'idempotency', 'lifecycle', 'phase', 'protocol', 'retry', 'state', 'status', 'transaction', 'transition'],
-	},
-};
 
 const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
 	primary: 18,
@@ -269,6 +247,21 @@ function readStringArrayFromTable(table: TomlTable, key: string): string[] {
 	return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
 		? value.map((entry) => entry.trim()).filter(Boolean)
 		: [];
+}
+
+function readRouteSignalProfile(route: TomlTable): RouteSignalProfile {
+	const contexts = route.contexts;
+	if (!isRecord(contexts)) {
+		return {
+			positiveTerms: [],
+			negativeTerms: [],
+		};
+	}
+
+	return {
+		positiveTerms: tokenize(readStringArrayFromTable(contexts, 'positive_terms').join(' ')),
+		negativeTerms: tokenize(readStringArrayFromTable(contexts, 'negative_terms').join(' ')),
+	};
 }
 
 function readFrontmatterBlock(content: string): string[] {
@@ -361,6 +354,7 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 				priority: Number.isInteger(route.priority) ? Number(route.priority) : 0,
 				appliesToReasons: readStringArrayFromTable(route, 'applies_to_reasons'),
 				mutuallyExclusiveWith: readStringArrayFromTable(route, 'mutually_exclusive_with'),
+				signalProfile: readRouteSignalProfile(route),
 			});
 		}
 	} catch {
@@ -544,7 +538,7 @@ function createRouteCard(skillPath: string, matchedDimensions: readonly string[]
 }
 
 function createPatternSignalBreakdown(
-	skill: string,
+	signalProfile: RouteSignalProfile,
 	taskTerms: readonly string[],
 	pathTerms: readonly string[],
 ): {
@@ -553,8 +547,7 @@ function createPatternSignalBreakdown(
 	readonly patternScore: number;
 	readonly negativePenalty: number;
 } {
-	const profile = ROUTE_SIGNAL_PROFILES[skill];
-	if (!profile) {
+	if (signalProfile.positiveTerms.length === 0 && signalProfile.negativeTerms.length === 0) {
 		return {
 			positiveMatches: [],
 			negativeMatches: [],
@@ -564,8 +557,8 @@ function createPatternSignalBreakdown(
 	}
 
 	const inputTerms = [...new Set([...taskTerms, ...pathTerms])];
-	const positiveMatches = collectMatchedTerms(profile.positiveTerms, inputTerms);
-	const negativeMatches = collectMatchedTerms(profile.negativeTerms, inputTerms);
+	const positiveMatches = collectMatchedTerms(signalProfile.positiveTerms, inputTerms);
+	const negativeMatches = collectMatchedTerms(signalProfile.negativeTerms, inputTerms);
 
 	return {
 		positiveMatches,
@@ -589,7 +582,7 @@ function createCandidate(
 	const taskMatches = countMatches(taskTerms, terms);
 	const pathMatches = countMatches(pathTerms, terms);
 	const pathSkillHintMatched = pathSkillHints.has(skill);
-	const patternSignals = createPatternSignalBreakdown(skill, taskTerms, pathTerms);
+	const patternSignals = createPatternSignalBreakdown(metadata.signalProfile, taskTerms, pathTerms);
 	const breakdown = {
 		reason_match: matchedReasons.length * 35,
 		task_text_match: taskMatches * 6,
@@ -769,6 +762,10 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 					priority: 0,
 					appliesToReasons: [],
 					mutuallyExclusiveWith: [],
+					signalProfile: {
+						positiveTerms: [],
+						negativeTerms: [],
+					},
 				},
 				taskTerms,
 				pathTerms,

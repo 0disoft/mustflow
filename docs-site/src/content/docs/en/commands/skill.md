@@ -21,6 +21,11 @@ fallback-only index policy, and the selected skill's `Use When` / `Do Not Use Wh
 references. Host integrations can use those excerpt references to break close route ties before
 loading full competing `SKILL.md` files or the expanded index.
 
+Pattern tie-break signals come from route metadata under `.mustflow/skills/routes.toml`, such as
+`contexts.positive_terms` and `contexts.negative_terms`. This keeps the resolver deterministic while
+letting skill authors improve routing precision by editing metadata instead of changing resolver
+code.
+
 JSON output may also include `script_pack_suggestions`, a read-only helper list derived from the
 route input and selected skill candidates. These suggestions do not run scripts or grant command
 authority; they only name optional helpers the caller may inspect under the repository command

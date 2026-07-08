@@ -1266,6 +1266,39 @@ function readOptionalStringArray(value: unknown, label: string, issues: CheckIss
 	return value.map((entry) => entry.trim());
 }
 
+function readOptionalSlugArray(value: unknown, label: string, issues: CheckIssue[]): string[] {
+	const values = readOptionalStringArray(value, label, issues);
+
+	for (const value of values) {
+		if (!/^[a-z][a-z0-9_-]*$/u.test(value)) {
+			pushStrictIssue(issues, `${label} entry "${value}" must use lowercase slug text`);
+		}
+	}
+
+	return values;
+}
+
+function readSkillRouteMetadataContexts(
+	value: unknown,
+	label: string,
+	issues: CheckIssue[],
+): SkillRouteMetadata['contexts'] {
+	if (value !== undefined && !isRecord(value)) {
+		pushStrictIssue(issues, `${label}.contexts must be a TOML table`);
+	}
+
+	const contexts = isRecord(value) ? value : {};
+
+	return {
+		fileTypes: readOptionalSlugArray(contexts.file_types, `${label}.contexts.file_types`, issues),
+		frameworks: readOptionalSlugArray(contexts.frameworks, `${label}.contexts.frameworks`, issues),
+		layers: readOptionalSlugArray(contexts.layers, `${label}.contexts.layers`, issues),
+		patternCategories: readOptionalSlugArray(contexts.pattern_categories, `${label}.contexts.pattern_categories`, issues),
+		positiveTerms: readOptionalSlugArray(contexts.positive_terms, `${label}.contexts.positive_terms`, issues),
+		negativeTerms: readOptionalSlugArray(contexts.negative_terms, `${label}.contexts.negative_terms`, issues),
+	};
+}
+
 function validateSkillRouteMetadataTable(
 	skillName: string,
 	route: TomlTable,
@@ -1284,6 +1317,7 @@ function validateSkillRouteMetadataTable(
 		`${label}.mutually_exclusive_with`,
 		issues,
 	);
+	const contexts = readSkillRouteMetadataContexts(route.contexts, label, issues);
 
 	if (!category) {
 		pushStrictIssue(issues, `${label}.category must be one of ${[...ALLOWED_SKILL_ROUTE_CATEGORIES].join(', ')}`);
@@ -1315,6 +1349,7 @@ function validateSkillRouteMetadataTable(
 		routeType,
 		priority: route.priority,
 		mutuallyExclusiveWith,
+		contexts,
 	};
 }
 
