@@ -11,14 +11,17 @@ import {
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import { withScriptPackChildProcessGuard } from '../lib/script-pack-execution-guard.js';
 import {
 	findScriptPackScript,
 	listScriptPackScripts,
 	SCRIPT_PACKS,
+	SCRIPT_PACK_SAFETY_CONTRACT,
 	type ScriptPackDefinition,
 	type ScriptPackPhase,
 	type ScriptPackRiskLevel,
 	type ScriptPackCost,
+	type ScriptPackSafetyContract,
 	type ScriptPackScriptDefinition,
 } from '../lib/script-pack-registry.js';
 import {
@@ -54,6 +57,7 @@ interface ScriptPackCatalogScript {
 	readonly risk_level: ScriptPackRiskLevel;
 	readonly cost: ScriptPackCost;
 	readonly report_schema_file: string | null;
+	readonly safety_contract: ScriptPackSafetyContract;
 }
 
 interface ScriptPackCatalogPack {
@@ -99,6 +103,7 @@ function createCatalogReport(mustflowRoot: string, packs: readonly ScriptPackDef
 				risk_level: script.riskLevel,
 				cost: script.cost,
 				report_schema_file: script.reportSchemaFile,
+				safety_contract: SCRIPT_PACK_SAFETY_CONTRACT,
 			})),
 		})),
 		issues: [],
@@ -374,8 +379,10 @@ async function runScriptPackScript(args: string[], reporter: Reporter, lang: Cli
 		return 1;
 	}
 
-	const runner = await script.loadRunner();
-	return runner(scriptArgs, reporter, lang);
+	return withScriptPackChildProcessGuard(async () => {
+		const runner = await script.loadRunner();
+		return runner(scriptArgs, reporter, lang);
+	});
 }
 
 export async function runScriptPack(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {

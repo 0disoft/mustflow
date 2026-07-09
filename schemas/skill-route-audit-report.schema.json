@@ -18,6 +18,7 @@
     "input_hash",
     "counts",
     "inventory",
+    "resolution",
     "findings",
     "issues"
   ],
@@ -45,6 +46,7 @@
     "input_hash": { "$ref": "#/$defs/sha256" },
     "counts": { "$ref": "#/$defs/counts" },
     "inventory": { "$ref": "#/$defs/inventory" },
+    "resolution": { "$ref": "#/$defs/resolution" },
     "findings": {
       "type": "array",
       "items": { "$ref": "#/$defs/finding" }
@@ -105,6 +107,40 @@
         "manifest_skill_creates": { "$ref": "#/$defs/stringArray" },
         "manifest_profile_skills": { "$ref": "#/$defs/stringArray" },
         "i18n_skill_documents": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "registryStatus": {
+      "enum": ["ok", "issues_found", "partial", "not_available", "not_evaluated"]
+    },
+    "registryScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "profile", "skill_root", "route_metadata", "index", "manifest", "i18n", "note"],
+      "properties": {
+        "status": { "$ref": "#/$defs/registryStatus" },
+        "profile": { "type": ["string", "null"] },
+        "skill_root": { "type": ["string", "null"] },
+        "route_metadata": { "type": ["string", "null"] },
+        "index": { "type": ["string", "null"] },
+        "manifest": { "type": ["string", "null"] },
+        "i18n": { "type": ["string", "null"] },
+        "note": { "type": "string" }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_registry",
+        "packaged_template_registry",
+        "shared_workspace_registry",
+        "active_install_profile"
+      ],
+      "properties": {
+        "local_registry": { "$ref": "#/$defs/registryScope" },
+        "packaged_template_registry": { "$ref": "#/$defs/registryScope" },
+        "shared_workspace_registry": { "$ref": "#/$defs/registryScope" },
+        "active_install_profile": { "$ref": "#/$defs/registryScope" }
       }
     },
     "finding": {

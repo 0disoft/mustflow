@@ -61,6 +61,26 @@ export interface SkillRouteAuditInventory {
 	readonly i18n_skill_documents: readonly string[];
 }
 
+export type SkillRouteAuditRegistryStatus = 'ok' | 'issues_found' | 'partial' | 'not_available' | 'not_evaluated';
+
+export interface SkillRouteAuditRegistryScope {
+	readonly status: SkillRouteAuditRegistryStatus;
+	readonly profile: string | null;
+	readonly skill_root: string | null;
+	readonly route_metadata: string | null;
+	readonly index: string | null;
+	readonly manifest: string | null;
+	readonly i18n: string | null;
+	readonly note: string;
+}
+
+export interface SkillRouteAuditResolution {
+	readonly local_registry: SkillRouteAuditRegistryScope;
+	readonly packaged_template_registry: SkillRouteAuditRegistryScope;
+	readonly shared_workspace_registry: SkillRouteAuditRegistryScope;
+	readonly active_install_profile: SkillRouteAuditRegistryScope;
+}
+
 export interface SkillRouteAuditInput {
 	readonly source_skill_root: '.mustflow/skills';
 	readonly template_skill_root: 'templates/default/locales/en/.mustflow/skills';
@@ -82,6 +102,7 @@ export interface SkillRouteAuditReport {
 	readonly input_hash: string;
 	readonly counts: SkillRouteAuditCounts;
 	readonly inventory: SkillRouteAuditInventory;
+	readonly resolution: SkillRouteAuditResolution;
 	readonly findings: readonly SkillRouteAuditFinding[];
 	readonly issues: readonly string[];
 }
@@ -108,6 +129,7 @@ const TEMPLATE_SKILL_ROOT = 'templates/default/locales/en/.mustflow/skills';
 const TEMPLATE_ROUTES_PATH = 'templates/default/locales/en/.mustflow/skills/routes.toml';
 const TEMPLATE_MANIFEST_PATH = 'templates/default/manifest.toml';
 const TEMPLATE_I18N_PATH = 'templates/default/i18n.toml';
+const MANIFEST_LOCK_PATH = '.mustflow/config/manifest.lock.toml';
 const SKILL_PATH_PATTERN = /^\.mustflow\/skills\/([^/]+)\/SKILL\.md$/u;
 
 function normalizePath(value: string): string {
@@ -297,6 +319,30 @@ function readTemplateManifest(projectRoot: string, issues: string[]): {
 	}
 }
 
+function readActiveInstallProfile(projectRoot: string, issues: string[]): string | null {
+	try {
+		if (!existsSync(path.join(projectRoot, ...MANIFEST_LOCK_PATH.split('/')))) {
+			return null;
+		}
+
+		const parsed = readMustflowOwnedTomlFile(projectRoot, MANIFEST_LOCK_PATH);
+		const profile = isRecord(parsed) && isRecord(parsed.template) && typeof parsed.template.profile === 'string'
+			? parsed.template.profile.trim()
+			: '';
+
+		if (profile.length === 0) {
+			issues.push(`${MANIFEST_LOCK_PATH} does not declare a non-empty [template].profile value`);
+			return null;
+		}
+
+		return profile;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		issues.push(`Could not read ${MANIFEST_LOCK_PATH}: ${message}`);
+		return null;
+	}
+}
+
 function readI18nDocuments(projectRoot: string, issues: string[]): Map<string, I18nDocumentSummary> {
 	const documents = new Map<string, I18nDocumentSummary>();
 
@@ -372,10 +418,95 @@ function compareSetPresence(
 
 function createInputHash(reportInput: {
 	readonly inventory: SkillRouteAuditInventory;
+	readonly resolution: SkillRouteAuditResolution;
 	readonly findings: readonly SkillRouteAuditFinding[];
 	readonly issues: readonly string[];
 }): string {
 	return sha256(JSON.stringify(reportInput));
+}
+
+function hasFindingCodePrefix(findings: readonly SkillRouteAuditFinding[], prefixes: readonly string[]): boolean {
+	return findings.some((finding) => prefixes.some((prefix) => finding.code.startsWith(prefix)));
+}
+
+function hasIssueMention(issues: readonly string[], paths: readonly string[]): boolean {
+	return issues.some((issue) => paths.some((pathValue) => issue.includes(pathValue)));
+}
+
+function createResolution(
+	inventory: SkillRouteAuditInventory,
+	findings: readonly SkillRouteAuditFinding[],
+	issues: readonly string[],
+	activeInstallProfile: string | null,
+): SkillRouteAuditResolution {
+	const localPartial = hasIssueMention(issues, [SOURCE_SKILL_ROOT, SOURCE_INDEX_PATH, SOURCE_ROUTES_PATH]);
+	const localIssues = hasFindingCodePrefix(findings, ['skill_', 'route_', 'index_', 'frontmatter_']);
+	const templateAvailable =
+		inventory.template_skills.length > 0 ||
+		inventory.manifest_skill_creates.length > 0 ||
+		inventory.manifest_profile_skills.length > 0 ||
+		inventory.i18n_skill_documents.length > 0;
+	const templatePartial = hasIssueMention(issues, [TEMPLATE_SKILL_ROOT, TEMPLATE_ROUTES_PATH, TEMPLATE_MANIFEST_PATH, TEMPLATE_I18N_PATH]);
+	const templateIssues = hasFindingCodePrefix(findings, ['template_', 'manifest_', 'i18n_']);
+	const activeInstallPartial = hasIssueMention(issues, [MANIFEST_LOCK_PATH]);
+	const activeInstallIssues = findings.some((finding) =>
+		finding.code === 'route_without_skill' || finding.code === 'index_without_skill'
+	);
+	const activeInstallStatus: SkillRouteAuditRegistryStatus = activeInstallPartial
+		? 'partial'
+		: activeInstallProfile === null
+			? 'not_available'
+			: activeInstallIssues
+				? 'issues_found'
+				: 'ok';
+
+	return {
+		local_registry: {
+			status: localPartial ? 'partial' : localIssues ? 'issues_found' : 'ok',
+			profile: null,
+			skill_root: SOURCE_SKILL_ROOT,
+			route_metadata: SOURCE_ROUTES_PATH,
+			index: SOURCE_INDEX_PATH,
+			manifest: null,
+			i18n: null,
+			note: 'Local registry status compares the installed skill files, routes.toml, and INDEX.md inside mustflow_root.',
+		},
+		packaged_template_registry: {
+			status: templatePartial ? 'partial' : !templateAvailable ? 'not_available' : templateIssues ? 'issues_found' : 'ok',
+			profile: null,
+			skill_root: TEMPLATE_SKILL_ROOT,
+			route_metadata: TEMPLATE_ROUTES_PATH,
+			index: null,
+			manifest: TEMPLATE_MANIFEST_PATH,
+			i18n: TEMPLATE_I18N_PATH,
+			note: 'Packaged template status compares source skills with the default install template, manifest creates, profiles, and i18n metadata.',
+		},
+		shared_workspace_registry: {
+			status: 'not_evaluated',
+			profile: null,
+			skill_root: null,
+			route_metadata: null,
+			index: null,
+			manifest: null,
+			i18n: null,
+			note: 'This script-pack audits the current mustflow_root only; agents in nested repositories must separately inspect any parent shared workspace skill registry named by AGENTS.md.',
+		},
+		active_install_profile: {
+			status: activeInstallStatus,
+			profile: activeInstallProfile,
+			skill_root: SOURCE_SKILL_ROOT,
+			route_metadata: SOURCE_ROUTES_PATH,
+			index: SOURCE_INDEX_PATH,
+			manifest: MANIFEST_LOCK_PATH,
+			i18n: null,
+			note:
+				activeInstallProfile === null
+					? `No active install profile was found in ${MANIFEST_LOCK_PATH}; use local_registry for current files and packaged_template_registry for built-in template coverage.`
+					: activeInstallIssues
+						? `Active install profile is "${activeInstallProfile}". Route or index entries reference skills absent from the current .mustflow/skills install surface; compare packaged_template_registry and shared_workspace_registry before treating a related skill as missing from mustflow.`
+						: `Active install profile is "${activeInstallProfile}". Current route and index entries resolve to local skill files for this installed profile.`,
+		},
+	};
 }
 
 export function auditSkillRoutes(projectRoot: string): SkillRouteAuditReport {
@@ -392,6 +523,7 @@ export function auditSkillRoutes(projectRoot: string): SkillRouteAuditReport {
 	const manifestCreateSkillNames = uniqueSorted(manifest.creates.map((entry) => skillFromSkillPath(entry)).filter(Boolean) as string[]);
 	const i18nDocuments = readI18nDocuments(root, issues);
 	const i18nSkillNames = uniqueSorted([...i18nDocuments.keys()].map((id) => id.replace(/^skill\./u, '')));
+	const activeInstallProfile = readActiveInstallProfile(root, issues);
 	const findings: SkillRouteAuditFinding[] = [];
 
 	compareSetPresence(findings, sourceSkillNames, routeSkillNames, {
@@ -573,6 +705,7 @@ export function auditSkillRoutes(projectRoot: string): SkillRouteAuditReport {
 		manifest_profile_skills: manifestProfileSkills,
 		i18n_skill_documents: i18nSkillNames,
 	} satisfies SkillRouteAuditInventory;
+	const resolution = createResolution(inventory, findings, issues, activeInstallProfile);
 	const status: SkillRouteAuditStatus = issues.length > 0 ? 'partial' : findings.length > 0 ? 'issues_found' : 'ok';
 
 	return {
@@ -591,7 +724,7 @@ export function auditSkillRoutes(projectRoot: string): SkillRouteAuditReport {
 			template_manifest: TEMPLATE_MANIFEST_PATH,
 			template_i18n: TEMPLATE_I18N_PATH,
 		},
-		input_hash: createInputHash({ inventory, findings, issues }),
+		input_hash: createInputHash({ inventory, resolution, findings, issues }),
 		counts: {
 			source_skills: sourceSkillNames.length,
 			index_routes: indexSkillNames.length,
@@ -602,6 +735,7 @@ export function auditSkillRoutes(projectRoot: string): SkillRouteAuditReport {
 			i18n_skill_documents: i18nSkillNames.length,
 		},
 		inventory,
+		resolution,
 		findings,
 		issues,
 	};

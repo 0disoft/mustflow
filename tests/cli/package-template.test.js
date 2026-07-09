@@ -27,6 +27,7 @@ const technologySkillNames = [
 	'java-code-change',
 	'javascript-code-change',
 	'node-code-change',
+	'nestjs-code-change',
 	'python-code-change',
 	'rust-code-change',
 	'svelte-code-change',

@@ -28,7 +28,15 @@ npx mf script-pack list --json
 
 The list output reports script pack ids, script refs, supported actions, usage strings, routing
 phases, read-only and side-effect flags, input and output contracts, related skill names, cost,
-risk level, and the report schema file for scripts that publish machine-readable reports.
+risk level, the report schema file for scripts that publish machine-readable reports, and a
+machine-readable safety contract. The safety contract keeps catalog metadata explicit that
+script-pack discovery is suggestion-only, does not grant command authority, and still depends on
+configured mustflow command intents before an agent treats any helper as runnable.
+
+`script-pack run` also guards helper child-process calls. Bundled helpers may use bounded
+read-only Git probes such as `status`, `diff`, `ls-files`, `show`, `check-ignore`, and
+`config --get`, but package managers, shell wrappers, Git writes, publishing commands, and other
+unconfigured process execution are denied.
 
 Agents may use `mf run script_pack_list` when the local command contract exposes that intent. This
 read-only intent is for script discovery only; running a script still depends on the selected
@@ -54,7 +62,8 @@ CLI, and script-pack surface changes where stale examples or path references are
 or adjacent-file discovery is
 useful. Helpers that need data from another helper keep that dependency explicit; for example,
 `code/symbol-read` is presented as a follow-up after `code/outline` identifies a symbol line or
-source anchor.
+source anchor. A `run_hint` is not command authority; it is a bounded hint that still has to be
+mapped through the repository command contract and the script's safety metadata.
 
 Use repeated `--path`, repeated `--skill`, and repeated `--phase` options to describe the current
 work. `--changed` adds current Git working-tree paths to the suggestion input. If changed-file
@@ -336,6 +345,8 @@ npx mf script-pack run repo/related-files map src/cli/index.ts --json
 `schemas/repo-dependency-surface-report.schema.json`.
 `repo/generated-boundary` JSON reports are validated by
 `schemas/generated-boundary-report.schema.json`.
+`repo/skill-route-audit` JSON reports are validated by
+`schemas/skill-route-audit-report.schema.json`.
 `repo/related-files` JSON reports are validated by `schemas/related-files-report.schema.json`.
 
 The script-pack catalog includes:
@@ -353,6 +364,12 @@ The script-pack catalog includes:
 - `scripts[].related_skills`: Skill procedures that commonly benefit from the script.
 - `scripts[].risk_level` and `scripts[].cost`: Lightweight selection hints.
 - `scripts[].report_schema_file`: Report schema file when the script has a JSON report contract.
+- `scripts[].safety_contract`: Machine-readable reminder that catalog entries are suggestion-only,
+  require configured command-intent authority, treat `run_hint` as non-authoritative, scope inputs
+  to explicit or changed paths, and produce bounded reports. The contract also marks script-pack
+  output as `advisory_evidence`, names verification intents it cannot satisfy, and lists forbidden
+  action classes such as raw shell execution, Git writes, package installation, publishing, and
+  secret reads.
 
 The script-pack suggestion report includes:
 
@@ -367,6 +384,9 @@ The script-pack suggestion report includes:
 - `suggestions`: Ranked script refs with score, confidence, matched evidence, side-effect flags,
   report schema, and `run_hint`. `run_hint` is a concrete command when path evidence is sufficient,
   or a follow-up instruction when another script must first identify a line or anchor.
+- `suggestions[].safety_contract`: The same safety contract surfaced per suggestion so agents do
+  not have to join against the catalog before deciding whether a helper is only advisory or whether
+  its `run_hint` may replace a configured `mf run` verification intent.
 - `issues`: Human-readable limitations such as unavailable changed-file discovery.
 
 The code-outline report includes:
@@ -513,6 +533,30 @@ The generated-boundary report includes:
 - `findings`: Stable finding codes for generated, ignored, protected, vendor, cache, outside-root,
   or unreadable paths.
 - `issues`: Human-readable issue summaries.
+
+The skill-route-audit report includes:
+
+- `schema_version`: Output format version.
+- `command`: Always `script-pack`.
+- `pack_id`, `script_id`, and `script_ref`: The script identity.
+- `action`: Always `audit`.
+- `status`: `ok`, `issues_found`, or `partial`.
+- `ok`: Whether the audit could read required metadata without partial evidence.
+- `mustflow_root`: Current mustflow root.
+- `input`: Local source skill root, default template skill root, template manifest, and template
+  i18n metadata paths audited by this script.
+- `input_hash`: Hash of the audited inventory, resolution, findings, and issues.
+- `counts` and `inventory`: Local source skills, route metadata, index routes, template skill
+  copies, manifest skill creates, profile entries, and i18n skill documents.
+- `resolution`: Separate registry-scope status for the local registry, packaged default template,
+  shared workspace registry, and active install profile. Shared workspace registry status is
+  `not_evaluated` because this script audits only the current `mustflow_root`; nested-repository
+  agents must inspect parent workspace skills according to `AGENTS.md`. The active install profile
+  scope reads `.mustflow/config/manifest.lock.toml` so a route/index reference that is absent from
+  the current profile is not confused with a missing packaged or shared-workspace skill.
+- `findings`: Stable finding codes for route/index/source skill drift, template drift, manifest
+  profile drift, and i18n metadata drift.
+- `issues`: Human-readable issue summaries for unreadable or missing metadata.
 
 The related-files report includes:
 

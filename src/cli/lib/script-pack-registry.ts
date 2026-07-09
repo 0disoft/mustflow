@@ -11,6 +11,23 @@ export type ScriptPackRunner = (
 export type ScriptPackPhase = 'before_change' | 'during_change' | 'after_change' | 'review';
 export type ScriptPackRiskLevel = 'low' | 'medium' | 'high';
 export type ScriptPackCost = 'low' | 'medium' | 'high';
+export type ScriptPackExecutionMode = 'suggestion_only';
+export type ScriptPackCommandAuthority = 'requires_configured_intent';
+export type ScriptPackRunHintAuthority = 'not_authority';
+export type ScriptPackInputScope = 'explicit_or_changed_paths';
+export type ScriptPackOutputScope = 'bounded_report';
+export type ScriptPackAuthorityClass = 'advisory_evidence';
+
+export interface ScriptPackSafetyContract {
+	readonly authority_class: ScriptPackAuthorityClass;
+	readonly execution_mode: ScriptPackExecutionMode;
+	readonly command_authority: ScriptPackCommandAuthority;
+	readonly run_hint_authority: ScriptPackRunHintAuthority;
+	readonly input_scope: ScriptPackInputScope;
+	readonly output_scope: ScriptPackOutputScope;
+	readonly cannot_satisfy_intents: readonly string[];
+	readonly forbidden_actions: readonly string[];
+}
 
 export interface ScriptPackScriptDefinition {
 	readonly packId: string;
@@ -42,6 +59,17 @@ export interface ScriptPackDefinition {
 function scriptRef(packId: string, scriptId: string): string {
 	return `${packId}/${scriptId}`;
 }
+
+export const SCRIPT_PACK_SAFETY_CONTRACT = {
+	authority_class: 'advisory_evidence',
+	execution_mode: 'suggestion_only',
+	command_authority: 'requires_configured_intent',
+	run_hint_authority: 'not_authority',
+	input_scope: 'explicit_or_changed_paths',
+	output_scope: 'bounded_report',
+	cannot_satisfy_intents: ['build', 'lint', 'test', 'typecheck', 'docs_validate', 'release'],
+	forbidden_actions: ['raw_shell', 'git_write', 'package_install', 'network_publish', 'secret_read'],
+} as const satisfies ScriptPackSafetyContract;
 
 export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 	{

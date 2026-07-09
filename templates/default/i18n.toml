@@ -778,6 +778,12 @@ source_locale = "en"
 revision = 4
 translations = {}
 
+[documents."skill.nestjs-code-change"]
+source = "locales/en/.mustflow/skills/nestjs-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.react-code-change"]
 source = "locales/en/.mustflow/skills/react-code-change/SKILL.md"
 source_locale = "en"

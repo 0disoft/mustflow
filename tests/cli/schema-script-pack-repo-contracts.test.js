@@ -174,7 +174,59 @@ test('skill-route-audit json output matches the published schema', () => {
 		]);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assertMatchesSchema(schemaRoot, 'skill-route-audit-report.schema.json', JSON.parse(result.stdout));
+		const report = JSON.parse(result.stdout);
+		assertMatchesSchema(schemaRoot, 'skill-route-audit-report.schema.json', report);
+		assert.equal(report.resolution.local_registry.status, 'ok');
+		assert.equal(report.resolution.packaged_template_registry.status, 'not_available');
+		assert.equal(report.resolution.shared_workspace_registry.status, 'not_evaluated');
+		assert.equal(report.resolution.active_install_profile.status, 'ok');
+		assert.equal(typeof report.resolution.active_install_profile.profile, 'string');
+		assert.equal(report.inventory.source_skills.length > 0, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('skill-route-audit separates active-profile gaps from packaged registry gaps', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		writeFileSync(
+			routesPath,
+			`${readFileSync(routesPath, 'utf8')}
+
+[routes."profile-only-route-probe"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 10
+applies_to_reasons = ["workflow_change"]
+`,
+		);
+
+		const result = runCli(projectPath, [
+			'script-pack',
+			'run',
+			'repo/skill-route-audit',
+			'audit',
+			'--json',
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const report = JSON.parse(result.stdout);
+		assertMatchesSchema(schemaRoot, 'skill-route-audit-report.schema.json', report);
+		assert.equal(report.resolution.local_registry.status, 'issues_found');
+		assert.equal(report.resolution.active_install_profile.status, 'issues_found');
+		assert.match(report.resolution.active_install_profile.note, /Active install profile/u);
+		assert.match(report.resolution.active_install_profile.note, /packaged_template_registry/u);
+		assert.ok(
+			report.findings.some(
+				(finding) =>
+					finding.code === 'route_without_skill' &&
+					finding.skill === 'profile-only-route-probe',
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

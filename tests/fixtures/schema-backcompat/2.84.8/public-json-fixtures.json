@@ -4852,6 +4852,48 @@
             "typescript-code-change"
           ]
         },
+        "resolution": {
+          "local_registry": {
+            "status": "ok",
+            "profile": null,
+            "skill_root": ".mustflow/skills",
+            "route_metadata": ".mustflow/skills/routes.toml",
+            "index": ".mustflow/skills/INDEX.md",
+            "manifest": null,
+            "i18n": null,
+            "note": "Local skill registry is internally aligned."
+          },
+          "packaged_template_registry": {
+            "status": "ok",
+            "profile": null,
+            "skill_root": "templates/default/locales/en/.mustflow/skills",
+            "route_metadata": "templates/default/locales/en/.mustflow/skills/routes.toml",
+            "index": "templates/default/locales/en/.mustflow/skills/INDEX.md",
+            "manifest": "templates/default/manifest.toml",
+            "i18n": "templates/default/i18n.toml",
+            "note": "Packaged template registry is internally aligned."
+          },
+          "shared_workspace_registry": {
+            "status": "not_evaluated",
+            "profile": null,
+            "skill_root": null,
+            "route_metadata": null,
+            "index": null,
+            "manifest": null,
+            "i18n": null,
+            "note": "Shared workspace registry resolution is evaluated by nested agents from parent AGENTS.md, not by this current-root audit."
+          },
+          "active_install_profile": {
+            "status": "ok",
+            "profile": "library",
+            "skill_root": ".mustflow/skills",
+            "route_metadata": ".mustflow/skills/routes.toml",
+            "index": ".mustflow/skills/INDEX.md",
+            "manifest": ".mustflow/config/manifest.lock.toml",
+            "i18n": null,
+            "note": "Active install profile is \"library\". Current route and index entries resolve to local skill files for this installed profile."
+          }
+        },
         "findings": [],
         "issues": []
       }

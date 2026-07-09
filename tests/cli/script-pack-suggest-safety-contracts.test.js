@@ -67,6 +67,16 @@ test('script-pack suggest recommends secret-risk-scan for security and privacy w
 		assert.ok(secretRiskScan.matched_phases.includes('before_change'));
 		assert.ok(secretRiskScan.matched_skills.includes('security-privacy-review'));
 		assert.ok(secretRiskScan.matched_surfaces.includes('source'));
+		assert.deepEqual(secretRiskScan.safety_contract, {
+			authority_class: 'advisory_evidence',
+			execution_mode: 'suggestion_only',
+			command_authority: 'requires_configured_intent',
+			run_hint_authority: 'not_authority',
+			input_scope: 'explicit_or_changed_paths',
+			output_scope: 'bounded_report',
+			cannot_satisfy_intents: ['build', 'lint', 'test', 'typecheck', 'docs_validate', 'release'],
+			forbidden_actions: ['raw_shell', 'git_write', 'package_install', 'network_publish', 'secret_read'],
+		});
 		assert.equal(secretRiskScan.run_hint, 'mf script-pack run repo/secret-risk-scan scan src/config.ts --json');
 		assert.equal(secretRiskScan.report_schema_file, 'secret-risk-scan-report.schema.json');
 	} finally {

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+
 import {
 	assert,
 	commitGitBaseline,
@@ -59,6 +61,16 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(codeOutline.read_only, true);
 		assert.equal(codeOutline.mutates, false);
 		assert.equal(codeOutline.network, false);
+		assert.deepEqual(codeOutline.safety_contract, {
+			authority_class: 'advisory_evidence',
+			execution_mode: 'suggestion_only',
+			command_authority: 'requires_configured_intent',
+			run_hint_authority: 'not_authority',
+			input_scope: 'explicit_or_changed_paths',
+			output_scope: 'bounded_report',
+			cannot_satisfy_intents: ['build', 'lint', 'test', 'typecheck', 'docs_validate', 'release'],
+			forbidden_actions: ['raw_shell', 'git_write', 'package_install', 'network_publish', 'secret_read'],
+		});
 		assert.deepEqual(codeOutline.phases, ['before_change', 'during_change', 'review']);
 		assert.ok(codeOutline.use_when.some((hint) => hint.includes('symbol headers')));
 		assert.ok(codeOutline.inputs.includes('max_files'));
@@ -498,6 +510,30 @@ test('script-pack catalog exposes routing metadata for agent script selection', 
 		assert.equal(relatedFiles.risk_level, 'low');
 		assert.equal(relatedFiles.cost, 'low');
 		assert.equal(relatedFiles.report_schema_file, 'related-files-report.schema.json');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('script-pack catalog related skills resolve to packaged source-locale skill files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const result = runCli(projectPath, ['script-pack', 'list', '--json']);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const report = JSON.parse(result.stdout);
+		const packagedSkillRoot = path.resolve('templates', 'default', 'locales', 'en', '.mustflow', 'skills');
+		const missing = report.packs.flatMap((pack) =>
+			pack.scripts.flatMap((script) =>
+				script.related_skills
+					.filter((skill) => !existsSync(path.join(packagedSkillRoot, skill, 'SKILL.md')))
+					.map((skill) => `${script.ref}:${skill}`),
+			),
+		);
+
+		assert.deepEqual(missing, []);
 	} finally {
 		removeTempProject(projectPath);
 	}

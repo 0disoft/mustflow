@@ -77,6 +77,12 @@ function renderSkillRouteAuditSummary(report: SkillRouteAuditReport, lang: CliLa
 		`${t(lang, 'skillRouteAudit.label.indexRoutes')}: ${report.counts.index_routes}`,
 		`${t(lang, 'skillRouteAudit.label.templateSkills')}: ${report.counts.template_skills}`,
 		`${t(lang, 'skillRouteAudit.label.findings')}: ${report.findings.length}`,
+		`local_registry: ${report.resolution.local_registry.status}`,
+		`packaged_template_registry: ${report.resolution.packaged_template_registry.status}`,
+		`shared_workspace_registry: ${report.resolution.shared_workspace_registry.status}`,
+		`active_install_profile: ${report.resolution.active_install_profile.status}${
+			report.resolution.active_install_profile.profile ? ` (${report.resolution.active_install_profile.profile})` : ''
+		}`,
 	];
 
 	if (report.findings.length > 0) {

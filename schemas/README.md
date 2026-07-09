@@ -164,7 +164,8 @@ Current schemas:
   rewriting `.mustflow/config/manifest.lock.toml`
 - `skill-route-audit-report.schema.json`: output of
   `mf script-pack run repo/skill-route-audit audit --json`, containing source skill, route metadata,
-  skill index, default template skill copy, manifest profile, and i18n metadata drift findings
+  skill index, default template skill copy, manifest profile, i18n metadata drift findings, and
+  local/template/shared-workspace/active-profile registry resolution status
 - `repo-version-source-report.schema.json`: output of
   `mf script-pack run repo/version-source inspect --json`, containing detected version sources,
   release-versioning preference status, source authority counts, and missing-source findings

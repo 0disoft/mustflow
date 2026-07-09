@@ -4,6 +4,23 @@ import path from 'node:path';
 export type ScriptPackSuggestionPhase = 'before_change' | 'during_change' | 'after_change' | 'review';
 export type ScriptPackSuggestionRiskLevel = 'low' | 'medium' | 'high';
 export type ScriptPackSuggestionCost = 'low' | 'medium' | 'high';
+export type ScriptPackSuggestionExecutionMode = 'suggestion_only';
+export type ScriptPackSuggestionCommandAuthority = 'requires_configured_intent';
+export type ScriptPackSuggestionRunHintAuthority = 'not_authority';
+export type ScriptPackSuggestionInputScope = 'explicit_or_changed_paths';
+export type ScriptPackSuggestionOutputScope = 'bounded_report';
+export type ScriptPackSuggestionAuthorityClass = 'advisory_evidence';
+
+export interface ScriptPackSuggestionSafetyContract {
+	readonly authority_class: ScriptPackSuggestionAuthorityClass;
+	readonly execution_mode: ScriptPackSuggestionExecutionMode;
+	readonly command_authority: ScriptPackSuggestionCommandAuthority;
+	readonly run_hint_authority: ScriptPackSuggestionRunHintAuthority;
+	readonly input_scope: ScriptPackSuggestionInputScope;
+	readonly output_scope: ScriptPackSuggestionOutputScope;
+	readonly cannot_satisfy_intents: readonly string[];
+	readonly forbidden_actions: readonly string[];
+}
 
 export type ScriptPackSurface =
 	| 'config'
@@ -32,6 +49,17 @@ const CODE_NAVIGATION_SCRIPT_REFS = new Set([
 const CONFIG_CHAIN_SURFACES = new Set<ScriptPackSurface>(['config', 'package', 'source', 'test']);
 const CONFIG_FILE_PATTERN =
 	/(?:^|\/)(?:\.gitignore|\.env\.(?:example|sample|template|defaults)|\.dev\.vars\.example|\.nvmrc|\.node-version|\.python-version|\.tool-versions|mise\.toml|\.mise\.toml|pyproject\.toml|go\.mod|rust-toolchain(?:\.toml)?|Makefile|Taskfile\.ya?ml|justfile|Justfile|tsconfig(?:\..*)?\.json|eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.json)?|\.prettierrc(?:\.json)?|prettier\.config\.[cm]?[jt]s|vite\.config\.[cm]?[jt]s|vitest\.config\.[cm]?[jt]s|tailwind\.config\.[cm]?[jt]s|jest\.config\.[cm]?[jt]s|playwright\.config\.[cm]?[jt]s|astro\.config\.mjs|svelte\.config\.js|wrangler\.(?:toml|jsonc?)|vercel\.json|netlify\.toml|Dockerfile|docker-compose\.ya?ml|compose\.ya?ml)$/u;
+
+export const SCRIPT_PACK_SUGGESTION_SAFETY_CONTRACT = {
+	authority_class: 'advisory_evidence',
+	execution_mode: 'suggestion_only',
+	command_authority: 'requires_configured_intent',
+	run_hint_authority: 'not_authority',
+	input_scope: 'explicit_or_changed_paths',
+	output_scope: 'bounded_report',
+	cannot_satisfy_intents: ['build', 'lint', 'test', 'typecheck', 'docs_validate', 'release'],
+	forbidden_actions: ['raw_shell', 'git_write', 'package_install', 'network_publish', 'secret_read'],
+} as const satisfies ScriptPackSuggestionSafetyContract;
 
 export interface ScriptPackSuggestionScript {
 	readonly ref: string;
@@ -85,6 +113,7 @@ export interface ScriptPackSuggestion {
 	readonly risk_level: ScriptPackSuggestionRiskLevel;
 	readonly cost: ScriptPackSuggestionCost;
 	readonly report_schema_file: string | null;
+	readonly safety_contract: ScriptPackSuggestionSafetyContract;
 	readonly run_hint: string;
 }
 
@@ -683,6 +712,7 @@ export function createScriptPackSuggestionReport(
 				risk_level: script.riskLevel,
 				cost: script.cost,
 				report_schema_file: script.reportSchemaFile,
+				safety_contract: SCRIPT_PACK_SUGGESTION_SAFETY_CONTRACT,
 				run_hint: createRunHint(script, analyzedPaths),
 			};
 		})

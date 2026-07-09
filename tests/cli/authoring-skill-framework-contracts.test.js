@@ -484,6 +484,51 @@ test('Hono code change skill keeps routing, validation, typed client, and adapte
 	assert.match(i18n, /\[documents\."skill\.hono-code-change"\][\s\S]*?revision = 2/u);
 });
 
+test('NestJS code change skill keeps module, DI, pipeline, and adapter risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/nestjs-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/nestjs-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /NestJS module boundaries, dependency-injection ownership/u);
+	assert.match(localSkill, /`@Module`, `@Controller`, route decorators/u);
+	assert.match(localSkill, /Express or Fastify is the active Nest adapter/u);
+	assert.match(localSkill, /Build a module ledger/u);
+	assert.match(localSkill, /Build a route ledger/u);
+	assert.match(localSkill, /Treat provider scope as a performance and correctness contract/u);
+	assert.match(localSkill, /Avoid `forwardRef\(\)` as a casual cycle fix/u);
+	assert.match(localSkill, /Keep request-local data out of singleton provider mutable fields/u);
+	assert.match(localSkill, /middleware runs before guards/u);
+	assert.match(localSkill, /Do not treat CORS, Swagger hiding, or route omission from OpenAPI as authorization/u);
+	assert.match(localSkill, /Class decorators, global `ValidationPipe` options/u);
+	assert.match(localSkill, /HTTP input starts as strings/u);
+	assert.match(localSkill, /Express and Fastify differ/u);
+	assert.match(localSkill, /OpenAPI and generated clients as separate public contracts/u);
+	assert.match(localSkill, /Override only the provider under test/u);
+
+	assert.match(skillIndex, /Use `nestjs-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/nestjs-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining NestJS risk/u);
+	assert.match(
+		routes,
+		/\[routes\."nestjs-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['behavior_change', 'docs_change', 'performance_change', 'privacy_change', 'data_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'nestjs-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/nestjs-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"nestjs-code-change"/u);
+	assert.match(i18n, /\[documents\."skill\.nestjs-code-change"\][\s\S]*?revision = 1/u);
+});
+
 test('Axum code change skill keeps route, extractor, Tower, Tokio, and SQLx risks explicit', () => {
 	const localSkill = readText('.mustflow/skills/axum-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/axum-code-change/SKILL.md');

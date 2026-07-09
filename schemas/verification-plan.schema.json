@@ -221,7 +221,42 @@
             { "type": "null" }
           ]
         },
+        "safety_contract": {
+          "$ref": "#/$defs/safetyContract"
+        },
         "run_hint": { "type": "string" }
+      }
+    },
+    "safetyContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_class",
+        "execution_mode",
+        "command_authority",
+        "run_hint_authority",
+        "input_scope",
+        "output_scope",
+        "cannot_satisfy_intents",
+        "forbidden_actions"
+      ],
+      "properties": {
+        "authority_class": { "const": "advisory_evidence" },
+        "execution_mode": { "const": "suggestion_only" },
+        "command_authority": { "const": "requires_configured_intent" },
+        "run_hint_authority": { "const": "not_authority" },
+        "input_scope": { "const": "explicit_or_changed_paths" },
+        "output_scope": { "const": "bounded_report" },
+        "cannot_satisfy_intents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "forbidden_actions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
       }
     },
     "classification": {
