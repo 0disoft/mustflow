@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 249
+anchor_count: 251
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:ef1639fe705fad8b245797cefe4bea5a9206e63ca6c75cde7a67ad99860cfd34"
+source_fingerprint: "sha256:476d6b0e23663f72a40616b56faf31f02ce4cab885b89e06cc8aa9342c01ff8d"
 ---
 
 # REPO_MAP.md
@@ -541,6 +541,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/nestjs-code-change/
+
+- `.mustflow/skills/nestjs-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/next-action-menu/
 
 - `.mustflow/skills/next-action-menu/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -962,6 +966,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### schemas/
 
 - `schemas/README.md`: Directory guide for this area.
+
+### tools/manifest-lock-accept/
+
+- `tools/manifest-lock-accept/go.mod`: Go module definition and dependency boundary.
 
 ## Generated Files
 
