@@ -281,6 +281,14 @@ first_seen_at = "2026-07-02T06:39:48.206Z"
 last_touched_at = "2026-07-02T08:57:21.573Z"
 
 [[documents]]
+path = ".mustflow/skills/dependency-reality-check/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-09T14:25:36.164Z"
+last_touched_at = "2026-07-09T14:25:36.164Z"
+
+[[documents]]
 path = ".mustflow/skills/dependency-upgrade-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -422,7 +430,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-09T02:33:14.954Z"
+last_touched_at = "2026-07-09T14:25:36.182Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -480,7 +488,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-06T02:38:08.907Z"
-last_touched_at = "2026-07-06T02:38:08.907Z"
+last_touched_at = "2026-07-09T14:25:36.193Z"
 
 [[documents]]
 path = ".mustflow/skills/motion-system-contract-review/SKILL.md"
@@ -1451,6 +1459,14 @@ first_seen_at = "2026-07-02T06:39:48.251Z"
 last_touched_at = "2026-07-02T08:57:21.669Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-09T14:25:36.203Z"
+last_touched_at = "2026-07-09T14:25:36.203Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -1592,7 +1608,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-09T02:33:14.990Z"
+last_touched_at = "2026-07-09T14:25:36.212Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/java-code-change/SKILL.md"
@@ -1648,7 +1664,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-06T02:38:08.941Z"
-last_touched_at = "2026-07-06T02:38:08.941Z"
+last_touched_at = "2026-07-09T14:25:36.221Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/motion-system-contract-review/SKILL.md"

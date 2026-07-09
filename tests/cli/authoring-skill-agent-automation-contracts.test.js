@@ -404,6 +404,17 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.equal(regressionSkill, regressionTemplate);
 	assert.equal(dependencySkill, dependencyTemplate);
 	assert.equal(promptSkill, promptTemplate);
+	assert.match(dependencySkill, /workspace package contract/u);
+	assert.match(dependencySkill, /package\.json` as that package's external contract/u);
+	assert.match(dependencySkill, /emitted JavaScript imports a package/u);
+	assert.match(dependencySkill, /public `\.d\.ts` type references an external package/u);
+	assert.match(dependencySkill, /peerDependencies` contract plus local `devDependencies`/u);
+	assert.match(dependencySkill, /workspace:\*`, `workspace:\^`/u);
+	assert.match(dependencySkill, /Root overrides and resolutions are emergency graph controls/u);
+	assert.match(dependencySkill, /tsconfig\.paths` as a TypeScript resolver hint/u);
+	assert.match(dependencySkill, /A compiling import is not proof/u);
+	assert.match(dependencySkill, /affected tests, build cache keys/u);
+	assert.match(dependencySkill, /deploy\/prune artifacts/u);
 	assert.match(securitySkill, /AI-generated code as untrusted/u);
 	assert.match(securitySkill, /server-side authorization/u);
 	assert.match(securitySkill, /private network ranges/u);

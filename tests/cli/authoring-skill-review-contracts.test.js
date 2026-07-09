@@ -179,6 +179,15 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 	assert.match(localSkill, /`code\/module-boundary`/u);
 	assert.match(localSkill, /DTO infection/u);
 	assert.match(localSkill, /`common`, `shared`, `utils`, and `helpers`/u);
+	assert.match(localSkill, /monorepo package graph/u);
+	assert.match(localSkill, /Apps assemble and should not be\s+imported/u);
+	assert.match(localSkill, /cross-package deep imports/u);
+	assert.match(localSkill, /package\.json` `exports` as the public API/u);
+	assert.match(localSkill, /root-hoisted undeclared dependencies/u);
+	assert.match(localSkill, /compile-success versus allowed-dependency confusion/u);
+	assert.match(localSkill, /the import compiles/u);
+	assert.match(localSkill, /Do not use `tsconfig\.paths` as a substitute/u);
+	assert.match(localSkill, /If only `paths` knows the edge/u);
 	assert.match(localSkill, /many mocks/u);
 	assert.match(localSkill, /Repeated `isPremium`/u);
 	assert.match(localSkill, /Check enum spread/u);
@@ -217,11 +226,12 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 		'security_change',
 		'privacy_change',
 		'data_change',
+		'package_metadata_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/module-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"module-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 5/u);
 });
 
 test('change blast radius review predicts maintainability spread and deletion cost', () => {

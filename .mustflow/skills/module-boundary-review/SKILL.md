@@ -2,11 +2,11 @@
 mustflow_doc: skill.module-boundary-review
 locale: en
 canonical: true
-revision: 3
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: module-boundary-review
-description: Apply this skill when code is created, changed, reviewed, or reported and module separation, cohesion, coupling, change axes, stability direction, data ownership, rule ownership, failure ownership, import direction, circular dependency, DTO leakage, shared/common/utils growth, mock-heavy tests, repeated policy conditions, enum interpretation, repository business logic, anemic domain, domain-to-I/O leakage, transaction boundary mismatch, event naming, public API bloat, caller sequencing, premature reuse, co-change history, bug/fix distance, config ownership, log responsibility, exception translation, cache invalidation ownership, repeated authorization checks, frontend/backend policy leakage, time policy, batch or worker bypass, shallow modules, or temporary-code accumulation can make a change spread beyond its real owner.
+description: Apply this skill when code is created, changed, reviewed, or reported and module or monorepo package separation, cohesion, coupling, change axes, stability direction, package dependency direction, TypeScript path alias boundaries, compile-success versus allowed-dependency confusion, data ownership, rule ownership, failure ownership, import direction, circular dependency, DTO leakage, shared/common/utils growth, cross-package deep imports, package exports, workspace boundary rules, mock-heavy tests, repeated policy conditions, enum interpretation, repository business logic, anemic domain, domain-to-I/O leakage, transaction boundary mismatch, event naming, public API bloat, caller sequencing, premature reuse, co-change history, bug/fix distance, config ownership, log responsibility, exception translation, cache invalidation ownership, repeated authorization checks, frontend/backend policy leakage, time policy, batch or worker bypass, shallow modules, or temporary-code accumulation can make a change spread beyond its real owner.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -42,6 +42,10 @@ who must change, who owns the data, who owns the failure, and who should not nee
   services, repositories, validators, mappers, helpers, shared utilities, DTOs, domain models,
   policies, use cases, workers, batches, events, caches, permissions, config reads, or public module
   APIs.
+- A monorepo package graph, workspace dependency direction, package `exports`, cross-package import,
+  deep import, TypeScript `paths` alias, package tag, module-boundary lint rule, TypeScript project
+  reference, affected build/test graph, package deploy/prune surface, or shared/common package is
+  created, changed, reviewed, or reported.
 - A change touches several folders, layers, or modules for one reason, or several differently named
   files repeatedly change together.
 - A review claims that layering, clean architecture, DDD, modular monolith, feature folders,
@@ -85,6 +89,12 @@ who must change, who owns the data, who owns the failure, and who should not nee
   history showing files that usually move together.
 - Module graph evidence: imports, exports, public APIs, call sites, dependency direction, cycles,
   shared helpers, DTO flow, and configuration reads.
+- Monorepo package graph evidence when relevant: each package's role (app, feature, domain, data
+  access, UI, util, tooling), domain scope, runtime platform, package `dependencies`,
+  `peerDependencies`, `devDependencies`, `exports`, `imports`, TypeScript project references,
+  `tsconfig.paths` aliases, bundler and test resolver aliases, package-manager workspace protocol,
+  affected build/test graph, deploy or prune artifact expectations, release graph evidence,
+  boundary lint constraints, and package-level cycle reports.
 - Stability evidence: which modules many callers rely on, which modules change because external
   details move, and whether dependencies point toward the more stable policy owner rather than the
   more volatile implementation detail.
@@ -148,6 +158,14 @@ who must change, who owns the data, who owns the failure, and who should not nee
    - Prefer volatility names and business capabilities, such as pricing policy, payment provider,
      subscription lifecycle, invoice rendering, fraud check, fulfillment handoff, or entitlement
      decision, over role-sliced layer names when those better predict future edits.
+   - In monorepos, assign package roles before accepting an edge. Apps assemble and should not be
+     imported. Domain or policy packages should not know UI, router, database, provider SDK, or
+     framework request details. Infrastructure packages may depend on domain-owned ports or types,
+     but domain packages should not depend on infrastructure implementations.
+   - Treat `shared`, `common`, `utils`, and broad `types` packages as suspect until their scope,
+     layer, and runtime platform are explicit. Split shared concepts by reason to change, such as
+     shared-kernel, shared-ui, shared-config, shared-testing, or domain-owned contracts, rather than
+     by "used in many places".
 3. Check import direction.
    - Infrastructure or low-level modules should not know high-level business use case names unless
      the repository intentionally uses that inversion.
@@ -160,6 +178,21 @@ who must change, who owns the data, who owns the failure, and who should not nee
    - Prefer interfaces or ports owned by the using side when the abstraction protects stable policy
      code from an unstable provider, database, queue, cache, filesystem, network, framework, or UI
      detail.
+   - For monorepos, prefer dependency direction from volatile assembly code toward stable policy or
+     contract code. A stable package importing a fast-changing app, route, UI flow, database adapter,
+     or external API client is a boundary smell even when the folder layout looks layered.
+   - Feature packages should not import each other's internals. If two features need to communicate,
+     look for a missing contract, event, port, or shared lower-level policy package before accepting
+     a direct feature-to-feature edge.
+   - UI kit packages should stay ignorant of business state, routes, auth stores, billing enums, API
+     error shapes, and domain policies. Feature code owns visibility and policy decisions; UI
+     packages render props and callbacks.
+   - Treat "the import compiles" as weak evidence. TypeScript path aliases, editor autocomplete, and
+     root `node_modules` can make an illegal package edge look available while package ownership,
+     deploy output, build cache, and release order remain wrong.
+   - If an import crosses a package boundary through a relative path, `src/`, `dist/`, or an alias
+     that points at another package's source, review it as a boundary violation candidate even when
+     local typecheck and tests pass.
 4. Treat cycles as boundary failure until proven harmless.
    - If A imports B and B imports A, identify the missing concept, ownership decision, event, port, or
      data-flow direction.
@@ -167,6 +200,11 @@ who must change, who owns the data, who owns the failure, and who should not nee
    - When the repository declares `.mustflow/config/module-boundaries.toml`, use the read-only
      `code/module-boundary` script-pack report as executable evidence before relying on prose-only
      boundary claims.
+   - Workspace dependency cycles, even type-only cycles, are package-boundary evidence. `import type`
+     can remove a runtime edge but does not erase architectural knowledge or public declaration
+     coupling.
+   - If a cycle exists between packages, identify the missing lower-level contract package,
+     shared protocol, event, or ownership decision instead of adding a larger shared bucket.
 5. Trace DTO infection.
    - API response DTOs, request DTOs, ORM rows, provider payloads, and UI view models should not
      become domain, repository, batch, worker, or event models by default.
@@ -221,8 +259,19 @@ who must change, who owns the data, who owns the failure, and who should not nee
     - A good module should have a small door and a deeper inside. If most files only expose one-line
       forwarding methods, wrapper services, or renamed CRUD calls, treat the split as shallow module
       theater until a real hidden decision or variation point is named.
-    - A public API wider than the behavior it hides is usually not a boundary; it is implementation
-      leakage with extra navigation.
+   - A public API wider than the behavior it hides is usually not a boundary; it is implementation
+     leakage with extra navigation.
+   - For packages, treat `package.json` `exports` as the public API, not the folder tree. External
+     callers should use package names and intentional subpath exports, not relative paths into
+     sibling packages, `src/`, `dist/`, or internal files.
+   - Do not use `tsconfig.paths` as a substitute for `exports`, `imports`, package self-reference,
+     workspace dependency declarations, or module-boundary lint rules. Path aliases can shorten
+     names inside an app, but they should not define cross-package public API.
+   - Broad export maps such as `./*`, root barrels that `export *`, and package-internal code that
+     imports its own root barrel are public API leak or cycle signals until proven intentional.
+   - Runtime entrypoints and type declarations should expose the same shape. A runtime export with no
+     matching type export, or a public type path with no runtime entrypoint, means consumers see a
+     different contract in the editor and in production.
 16. Check reuse claims.
     - "Used in many places" is not enough reason to extract a common helper.
     - Reuse is safe only when the callers change for the same reason. Similar code from different
@@ -264,9 +313,16 @@ who must change, who owns the data, who owns the failure, and who should not nee
     - Name the three modules or abstractions most likely to rot first.
     - For each, name the change request that would break it, the owner that would cause the change,
       and whether the blast stays inside one module.
-    - Remove or redesign shallow wrappers, central managers, enum-switch strategies, provider-shaped
-      "neutral" ports, configuration-driven logic hiding, event-bus call hiding, and CRUD stamp
-      modules when they fail the attack.
+   - Remove or redesign shallow wrappers, central managers, enum-switch strategies, provider-shaped
+     "neutral" ports, configuration-driven logic hiding, event-bus call hiding, and CRUD stamp
+     modules when they fail the attack.
+   - In a monorepo, attack the package graph too: add a new route, swap a provider, change a domain
+     rule, split a UI component, or publish a library package. If those changes require deep imports,
+     root-hoisted undeclared dependencies, app imports from shared code, or cross-feature internals,
+     the package boundary is not carrying its weight.
+   - Attack the resolver graph too: remove the root install crutch, pack or prune the target package,
+     and ask whether TypeScript, bundler, test runner, task graph, and release tooling still agree on
+     the same edge. If only `paths` knows the edge, the boundary is paper-thin.
 24. Decide the smallest response.
     - If evidence is strong and the edit is in scope, make the smallest boundary fix.
     - If the fix would be broad, report the module boundary risk and the first safe split point.
@@ -287,6 +343,9 @@ who must change, who owns the data, who owns the failure, and who should not nee
 - Shallow module signals such as role-sliced CRUD layers, one-line wrappers, provider-shaped ports,
   ownerless managers, event-bus call hiding, config-hidden logic, and public API bloat are removed,
   justified, or reported.
+- Package-boundary signals such as path-alias reach-through, relative sibling imports, deep source
+  imports, root-hoisted undeclared dependencies, and compile-only imports are fixed, justified, or
+  reported with their graph risk.
 - Any new abstraction hides a named responsibility and reduces caller knowledge, change spread, or
   test mock cost.
 - Behavior, public contracts, permissions, data ownership, and failure semantics remain intact or

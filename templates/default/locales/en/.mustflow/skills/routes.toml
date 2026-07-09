@@ -262,7 +262,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 category = "general_code"
 route_type = "adjunct"
 priority = 70
-applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change"]
 
 [routes."change-blast-radius-review"]
 category = "general_code"
@@ -856,7 +856,7 @@ applies_to_reasons = ["code_change", "docs_change", "security_change", "package_
 category = "data_external"
 route_type = "adjunct"
 priority = 45
-applies_to_reasons = ["code_change", "docs_change", "security_change"]
+applies_to_reasons = ["unknown_change", "code_change", "docs_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."version-freshness-check"]
 category = "data_external"

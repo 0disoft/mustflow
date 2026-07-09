@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 226
+revision = 228
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -146,7 +146,7 @@ translations = {}
 [documents."skill.module-boundary-review"]
 source = "locales/en/.mustflow/skills/module-boundary-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.change-blast-radius-review"]
@@ -589,7 +589,7 @@ translations = {}
 [documents."skill.dependency-reality-check"]
 source = "locales/en/.mustflow/skills/dependency-reality-check/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 9
 translations = {}
 
 [documents."skill.dependency-upgrade-review"]
