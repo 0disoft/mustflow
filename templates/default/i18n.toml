@@ -997,7 +997,7 @@ translations = {}
 [documents."skill.writing-elegance"]
 source = "locales/en/.mustflow/skills/writing-elegance/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 9
 translations = {}
 
 [documents."skill.writing-elegance.phrase-bank"]

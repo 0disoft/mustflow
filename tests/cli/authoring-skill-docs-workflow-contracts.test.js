@@ -210,9 +210,18 @@ test('writing elegance skill stores reusable phrase fragments outside the main p
 	assert.match(localSkill, /Store entries as compact rows/u);
 	assert.match(localSkill, /Do not store private names, unique character names/u);
 	assert.match(localSkill, /The task is a documentation review queue entry/u);
+	assert.match(localSkill, /for presentations, make the first slide or opening screen state the conclusion/u);
+	assert.match(localSkill, /draft and revise by paragraph as the basic unit of logic/u);
+	assert.match(localSkill, /tune concreteness to the reader's need/u);
+	assert.match(localSkill, /one sentence should carry one concept/u);
+	assert.match(localSkill, /structural guidance for argument or report shape, phrase-level polish/u);
+	assert.match(localSkill, /keep them in this\s+procedure rather than the phrase bank/u);
 	assert.match(phraseBank, /with no trace of hope \/ where no trace of hope remained/u);
 	assert.match(phraseBank, /a small ___ worth protecting/u);
 	assert.match(phraseBank, /Use before a fragile noun/u);
+	assert.doesNotMatch(phraseBank, /Practical Argument Structure Patterns/u);
+	assert.doesNotMatch(phraseBank, /make evidence visible, audible, or touchable/u);
+	assert.doesNotMatch(phraseBank, /draft first, then lift the conclusion upward/u);
 	assert.match(skillIndex, /writing-elegance\/SKILL\.md/u);
 	assert.match(skillIndex, /over-specific sentence capture/u);
 	assert.match(skillIndex, /phrase-bank bloat/u);
@@ -233,7 +242,7 @@ test('writing elegance skill stores reusable phrase fragments outside the main p
 		assert.equal(profileBlock(profile).includes('"writing-elegance"'), false, `${profile} profile should not include skill`);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.writing-elegance"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.writing-elegance"\][\s\S]*?revision = 9/u);
 	assert.match(i18n, /\[documents\."skill\.writing-elegance\.phrase-bank"\][\s\S]*?revision = 1/u);
 });
 
