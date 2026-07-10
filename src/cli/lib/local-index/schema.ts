@@ -3,6 +3,12 @@ import type { LocalSearchCapabilities } from './database-read.js';
 import type { SqlJsDatabase } from './sql.js';
 
 export function createSchema(database: SqlJsDatabase, capabilities: LocalSearchCapabilities): void {
+	database.run('PRAGMA foreign_keys = ON');
+	const [foreignKeyResult] = database.exec('PRAGMA foreign_keys');
+	if (foreignKeyResult?.values[0]?.[0] !== 1) {
+		throw new Error('SQLite foreign-key enforcement is unavailable for the local index.');
+	}
+
 	database.run(`
 CREATE TABLE metadata (
   key TEXT PRIMARY KEY,
@@ -18,6 +24,11 @@ CREATE TABLE indexed_files (
   indexed_at TEXT NOT NULL,
   index_mode TEXT NOT NULL,
   parser_version TEXT NOT NULL
+);
+
+CREATE TABLE indexed_source_candidates (
+  path TEXT PRIMARY KEY,
+  FOREIGN KEY (path) REFERENCES indexed_files(path) ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE TABLE documents (

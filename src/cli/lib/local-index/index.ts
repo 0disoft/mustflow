@@ -288,6 +288,19 @@ function indexedFilesMatch(database: SqlJsDatabase, currentFiles: readonly Index
 	return true;
 }
 
+function indexedSourceCandidatesMatch(database: SqlJsDatabase, currentPaths: readonly string[]): boolean {
+	if (!hasTable(database, 'indexed_source_candidates')) {
+		return false;
+	}
+
+	const storedPaths = new Set(
+		queryRows(database, 'SELECT path FROM indexed_source_candidates').map((row) => toSearchString(row.path)),
+	);
+	const currentPathSet = new Set(currentPaths);
+
+	return storedPaths.size === currentPathSet.size && [...storedPaths].every((storedPath) => currentPathSet.has(storedPath));
+}
+
 const INDEXED_FILE_MTIME_TOLERANCE_MS = 1;
 
 function indexedFileMtimeMsEqual(storedMtimeMs: number | null, currentMtimeMs: number): boolean {
@@ -332,11 +345,12 @@ async function readIncrementalPreflightReuse(
 	databasePath: string,
 	projectRoot: string,
 	currentFiles: readonly IndexedFileMetadataRecord[] | null,
+	currentSourceCandidatePaths: readonly string[] | null,
 	sourceScopeHash: string,
 	dryRun: boolean,
 	indexMode: LocalIndexResult['index_mode'],
 ): Promise<IncrementalPreflightReuse> {
-	if (!currentFiles) {
+	if (!currentFiles || !currentSourceCandidatePaths) {
 		return { result: null, rebuildReason: null };
 	}
 
@@ -363,6 +377,10 @@ async function readIncrementalPreflightReuse(
 
 		if (!hasTable(database, 'indexed_files')) {
 			return { result: null, rebuildReason: 'indexed_files_missing' };
+		}
+
+		if (!indexedSourceCandidatesMatch(database, currentSourceCandidatePaths)) {
+			return { result: null, rebuildReason: 'source_scope_mismatch' };
 		}
 
 		if (!indexedFileMetadataMatch(database, currentFiles)) {
@@ -392,6 +410,7 @@ async function readIncrementalReuseDecision(
 	SQL: SqlJsStatic,
 	databasePath: string,
 	currentFiles: readonly IndexedFileRecord[],
+	currentSourceCandidatePaths: readonly string[],
 	sourceScopeHash: string,
 ): Promise<IncrementalReuseDecision> {
 	if (!existsSync(databasePath)) {
@@ -417,6 +436,10 @@ async function readIncrementalReuseDecision(
 
 		if (!hasTable(database, 'indexed_files')) {
 			return { reusable: false, rebuildReason: 'indexed_files_missing', capabilities: null };
+		}
+
+		if (!indexedSourceCandidatesMatch(database, currentSourceCandidatePaths)) {
+			return { reusable: false, rebuildReason: 'source_scope_mismatch', capabilities: null };
 		}
 
 		if (!indexedFilesMatch(database, currentFiles)) {
@@ -465,7 +488,8 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 			SQL,
 			databasePath,
 			projectRoot,
-			preflightFiles,
+			preflightFiles?.records ?? null,
+			preflightFiles?.sourceCandidatePaths ?? null,
 			sourceScopeHash,
 			dryRun,
 			indexMode,
@@ -496,9 +520,15 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 	const indexedFiles = collectIndexedFileRecords(projectRoot, documents, sourceAnchors, sourceAnchorCandidatePaths);
 
 	if (incremental) {
-		const reuseDecision = await readIncrementalReuseDecision(SQL, databasePath, indexedFiles, sourceScopeHash);
+		const reuseDecision = await readIncrementalReuseDecision(
+			SQL,
+			databasePath,
+			indexedFiles,
+			sourceAnchorCandidatePaths,
+			sourceScopeHash,
+		);
 		reusedExisting = reuseDecision.reusable;
-		rebuildReason = reuseDecision.rebuildReason ?? rebuildReason;
+		rebuildReason = reuseDecision.reusable ? null : (reuseDecision.rebuildReason ?? rebuildReason);
 		capabilities = reuseDecision.capabilities ?? capabilities;
 	}
 
@@ -516,6 +546,7 @@ export async function createLocalIndex(projectRoot: string, options: LocalIndexO
 				commandIntents,
 				sourceAnchors,
 				indexedFiles,
+				sourceAnchorCandidatePaths,
 				verificationEvidence,
 				indexMode,
 				sourceScopeHash,
@@ -1001,12 +1032,17 @@ export async function readLocalSourceAnchorCheckWarnings(projectRoot: string): P
 			return [];
 		}
 
-		if (!hasTable(database, 'indexed_files') || !hasTable(database, 'source_anchors') || !hasTable(database, 'source_anchor_status')) {
+		if (
+			!hasTable(database, 'indexed_files') ||
+			!hasTable(database, 'indexed_source_candidates') ||
+			!hasTable(database, 'source_anchors') ||
+			!hasTable(database, 'source_anchor_status')
+		) {
 			return ['source anchor local index is missing source-anchor tables; refresh with mf index --source'];
 		}
 
 		const indexedSourcePaths = new Set(
-			queryRows(database, 'SELECT path FROM indexed_files WHERE source_scope = "source_anchor"')
+			queryRows(database, 'SELECT path FROM indexed_source_candidates')
 				.map((row) => toSearchString(row.path))
 				.filter(Boolean),
 		);

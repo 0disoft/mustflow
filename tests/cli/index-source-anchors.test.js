@@ -31,7 +31,7 @@ test('does not index source anchors unless source indexing is requested', async 
 		const [anchorCount] = queryRows(database, 'SELECT COUNT(*) AS count FROM source_anchors');
 		const [sourceIndexedFileCount] = queryRows(
 			database,
-			'SELECT COUNT(*) AS count FROM indexed_files WHERE source_scope = "source_anchor"',
+			'SELECT COUNT(*) AS count FROM indexed_source_candidates',
 		);
 
 		assert.equal(output.source_index_enabled, false);
@@ -64,7 +64,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 	const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 	const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-	assert.equal(output.schema_version, '20');
+	assert.equal(output.schema_version, '21');
 	assert.equal(output.source_index_enabled, true);
 	assert.equal(output.source_anchor_count, 4);
 	assert.ok(output.indexed_paths.includes('src/auth.ts'));
@@ -133,7 +133,7 @@ test('indexes YAML service contract source anchors', async () => {
 		);
 		const indexedSourcePaths = queryRows(
 			database,
-			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+			'SELECT path FROM indexed_source_candidates ORDER BY path',
 		).map((row) => row.path);
 
 		assert.equal(output.source_index_enabled, true);
@@ -182,7 +182,7 @@ export const cachedAnchor = true;
 		const database = new SQL.Database(readFileSync(indexPath));
 		const indexedSourcePaths = queryRows(
 			database,
-			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+			'SELECT path FROM indexed_source_candidates ORDER BY path',
 		).map((row) => row.path);
 		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
 
@@ -251,7 +251,7 @@ export const skippedAnchor = true;
 		const database = new SQL.Database(readFileSync(indexPath));
 		const indexedSourcePaths = queryRows(
 			database,
-			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+			'SELECT path FROM indexed_source_candidates ORDER BY path',
 		).map((row) => row.path);
 		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
 
@@ -265,7 +265,7 @@ export const skippedAnchor = true;
 	}
 });
 
-test('source indexed file records skip disappeared source candidates', async () => {
+test('source indexed file records fail closed when a required source candidate disappears', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-source-disappeared-candidate-');
 
 	try {
@@ -273,12 +273,43 @@ test('source indexed file records skip disappeared source candidates', async () 
 		writeFileSync(path.join(projectPath, 'src', 'kept.ts'), 'export const keptSource = true;\n');
 
 		const { collectIndexedFileRecords } = await import('../../dist/cli/lib/local-index/source-index.js');
-		const records = collectIndexedFileRecords(projectPath, [], [], ['src/disappeared.ts', 'src/kept.ts']);
-
-		assert.deepEqual(
-			records.map((record) => record.path),
-			['src/kept.ts'],
+		assert.throws(
+			() => collectIndexedFileRecords(projectPath, [], [], ['src/disappeared.ts', 'src/kept.ts']),
+			/ENOENT|no such file/u,
 		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('source incremental reuse compares mixed-case candidate paths as a set in both reuse phases', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-source-mixed-case-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'B.ts'), 'export const upper = true;\n');
+		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'export const lower = true;\n');
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+
+		const preflightReuse = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		assert.equal(preflightReuse.reused_existing, true);
+		assert.equal(preflightReuse.wrote_files, false);
+		assert.equal(preflightReuse.rebuild_reason, null);
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		try {
+			database.run('UPDATE indexed_files SET mtime_ms = mtime_ms + 10 WHERE path = ?', ['src/B.ts']);
+			writeFileSync(indexPath, database.export());
+		} finally {
+			database.close();
+		}
+
+		const postCollectionReuse = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		assert.equal(postCollectionReuse.reused_existing, true);
+		assert.equal(postCollectionReuse.wrote_files, false);
+		assert.equal(postCollectionReuse.rebuild_reason, null);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -321,13 +352,13 @@ export const changedSetAnchor = true;
 		const database = new SQL.Database(readFileSync(indexPath));
 		const indexedSourcePaths = queryRows(
 			database,
-			'SELECT path FROM indexed_files WHERE source_scope = "source_anchor" ORDER BY path',
+			'SELECT path FROM indexed_source_candidates ORDER BY path',
 		).map((row) => row.path);
 		const anchorRows = queryRows(database, 'SELECT id, path FROM source_anchors ORDER BY id');
 
 		assert.equal(output.index_mode, 'incremental');
 		assert.equal(output.reused_existing, false);
-		assert.equal(output.rebuild_reason, 'file_fingerprint_mismatch');
+		assert.equal(output.rebuild_reason, 'source_scope_mismatch');
 		assert.equal(output.source_anchor_count, 1);
 		assert.deepEqual(indexedSourcePaths, ['src/new-plain.ts', 'src/with-anchor.ts']);
 		assert.deepEqual(anchorRows, [{ id: 'source.preflight.changed-set', path: 'src/with-anchor.ts' }]);

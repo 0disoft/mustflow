@@ -1,4 +1,4 @@
-export const LOCAL_INDEX_SCHEMA_VERSION = '20';
+export const LOCAL_INDEX_SCHEMA_VERSION = '21';
 export const LOCAL_INDEX_PARSER_VERSION = '1';
 export const DEFAULT_DATABASE_RELATIVE_PATH = '.mustflow/cache/mustflow.sqlite';
 export const LATEST_RUN_STATE_RELATIVE_PATH = '.mustflow/state/runs/latest.json';

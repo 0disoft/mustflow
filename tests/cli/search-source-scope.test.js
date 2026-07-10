@@ -73,6 +73,41 @@ test('searches source anchors only when source scope is requested', async () => 
 	}
 });
 
+test('rejects source search when a new source candidate appears after indexing', async () => {
+	const projectPath = cloneSourceIndexedProject();
+
+	try {
+		writeFileSync(path.join(projectPath, 'src', 'new-candidate.ts'), 'export const newCandidate = true;\n');
+
+		await assert.rejects(
+			searchLocalIndexDirect(projectPath, 'newCandidate', { scope: 'source' }),
+			/Local mustflow index is stale: src\/new-candidate\.ts/u,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps source search fresh when a workflow document is also a source candidate', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+			['[source_index]', 'include = ["AGENTS.md"]', 'allowed_extensions = ["md"]', ''].join('\n'),
+		);
+		indexProject(projectPath, ['--source']);
+
+		const output = await searchLocalIndexDirect(projectPath, 'AGENTS', { scope: 'source' });
+
+		assert.equal(output.index_fresh, true);
+		assert.deepEqual(output.stale_paths, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps workflow authority above source anchors in all-scope search results', async () => {
 	const projectPath = cloneSourceIndexedProject();
 

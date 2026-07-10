@@ -746,3 +746,152 @@ test('prints prompt-cache task local-index status when the index is fresh or sta
 		removeTempProject(projectPath);
 	}
 });
+
+test('marks source-enabled local indexes stale when the source candidate set changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'existing.ts'), 'export const existing = true;\n');
+
+		const index = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		writeFileSync(path.join(projectPath, 'src', 'added.ts'), 'export const added = true;\n');
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'stale');
+		assert.equal(context.task_context.local_index.index_fresh, false);
+		assert.ok(context.task_context.local_index.stale_paths.includes('src/added.ts'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps source-disabled local indexes fresh when source candidates change', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const index = runCli(projectPath, ['index', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'ignored.ts'), 'export const ignored = true;\n');
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'fresh');
+		assert.equal(context.task_context.local_index.index_fresh, true);
+		assert.deepEqual(context.task_context.local_index.stale_paths, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('marks source-enabled local indexes stale when source scope configuration changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+
+		const index = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+			['[source_index]', 'max_file_bytes = 1024', ''].join('\n'),
+		);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'stale');
+		assert.equal(context.task_context.local_index.index_fresh, false);
+		assert.ok(context.task_context.local_index.stale_paths.includes('.mustflow/cache/mustflow.sqlite'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps source-enabled indexes fresh when one path is both workflow authority and a source candidate', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'index.toml'),
+			['[source_index]', 'include = ["AGENTS.md"]', 'allowed_extensions = ["md"]', ''].join('\n'),
+		);
+
+		const index = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'fresh');
+		assert.equal(context.task_context.local_index.index_fresh, true);
+		assert.deepEqual(context.task_context.local_index.stale_paths, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('marks a source candidate stale when configuration removes the unchanged file from source scope', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'kept.ts'), 'export const kept = true;\n');
+		const indexConfigPath = path.join(projectPath, '.mustflow', 'config', 'index.toml');
+		writeFileSync(indexConfigPath, ['[source_index]', 'exclude = []', ''].join('\n'));
+
+		const index = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		writeFileSync(indexConfigPath, ['[source_index]', 'exclude = ["src/kept.ts"]', ''].join('\n'));
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'stale');
+		assert.ok(context.task_context.local_index.stale_paths.includes('.mustflow/cache/mustflow.sqlite'));
+		assert.ok(context.task_context.local_index.stale_paths.includes('src/kept.ts'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('fails source freshness closed when the current source config cannot be parsed', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const indexConfigPath = path.join(projectPath, '.mustflow', 'config', 'index.toml');
+		writeFileSync(indexConfigPath, ['[source_index]', 'exclude = []', ''].join('\n'));
+
+		const index = runCli(projectPath, ['index', '--source', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		writeFileSync(indexConfigPath, '[source_index\n');
+		const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(context.task_context.local_index.status, 'stale');
+		assert.ok(context.task_context.local_index.stale_paths.includes('.mustflow/cache/mustflow.sqlite'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

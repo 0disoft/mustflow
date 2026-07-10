@@ -1,8 +1,10 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, readStringArray, type TomlTable } from '../command-contract.js';
+import { MUSTFLOW_TEXT_MAX_BYTES, mustflowProjectPath } from '../mustflow-read.js';
 import { readMustflowTomlFile } from '../toml.js';
+import { ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
 import { listSourceAnchorFiles } from '../../../core/source-anchors.js';
 import {
 	INDEX_CONFIG_RELATIVE_PATH,
@@ -16,6 +18,38 @@ import type { IndexedFileRecord, IndexDocument, LocalIndexSourceConfig } from '.
 import { getExistingIndexablePaths } from './workflow-documents.js';
 
 export type IndexedFileMetadataRecord = Omit<IndexedFileRecord, 'contentHash'>;
+
+export interface FastPreflightIndexedFiles {
+	readonly records: readonly IndexedFileMetadataRecord[];
+	readonly sourceCandidatePaths: readonly string[];
+}
+
+function indexedProjectPath(projectRoot: string, relativePath: string): string {
+	if (
+		relativePath.length === 0 ||
+		relativePath.includes('\0') ||
+		relativePath.includes('\\') ||
+		path.posix.isAbsolute(relativePath) ||
+		path.win32.isAbsolute(relativePath)
+	) {
+		throw new Error(`Indexed file path must be a canonical project-relative path: ${relativePath}`);
+	}
+
+	const segments = relativePath.split('/');
+	if (segments.some((segment) => segment.length === 0 || segment === '.' || segment === '..')) {
+		throw new Error(`Indexed file path must be a canonical project-relative path: ${relativePath}`);
+	}
+
+	const fullPath = mustflowProjectPath(projectRoot, relativePath);
+	ensureInsideWithoutSymlinks(projectRoot, fullPath);
+	return fullPath;
+}
+
+function readIndexedFileBytes(projectRoot: string, relativePath: string): Buffer {
+	return readFileInsideWithoutSymlinks(projectRoot, indexedProjectPath(projectRoot, relativePath), {
+		maxBytes: MUSTFLOW_TEXT_MAX_BYTES,
+	});
+}
 
 function readIndexToml(projectRoot: string): TomlTable | undefined {
 	const indexConfigPath = path.join(projectRoot, ...INDEX_CONFIG_RELATIVE_PATH.split('/'));
@@ -106,14 +140,14 @@ export function readIndexedFileRecord(
 
 	return {
 		...metadata,
-		contentHash: contentHash ?? sha256Bytes(readFileSync(path.join(projectRoot, ...relativePath.split('/')))),
+		contentHash: contentHash ?? sha256Bytes(readIndexedFileBytes(projectRoot, relativePath)),
 	};
 }
 
 function hashIndexedFileMetadataRecord(projectRoot: string, metadata: IndexedFileMetadataRecord): IndexedFileRecord {
 	return {
 		...metadata,
-		contentHash: sha256Bytes(readFileSync(path.join(projectRoot, ...metadata.path.split('/')))),
+		contentHash: sha256Bytes(readIndexedFileBytes(projectRoot, metadata.path)),
 	};
 }
 
@@ -142,8 +176,11 @@ export function readIndexedFileMetadataRecord(
 	relativePath: string,
 	sourceScope: IndexedFileRecord['sourceScope'],
 ): IndexedFileMetadataRecord {
-	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
+	const fullPath = indexedProjectPath(projectRoot, relativePath);
 	const stats = statSync(fullPath);
+	if (!stats.isFile()) {
+		throw new Error(`Indexed path must be a regular file: ${relativePath}`);
+	}
 
 	return {
 		path: relativePath,
@@ -182,11 +219,7 @@ export function collectIndexedFileRecords(
 
 	for (const anchorPath of [...sourcePaths].sort((left, right) => left.localeCompare(right))) {
 		if (!records.has(anchorPath)) {
-			const record = tryReadIndexedFileRecord(projectRoot, anchorPath, 'source_anchor');
-
-			if (record) {
-				records.set(anchorPath, record);
-			}
+			records.set(anchorPath, readIndexedFileRecord(projectRoot, anchorPath, 'source_anchor'));
 		}
 	}
 
@@ -202,18 +235,25 @@ export function collectIndexedFileRecords(
 }
 
 export function collectSourceAnchorCandidatePaths(projectRoot: string, sourceConfig: LocalIndexSourceConfig): string[] {
-	return listSourceAnchorFiles(projectRoot, {
+	const paths = listSourceAnchorFiles(projectRoot, {
 		...sourceConfig,
 		excludeGeneratedOrVendor: true,
 	});
+
+	for (const relativePath of paths) {
+		indexedProjectPath(projectRoot, relativePath);
+	}
+
+	return paths;
 }
 
 export function collectFastPreflightIndexedFileMetadataRecords(
 	projectRoot: string,
 	includeSource: boolean,
 	sourceConfig: LocalIndexSourceConfig,
-): IndexedFileMetadataRecord[] | null {
+): FastPreflightIndexedFiles | null {
 	const records = new Map<string, IndexedFileMetadataRecord>();
+	let sourceCandidatePaths: readonly string[] = [];
 
 	for (const relativePath of getExistingIndexablePaths(projectRoot)) {
 		records.set(relativePath, readIndexedFileMetadataRecord(projectRoot, relativePath, 'workflow'));
@@ -221,7 +261,8 @@ export function collectFastPreflightIndexedFileMetadataRecords(
 
 	if (includeSource) {
 		try {
-			for (const sourcePath of collectSourceAnchorCandidatePaths(projectRoot, sourceConfig)) {
+			sourceCandidatePaths = collectSourceAnchorCandidatePaths(projectRoot, sourceConfig);
+			for (const sourcePath of sourceCandidatePaths) {
 				if (!records.has(sourcePath)) {
 					records.set(sourcePath, readIndexedFileMetadataRecord(projectRoot, sourcePath, 'source_anchor'));
 				}
@@ -238,5 +279,8 @@ export function collectFastPreflightIndexedFileMetadataRecords(
 		);
 	}
 
-	return [...records.values()].sort((left, right) => left.path.localeCompare(right.path));
+	return {
+		records: [...records.values()].sort((left, right) => left.path.localeCompare(right.path)),
+		sourceCandidatePaths,
+	};
 }

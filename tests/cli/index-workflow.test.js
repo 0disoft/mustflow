@@ -1,5 +1,15 @@
 import assert from 'node:assert/strict';
-import { appendFileSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import {
+	appendFileSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	symlinkSync,
+	utimesSync,
+	writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -13,6 +23,7 @@ import {
 	cloneWorkflowIndexedProject,
 	createLocalIndexDirect,
 	createMinimalWorkflowProject,
+	createTempProject,
 	getCachedIndexedProjectFixture,
 	importDistModule,
 	loadSqlJsCached,
@@ -24,8 +35,10 @@ import {
 	queryRows,
 	readLatestLocalVerificationReadModelQueriesDirect,
 	removeTempProject,
+	runCli,
 	sourceAnchorStatusChangedSource,
 } from './index-support.js';
+import { searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
 
 test('reuses loaded sql.js runtime within the current process', async () => {
 	const { loadSqlJs } = await importDistModule('cli/lib/local-index/sql.js');
@@ -34,6 +47,233 @@ test('reuses loaded sql.js runtime within the current process', async () => {
 
 	assert.equal(firstRuntime, secondRuntime);
 	assert.equal(secondRuntime, thirdRuntime);
+});
+
+test('enforces source candidate fingerprints through the SQLite schema', async () => {
+	const SQL = await loadSqlJsCached();
+	const database = new SQL.Database();
+	const { createSchema } = await importDistModule('cli/lib/local-index/schema.js');
+
+	try {
+		createSchema(database, { backend: 'table_scan', fts5Available: false });
+
+		assert.equal(queryRows(database, 'PRAGMA foreign_keys')[0].foreign_keys, 1);
+		assert.deepEqual(
+			queryRows(database, 'PRAGMA foreign_key_list(indexed_source_candidates)').map((row) => ({
+				table: row.table,
+				from: row.from,
+				to: row.to,
+				onUpdate: row.on_update,
+				onDelete: row.on_delete,
+			})),
+			[
+				{
+					table: 'indexed_files',
+					from: 'path',
+					to: 'path',
+					onUpdate: 'RESTRICT',
+					onDelete: 'RESTRICT',
+				},
+			],
+		);
+		assert.throws(
+			() => database.run('INSERT INTO indexed_source_candidates (path) VALUES (?)', ['src/missing.ts']),
+			/FOREIGN KEY constraint failed/u,
+		);
+
+		database.run(
+			'INSERT INTO indexed_files (path, source_scope, size_bytes, mtime_ms, content_hash, indexed_at, index_mode, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			['src/candidate.ts', 'source_anchor', 1, 1, 'sha256:test', '2026-07-10T00:00:00.000Z', 'full', '1'],
+		);
+		database.run('INSERT INTO indexed_source_candidates (path) VALUES (?)', ['src/candidate.ts']);
+
+		assert.deepEqual(queryRows(database, 'PRAGMA foreign_key_check'), []);
+		assert.throws(
+			() => database.run('DELETE FROM indexed_files WHERE path = ?', ['src/candidate.ts']),
+			/FOREIGN KEY constraint failed/u,
+		);
+		assert.throws(
+			() => database.run('UPDATE indexed_files SET path = ? WHERE path = ?', ['src/renamed.ts', 'src/candidate.ts']),
+			/FOREIGN KEY constraint failed/u,
+		);
+	} finally {
+		database.close();
+	}
+});
+
+test('rejects non-canonical and symlinked indexed file paths before reading them', async (t) => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-path-boundary-');
+	const outsidePath = createTempProject('mustflow-index-path-outside-');
+
+	try {
+		const outsideFile = path.join(outsidePath, 'outside.txt');
+		writeFileSync(outsideFile, 'outside sentinel\n');
+		const { readIndexedFileRecord } = await importDistModule('cli/lib/local-index/source-index.js');
+
+		for (const candidate of ['../outside.txt', '..\\outside.txt', '/outside.txt', 'C:\\outside.txt', '\\\\server\\share\\outside.txt']) {
+			assert.throws(
+				() => readIndexedFileRecord(projectPath, candidate, 'workflow'),
+				/canonical project-relative path|escapes mustflow project root/u,
+			);
+		}
+
+		const linkedPath = path.join(projectPath, 'linked-outside.txt');
+		try {
+			symlinkSync(outsideFile, linkedPath, 'file');
+		} catch (error) {
+			if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'EACCES', 'ENOTSUP'].includes(String(error.code))) {
+				t.skip('file symlinks are unavailable in this environment');
+				return;
+			}
+			throw error;
+		}
+
+		assert.throws(
+			() => readIndexedFileRecord(projectPath, 'linked-outside.txt', 'workflow'),
+			/Path must not contain symlinks/u,
+		);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
+	}
+});
+
+test('fails local-index freshness closed for missing or inconsistent source metadata', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-metadata-boundary-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'candidate.ts'), 'export const candidate = true;\n');
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const originalBytes = readFileSync(indexPath);
+		const SQL = await loadSqlJsCached();
+		const mutations = [
+			'DELETE FROM metadata WHERE key = "source_index_enabled"',
+			'UPDATE metadata SET value = "invalid" WHERE key = "source_index_enabled"',
+			'UPDATE metadata SET value = "false" WHERE key = "source_index_enabled"',
+			'DELETE FROM metadata WHERE key = "source_scope_hash"',
+		];
+
+		for (const mutation of mutations) {
+			const database = new SQL.Database(originalBytes);
+			try {
+				database.run(mutation);
+				writeFileSync(indexPath, database.export());
+			} finally {
+				database.close();
+			}
+
+			const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+			const context = JSON.parse(result.stdout);
+
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+			assert.equal(context.task_context.local_index.status, 'stale');
+			assert.ok(context.task_context.local_index.stale_paths.includes('.mustflow/cache/mustflow.sqlite'));
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects a tampered source candidate that has no indexed file fingerprint', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-candidate-fingerprint-');
+
+	try {
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'candidate.ts'),
+			`/**
+ * mf:anchor source.candidate.fingerprint
+ * purpose: Require every source candidate to retain an indexed file fingerprint.
+ * search: source candidate fingerprint
+ * invariant: Candidate membership cannot outlive its indexed file fingerprint.
+ * risk: cache
+ */
+export const candidate = true;
+`,
+		);
+		await createLocalIndexDirect(projectPath, { includeSource: true });
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		try {
+			database.run('DELETE FROM indexed_files WHERE path = ?', ['src/candidate.ts']);
+			writeFileSync(indexPath, database.export());
+		} finally {
+			database.close();
+		}
+		writeFileSync(path.join(projectPath, 'src', 'candidate.ts'), 'export const changed = true;\n');
+
+		const contextResult = runCli(projectPath, ['context', '--json', '--cache-profile', 'task']);
+		const context = JSON.parse(contextResult.stdout);
+		assert.equal(contextResult.status, 0, contextResult.stderr || contextResult.stdout);
+		assert.equal(context.task_context.local_index.status, 'stale');
+		assert.ok(context.task_context.local_index.stale_paths.includes('src/candidate.ts'));
+
+		await assert.rejects(
+			searchLocalIndexDirect(projectPath, 'source candidate fingerprint', { scope: 'source' }),
+			/Local mustflow index is stale: src\/candidate\.ts/u,
+		);
+
+		const incremental = await createLocalIndexDirect(projectPath, { includeSource: true, incremental: true });
+		assert.equal(incremental.reused_existing, false);
+		assert.equal(incremental.wrote_files, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects unsupported portable source candidate names before writing an index on POSIX', async (t) => {
+	if (process.platform === 'win32') {
+		t.skip('POSIX-only filename contract');
+		return;
+	}
+
+	for (const relativePath of ['src/odd\\name.ts', 'C:/anchor.ts']) {
+		const projectPath = createMinimalWorkflowProject('mustflow-index-portable-path-');
+		try {
+			const candidatePath = path.join(projectPath, ...relativePath.split('/'));
+			mkdirSync(path.dirname(candidatePath), { recursive: true });
+			writeFileSync(candidatePath, '/* mf:anchor portable.path */\nexport const value = true;\n');
+
+			await assert.rejects(
+				createLocalIndexDirect(projectPath, { includeSource: true }),
+				/canonical project-relative path/u,
+			);
+			assert.equal(existsSync(path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite')), false);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	}
+});
+
+test('ignores an already indexed volatile state row only when includeState is false', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-state-freshness-');
+
+	try {
+		const statePath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
+		mkdirSync(path.dirname(statePath), { recursive: true });
+		writeFileSync(statePath, '{"status":"passed"}\n');
+		await createLocalIndexDirect(projectPath);
+		writeFileSync(statePath, '{"status":"failed"}\n');
+
+		const indexPath = path.join(projectPath, '.mustflow', 'cache', 'mustflow.sqlite');
+		const SQL = await loadSqlJsCached();
+		const database = new SQL.Database(readFileSync(indexPath));
+		const { getStalePaths } = await importDistModule('cli/lib/local-index/freshness.js');
+
+		try {
+			assert.equal(getStalePaths(projectPath, database, { includeState: false }).includes('.mustflow/state/runs/latest.json'), false);
+			assert.equal(getStalePaths(projectPath, database, { includeState: true }).includes('.mustflow/state/runs/latest.json'), true);
+		} finally {
+			database.close();
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
 });
 
 test('writes a sqlite local index for mustflow documents and command intents', async () => {
@@ -70,7 +310,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '20');
+		assert.equal(output.schema_version, '21');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -104,7 +344,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '20');
+		assert.equal(metadata.schema_version, '21');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');

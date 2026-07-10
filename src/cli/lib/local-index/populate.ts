@@ -301,6 +301,7 @@ export function populateDatabase(
 	commandIntents: readonly IndexCommandIntent[],
 	sourceAnchors: readonly SourceAnchorIndexRecord[],
 	indexedFiles: readonly IndexedFileRecord[],
+	indexedSourceCandidates: readonly string[],
 	verificationEvidence: VerificationEvidenceIndex,
 	indexMode: LocalIndexResult['index_mode'],
 	sourceScopeHash: string,
@@ -361,6 +362,10 @@ export function populateDatabase(
 				LOCAL_INDEX_PARSER_VERSION,
 			],
 		);
+	}
+
+	for (const sourceCandidatePath of indexedSourceCandidates) {
+		database.run('INSERT INTO indexed_source_candidates (path) VALUES (?)', [sourceCandidatePath]);
 	}
 
 	for (const document of documents) {

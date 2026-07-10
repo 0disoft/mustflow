@@ -330,7 +330,7 @@ test('indexes latest verification evidence as bounded read-model summaries', asy
 		const [failureReadModel] = queryRows(database, 'SELECT * FROM failure_fingerprints');
 		const databaseText = Buffer.from(database.export()).toString('utf8');
 
-		assert.equal(output.schema_version, '20');
+		assert.equal(output.schema_version, '21');
 		assert.equal(output.verification_evidence_summary_count, 1);
 		assert.equal(output.verification_plan_count, 1);
 		assert.equal(output.acceptance_criteria_count, 1);

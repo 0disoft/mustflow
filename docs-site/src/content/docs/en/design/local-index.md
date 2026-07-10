@@ -70,6 +70,14 @@ remain compatible; otherwise it falls back to a full rebuild. When source-anchor
 the reuse path can stop after a lightweight size and modified-time preflight instead of reading and
 parsing every indexed input again.
 
+The `indexed_source_candidates` table records source-candidate membership separately from
+`indexed_files.source_scope`. This keeps a path that is both workflow authority and a source candidate
+from being misclassified as stale. A foreign key requires every source candidate to retain its
+`indexed_files` fingerprint and prevents that fingerprint path from being deleted or renamed first.
+Indexed file paths must be canonical project-relative paths;
+index creation and freshness checks reject traversal, absolute or Windows drive/UNC forms, and
+symlinked paths instead of reading outside the mustflow root.
+
 `path_surfaces` and `path_surface_reasons` are derived from the built-in change classification
 rules. They store rule id, pattern shape, pattern flags, surface kind, category, public-surface flag, validation
 reasons, affected contracts, update policy, and drift checks. The TypeScript classification rules
