@@ -51,9 +51,11 @@ For npm publication, `release_npm_version_available` checks that the current
 the release tag for that version and triggers the trusted publishing workflow,
 and `release_npm_published_verify` checks npm after the workflow finishes.
 `release_npm_install_smoke` then installs that exact version from the registry
-into an isolated operating-system temporary project with lifecycle scripts
-disabled, verifies both CLI bins and the reported version, initializes mustflow,
-runs a strict check, and removes the temporary project. The publish workflow
+into an isolated operating-system temporary project and npm cache with lifecycle
+scripts disabled. It uses bounded retries for transient registry propagation,
+executes both public CLI aliases through npm, verifies their reported versions,
+initializes mustflow, runs a strict check, reports the runtime environment, and
+removes the temporary state without hiding the primary failure. The publish workflow
 creates the GitHub Release for the pushed tag when needed. The publish intent
 requires explicit release/network approval before execution.
 

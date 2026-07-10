@@ -1,4 +1,21 @@
 import {
+	chmodSync,
+	mkdtempSync,
+	mkdirSync,
+	readdirSync,
+	rmSync,
+	writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+
+import {
+	CommandExecutionError,
+	createNpmRunner,
+	smokePublishedPackage,
+} from '../../scripts/lib/npm-release-install-smoke.mjs';
+
+import {
 	assert,
 	ciWorkflow,
 	cliPath,
@@ -25,6 +42,99 @@ import {
 	templateSkillCreates,
 	test,
 } from './helpers/package-contracts.js';
+
+const smokeFixturePackage = { name: 'mustflow', version: '9.9.9' };
+
+function createSmokeFixtureParent() {
+	return mkdtempSync(path.join(tmpdir(), 'mustflow-release-smoke-test-'));
+}
+
+function writeInstalledSmokeFixture(projectPath, installedVersion) {
+	const packageRoot = path.join(projectPath, 'node_modules', 'mustflow');
+	const cliPath = path.join(packageRoot, 'dist', 'cli', 'index.js');
+	const binRoot = path.join(projectPath, 'node_modules', '.bin');
+
+	mkdirSync(path.dirname(cliPath), { recursive: true });
+	mkdirSync(binRoot, { recursive: true });
+	writeFileSync(cliPath, '#!/usr/bin/env node\n');
+	writeFileSync(path.join(binRoot, 'mf'), 'fixture shim\n');
+	writeFileSync(path.join(binRoot, 'mustflow'), 'fixture shim\n');
+	writeFileSync(
+		path.join(packageRoot, 'package.json'),
+		`${JSON.stringify({
+			name: 'mustflow',
+			version: installedVersion,
+			bin: {
+				mf: './dist/cli/index.js',
+				mustflow: './dist/cli/index.js',
+			},
+		}, null, 2)}\n`,
+	);
+}
+
+function createFakeNpmRunner({
+	installedVersion = smokeFixturePackage.version,
+	transientInstallFailures = 0,
+	failingBin,
+	strictReport = { ok: true, strict: true },
+} = {}) {
+	const calls = [];
+	let installAttempts = 0;
+
+	const runNpm = async (args, cwd) => {
+		calls.push([...args]);
+		if (args[0] === '--version') {
+			return { status: 0, stdout: '11.4.2\n', stderr: '' };
+		}
+		if (args[0] === 'install') {
+			installAttempts += 1;
+			if (installAttempts <= transientInstallFailures) {
+				throw new CommandExecutionError('npm error code E404', {
+					command: 'npm',
+					args,
+					cwd,
+					status: 1,
+					stderr: 'npm error code E404',
+				});
+			}
+			writeInstalledSmokeFixture(cwd, installedVersion);
+			return { status: 0, stdout: 'installed\n', stderr: '' };
+		}
+		if (args[0] === 'exec') {
+			const separatorIndex = args.indexOf('--');
+			const binName = args[separatorIndex + 1];
+			const binArgs = args.slice(separatorIndex + 2);
+			if (binName === failingBin) {
+				throw new CommandExecutionError(`broken ${binName} shim`, {
+					command: 'npm',
+					args,
+					cwd,
+					status: 1,
+					stderr: `broken ${binName} shim`,
+				});
+			}
+			if (binArgs[0] === '--version') {
+				return { status: 0, stdout: `${installedVersion}\n`, stderr: '' };
+			}
+			if (binName === 'mf' && binArgs[0] === 'init') {
+				return { status: 0, stdout: 'initialized\n', stderr: '' };
+			}
+			if (binName === 'mf' && binArgs[0] === 'check') {
+				return { status: 0, stdout: `${JSON.stringify(strictReport)}\n`, stderr: '' };
+			}
+		}
+
+		throw new Error(`Unexpected fake npm call: ${args.join(' ')}`);
+	};
+
+	return {
+		calls,
+		get installAttempts() {
+			return installAttempts;
+		},
+		runNpm,
+	};
+}
 
 test('npm publish workflow uses trusted publisher identity', () => {
 	assert.match(publishNpmWorkflow, /push:\s*\n\s+tags:\s*\n\s+- "v\*"/u);
@@ -87,15 +197,182 @@ test('published npm install smoke verifies the isolated user installation path',
 	assert.match(smokeIntent, /destructive = false/u);
 	assert.match(smokeIntent, /required_after = \["release_risk"\]/u);
 
-	assert.match(releaseInstallSmokeScript, /`\$\{packageJson\.name\}@\$\{packageJson\.version\}`/u);
-	assert.match(releaseInstallSmokeScript, /MUSTFLOW_NPM_REGISTRY_URL/u);
-	assert.match(releaseInstallSmokeScript, /'--ignore-scripts'/u);
-	assert.match(releaseInstallSmokeScript, /'--save-exact'/u);
-	assert.match(releaseInstallSmokeScript, /const requiredBins = \['mf', 'mustflow'\]/u);
-	assert.match(releaseInstallSmokeScript, /\[cliPath, '--version'\]/u);
-	assert.match(releaseInstallSmokeScript, /\[cliPath, 'init', '--yes'\]/u);
-	assert.match(releaseInstallSmokeScript, /\[cliPath, 'check', '--strict', '--json'\]/u);
-	assert.match(releaseInstallSmokeScript, /rmSync\(tempRoot, \{ recursive: true, force: true \}\)/u);
+	assert.match(releaseInstallSmokeScript, /smokePublishedPackage/u);
+	assert.match(releaseInstallSmokeScript, /formatSmokeError/u);
+});
+
+test('published npm smoke executes both public aliases and a strict consumer workflow', async () => {
+	const tempParent = createSmokeFixtureParent();
+	const fakeNpm = createFakeNpmRunner();
+
+	try {
+		const evidence = await smokePublishedPackage({
+			packageJson: smokeFixturePackage,
+			runNpm: fakeNpm.runNpm,
+			tempParent,
+			logger: () => {},
+		});
+		const calls = fakeNpm.calls.map((args) => args.join(' '));
+
+		assert.equal(evidence.packageSpec, 'mustflow@9.9.9');
+		assert.deepEqual(evidence.bins, ['mf', 'mustflow']);
+		assert.ok(calls.some((call) => call.includes('install --ignore-scripts')));
+		assert.ok(calls.some((call) => call.includes('--prefer-online --cache')));
+		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf --version')));
+		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mustflow --version')));
+		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf init --yes')));
+		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf check --strict --json')));
+		assert.deepEqual(readdirSync(tempParent), []);
+	} finally {
+		rmSync(tempParent, { recursive: true, force: true });
+	}
+});
+
+test('npm exec runs a real local public shim in offline mode', async () => {
+	const projectPath = createSmokeFixtureParent();
+	const binRoot = path.join(projectPath, 'node_modules', '.bin');
+	const packageRoot = path.join(projectPath, 'node_modules', 'mustflow');
+	const cacheRoot = path.join(projectPath, 'npm-cache');
+	const shimPath = path.join(binRoot, process.platform === 'win32' ? 'mf.cmd' : 'mf');
+
+	try {
+		mkdirSync(binRoot, { recursive: true });
+		mkdirSync(path.join(packageRoot, 'bin'), { recursive: true });
+		mkdirSync(cacheRoot);
+		writeFileSync(
+			path.join(projectPath, 'package.json'),
+			'{"private":true,"dependencies":{"mustflow":"9.9.9"}}\n',
+		);
+		writeFileSync(
+			path.join(packageRoot, 'package.json'),
+			'{"name":"mustflow","version":"9.9.9","bin":{"mf":"./bin/mf.js"}}\n',
+		);
+		writeFileSync(path.join(packageRoot, 'bin', 'mf.js'), '#!/usr/bin/env node\n');
+		writeFileSync(
+			shimPath,
+			process.platform === 'win32'
+				? '@echo off\r\necho 9.9.9\r\n'
+				: '#!/bin/sh\nprintf "9.9.9\\n"\n',
+		);
+		if (process.platform !== 'win32') {
+			chmodSync(shimPath, 0o755);
+		}
+
+		const result = await createNpmRunner()(
+			['exec', '--package=mustflow', '--cache', cacheRoot, '--offline', '--yes=false', '--', 'mf', '--version'],
+			projectPath,
+		);
+
+		assert.equal(result.stdout.trim(), '9.9.9');
+	} finally {
+		rmSync(projectPath, { recursive: true, force: true });
+	}
+});
+
+test('published npm smoke fails when the mustflow public alias is broken and still cleans up', async () => {
+	const tempParent = createSmokeFixtureParent();
+	const fakeNpm = createFakeNpmRunner({ failingBin: 'mustflow' });
+
+	try {
+		await assert.rejects(
+			smokePublishedPackage({
+				packageJson: smokeFixturePackage,
+				runNpm: fakeNpm.runNpm,
+				tempParent,
+				logger: () => {},
+			}),
+			/broken mustflow shim/u,
+		);
+		assert.deepEqual(readdirSync(tempParent), []);
+	} finally {
+		rmSync(tempParent, { recursive: true, force: true });
+	}
+});
+
+test('published npm smoke retries transient registry propagation with a bounded policy', async () => {
+	const tempParent = createSmokeFixtureParent();
+	const fakeNpm = createFakeNpmRunner({ transientInstallFailures: 2 });
+	const retries = [];
+
+	try {
+		await smokePublishedPackage({
+			packageJson: smokeFixturePackage,
+			runNpm: fakeNpm.runNpm,
+			tempParent,
+			retryDelaysMilliseconds: [0, 0],
+			sleep: async () => {},
+			onRetry: (retry) => retries.push(retry),
+			logger: () => {},
+		});
+
+		assert.equal(fakeNpm.installAttempts, 3);
+		assert.equal(retries.length, 2);
+		assert.deepEqual(readdirSync(tempParent), []);
+	} finally {
+		rmSync(tempParent, { recursive: true, force: true });
+	}
+});
+
+test('published npm smoke rejects the wrong installed version and non-strict reports', async () => {
+	const wrongVersionParent = createSmokeFixtureParent();
+	const nonStrictParent = createSmokeFixtureParent();
+
+	try {
+		await assert.rejects(
+			smokePublishedPackage({
+				packageJson: smokeFixturePackage,
+				runNpm: createFakeNpmRunner({ installedVersion: '9.9.8' }).runNpm,
+				tempParent: wrongVersionParent,
+				logger: () => {},
+			}),
+			/Expected mustflow@9\.9\.9, received mustflow@9\.9\.8/u,
+		);
+		await assert.rejects(
+			smokePublishedPackage({
+				packageJson: smokeFixturePackage,
+				runNpm: createFakeNpmRunner({ strictReport: { ok: true, strict: false } }).runNpm,
+				tempParent: nonStrictParent,
+				logger: () => {},
+			}),
+			/ok=true and strict=true/u,
+		);
+	} finally {
+		rmSync(wrongVersionParent, { recursive: true, force: true });
+		rmSync(nonStrictParent, { recursive: true, force: true });
+	}
+});
+
+test('published npm smoke preserves both the primary and cleanup failures', async () => {
+	const tempParent = createSmokeFixtureParent();
+	const fakeNpm = createFakeNpmRunner({ failingBin: 'mf' });
+	let leakedTempRoot;
+
+	try {
+		await assert.rejects(
+			smokePublishedPackage({
+				packageJson: smokeFixturePackage,
+				runNpm: fakeNpm.runNpm,
+				tempParent,
+				logger: () => {},
+				removeDirectory: (directory) => {
+					leakedTempRoot = directory;
+					throw new Error('cleanup failed');
+				},
+			}),
+			(error) => {
+				assert.ok(error instanceof AggregateError);
+				assert.equal(error.errors.length, 2);
+				assert.match(error.errors[0].message, /broken mf shim/u);
+				assert.match(error.errors[1].message, /cleanup failed/u);
+				return true;
+			},
+		);
+	} finally {
+		if (leakedTempRoot) {
+			rmSync(leakedTempRoot, { recursive: true, force: true });
+		}
+		rmSync(tempParent, { recursive: true, force: true });
+	}
 });
 
 test('npm registry release check fully encodes package lookup paths', () => {

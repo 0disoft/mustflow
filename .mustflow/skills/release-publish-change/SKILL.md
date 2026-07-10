@@ -2,7 +2,7 @@
 mustflow_doc: skill.release-publish-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: release-publish-change
@@ -60,7 +60,7 @@ The release is not done when tests pass locally, a version string changes, or a 
   and whether each belongs to publication, branch CI, tag CI, release asset generation, or another
   independent verification path.
 - Recovery model: unpublish, yank, deprecate, republish with new version, move channel pointer, revoke asset, restore from backup, or forward fix.
-- Configured command intents for build, package inspection, release verification, docs validation, and user installation or updater smoke test. If no such intent exists, report the missing intent instead of inventing a raw command.
+- Configured command intents for build, package inspection, release verification, docs validation, and user installation or updater smoke test. For post-publish checks, also identify the exact immutable version, intended registry or channel, consumer environment, public entrypoints, and runtime or platform evidence. If no such intent exists, report the missing intent instead of inventing a raw command.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -101,6 +101,14 @@ The release is not done when tests pass locally, a version string changes, or a 
    - GitHub Releases depend on Git tags, but release assets, checksums, signatures, and release body are separate evidence surfaces.
    - App updater channels depend on metadata and signature state, not only uploaded installers.
 5. For npm-style package publication, verify package metadata, packed file list, entrypoints, bin links, README, LICENSE, access, provenance or trusted publisher setup, registry target, and exact published version behavior through configured intents.
+   - Keep pre-publish packed-artifact checks separate from post-publish registry checks. A local tarball or workspace install does not prove that the immutable registry version users receive is installable.
+   - Run the post-publish smoke in a fresh consumer root outside the source checkout. Install the exact immutable name and version from the intended registry without workspace links or local archive fallbacks.
+   - Use a fresh or isolated package-manager cache strategy and prefer current registry metadata. A cache-only success is not independent remote-channel evidence.
+   - Disable lifecycle scripts by default so a package cannot repair missing build output during installation. If lifecycle scripts are an intentional public contract, test that behavior separately with the required sandbox and approval boundary.
+   - Execute the public command shims, exported entrypoints, or documented import path that users invoke. Calling an internal module file directly does not prove that package-manager shims, aliases, permissions, or entry metadata work.
+   - Exercise every documented command alias that is part of the release contract, then run one minimal documented workflow that crosses initialization or configuration validation when applicable.
+   - Retry only bounded transient registry conditions such as propagation delay, throttling, or transport reset. Do not retry authentication, package metadata, entrypoint, or runtime failures into a false pass.
+   - Keep temporary state owned and removable, preserve the primary failure if cleanup also fails, and report the exact package version, registry, package-manager version, runtime, operating system, and public entrypoints exercised.
 6. For PyPI-style publication, verify source distribution, wheel contents, metadata, Python version constraints, entrypoints, README rendering, filename uniqueness, and install smoke path through configured intents.
 7. For crates.io-style publication, verify manifest metadata, include and exclude rules, packaged file list, feature combinations, docs expectations, and yank-forward-fix policy.
 8. For Go modules, treat the Git tag as the release. Verify module path, semantic tag, major-version path rules, tag target commit, proxy/cache implications, and module consumer smoke path. Do not move or delete tags as a casual recovery shortcut.
@@ -137,7 +145,7 @@ The release is not done when tests pass locally, a version string changes, or a 
 - Remote publication status is classified as not started, prepared, published, verified, failed, yanked, deprecated, superseded, or unknown.
 - Branch, tag, and publication workflow checks are classified separately as green, failing, pending,
   skipped, not applicable, or unknown.
-- User installation, pull, download, or updater smoke test status is known or explicitly reported as skipped.
+- Independent consumer-root installation, pull, download, or updater smoke status through public entrypoints is known with environment evidence, or explicitly reported as skipped.
 - Recovery plan matches the channel's actual permanence and rules.
 
 <!-- mustflow-section: verification -->
@@ -155,7 +163,7 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Prefer configured release, package-inspection, artifact-inspection, install-smoke, updater-smoke, checksum, signature, provenance, or registry-verification intents when the command contract exposes them.
+Prefer configured release, package-inspection, artifact-inspection, install-smoke, updater-smoke, checksum, signature, provenance, or registry-verification intents when the command contract exposes them. A local packed-artifact check may support pre-publish confidence, but it does not satisfy an independent post-publish installation claim.
 
 Do not infer package manager, registry, Docker, Git, Homebrew, or updater commands from project files. If the needed intent is missing, report the missing command contract instead of writing a raw command into the skill or final release procedure.
 
@@ -180,7 +188,7 @@ Do not infer package manager, registry, Docker, Git, Homebrew, or updater comman
 - Artifact contents inspected
 - Remote publication state
 - Branch, tag, and publication check-suite state
-- User installation, download, pull, or updater smoke path result
+- User installation, download, pull, or updater smoke result, including exact immutable version, registry or channel, public entrypoints, package manager, runtime, operating system, retry outcome, and skipped platforms
 - Synchronized version, docs, manifest, workflow, and test surfaces
 - Recovery or rollback classification
 - Command intents run

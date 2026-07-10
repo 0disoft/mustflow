@@ -25,6 +25,27 @@ test('release notes authoring avoids invented history and stays template-synced'
 	assert.match(skillIndex, /skipped release-history checks/u);
 });
 
+test('release publish change requires independent public-entrypoint smoke evidence', () => {
+	const localSkill = readText('.mustflow/skills/release-publish-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/release-publish-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /local tarball or workspace install does not prove/u);
+	assert.match(localSkill, /fresh consumer root outside the source checkout/u);
+	assert.match(localSkill, /cache-only success is not independent remote-channel evidence/u);
+	assert.match(localSkill, /Execute the public command shims, exported entrypoints, or documented import path/u);
+	assert.match(localSkill, /Calling an internal module file directly does not prove/u);
+	assert.match(localSkill, /Retry only bounded transient registry conditions/u);
+	assert.match(localSkill, /preserve the primary failure if cleanup also fails/u);
+	assert.match(skillIndex, /cache-only or internal-entrypoint-only smoke/u);
+	assert.match(skillIndex, /public-entrypoint user-path smoke and environment evidence/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'release-publish-change', 3);
+});
+
 test('date number audit classifies release version impact from public contracts', () => {
 	const localSkill = readText('.mustflow/skills/date-number-audit/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/date-number-audit/SKILL.md');
