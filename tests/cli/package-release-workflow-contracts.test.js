@@ -13,6 +13,7 @@ import {
 	readPublicJsonContracts,
 	readTemplateSkillProfile,
 	readTomlStringArrayBlock,
+	releaseInstallSmokeScript,
 	releaseVersionCheckScript,
 	sourceCommandContract,
 	spawnSync,
@@ -44,7 +45,9 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /\[intents\.release_npm_version_available\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_publish\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_published_verify\]/u);
+	assert.match(sourceCommandContract, /\[intents\.release_npm_install_smoke\]/u);
 	assert.match(sourceCommandContract, /scripts\/check-npm-release-version\.mjs/u);
+	assert.match(sourceCommandContract, /scripts\/smoke-npm-release-install\.mjs/u);
 	assert.match(sourceCommandContract, /scripts\/start-npm-release\.mjs/u);
 	assert.match(sourceCommandContract, /--expect-available/u);
 	assert.match(sourceCommandContract, /--expect-published/u);
@@ -67,6 +70,32 @@ test('source repository declares bounded npm registry release checks', () => {
 	});
 	assert.equal(guardedStart.status, 1);
 	assert.match(guardedStart.stderr, /Refusing to start npm release without --yes/u);
+});
+
+test('published npm install smoke verifies the isolated user installation path', () => {
+	const smokeIntent = /\[intents\.release_npm_install_smoke\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(smokeIntent, '');
+	assert.match(smokeIntent, /status = "configured"/u);
+	assert.match(smokeIntent, /lifecycle = "oneshot"/u);
+	assert.match(smokeIntent, /run_policy = "agent_allowed"/u);
+	assert.match(smokeIntent, /timeout_seconds = 300/u);
+	assert.match(smokeIntent, /stdin = "closed"/u);
+	assert.match(smokeIntent, /success_exit_codes = \[0\]/u);
+	assert.match(smokeIntent, /writes = \[\]/u);
+	assert.match(smokeIntent, /network = true/u);
+	assert.match(smokeIntent, /destructive = false/u);
+	assert.match(smokeIntent, /required_after = \["release_risk"\]/u);
+
+	assert.match(releaseInstallSmokeScript, /`\$\{packageJson\.name\}@\$\{packageJson\.version\}`/u);
+	assert.match(releaseInstallSmokeScript, /MUSTFLOW_NPM_REGISTRY_URL/u);
+	assert.match(releaseInstallSmokeScript, /'--ignore-scripts'/u);
+	assert.match(releaseInstallSmokeScript, /'--save-exact'/u);
+	assert.match(releaseInstallSmokeScript, /const requiredBins = \['mf', 'mustflow'\]/u);
+	assert.match(releaseInstallSmokeScript, /\[cliPath, '--version'\]/u);
+	assert.match(releaseInstallSmokeScript, /\[cliPath, 'init', '--yes'\]/u);
+	assert.match(releaseInstallSmokeScript, /\[cliPath, 'check', '--strict', '--json'\]/u);
+	assert.match(releaseInstallSmokeScript, /rmSync\(tempRoot, \{ recursive: true, force: true \}\)/u);
 });
 
 test('npm registry release check fully encodes package lookup paths', () => {

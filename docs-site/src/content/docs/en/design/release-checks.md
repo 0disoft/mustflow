@@ -30,6 +30,7 @@ mf run mustflow_check
 mf run release_npm_version_available
 mf run release_npm_publish
 mf run release_npm_published_verify
+mf run release_npm_install_smoke
 ```
 
 `bun run release:check` remains the publishing gate. `test_fast` runs the fast
@@ -48,9 +49,13 @@ release-sensitive changes.
 For npm publication, `release_npm_version_available` checks that the current
 `package.json` version is still available on npm, `release_npm_publish` pushes
 the release tag for that version and triggers the trusted publishing workflow,
-and `release_npm_published_verify` checks npm after the workflow finishes. The
-publish workflow creates the GitHub Release for the pushed tag when needed. The
-publish intent requires explicit release/network approval before execution.
+and `release_npm_published_verify` checks npm after the workflow finishes.
+`release_npm_install_smoke` then installs that exact version from the registry
+into an isolated operating-system temporary project with lifecycle scripts
+disabled, verifies both CLI bins and the reported version, initializes mustflow,
+runs a strict check, and removes the temporary project. The publish workflow
+creates the GitHub Release for the pushed tag when needed. The publish intent
+requires explicit release/network approval before execution.
 
 ## Purpose
 

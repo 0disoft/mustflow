@@ -623,6 +623,21 @@ network = true
 destructive = false
 required_after = ["release_risk"]
 
+[intents.release_npm_install_smoke]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Install the exact package.json version from npm into an isolated OS temporary project, verify both CLI bins, initialize mustflow, run a strict check, and remove the project."
+argv = ["node", "scripts/smoke-npm-release-install.mjs"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+required_after = ["release_risk"]
+
 [intents.mustflow_update_dry_run]
 status = "configured"
 kind = "mustflow_builtin"

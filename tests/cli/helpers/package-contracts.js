@@ -18,6 +18,7 @@ export const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustf
 export const ciWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
 export const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 export const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
+export const releaseInstallSmokeScript = readFileSync(path.join(projectRoot, 'scripts', 'smoke-npm-release-install.mjs'), 'utf8');
 export const startNpmReleaseScript = readFileSync(path.join(projectRoot, 'scripts', 'start-npm-release.mjs'), 'utf8');
 export const supportedTemplateLocales = ['en', 'ko', 'zh', 'es', 'fr', 'hi'];
 export const templateCreates = readTomlStringArrayBlock(templateManifest, 'creates');
