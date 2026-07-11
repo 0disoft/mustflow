@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.115.5"
+version = "2.115.6"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -95,7 +95,9 @@ creates = [
   ".mustflow/skills/astro-code-change/SKILL.md",
   ".mustflow/skills/axum-code-change/SKILL.md",
   ".mustflow/skills/babylon-code-change/SKILL.md",
+  ".mustflow/skills/threejs-code-change/SKILL.md",
   ".mustflow/skills/bun-code-change/SKILL.md",
+  ".mustflow/skills/deno-code-change/SKILL.md",
   ".mustflow/skills/c-code-change/SKILL.md",
   ".mustflow/skills/css-code-change/SKILL.md",
   ".mustflow/skills/cpp-code-change/SKILL.md",
@@ -332,7 +334,9 @@ minimal = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",
@@ -503,7 +507,9 @@ patterns = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",
@@ -685,7 +691,9 @@ oss = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",
@@ -886,7 +894,9 @@ team = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",
@@ -1071,7 +1081,9 @@ product = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",
@@ -1262,7 +1274,9 @@ library = [
   "astro-code-change",
   "axum-code-change",
   "babylon-code-change",
+  "threejs-code-change",
   "bun-code-change",
+  "deno-code-change",
   "c-code-change",
   "css-code-change",
   "cpp-code-change",

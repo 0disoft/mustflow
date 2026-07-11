@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 22
+revision: 23
 lifecycle: user-editable
 authority: binding
 ---
@@ -129,6 +129,13 @@ mustflow-managed details are under `.mustflow/`.
   nested repository's local routing files.
 - Shared workspace skills provide procedure guidance only. They do not override the nested
   repository's `AGENTS.md`, command contract, edit scope, safety rules, or source of truth.
+- Resolve every verification intent named by a shared workspace skill against the selected child
+  repository's own `.mustflow/config/commands.toml`. Do not run a parent-root intent merely to
+  satisfy a child task, and do not treat the parent intent as a skipped child check.
+- Require parent-root verification only when the task edits parent-owned files, changes
+  parent-owned orchestration, or the child result explicitly depends on a parent-owned artifact or
+  contract. Unrelated parent worktree changes, locks, or manifest drift do not block a child-only
+  completion claim.
 - If a nested repository lacks a local skill index or uses a different local agent convention,
   do not treat that absence as meaning no applicable workspace-level skill exists; consult the
   shared workspace registry while keeping child-repository authority local.

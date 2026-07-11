@@ -53,7 +53,11 @@ test('Astro code change skill gates islands, rendering, content, and runtime ris
 	assert.match(localSkill, /edge runtimes/u);
 	assert.match(localSkill, /target adapter preview/u);
 	assert.match(localSkill, /For v6 to v7 migrations/u);
-	assert.match(localSkill, /`getContainerRenderer\(\)` imports from integration roots/u);
+	assert.match(localSkill, /remove obsolete `advancedRouting`, `queuedRendering`, and `rustCompiler` experimental flags/u);
+	assert.match(localSkill, /move stable `cache` and `routeRules` configuration out of the experimental block/u);
+	assert.match(localSkill, /treat `src\/fetch\.\*` as a reserved advanced-routing entrypoint/u);
+	assert.match(localSkill, /migrate deprecated `getContainerRenderer\(\)` imports from integration package roots/u);
+	assert.match(localSkill, /remove unsupported `@astrojs\/db` integration usage and exposed transition internals/u);
 	assert.match(skillIndex, /server islands/u);
 	assert.match(skillIndex, /stale `output: "hybrid"` migration/u);
 	assert.match(skillIndex, /`src\/fetch\.\*`/u);
@@ -82,7 +86,7 @@ test('Astro code change skill gates islands, rendering, content, and runtime ris
 	assert.match(manifest, /"\.mustflow\/skills\/astro-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"astro-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.astro-code-change"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.astro-code-change"\][\s\S]*?revision = 6/u);
 });
 
 test('frontend render stability keeps flicker diagnosis symptom-first and template-synced', () => {

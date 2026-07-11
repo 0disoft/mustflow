@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 251
+anchor_count: 253
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:476d6b0e23663f72a40616b56faf31f02ce4cab885b89e06cc8aa9342c01ff8d"
+source_fingerprint: "sha256:a2f0dd97363cd02188c9637cfd8d02652eca62c0c5dfc9e00dbe5b8c32aa612f"
 ---
 
 # REPO_MAP.md
@@ -300,6 +300,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/deletion-lifecycle-review/
 
 - `.mustflow/skills/deletion-lifecycle-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/deno-code-change/
+
+- `.mustflow/skills/deno-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/dependency-injection/
 
@@ -820,6 +824,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/third-party-api-integration-review/
 
 - `.mustflow/skills/third-party-api-integration-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/threejs-code-change/
+
+- `.mustflow/skills/threejs-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/transaction-boundary-integrity-review/
 

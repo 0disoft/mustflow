@@ -2,7 +2,7 @@
 mustflow_doc: skill.astro-code-change
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: astro-code-change
@@ -184,7 +184,15 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 ## Astro Major Migration Deltas
 
 - For v5 to v6 migrations, check removed or changed surfaces before editing call sites: `Astro.glob()` replacement with `import.meta.glob()` or content collections, `.cjs` and `.cts` config removal, `astro:ssr-manifest`, `RouteData.generate()`, old adapter hooks, old `NodeApp` paths, Zod 4 schema effects, and numeric dynamic route params.
-- For v6 to v7 migrations, check `src/fetch.*` or `fetchFile`, direct request handler composition, `cache`, `routeRules`, `advancedRouting`, `logger`, `queuedRendering`, `rustCompiler`, `markdown.processor`, `compressHTML`, removed or changed `@astrojs/db` usage, transition internals, and `getContainerRenderer()` imports from integration roots.
+- For v6 to v7 migrations, classify each crossed surface by its official migration status before
+  editing. The following status map is an official-source snapshot checked on 2026-07-11 and must
+  be refreshed before later durable use:
+  - remove obsolete `advancedRouting`, `queuedRendering`, and `rustCompiler` experimental flags because their behavior became the default;
+  - move stable `cache` and `routeRules` configuration out of the experimental block instead of deleting it;
+  - treat `src/fetch.*` as a reserved advanced-routing entrypoint and use `fetchFile` only to relocate or disable that entrypoint intentionally;
+  - migrate deprecated `getContainerRenderer()` imports from integration package roots to the documented container-renderer entrypoint;
+  - remove unsupported `@astrojs/db` integration usage and exposed transition internals;
+  - separately verify direct request handler composition, `logger`, `markdown.processor`, and `compressHTML` behavior against the official v7 guide for the installed target.
 - For v6 to v7 migrations with custom Vite config, Rollup hooks, or Astro integrations that call Vite APIs, also use `dependency-upgrade-review` when available.
 - Keep each migration delta scoped to the crossed major version. Do not copy old delta checks into ordinary Astro UI, content, or route edits.
 

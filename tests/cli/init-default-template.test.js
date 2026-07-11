@@ -163,6 +163,8 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(installedAgents, /shared\s+workspace skill registry/);
 		assert.match(installedAgents, /They do not override the nested\s+repository's `AGENTS\.md`, command contract/);
 		assert.match(installedAgents, /do not treat that absence as meaning no applicable workspace-level skill exists/);
+		assert.match(installedAgents, /Do not run a parent-root intent merely to\s+satisfy a child task/);
+		assert.match(installedAgents, /Unrelated parent worktree changes, locks, or manifest drift do not block a child-only/);
 
 		const gitignore = readText(path.join(projectPath, '.gitignore'));
 		assert.match(gitignore, /# mustflow:start schema=1/);

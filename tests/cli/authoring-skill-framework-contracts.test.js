@@ -10,7 +10,7 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
-test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, and nightly tracks', () => {
+test('TypeScript and dependency freshness skills distinguish stable compiler, API compatibility, development, and preview tracks', () => {
 	const tsSkill = readText('.mustflow/skills/typescript-code-change/SKILL.md');
 	const templateTsSkill = readText('templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md');
 	const dependencySkill = readText('.mustflow/skills/dependency-upgrade-review/SKILL.md');
@@ -34,10 +34,11 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 	assert.equal(routes, templateRoutes);
 
 	assert.match(tsSkill, /TypeScript 6 transition deprecations/u);
-	assert.match(tsSkill, /TypeScript 7 RC comparison/u);
-	assert.match(tsSkill, /TypeScript 7 nightly comparison/u);
+	assert.match(tsSkill, /TypeScript 7 stable adoption/u);
+	assert.match(tsSkill, /TypeScript development-build comparison/u);
 	assert.match(tsSkill, /`@typescript\/typescript6`/u);
 	assert.match(tsSkill, /`typescript@rc`/u);
+	assert.match(tsSkill, /`typescript@next`/u);
 	assert.match(tsSkill, /`@typescript\/native-preview`/u);
 	assert.match(tsSkill, /`tsgo`/u);
 	assert.match(tsSkill, /prefer `\.ts` source plus package `"type": "module"`/u);
@@ -54,29 +55,31 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 	assert.match(tsSkill, /`repo\/config-chain`, `code\/dependency-graph`, `code\/import-cycle`/u);
 	assert.match(tsSkill, /`ignoreDeprecations` is a temporary compatibility valve/u);
 	assert.match(tsSkill, /`--stableTypeOrdering` as a migration comparison tool/u);
-	assert.match(tsSkill, /Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline/u);
+	assert.match(tsSkill, /adopted stable compiler, TS6 API compatibility check, or framework typecheck as the baseline/u);
 	assert.match(tsSkill, /compiler API consumers, language-service plugins, custom transformers/u);
 
 	assert.match(dependencySkill, /TypeScript compiler tracks/u);
-	assert.match(dependencySkill, /TS6 stable API track through `@typescript\/typescript6` and `tsc6`/u);
-	assert.match(dependencySkill, /TS7 RC compiler track through `typescript@rc` and `tsc`/u);
-	assert.match(dependencySkill, /TS7 nightly track through `@typescript\/native-preview` and `tsgo`/u);
-	assert.match(dependencySkill, /Do not treat a nightly package as a stable replacement/u);
+	assert.match(dependencySkill, /snapshot checked on 2026-07-11/u);
+	assert.match(dependencySkill, /TS7 stable used `typescript` and\s+`tsc`/u);
+	assert.match(dependencySkill, /TS6 JavaScript API compatibility used `@typescript\/typescript6` and `tsc6`/u);
+	assert.match(dependencySkill, /development builds used `typescript@next`/u);
+	assert.match(dependencySkill, /`@typescript\/native-preview` and `tsgo`/u);
+	assert.match(dependencySkill, /`typescript@rc` was historical prerelease/u);
 	assert.match(dependencySkill, /Keep compiler API, transformer, ESLint, language-service plugin/u);
 	assert.match(dependencySkill, /lockfile-only or transitive vulnerability alerts/u);
 	assert.match(dependencySkill, /old vulnerable version is absent from the resolved graph/u);
 
 	assert.match(freshnessSkill, /TypeScript compiler-track references/u);
-	assert.match(freshnessSkill, /Do not call RC or nightly output "latest stable TypeScript"/u);
-	assert.match(freshnessSkill, /TS6 API compatibility, TS7 RC compiler verification, TS7 nightly comparison/u);
-	assert.match(freshnessSkill, /TypeScript 6 stable API, TypeScript 7 RC compiler, TypeScript 7 nightly/u);
+	assert.match(freshnessSkill, /do not call development, preview, or RC output "latest stable\s+TypeScript"/u);
+	assert.match(freshnessSkill, /TS7 stable compiler adoption, TS6 API compatibility/u);
+	assert.match(freshnessSkill, /TypeScript 7 stable compiler, TypeScript 6 JavaScript API compatibility/u);
 
 	assert.match(skillIndex, /TypeScript 6-to-7 migration surfaces/u);
 	assert.match(skillIndex, /project references, type-check performance/u);
 	assert.match(skillIndex, /DTO\/domain drift/u);
 	assert.match(skillIndex, /type-graph bloat/u);
-	assert.match(skillIndex, /TS7 RC over-adoption/u);
-	assert.match(skillIndex, /TypeScript RC\/nightly\/API-track confusion/u);
+	assert.match(skillIndex, /development or native-preview over-adoption/u);
+	assert.match(skillIndex, /TypeScript stable\/development\/native-preview\/prerelease\/API-track confusion/u);
 	const typeScriptRouteReasons = [
 		'"code_change"',
 		'"behavior_change"',
@@ -102,9 +105,9 @@ test('TypeScript and dependency freshness skills distinguish TS6 API, TS7 RC, an
 			'u',
 		),
 	);
-	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 6/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 8/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });
 
 test('React code change skill keeps modern React contribution boundaries explicit', () => {
@@ -334,6 +337,43 @@ test('Babylon code change skill keeps engine, asset, material, physics, and life
 	assert.match(i18n, /\[documents\."skill\.babylon-code-change"\][\s\S]*?revision = 1/u);
 });
 
+test('Three.js code change skill keeps renderer, resource, picking, and GPU risks explicit', () => {
+	const localSkill = readText('.mustflow/skills/threejs-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/threejs-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /release, WebGLRenderer,\s+WebGPURenderer, TSL\/node-material/u);
+	assert.match(localSkill, /renderer\.setAnimationLoop\(\)/u);
+	assert.match(localSkill, /Removing an object from a scene does\s+not dispose geometry/u);
+	assert.match(localSkill, /InstancedMesh\.instanceId/u);
+	assert.match(localSkill, /material define changes as shader-variant changes/u);
+	assert.match(localSkill, /canvas\.getBoundingClientRect\(\)/u);
+	assert.match(localSkill, /BVH or coarse colliders/u);
+	assert.match(localSkill, /WebGL context loss and WebGPU device loss/u);
+	assert.match(localSkill, /Do not call a change an optimization/u);
+	assert.match(skillIndex, /Use `threejs-code-change` as a primary route/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/threejs-code-change\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."threejs-code-change"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['ui_change', 'code_change', 'performance_change', 'docs_change', 'migration_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'threejs-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/threejs-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"threejs-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.threejs-code-change"\][\s\S]*?revision = 1/u);
+});
+
 test('Svelte code change skill catches SvelteKit execution modes and runes traps', () => {
 	const localSkill = readText('.mustflow/skills/svelte-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/svelte-code-change/SKILL.md');
@@ -367,6 +407,12 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	assert.match(localSkill, /Keep `\$effect` dependencies narrow and synchronous/u);
 	assert.match(localSkill, /Treat props as parent-owned/u);
 	assert.match(localSkill, /Treat snippets as typed render callbacks/u);
+	assert.match(localSkill, /Presence in current official docs does not by itself prove stable support/u);
+	assert.match(localSkill, /snapshot checked on 2026-07-11, SvelteKit remote functions were\s+experimental/u);
+	assert.match(localSkill, /Refresh the installed track's current official status/u);
+	assert.match(localSkill, /verify every opt-in\s+documented for the installed Svelte and SvelteKit tracks/u);
+	assert.match(localSkill, /separate compiler\s+opt-in required by the syntax actually used/u);
+	assert.match(localSkill, /rollback to stable primitives/u);
 	assert.match(localSkill, /Do not edit generated `\.svelte-kit` files as source/u);
 
 	assert.match(skillIndex, /Use `svelte-code-change` as a primary route/u);
@@ -381,7 +427,7 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/svelte-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"svelte-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 4/u);
 });
 
 test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runtime risks explicit', () => {
@@ -434,7 +480,7 @@ test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runti
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/elysia-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"elysia-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.elysia-code-change"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.elysia-code-change"\][\s\S]*?revision = 4/u);
 });
 
 test('Hono code change skill keeps routing, validation, typed client, and adapter risks explicit', () => {
@@ -481,7 +527,7 @@ test('Hono code change skill keeps routing, validation, typed client, and adapte
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/hono-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"hono-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.hono-code-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.hono-code-change"\][\s\S]*?revision = 3/u);
 });
 
 test('NestJS code change skill keeps module, DI, pipeline, and adapter risks explicit', () => {
@@ -506,7 +552,9 @@ test('NestJS code change skill keeps module, DI, pipeline, and adapter risks exp
 	assert.match(localSkill, /Treat provider scope as a performance and correctness contract/u);
 	assert.match(localSkill, /Avoid `forwardRef\(\)` as a casual cycle fix/u);
 	assert.match(localSkill, /Keep request-local data out of singleton provider mutable fields/u);
-	assert.match(localSkill, /middleware runs before guards/u);
+	assert.match(localSkill, /middleware runs first, guards authorize next/u);
+	assert.match(localSkill, /interceptors process the return path in reverse order/u);
+	assert.match(localSkill, /Exception filters run only\s+for uncaught exceptions/u);
 	assert.match(localSkill, /Do not treat CORS, Swagger hiding, or route omission from OpenAPI as authorization/u);
 	assert.match(localSkill, /Class decorators, global `ValidationPipe` options/u);
 	assert.match(localSkill, /HTTP input starts as strings/u);
@@ -526,7 +574,7 @@ test('NestJS code change skill keeps module, DI, pipeline, and adapter risks exp
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/nestjs-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"nestjs-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.nestjs-code-change"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.nestjs-code-change"\][\s\S]*?revision = 2/u);
 });
 
 test('Axum code change skill keeps route, extractor, Tower, Tokio, and SQLx risks explicit', () => {

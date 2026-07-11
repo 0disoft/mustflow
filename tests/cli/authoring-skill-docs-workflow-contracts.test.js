@@ -361,7 +361,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 3/u);
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 13/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 4/u);
 });
 
@@ -462,6 +462,12 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(pythonSkill, /Python 3\.14\+ `map\(strict=True\)`/u);
 	assert.match(pythonSkill, /`itertools\.batched\(\.\.\., strict=True\)`/u);
 	assert.match(pythonSkill, /`functools\.cache`, `lru_cache`, `cached_property`, `partial`, and Python 3\.14\+ `Placeholder`/u);
+	assert.match(pythonSkill, /Python 3\.14\+ template string literals/u);
+	assert.match(pythonSkill, /Python 3\.14\+ `annotationlib`/u);
+	assert.match(pythonSkill, /built-in sentinel facility was Python 3\.15\+ prerelease-only/u);
+	assert.match(pythonSkill, /official snapshot checked on 2026-07-11/u);
+	assert.match(pythonSkill, /Python 3\.15\+ explicit lazy imports/u);
+	assert.match(pythonSkill, /keep them out of stable-target code and examples/u);
 	assert.match(pythonSkill, /avoid list membership inside large loops/u);
 	assert.match(pythonSkill, /archive extraction, including `tarfile`/u);
 	assert.match(pythonSkill, /Interpreter or library diagnostics such as import timing, `tracemalloc`, `faulthandler`/u);
@@ -500,9 +506,9 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(dependencySkill, /changed defaults/u);
 	assert.match(dependencySkill, /archive extraction, subprocess handling, async lifecycle/u);
 
-	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 5/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 6/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 6/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });
 
 test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {

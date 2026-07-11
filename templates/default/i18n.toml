@@ -10,8 +10,8 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 22
-translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 22, status = "current" }
+revision = 23
+translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 22, status = "needs_review" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 22, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 22, status = "needs_review" }
 translations.fr = { path = "locales/fr/AGENTS.md", source_revision = 22, status = "needs_review" }
@@ -40,7 +40,7 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 29
+revision = 30
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 229
+revision = 234
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -278,7 +278,7 @@ translations = {}
 [documents."skill.core-web-vitals-field-review"]
 source = "locales/en/.mustflow/skills/core-web-vitals-field-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.image-delivery-performance-review"]
@@ -595,13 +595,13 @@ translations = {}
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 10
+revision = 11
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -655,7 +655,7 @@ translations = {}
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.axum-code-change"]
@@ -666,6 +666,12 @@ translations = {}
 
 [documents."skill.babylon-code-change"]
 source = "locales/en/.mustflow/skills/babylon-code-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.threejs-code-change"]
+source = "locales/en/.mustflow/skills/threejs-code-change/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -700,6 +706,12 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.deno-code-change"]
+source = "locales/en/.mustflow/skills/deno-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
 [documents."skill.cpp-code-change"]
 source = "locales/en/.mustflow/skills/cpp-code-change/SKILL.md"
 source_locale = "en"
@@ -727,7 +739,7 @@ translations = {}
 [documents."skill.elysia-code-change"]
 source = "locales/en/.mustflow/skills/elysia-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.flutter-code-change"]
@@ -751,7 +763,7 @@ translations = {}
 [documents."skill.hono-code-change"]
 source = "locales/en/.mustflow/skills/hono-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.html-code-change"]
@@ -775,13 +787,13 @@ translations = {}
 [documents."skill.node-code-change"]
 source = "locales/en/.mustflow/skills/node-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.nestjs-code-change"]
 source = "locales/en/.mustflow/skills/nestjs-code-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.react-code-change"]
@@ -805,7 +817,7 @@ translations = {}
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.powershell-code-change"]
@@ -859,7 +871,7 @@ translations = {}
 [documents."skill.svelte-code-change"]
 source = "locales/en/.mustflow/skills/svelte-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.tailwind-code-change"]
@@ -871,7 +883,7 @@ translations = {}
 [documents."skill.tauri-code-change"]
 source = "locales/en/.mustflow/skills/tauri-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.wails-code-change"]
@@ -883,7 +895,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.unocss-code-change"]
@@ -913,7 +925,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.next-action-menu"]
@@ -1038,7 +1050,7 @@ translations = {}
 [documents."skill.instruction-conflict-scope-check"]
 source = "locales/en/.mustflow/skills/instruction-conflict-scope-check/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.migration-safety-check"]
@@ -1128,7 +1140,7 @@ translations = {}
 [documents."skill.source-freshness-check"]
 source = "locales/en/.mustflow/skills/source-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.source-anchor-authoring"]
@@ -1188,13 +1200,13 @@ translations = {}
 [documents."skill.skill-refresh"]
 source = "locales/en/.mustflow/skills/skill-refresh/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 11
 translations = {}
 
 [documents."skill.task-instruction-authoring"]

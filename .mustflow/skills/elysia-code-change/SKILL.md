@@ -2,7 +2,7 @@
 mustflow_doc: skill.elysia-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: elysia-code-change
@@ -74,7 +74,7 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
 
 1. Read server entry, routes, plugins, schemas, auth, cookies, CORS, error handling, OpenAPI, Eden exports, runtime deployment config, and tests.
 2. Build a route inventory for the changed surface.
-3. Treat route schema as the primary contract for runtime validation, TypeScript inference, OpenAPI, and Eden. Avoid duplicating request and response contracts as separate TypeScript interfaces unless a clear external boundary requires it.
+3. Treat route schemas as the primary contract for runtime validation and Eden inference. For OpenAPI, determine whether the project uses runtime schemas, `fromTypes()`, or both; when both are present, runtime schema takes precedence. Avoid duplicating contracts as unrelated interfaces or generated definitions.
 4. Add or update schemas for every external input and meaningful response status, including non-2xx statuses.
 5. For URL and header inputs, remember that params, query, and headers arrive as HTTP strings:
    - use lower-case header schema keys;
@@ -109,7 +109,7 @@ Preserve Elysia schema-first runtime validation, type inference, plugin, auth, e
    - the official Elysia OpenAPI plugin and its docs UI provider are not the same thing as the raw OpenAPI document;
    - confirm the raw OpenAPI JSON path, UI provider, and access policy before telling SDK consumers where to read the spec;
    - if `fromTypes()` or type generation is used, verify production and bundled builds can still read the required `.d.ts`, `projectRoot`, and `tsconfigPath`;
-   - if Standard Schema is used, verify `mapJsonSchema` or equivalent JSON Schema mapping rather than assuming OpenAPI output is complete;
+   - for file uploads, review runtime file validation and OpenAPI conversion separately. Configure `mapJsonSchema` when a Standard Schema implementation cannot produce the required OpenAPI schema, and independently verify runtime file size, MIME, extension, and magic-number policy where those checks are required;
    - remember `withHeader()` documents response headers; it does not enforce that the runtime sets them.
 18. Review Eden Treaty separately from OpenAPI codegen:
    - export `type App = typeof app` from the server boundary;

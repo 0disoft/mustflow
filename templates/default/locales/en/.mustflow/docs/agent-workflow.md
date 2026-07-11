@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 29
+revision: 30
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -255,6 +255,11 @@ When a version changes, keep package metadata, template manifest versions, docs 
 
 Do not infer commands from `package.json`, `Makefile`, `justfile`, `Taskfile.yml`, or source files. Use `.mustflow/config/commands.toml` as the command contract.
 
+For nested-repository work, the current command contract is the selected child repository's
+contract. A parent workspace skill may name useful verification intents, but those names are
+procedure hints only until the child contract declares them. Do not leave the selected child root
+to execute a parent intent as a substitute.
+
 A command intent is eligible for agent use only when all of these are true:
 
 - `status = "configured"`
@@ -310,6 +315,13 @@ Use configured command intents for checks. Typical intent names include:
 - `docs_validate`
 
 If an expected intent is missing, disabled, manual-only, or not configured, do not invent a replacement. Report what was skipped and why.
+
+Keep verification ownership local to the selected repository. A child-only change does not inherit
+parent-root verification obligations from shared skills, parent preferences, or a parent final-report
+template. Run or report a parent-root check only when parent-owned files or orchestration changed, or
+when a named parent artifact or contract is an explicit dependency of the child result. Unrelated
+parent worktree changes, active locks, stale receipts, or manifest drift are context, not blockers for
+the child completion claim, and should not be listed as skipped child checks.
 
 ## Verification Selection
 

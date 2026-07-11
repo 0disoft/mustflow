@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -65,6 +65,8 @@ missing, blocked, failed, stale, or only partially relevant.
 
 - The original user request, acceptance criteria, and any later scope changes.
 - Current changed-file list and diff summary.
+- Selected repository root, its command contract, and any explicit dependency on a parent-owned
+  artifact, orchestration path, or contract.
 - The skills used, main route chosen, and any supporting or event skills activated.
 - Requirement, bug, issue, or external-advice sources that influenced the work.
 - Command intents run, exit status, and whether the evidence came from `mf run` receipts or lower-confidence direct shell output.
@@ -111,6 +113,12 @@ missing, blocked, failed, stale, or only partially relevant.
 4. Check verification quality.
    - Prefer configured `mf run` receipts over direct shell output.
    - Confirm that each command intent was relevant to the changed surface and current diff.
+   - Resolve skill-named verification intents only against the selected repository's command
+     contract. A shared parent skill does not make a parent-root intent required or runnable for a
+     child task.
+   - Treat parent-root verification as relevant only when parent-owned files or orchestration
+     changed, or when the child result explicitly depends on a named parent artifact or contract.
+     Do not list unrelated parent checks as skipped child verification.
    - For commit, push, tag, release, or deploy claims, classify remote checks separately from
      artifact publication. A successful package registry lookup, GitHub Release, uploaded asset,
      or deployment artifact does not prove branch CI or same-commit checks passed.
@@ -129,6 +137,8 @@ missing, blocked, failed, stale, or only partially relevant.
    - Use `implemented but unverified` when the files changed but no relevant configured verification was run.
    - Use `blocked` when required evidence cannot be produced without a missing decision, unavailable environment, manual-only command, failed prerequisite, or user approval.
    - Use `not complete` when a required acceptance criterion is not implemented or verification contradicts the claim.
+   - Do not downgrade a verified child-only result because an unrelated parent worktree has local
+     changes, an active lock, stale receipts, or manifest drift.
 7. Decide whether a next-action menu is required.
    - For a non-trivial final report, read and apply `next-action-menu` before final reporting when
      at least one concrete, evidence-backed follow-up task remains.
@@ -192,6 +202,8 @@ instead of replacing it with an inferred command.
 - If a remote check is failing or still pending for the pushed ref, do not report the work as fully
   green even when publication, artifact upload, or installation verification succeeded.
 - If a required surface is missing, either synchronize it under the matching skill or report the remaining drift.
+- If parent-root state appears in a child-only completion report, prove the direct dependency or
+  remove it from blockers and skipped checks.
 - If evidence is stale or comes from a different diff, treat the task as unverified until current evidence exists.
 - If evidence stalls behind repeated reads, searches, or duplicate-call warnings, use
   `evidence-stall-breaker` and lower the completion claim until a different current source proves it.
@@ -205,6 +217,7 @@ instead of replacing it with an inferred command.
 - User requirements mapped to evidence
 - Changed surfaces
 - Synchronized surfaces and deferred surfaces
+- Selected repository verification boundary and any explicit parent dependency
 - Command intents run
 - Remote check-suite state for pushed refs, tags, releases, or deploys
 - Skipped, missing, failed, stale, or manual-only checks

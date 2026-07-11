@@ -2,7 +2,7 @@
 mustflow_doc: skill.dependency-upgrade-review
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-upgrade-review
@@ -40,7 +40,7 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - A task claims a dependency change is "only patch", "only devDependency", "safe minor", "security-only", "transitive only", "lockfile only", or "no runtime change".
 - A dependency update touches installation, publish output, generated clients, SDKs, native binaries, browser bundles, serverless or edge runtime, ESM/CJS/module format, Python markers, Go module graph, Cargo features, JVM dependency mediation, .NET target frameworks, Ruby/PHP/Swift lockfiles, Docker images, or CI actions.
 - A Python runtime support floor, CI matrix, container image, `requires-python`, standard-library feature expectation, or security-default expectation changes as part of an upgrade.
-- A TypeScript upgrade touches TypeScript 6 transition deprecations, TS6 stable API compatibility, TypeScript 7 RC compiler verification, TypeScript 7 nightly comparison, `@typescript/typescript6`, `tsc6`, `typescript@rc`, `@typescript/native-preview`, `tsgo`, compiler API consumers, declaration emit, framework typecheck wrappers, or editor language-service behavior.
+- A TypeScript upgrade touches TypeScript 6 transition deprecations, TS6 JavaScript API compatibility, TypeScript 7 stable compiler adoption, `typescript@next` development comparison, native-preview comparison, `@typescript/typescript6`, `tsc6`, `typescript`, `@typescript/native-preview`, `tsgo`, compiler API consumers, declaration emit, framework typecheck wrappers, or editor language-service behavior.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -101,8 +101,14 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 11. Treat framework, plugin, code generator, formatter, linter, bundler, ORM, protobuf, OpenAPI, GraphQL, database driver, dev-server, browser-test, and test-runner upgrades as behavior changes when their output, config schema, plugin API, CLI flags, file-serving policy, privileged UI gates, or generated code can change.
 12. For Python runtime upgrades, treat `requires-python`, CI matrices, base images, dependency markers, wheels, packaging output, standard-library API availability, and security-default changes as one compatibility contract. Review version-gated standard-library usage and changed defaults before assuming the upgrade is only a dependency resolution change.
 13. For Python upgrades that adopt newer standard-library behavior, call out affected paths such as archive extraction, subprocess handling, async lifecycle, import/resource loading, typing surfaces, data-class shapes, and diagnostic flags. Keep fallbacks or compatibility wording when the repository still supports older interpreters.
-14. For TypeScript upgrades, classify the compiler track explicitly: TS6 stable API track through `@typescript/typescript6` and `tsc6`, TS7 RC compiler track through `typescript@rc` and `tsc`, TS7 nightly track through `@typescript/native-preview` and `tsgo`, future TS7 stable track through the stable `typescript` package, editor extension preview, or framework-owned wrapper. Do not treat a nightly package as a stable replacement for the `typescript` package unless the repository policy says so.
-15. For TypeScript 6, review deprecations as future TypeScript 7 removals. For TS7 RC, review compiler parity, declaration emit, watch/incremental, generated-output, and framework wrapper risks. For TS7 nightly, use `tsgo` only as an optional comparison path. Keep compiler API, transformer, ESLint, language-service plugin, and framework wrapper consumers on the TS6 API track until their owners explicitly support the TS7 API surface.
+14. For TypeScript upgrades, refresh official release and registry evidence before classifying the
+    compiler track. In the snapshot checked on 2026-07-11, TS7 stable used `typescript` and
+    `tsc`, TS6 JavaScript API compatibility used `@typescript/typescript6` and `tsc6`,
+    development builds used `typescript@next`, native preview used
+    `@typescript/native-preview` and `tsgo`, and `typescript@rc` was historical prerelease
+    evidence. Reclassify those tags when current registry metadata changes; never treat development
+    or preview packages as stable replacements merely because they are newer.
+15. For TypeScript 6, review deprecations as TypeScript 7 removal risks. For TS7 stable, review compiler parity, declaration emit, watch/incremental, generated-output, and framework wrapper risks. Use `typescript@next` or `tsgo` only as optional comparison paths. Keep compiler API, transformer, ESLint, language-service plugin, and framework wrapper consumers on the TS6 API compatibility track until their owners explicitly support the TS7 API surface.
 16. For new dependencies introduced by the upgrade, invoke the `dependency-reality-check` decision path: license, maintainer risk, provenance, lifecycle scripts, binary downloads, package age, transitive size, supply-chain risk, and replacement path.
 17. For Docker base images and CI actions, review them as dependencies. Check image/action source, version pinning policy, digest use when required, runtime version changes, security patch reason, cache impact, and deployment smoke coverage.
 18. Synchronize dependent surfaces: generated code, snapshots, mocks, fixtures, examples, SDK clients, OpenAPI or GraphQL artifacts, README install guidance, migration docs, changelog, Docker/CI docs, and package publish metadata.
@@ -117,7 +123,7 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 - Direct and transitive changes are understood, not hidden behind lockfile volume.
 - Runtime engine, peer dependency, optional/platform package, feature, module-format, generated-output, and publish-surface risks are classified.
 - Python runtime upgrades classify standard-library availability, changed defaults, packaging output, and security-behavior impact.
-- TypeScript compiler-track changes distinguish TS6 stable API compatibility, TS7 RC compiler verification, TS7 nightly comparison work, and future TS7 stable adoption.
+- TypeScript compiler-track changes distinguish TS7 stable compiler adoption, TS6 JavaScript API compatibility, `typescript@next` development comparison, native-preview comparison, and historical prerelease evidence.
 - Security fixes are narrow unless the user explicitly accepted a broader modernization.
 - Advisory exploit preconditions are checked against local scripts, config, CI, containers, remote workspaces, and docs before an alert is dismissed as development-only or unreachable.
 - Tests and scanners were not weakened to pass the upgrade.
@@ -148,7 +154,7 @@ Prefer the narrowest configured intent that proves the actual upgraded dependenc
 - If tests fail after an upgrade, do not delete tests, skip tests, loosen assertions, lower coverage, disable scanners, or widen permissions unless the behavior contract intentionally changed and the report says so.
 - If a security upgrade requires broad modernization, split the minimum patch from the modernization when possible.
 - If generated output changes, regenerate from the official generator path and explain the generated diff. Do not hand-edit generated dependency output.
-- If TS7 RC or nightly verification is introduced, keep the repository's stable, TS6 API, or framework verification unless the repository explicitly adopts the new track and all compiler API, framework wrapper, declaration, and generated-output risks are covered.
+- If `typescript@next` or native-preview verification is introduced, keep the repository's adopted stable compiler, TS6 API compatibility, and framework verification unless the repository explicitly adopts the new track and all compiler API, framework wrapper, declaration, and generated-output risks are covered.
 - If configured verification is missing, report the missing command intent instead of inferring a package-manager command.
 
 <!-- mustflow-section: output-format -->

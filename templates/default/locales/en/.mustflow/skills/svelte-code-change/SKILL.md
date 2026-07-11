@@ -2,7 +2,7 @@
 mustflow_doc: skill.svelte-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: svelte-code-change
@@ -48,7 +48,7 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 ## Required Inputs
 
 - Package metadata, Svelte config, Vite config, TypeScript config, route segment files, hooks, app types, stores/runes/context, form schema, adapter config, package export metadata, and tests.
-- Svelte and SvelteKit version tracks, route data source, secrecy, request scope, mutation type, serialization requirement, SSR/client boundary, browser dependency, state owner, and adapter target.
+- Svelte and SvelteKit version tracks, feature stability status, route data source, secrecy, request scope, mutation type, serialization requirement, SSR/client boundary, browser dependency, state owner, and adapter target.
 - Imports from `$lib/server`, `*.server.*`, `$env/static/private`, `$env/dynamic/private`, DB/filesystem/server SDK modules, cookies, auth headers, `event.locals`, `$app/state`, `$app/navigation`, `$app/forms`, and browser-only libraries.
 - Official or repository-local source evidence before preserving exact latest-version, release-date, Node/Vite requirement, adapter behavior, or compiler behavior claims.
 - Configured verification intents.
@@ -60,6 +60,7 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 - Classify every data access by origin, secrecy, request scope, mutation, browser dependency, serialization, invalidation dependency, and adapter support before choosing a SvelteKit file.
 - Treat universal route files as server-executed and browser-executed until proven otherwise.
 - Refresh official package or vendor sources before preserving exact "latest", Node/Vite minimum, adapter, or release-note claims; otherwise keep those facts out of durable skill text or mark them as snapshot-only in the report.
+- Classify version-sensitive features as stable, experimental, deprecated, removed, or prerelease before recommending them. Presence in current official docs does not by itself prove stable support.
 
 <!-- mustflow-section: allowed-edits -->
 ## Allowed Edits
@@ -99,7 +100,15 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 22. Treat props as parent-owned. Use callback props for changes and `$bindable` only for narrow form-control-like two-way APIs. Preserve wrapper binding chains or convert them to explicit callbacks.
 23. In Svelte 5, treat DOM event handlers as props. When spreading rest props through wrappers, intentionally compose external handlers with internal policy instead of relying on spread order.
 24. Treat snippets as typed render callbacks. Require optional snippet guards, pass row or slot-like data as parameters, and avoid hidden parent-state capture in reusable library components.
-25. Check SvelteKit, Vite, TypeScript, adapter, and package output as one toolchain boundary. Do not edit generated `.svelte-kit/tsconfig.json`; fix `svelte.config`, `kit.alias`, package exports, `types`, `svelte` conditions, `files`, and CSS side effects at their source.
+25. In the official-source snapshot checked on 2026-07-11, SvelteKit remote functions were
+    experimental. Refresh the installed track's current official status before every adoption; if
+    it remains experimental, do not replace stable `load`, form action, or endpoint contracts
+    merely because remote functions appear in the docs. When a project opts in, verify every opt-in
+    documented for the installed Svelte and SvelteKit tracks, including any separate compiler
+    opt-in required by the syntax actually used, plus `.remote.*` placement, server-only
+    execution, generated endpoint behavior, prerender constraints, cache and invalidation
+    semantics, and rollback to stable primitives.
+26. Check SvelteKit, Vite, TypeScript, adapter, and package output as one toolchain boundary. Do not edit generated `.svelte-kit/tsconfig.json`; fix `svelte.config`, `kit.alias`, package exports, `types`, `svelte` conditions, `files`, and CSS side effects at their source.
 
 <!-- mustflow-section: data-boundary-policy -->
 ## Data Boundary Policy
@@ -166,6 +175,7 @@ When SSR breaks, inspect in this order:
 
 - Server/client and SSR boundaries are explicit.
 - Route, load, action, endpoint, invalidation, and streaming behavior are clear.
+- Experimental remote-function usage is explicitly opted in, version-checked, and justified against stable load, action, and endpoint alternatives.
 - State owner, derived/effect behavior, props ownership, snippets, and binding behavior are clear.
 - Forms remain progressive unless intentionally changed.
 - Private data stays server-only and serialized data is intentionally minimal.
@@ -185,7 +195,7 @@ Use configured oneshot command intents when available:
 - `docs_validate_fast`
 - `mustflow_check`
 
-Report missing Svelte check, SSR render, hydration, form action, browser, adapter, package, or preview-mode verification intents when relevant.
+Report missing Svelte check, SSR render, hydration, form action, remote-function, browser, adapter, package, or preview-mode verification intents when relevant.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -196,13 +206,14 @@ Report missing Svelte check, SSR render, hydration, form action, browser, adapte
 - If server-only imports leak into universal/client files, move the boundary instead of adding runtime guards.
 - If request-local data is stored globally, move it to server load, actions, context, or persistent storage with user scoping.
 - If exact framework, adapter, Vite, Node, or release claims cannot be refreshed from official sources, omit them from durable skill text and report them as unverified snapshot context.
+- If remote functions or another experimental feature are proposed without current official stability evidence and explicit project opt-in, keep the stable load, action, or endpoint path and report the experiment as deferred.
 - If streaming, hydration, adapter output, package exports, or preview-mode behavior cannot be verified by configured intents, report the missing runtime smoke coverage.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
 
 - Boundary checked
-- SSR/server/client, route, load, action, invalidation, and streaming notes
+- SSR/server/client, route, load, action, remote-function, invalidation, and streaming notes
 - Runes, state, props, snippet, binding, and accessibility notes
 - Adapter, Vite, TypeScript, and package-output notes when touched
 - Files changed

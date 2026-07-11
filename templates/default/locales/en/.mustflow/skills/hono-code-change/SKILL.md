@@ -2,7 +2,7 @@
 mustflow_doc: skill.hono-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: hono-code-change
@@ -83,7 +83,7 @@ Preserve Hono route registration, runtime adapter, middleware ordering, validati
 9. For multipart uploads, large JSON, webhooks, raw-body signatures, and file routes, check parser shape, body limits, runtime limits, storage limits, repeated-field behavior, and raw request cloning before changing handlers.
 10. Preserve typed route, RPC, and SDK inference by exporting the route chain actually used by `hc<AppType>()`, keeping handler responses on typed `c.json(payload, status)` paths, and avoiding broad `Context` handler extraction that drops path, validator, or response types.
 11. Keep runtime validation schema, OpenAPI schema, response schema, generated SDKs, and Hono RPC types from becoming separate truths. Choose one canonical contract and verify drift with tests or snapshots when available.
-12. Do not put Node-only, Bun-only, Cloudflare-only, Deno-only, Lambda-only, static-serving, connection-info, WebSocket, or filesystem APIs in shared route modules. Keep runtime entry files thin and pass plain config or adapter functions into shared app code.
+12. Do not put Node-only, Bun-only, Cloudflare-only, Deno-only, Lambda-only, static-serving, connection-info, WebSocket, or filesystem APIs in shared route modules. Keep runtime entry files thin and pass plain config or adapter functions into shared app code. For Deno or JSR imports, keep the Hono core package, middleware, and runtime adapter subpaths on one compatible version; do not mix independently pinned Hono versions in the same app.
 13. For streaming, SSE, WebSocket, cache, ETag, static file, and SSR or JSX routes, check cancellation, abort handling, backpressure, already-started-response errors, header retention, path traversal, cache key and `Vary`, repeated `Set-Cookie`, and adapter header normalization.
 14. Choose configured verification intents that cover type checks, route tests, auth failure, validation failure, CORS/cookie/header behavior, streaming or WebSocket behavior, OpenAPI or SDK generation, and runtime env mocks when available.
 

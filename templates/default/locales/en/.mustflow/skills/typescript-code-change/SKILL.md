@@ -2,11 +2,11 @@
 mustflow_doc: skill.typescript-code-change
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: typescript-code-change
-description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 RC or nightly tooling, runtime data validation, type safety, or TypeScript tests are created or changed.
+description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 stable, development, API-compatibility, or native-preview tooling, runtime data validation, type safety, or TypeScript tests are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -36,7 +36,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - `.ts`, `.tsx`, `.mts`, `.cts`, `*.d.ts`, `tsconfig*.json`, package entry metadata, exports, declarations, runtime validators, or TypeScript tests change.
 - The task touches module resolution, ESM/CJS interop, public package API, path aliases, generated declarations, or strict type errors.
 - The task touches project references, monorepo package boundaries, type-check speed, declaration emit speed, ambient type scope, large unions, generated types, or TypeScript build graph shape.
-- The task touches TypeScript compiler major-version behavior, TypeScript 6 transition deprecations, TypeScript 7 RC comparison, TypeScript 7 nightly comparison, `@typescript/typescript6`, `tsc6`, `typescript@rc`, `@typescript/native-preview`, `tsgo`, compiler API use, declaration emit comparison, or editor language-service behavior.
+- The task touches TypeScript compiler major-version behavior, TypeScript 6 transition deprecations, TypeScript 7 stable adoption, TypeScript development-build comparison, `@typescript/typescript6`, `tsc6`, `typescript`, `typescript@next`, `@typescript/native-preview`, `tsgo`, compiler API use, declaration emit comparison, or editor language-service behavior.
 - The task touches external inputs such as JSON, HTTP responses, environment variables, config files, form data, URL params, local storage, message events, queue payloads, or user-provided objects.
 - A framework component written in TypeScript changes its props, events, routes, loader data, or exported types.
 
@@ -54,7 +54,12 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Existing source entrypoints, public exports, declaration files, validators, schemas, type tests, and nearby tests.
 - The target runtime and module system: Node, browser, worker, Bun, edge, ESM, CJS, or mixed boundary.
 - Workspace package dependency graph, `tsconfig` references graph, public package entrypoints, path alias policy, generated-type locations, and current import-boundary evidence when the repository is a monorepo or large TypeScript project.
-- TypeScript compiler track and tooling entrypoint when relevant: TS6 stable API track through `@typescript/typescript6` and `tsc6`, TS7 RC compiler track through `typescript@rc` and `tsc`, TS7 nightly track through `@typescript/native-preview` and `tsgo`, future TS7 stable track through the stable `typescript` package, framework typecheck wrappers, editor extension settings, and any compiler API consumers.
+- TypeScript compiler track and tooling entrypoint when relevant. In the registry snapshot checked
+  on 2026-07-11, TS7 stable used `typescript` and `tsc`, TS6 JavaScript API compatibility used
+  `@typescript/typescript6` and `tsc6`, development builds used `typescript@next`, native
+  preview used `@typescript/native-preview` and `tsgo`, and `typescript@rc` referred to
+  historical prerelease evidence. Refresh registry and official release evidence before reusing
+  that mapping, then include framework typecheck wrappers, editor settings, and compiler API consumers.
 - Package API metadata when relevant: `type`, `main`, `module`, `browser`, `exports`, `types`, `typings`, `typesVersions`, `files`, `bin`, `sideEffects`, and documented import paths.
 - Existing verification intents from the repository command contract.
 
@@ -74,7 +79,7 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 - Keep public runtime exports and declaration exports aligned.
 - Add focused tests or type tests only when they protect the changed contract.
 - Use existing schema validators or narrowly scoped type guards and assertion functions for external input boundaries.
-- Compare TS6 `tsc6`, TS7 RC `tsc`, and optionally TS7 nightly `tsgo` only as a bounded migration or diagnostics exercise when repository tooling explicitly supports those tracks.
+- Compare TS7 stable `tsc`, TS6-compatible `tsc6`, and optional `typescript@next` or native-preview `tsgo` only as a bounded migration or diagnostics exercise when repository tooling explicitly supports those tracks.
 - Do not weaken compiler, lint, module, package, or test boundaries to make the task appear complete.
 
 <!-- mustflow-section: procedure -->
@@ -112,14 +117,16 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 30. Inspect generated declarations when package surfaces change. Declaration files must not leak source-only aliases, private paths, workspace-only package names, unpublished internal paths, accidental public re-exports, stale `paths` aliases, or wrong ESM/CJS declaration shapes.
 31. For TypeScript 6 migration work, treat deprecation warnings as future TypeScript 7 removal risk. `ignoreDeprecations` is a temporary compatibility valve, not proof that the project is ready for 7.0. Prefer removing deprecated options and updating resolver or module choices to match the project runtime.
 32. Treat TypeScript 6 `--stableTypeOrdering` as a migration comparison tool for declaration and error-order differences, not as a permanent performance-neutral default. If it changes errors or declaration output, look for inference or declaration-stability issues instead of snapshotting noise.
-33. For TypeScript 7 migration work, keep the tracks separate:
-   - TS6 stable API track: `@typescript/typescript6` and `tsc6` for compiler API, transformer, ESLint, framework wrapper, and peer-dependency compatibility.
-   - TS7 RC compiler track: `typescript@rc` and `tsc` for RC compiler verification.
-   - TS7 nightly track: `@typescript/native-preview` and `tsgo` for nightly diagnostics only.
-   - Future TS7 stable track: stable `typescript` once upstream publishes TypeScript 7 on the normal stable path.
-34. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API track until their owners explicitly support the TS7 API surface. Treat TS7 RC `tsc` as compiler verification, not proof that JavaScript compiler API consumers can migrate.
-35. When comparing TS6 `tsc6`, TS7 RC `tsc`, and optional TS7 nightly `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
-36. Do not treat faster TS7 RC or nightly results as sufficient verification. Keep the repository's existing `tsc`, `tsc6`, or framework typecheck as the compatibility baseline until repository policy explicitly adopts a different compiler track.
+33. For TypeScript 7 migration work, refresh official release and registry evidence, then keep the
+   tracks separate. The following mapping is a snapshot checked on 2026-07-11:
+   - TS7 stable compiler track: `typescript` and `tsc` for repository adoption and ordinary compiler verification.
+   - TS6 JavaScript API compatibility track: `@typescript/typescript6` and `tsc6` for compiler API, transformer, ESLint, framework wrapper, and peer-dependency compatibility until each owner supports the TS7 API surface.
+   - Development compiler track: `typescript@next` for explicitly requested next-minor or next-major testing, never as a stable replacement.
+   - Native-preview track: `@typescript/native-preview` and `tsgo` for explicitly requested comparison only.
+   - Historical prerelease track: use `typescript@rc` only to reproduce a named prerelease or when current official registry metadata assigns it to a new release candidate.
+34. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API compatibility track until their owners explicitly support the TS7 API surface. Stable TS7 `tsc` output does not prove that JavaScript compiler API consumers can migrate.
+35. When comparing TS7 stable `tsc`, TS6-compatible `tsc6`, `typescript@next`, or native-preview `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
+36. Do not treat faster development or native-preview results as sufficient verification. Keep the repository's adopted stable compiler, TS6 API compatibility check, or framework typecheck as the baseline until repository policy explicitly adopts a different track.
 37. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, downstream-style consumer risk, and type-check performance risk.
 
 <!-- mustflow-section: assertion-policy -->
@@ -176,7 +183,7 @@ Reject or revise the patch when any of these appear without explicit evidence an
 - `tsconfig` defaults, ambient `types`, import attributes, `import defer`, or explicit resource management syntax are adopted without runtime, bundler, compiler-track, and generated-output evidence.
 - `skipLibCheck` or weakened strictness is used as release validation for a library/package.
 - TypeScript 6-to-7 migration warnings are silenced instead of classified and either fixed or reported.
-- TS7 RC or nightly output differences are accepted as harmless without classification.
+- TS7 stable, development, or native-preview output differences are accepted as harmless without classification.
 - Compiler API, transformer, language-service, or framework typecheck surfaces are moved off the TS6 API track without compatibility proof.
 
 <!-- mustflow-section: postconditions -->
@@ -206,7 +213,7 @@ Use configured oneshot command intents when available:
 
 If a package API changes, include the configured release or package-surface verification when available.
 
-Report whether configured verification exists for declaration output, package artifact contents, downstream-style consumer fixtures, minimum supported TypeScript version, latest supported TypeScript version, TS6/TS7 RC comparison, optional TS7 nightly comparison, ESM, CJS, and bundler-style resolution when those surfaces change.
+Report whether configured verification exists for declaration output, package artifact contents, downstream-style consumer fixtures, minimum supported TypeScript version, adopted stable TypeScript version, TS6 API compatibility, optional `typescript@next` or native-preview comparison, ESM, CJS, and bundler-style resolution when those surfaces change.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -215,7 +222,7 @@ Report whether configured verification exists for declaration output, package ar
 - If external input has no validation pattern, add a narrow validator/guard/assertion or report the missing boundary instead of casting.
 - If module resolution is unclear, inspect the package and compiler configuration before changing imports.
 - If generated declaration output cannot be inspected, report the package API risk and the missing verification intent.
-- If TS7 RC or nightly disagrees with the repository's TS6 or stable baseline, keep the baseline as the compatibility path, classify the difference, and report whether it is a project bug, compiler bug, unsupported feature, or expected declaration/order drift.
+- If TS7 stable, `typescript@next`, or native preview disagrees with the repository's adopted compiler, TS6 API compatibility, or framework baseline, keep the declared baseline as the compatibility path, classify the difference, and report whether it is a project bug, compiler bug, unsupported feature, or expected declaration/order drift.
 - If a framework, plugin, transformer, or compiler API consumer depends on the JavaScript compiler implementation, do not move it off the TS6 API track unless the dependency explicitly supports that path.
 - If verification commands are missing, report the missing intents instead of inventing package-manager commands.
 

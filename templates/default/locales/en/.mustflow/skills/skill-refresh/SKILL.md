@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-refresh
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-refresh
@@ -135,6 +135,11 @@ source freshness, routing metadata, helper-file alignment, and verification evid
    - official vendor docs or repositories for product behavior;
    - user-provided source text as snapshot-only when live refresh is unnecessary or unavailable.
    Omit or date claims that cannot be checked.
+   - Record feature status separately from package or framework release status: stable,
+     experimental, beta, release candidate, prerelease, deprecated, removed, or
+     compatibility-only.
+   - Do not infer stability from presence in current docs or infer recommendation from a retained
+     compatibility option. Verify the status in the official feature, migration, or config source.
 6. Decide runtime mode before editing frontmatter or fields. Keep mustflow-native metadata for
    mustflow skills. For cross-runtime skills, separate portable guidance from Codex-native,
    Claude-native, or other product-specific extensions instead of mixing incompatible fields.
@@ -199,6 +204,9 @@ source freshness, routing metadata, helper-file alignment, and verification evid
 - Trigger and non-trigger wording is concrete, short enough to route reliably, and checked against
   nearby skills.
 - Runtime-specific behavior is either scoped to the target runtime or excluded from portable mode.
+- Package release tracks and per-feature stability tracks are independently classified, so stable
+  releases do not silently promote experimental features and compatibility shims do not become
+  recommendations.
 - Helper files, examples, routes, template copies, locale metadata, and package surfaces agree.
 - External material is either rewritten as repository-native procedure, attributed where required,
   or omitted.
@@ -243,6 +251,7 @@ package output, public docs, or release-sensitive template output changed.
 - Skill refreshed
 - Runtime mode and behavior contract preserved or changed
 - Sources checked and stale claims omitted or dated
+- Package or framework release track, per-feature status, and owning official source
 - Semantic change classification
 - Package files, helpers, examples, routes, and template surfaces synchronized
 - Version impact decision

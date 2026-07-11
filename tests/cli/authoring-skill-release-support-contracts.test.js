@@ -46,6 +46,86 @@ test('release publish change requires independent public-entrypoint smoke eviden
 	assertI18nSkillDocument(i18n, 'release-publish-change', 3);
 });
 
+test('skill authoring requires logically scoped and falsifiable procedure contracts', () => {
+	const localSkill = readText('.mustflow/skills/skill-authoring/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/skill-authoring/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /revision: 11/u);
+	assert.match(localSkill, /Distinguish a necessary condition from a sufficient condition/u);
+	assert.match(localSkill, /Do not infer the converse/u);
+	assert.match(localSkill, /Name quantifier and scope when they matter/u);
+	assert.match(localSkill, /same reachable condition both requires and forbids an action/u);
+	assert.match(localSkill, /Separate different authority dimensions instead of forcing them into one total order/u);
+	assert.match(localSkill, /Attack universal and completion claims with a counterexample/u);
+	assert.match(localSkill, /postconditions to be observable from named evidence/u);
+	assert.match(localSkill, /shared parent skill\s+does not impose parent-root verification on child-only work/u);
+	assert.match(skillIndex, /converse inference, unbounded quantifier, contradictory branch/u);
+	assert.match(skillIndex, /cross-root verification inheritance/u);
+	assert.match(skillIndex, /logical consistency and repository-boundary result, counterexamples checked, and claims narrowed/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'skill-authoring', 11);
+});
+
+test('instruction conflict review separates authority dimensions from source priority', () => {
+	const localSkill = readText('.mustflow/skills/instruction-conflict-scope-check/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/instruction-conflict-scope-check/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /revision: 2/u);
+	assert.match(localSkill, /Classify each instruction by authority dimension before comparing priority/u);
+	assert.match(localSkill, /Host safety and approval rules constrain how the goal may be executed/u);
+	assert.match(localSkill, /Build an action-specific constraint set instead of one flat source ranking/u);
+	assert.match(localSkill, /Compare priority only within the same dimension/u);
+	assert.match(localSkill, /Do not manufacture a total order across unrelated authority dimensions/u);
+	assert.doesNotMatch(localSkill, /List the conflicting sources in priority order: direct user request, host safety rules/u);
+	assert.match(skillIndex, /flat authority ranking/u);
+	assert.match(skillIndex, /Conflicts reviewed by authority dimension/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'instruction-conflict-scope-check', 2);
+});
+
+test('nested repository verification stays local unless the child result depends on the parent', () => {
+	const localAgents = readText('AGENTS.md');
+	const templateAgents = readText('templates/default/locales/en/AGENTS.md');
+	const localWorkflow = readText('.mustflow/docs/agent-workflow.md');
+	const templateWorkflow = readText('templates/default/locales/en/.mustflow/docs/agent-workflow.md');
+	const localCompletionSkill = readText('.mustflow/skills/completion-evidence-gate/SKILL.md');
+	const templateCompletionSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localWorkflow, templateWorkflow);
+	assert.equal(localCompletionSkill, templateCompletionSkill);
+	for (const agents of [localAgents, templateAgents]) {
+		assert.match(agents, /Resolve every verification intent named by a shared workspace skill against the selected child/u);
+		assert.match(agents, /Do not run a parent-root intent merely to\s+satisfy a child task/u);
+		assert.match(agents, /Unrelated parent worktree changes, locks, or manifest drift do not block a child-only/u);
+	}
+	assert.match(localWorkflow, /revision: 30/u);
+	assert.match(localWorkflow, /current command contract is the selected child repository's\s+contract/u);
+	assert.match(localWorkflow, /should not be listed as skipped child checks/u);
+	assert.match(localCompletionSkill, /revision: 8/u);
+	assert.match(localCompletionSkill, /shared parent skill does not make a parent-root intent required or runnable/u);
+	assert.match(localCompletionSkill, /Do not list unrelated parent checks as skipped child verification/u);
+	assert.match(localCompletionSkill, /Do not downgrade a verified child-only result/u);
+	assert.match(skillIndex, /cross-root verification bleed/u);
+	assert.match(skillIndex, /unrelated parent blocker/u);
+	assert.match(i18n, /\[documents\."agents\.root"\][\s\S]*?revision = 23/u);
+	assert.match(i18n, /translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = 22, status = "needs_review" \}/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 30/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 8);
+});
+
 test('date number audit classifies release version impact from public contracts', () => {
 	const localSkill = readText('.mustflow/skills/date-number-audit/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/date-number-audit/SKILL.md');
@@ -73,9 +153,29 @@ test('source freshness check covers external research intake without authority d
 	assert.match(localSkill, /split the input into evidence, recommendation, executable instruction, popularity signal, and speculation/u);
 	assert.match(localSkill, /mapped to existing mustflow command intents or reported as missing intent coverage/u);
 	assert.match(localSkill, /repository-owned surface/u);
+	assert.match(localSkill, /Classify each refreshed feature or API independently as stable, experimental/u);
+	assert.match(localSkill, /Do not infer stability from a page existing in the current docs/u);
+	assert.match(localSkill, /stable framework release can contain opt-in experimental features/u);
+	assert.match(localSkill, /deprecated compatibility shims separate from recommended configuration/u);
+	assert.match(localSkill, /Per-feature status and owning official source/u);
 	assert.match(localSkill, /activate `external-prompt-injection-defense`/u);
 	assert.match(skillIndex, /research notes, methodology recommendations, tool comparisons/u);
 	assert.match(skillIndex, /copied external authority/u);
+});
+
+test('skill refresh separates release freshness from per-feature stability', () => {
+	const localSkill = readText('.mustflow/skills/skill-refresh/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/skill-refresh/SKILL.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /Record feature status separately from package or framework release status/u);
+	assert.match(localSkill, /Do not infer stability from presence in current docs/u);
+	assert.match(localSkill, /compatibility shims do not become\s+recommendations/u);
+	assert.match(localSkill, /Package or framework release track, per-feature status, and owning official source/u);
+	assert.match(i18n, /\[documents\."skill\.skill-refresh"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.source-freshness-check"\][\s\S]*?revision = 5/u);
 });
 
 test('external skill intake defers web testing and handoff runtime boundaries', () => {
@@ -246,7 +346,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	}
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 29/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 30/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
 });

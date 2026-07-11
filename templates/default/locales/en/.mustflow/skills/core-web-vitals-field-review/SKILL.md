@@ -2,7 +2,7 @@
 mustflow_doc: skill.core-web-vitals-field-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: core-web-vitals-field-review
@@ -91,7 +91,7 @@ The review question is: "Will real users at the 75th percentile on mobile and de
    - Manual-only or missing: evidence that cannot be collected through configured intents or user-provided artifacts.
 5. Prefer RUM first for operating decisions. Capture metric `rating`, route, URL template, navigation type, metric element or target when safe, load state, viewport class, device memory, effective connection type, and release version when local privacy policy allows it.
 6. Report percentiles, not averages. Track p75 for pass/fail and p90 or p95 for tail diagnosis; averages hide the slow devices and bad networks that usually decide field status.
-7. Explain Lighthouse-versus-field gaps. A clean lab score can still fail field data because CrUX and RUM include real devices, real networks, cache states, third-party drift, bfcache behavior, route mix, and 28-day rolling windows.
+7. Explain Lighthouse-versus-field gaps. A clean lab score can still fail field data because CrUX and RUM include real devices, real networks, cache states, third-party drift, bfcache behavior, and route mix. CrUX reports rolling 28-day aggregates; RUM uses the explicitly configured reporting window, which may be much shorter.
 8. Break LCP into subparts: TTFB, resource load delay, resource load duration, and element render delay. Do not call an image "optimized" until discovery, download, and render delay are each accounted for.
 9. Keep LCP resource discovery early. Lazy LCP images, CSS background heroes without preload, late client-rendered heroes, wrong `sizes`, font-blocked text candidates, and render-blocking CSS belong in `web-render-performance-review` or `image-delivery-performance-review`.
 10. Treat `fetchpriority` and preload as different levers. Preload helps discovery; `fetchpriority` changes priority after discovery. Too many high-priority resources create priority inflation.

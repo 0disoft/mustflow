@@ -2,7 +2,7 @@
 mustflow_doc: skill.instruction-conflict-scope-check
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: instruction-conflict-scope-check
@@ -25,7 +25,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Resolve conflicting instructions by narrowing authority, edit scope, command scope, and reporting boundaries before work proceeds.
+Resolve conflicting instructions by separating goal ownership, safety constraints, repository scope, command authority, evidence authority, and preferences before work proceeds.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -47,6 +47,7 @@ Resolve conflicting instructions by narrowing authority, edit scope, command sco
 ## Required Inputs
 
 - The conflicting instruction sources and the exact behavior they appear to require or forbid.
+- The type of each claim: goal, safety constraint, repository scope, command authority, evidence claim, reporting rule, preference, or generated hint.
 - The affected scope: repository root, nested project, file paths, command intents, verification, Git operation, migration, or report.
 - The user's direct request and any newer clarifying message.
 - Relevant command-intent contract entries and nearest `AGENTS.md` files for the affected paths.
@@ -69,19 +70,28 @@ Resolve conflicting instructions by narrowing authority, edit scope, command sco
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. List the conflicting sources in priority order: direct user request, host safety rules, nearest repository instructions, mustflow config, skills, preferences, generated state, and lower-priority docs.
+1. Classify each instruction by authority dimension before comparing priority.
+   - Direct user instructions define the requested goal and newer user clarification supersedes older user intent for the same decision.
+   - Host safety and approval rules constrain how the goal may be executed; they are not optional preferences and cannot be displaced by a user request.
+   - The nearest repository instructions define repository-local edit and workflow scope.
+   - `.mustflow/config/commands.toml` is the sole repository command-authority source.
+   - Current source, tests, schemas, remote state, and configured verification provide evidence; generated summaries and caches are secondary evidence.
+   - Skills guide procedure and preferences supply defaults; neither grants command authority.
 2. Identify the affected action: edit, read, verify, command run, commit, push, delete, migration, background process, browser launch, or final report.
-3. Select the nearest applicable repository root and path scope. If a nested repository is involved, reread that repository's instructions before editing there.
-4. Apply the stricter safe rule when safety, secrets, destructive actions, command permission, or repository boundaries conflict.
-5. Treat preferences as defaults only. Do not let preferences authorize commands, commits, pushes, migrations, or edits that higher-priority rules block.
-6. If command authority is unclear, use configured command intents only or report the missing command rather than inferring a raw command.
-7. If the conflict can be resolved by a small documentation or template clarification, update the source that caused confusion and keep the wording subordinate to the canonical contract.
-8. Report the chosen scope, skipped scope, and reason when part of the request cannot be completed safely.
+3. Build an action-specific constraint set instead of one flat source ranking. Record which source requires, permits, narrows, or forbids the action and on which authority dimension.
+4. Compare priority only within the same dimension. Across dimensions, satisfy all compatible constraints together. A user-owned goal can remain valid while a host safety rule forbids one execution method.
+5. Select the nearest applicable repository root and path scope. If a nested repository is involved, reread that repository's instructions before editing there.
+6. Apply the stricter safe rule when safety, secrets, destructive actions, command permission, or repository boundaries conflict. Do not use this rule to let a lower-authority preference erase the requested goal.
+7. Treat preferences as defaults only. Do not let preferences authorize commands, commits, pushes, migrations, or edits that higher-priority rules block.
+8. If command authority is unclear, use configured command intents only or report the missing command rather than inferring a raw command.
+9. If two same-dimension rules remain contradictory after scope and recency are applied, stop and ask for the decision owner or report the unresolved conflict. Do not manufacture a total order across unrelated authority dimensions.
+10. If the conflict can be resolved by a small documentation or template clarification, update the source that caused confusion and keep the wording subordinate to the canonical contract.
+11. Report the chosen scope, skipped scope, and reason when part of the request cannot be completed safely.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- The active instruction source, repository root, edit scope, command scope, and skipped scope are clear.
+- Goal owner, active constraints, repository root, edit scope, command scope, evidence basis, and skipped scope are clear.
 - Any changed docs or templates do not create a new self-authorizing policy source.
 - The final report distinguishes completed work from blocked, deferred, or intentionally skipped work.
 
@@ -102,6 +112,7 @@ Use a narrower configured test or docs intent when it better proves the clarifie
 ## Failure Handling
 
 - If two high-priority instructions cannot be reconciled, stop and report the conflict instead of guessing.
+- If a proposed priority order compares different authority dimensions as though they were interchangeable, replace it with an action-specific constraint set before deciding.
 - If the nearest repository root is unclear, inspect read-only status and instruction files before editing.
 - If a command, Git operation, migration, or destructive action lacks authority, do not run it. Report the missing approval or command contract.
 - If validation finds command-permission or authority drift, fix that drift before adding unrelated behavior.
@@ -109,8 +120,8 @@ Use a narrower configured test or docs intent when it better proves the clarifie
 <!-- mustflow-section: output-format -->
 ## Output Format
 
-- Conflicting instruction sources
-- Chosen priority rule and repository scope
+- Conflicting instruction sources and authority dimensions
+- Action-specific constraints, chosen same-dimension priority rule, and repository scope
 - Actions allowed, narrowed, skipped, or deferred
 - Documentation or template clarifications made
 - Command intents run

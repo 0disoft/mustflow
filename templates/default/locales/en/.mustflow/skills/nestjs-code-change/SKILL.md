@@ -2,7 +2,7 @@
 mustflow_doc: skill.nestjs-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: nestjs-code-change
@@ -80,12 +80,10 @@ Preserve NestJS module boundaries, dependency-injection ownership, request pipel
 6. Avoid `forwardRef()` as a casual cycle fix. If a cycle appears, inspect the module boundary, extract a port/interface, move shared policy, or report why the explicit cycle is accepted.
 7. Check dynamic modules and async factories. Keep options typed, validate config at the boundary, avoid reading secrets into logs or reports, and make module initialization failure explicit.
 8. Keep request-local data out of singleton provider mutable fields. Current user, tenant, request id, locale, transaction, or per-request cache should travel through request objects, guards, interceptors, CLS-style infrastructure with clear ownership, or explicit method arguments.
-9. Review pipeline order:
-   - middleware runs before guards;
-   - guards decide access before interceptors and pipes complete the handler path;
-   - pipes transform and validate inputs;
-   - interceptors wrap handler execution and response mapping;
-   - filters map thrown exceptions.
+9. Review the complete request lifecycle: middleware runs first, guards authorize next,
+   interceptors enter before pipes and handler execution, pipes transform or validate controller
+   arguments, and interceptors process the return path in reverse order. Exception filters run only
+   for uncaught exceptions and follow their own route, controller, and global resolution order.
 10. Do not treat CORS, Swagger hiding, or route omission from OpenAPI as authorization. Add real guards or report the exposure.
 11. For DTOs, distinguish TypeScript shape from runtime validation. Class decorators, global `ValidationPipe` options, transform behavior, whitelist, forbid settings, nested validation, arrays, dates, enums, partial update DTOs, and file uploads must be checked against real runtime behavior.
 12. For params, query, headers, and cookies, remember that HTTP input starts as strings. Use explicit parse pipes, DTO transform rules, or schema validation rather than relying on TypeScript annotations.

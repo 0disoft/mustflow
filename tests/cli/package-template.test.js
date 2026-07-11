@@ -11,7 +11,9 @@ const technologySkillNames = [
 	'astro-code-change',
 	'axum-code-change',
 	'babylon-code-change',
+	'threejs-code-change',
 	'bun-code-change',
+	'deno-code-change',
 	'clickhouse-code-change',
 	'css-code-change',
 	'cpp-code-change',
@@ -506,7 +508,7 @@ test('template i18n validation reports invalid translation metadata', async () =
 		cpSync(path.join(projectRoot, 'templates', 'default'), templateRoot, { recursive: true });
 		const i18nPath = path.join(templateRoot, 'i18n.toml');
 		const brokenI18n = readFileSync(i18nPath, 'utf8').replace(
-			/translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = \d+, status = "current" \}/u,
+			/translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = \d+, status = "(?:current|needs_review)" \}/u,
 			'translations.ko = { path = "locales/ko/MISSING.md", source_revision = 0, status = "done" }',
 		);
 		writeFileSync(i18nPath, brokenI18n);

@@ -2,7 +2,7 @@
 mustflow_doc: skill.node-code-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: node-code-change
@@ -100,7 +100,7 @@ Preserve the actual Node.js runtime, module, package manager, TypeScript executi
 16. Before using Node APIs in deployment code, classify the target as Node server, Docker, serverless Node, edge runtime, static build, or multi-runtime package. Edge runtimes are not full Node.js runtimes.
 17. Inspect native and install-sensitive dependencies when package metadata or runtime imports touch `.node`, `binding.gyp`, `node-gyp`, `preinstall`, `install`, `postinstall`, `prepare`, optional dependencies, peer dependencies, OS, CPU, libc, or Node ABI boundaries.
 18. Treat optional dependencies and optional peers as absent until code handles absence. Do not require optional packages directly without fallback or error handling that matches the existing project pattern.
-19. Treat the Node permission model as a trusted-code seatbelt, not a sandbox for untrusted code. If permission flags are introduced or changed, map required filesystem, network, child process, worker, native addon, WASI, inspector, and temporary directory access explicitly.
+19. Treat the Node permission model as a trusted-code seatbelt, not a sandbox for untrusted code. Map filesystem paths, network access, child processes, worker threads, native addons, WASI, FFI, and inspector access explicitly. Treat temporary directories as filesystem grants, and use OS-level isolation when malicious code is in scope.
 20. Separate Node performance bottlenecks before choosing a fix. Use available `perf_hooks` or configured evidence to distinguish JavaScript CPU, event-loop delay, external I/O wait, libuv worker-pool saturation, stream backpressure, and GC or allocation churn. Event-loop utilization is not CPU percent; high ELU with low CPU can still mean sync blocking.
 21. Prefer CPU profiles or flame graphs over timing logs for CPU-heavy Node paths. Use profile or configured evidence for parsing, validation, rendering, hashing, compression, crypto, diffing, report generation, sorting, JSON work, formatter creation, or AST work; log timers alone rarely prove the hot stack.
 22. Treat event-loop delay as a tail metric. Check p95 and p99 delay when evidence exists, not only averages. A rare 800ms block can dominate user-visible latency while average delay looks clean.

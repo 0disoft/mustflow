@@ -2,7 +2,7 @@
 mustflow_doc: skill.tauri-code-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: tauri-code-change
@@ -64,6 +64,7 @@ Treat the WebView as low trust and the Rust/native side as high authority. Front
 - Identify Tauri major version and permission model before editing.
 - Treat every frontend-provided path, URL, command argument, channel, token, or feature flag as untrusted.
 - Determine which window or webview receives each capability.
+- For Tauri v2, treat application commands registered only with `invoke_handler` as reachable from every window and webview by default. When capability-enforced access is required, declare app commands through `tauri_build::AppManifest::commands`, create explicit app-command permissions, and grant them only to intended capability targets.
 - Before widening any capability, write the exact native action being enabled: window label, webview label, command name, plugin command, input fields, allowed path or URL, and why a narrower existing permission cannot satisfy the feature.
 
 <!-- mustflow-section: allowed-edits -->
@@ -181,7 +182,7 @@ Reject or revise a change when:
 - Updater endpoint, public key, proxy, headers, authorization, TLS mode, downgrade behavior, or arbitrary channel is renderer-controlled.
 - A Rust command accepts untyped JSON, broad maps, raw paths, raw URLs, raw shell args, or action strings without immediate Rust-side normalization.
 - Frontend validation is presented as the authoritative security check.
-- A command is registered without checking which windows or webviews can reach it.
+- A command is registered without checking which windows or webviews can reach it, or a Tauri v2 `invoke_handler` command is assumed to inherit capability restrictions without an explicit app-command permission declaration.
 - The response returns sensitive paths, tokens, command output, update metadata, or system details without a scoped need.
 - A packaged blank-screen fix widens CSP with wildcard script or connect sources, remote script origins, `unsafe-eval`, or broad protocol allowances instead of proving the generated bootstrap and IPC requirements.
 

@@ -425,6 +425,8 @@ test('core web vitals field review treats CWV as real-user percentile operations
 	assert.match(localSkill, /CrUX/u);
 	assert.match(localSkill, /Search Console/u);
 	assert.match(localSkill, /Lighthouse-versus-field gaps/u);
+	assert.match(localSkill, /CrUX reports rolling 28-day aggregates/u);
+	assert.match(localSkill, /RUM uses the explicitly configured reporting window/u);
 	assert.match(localSkill, /TTFB, resource load delay, resource load duration, and element render delay/u);
 	assert.match(localSkill, /Long Animation Frames/u);
 	assert.match(localSkill, /GTM and marketing tags/u);
@@ -450,7 +452,7 @@ test('core web vitals field review treats CWV as real-user percentile operations
 	assert.match(manifest, /"\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md"/u);
 	assert.match(manifest, /"core-web-vitals-field-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.core-web-vitals-field-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.core-web-vitals-field-review"\][\s\S]*?revision = 2/u);
 });
 
 test('image delivery performance review catches discovery, candidate, cache, and safety risks', () => {

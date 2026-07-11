@@ -198,6 +198,20 @@ test('skill route metadata covers declared trigger axes for integration and fram
 			'package_metadata_change',
 			'release_risk',
 		],
+		'deno-code-change': [
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'test_change',
+			'docs_change',
+			'performance_change',
+			'security_change',
+			'privacy_change',
+			'data_change',
+			'migration_change',
+			'package_metadata_change',
+			'release_risk',
+		],
 		'java-code-change': [
 			'code_change',
 			'behavior_change',
@@ -249,6 +263,21 @@ test('skill route metadata covers declared trigger axes for integration and fram
 			'release_risk',
 		],
 		'babylon-code-change': [
+			'ui_change',
+			'code_change',
+			'behavior_change',
+			'public_api_change',
+			'data_change',
+			'security_change',
+			'privacy_change',
+			'performance_change',
+			'test_change',
+			'docs_change',
+			'migration_change',
+			'package_metadata_change',
+			'release_risk',
+		],
+		'threejs-code-change': [
 			'ui_change',
 			'code_change',
 			'behavior_change',
@@ -396,7 +425,7 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.equal(localSkill, templateSkill);
 	assert.equal(nextActionSkill, templateNextActionSkill);
 	assert.equal(workflow, templateWorkflow);
-	assert.match(localSkill, /revision: 7/u);
+	assert.match(localSkill, /revision: 8/u);
 	assert.match(nextActionSkill, /revision: 5/u);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
@@ -433,11 +462,11 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
 	assert.match(
 		i18n,
-		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 29/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 30/u,
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 7/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 8/u,
 	);
 	assert.match(
 		i18n,

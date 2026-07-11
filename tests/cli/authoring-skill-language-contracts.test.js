@@ -175,10 +175,55 @@ test('Node, Bun, Docker, and JavaScript code change skills keep runtime and tool
 	assert.match(manifest, /"javascript-code-change"/u);
 	assert.match(manifest, /"bun-code-change"/u);
 	assert.match(manifest, /"docker-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 5/u);
 	assert.match(i18n, /\[documents\."skill\.javascript-code-change"\][\s\S]*?revision = 6/u);
 	assert.match(i18n, /\[documents\."skill\.bun-code-change"\][\s\S]*?revision = 2/u);
 	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
+});
+
+test('Deno code change skill keeps runtime, permission, package, Worker, and Deploy boundaries explicit', () => {
+	const localSkill = readText('.mustflow/skills/deno-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/deno-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /2026-07-11 source material\s+as a snapshot/u);
+	assert.match(localSkill, /Deno can execute TypeScript without proving the full type contract/u);
+	assert.match(localSkill, /Permission denial alone does not prove the initial module graph/u);
+	assert.match(localSkill, /permissions are not per-package isolation/u);
+	assert.match(localSkill, /Worker permissions as inherited/u);
+	assert.match(localSkill, /Promise timeout only stops waiting/u);
+	assert.match(localSkill, /parallel server isolates as independent memory/u);
+	assert.match(localSkill, /Identify Classic versus the current Deploy platform/u);
+	assert.match(localSkill, /publication as immutable/u);
+	assert.match(localSkill, /`nodeModulesDir` and the node-modules linker as installation architecture/u);
+	assert.match(localSkill, /Native addons can require a local `node_modules`/u);
+	assert.match(localSkill, /conditional `exports` and actual selected entries/u);
+	assert.match(localSkill, /configuration owner from the command working directory/u);
+	assert.match(localSkill, /Deno lockfile as additive resolution history/u);
+	assert.match(localSkill, /sanitizers were no longer safe to assume enabled by default/u);
+	assert.match(localSkill, /Per-test permission configuration can only narrow/u);
+	assert.match(localSkill, /Preserve stream backpressure end to end/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/deno-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining Deno risk/u);
+	assert.match(
+		routes,
+		/\[routes\."deno-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['code_change', 'test_change', 'docs_change', 'performance_change', 'security_change', 'migration_change']) {
+		assert.ok(routeReasons(routes, 'deno-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/deno-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"deno-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.deno-code-change"\][\s\S]*?revision = 2/u);
 });
 
 test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () => {
@@ -205,13 +250,16 @@ test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () =>
 	assert.match(tauriSkill, /does not also allow remote script origins, `unsafe-eval`, or wildcard script sources/u);
 	assert.match(tauriSkill, /make `connect-src` explicit for the required IPC scheme or local origin/u);
 	assert.match(tauriSkill, /Do not replace a specific IPC allowance with `connect-src \*`/u);
+	assert.match(tauriSkill, /registered only with `invoke_handler` as reachable from every window and webview by default/u);
+	assert.match(tauriSkill, /`tauri_build::AppManifest::commands`/u);
+	assert.match(tauriSkill, /explicit app-command permissions/u);
 	assert.match(tauriSkill, /packaged WebView smoke, CSP violation/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/tauri-code-change\/SKILL\.md/u);
 	assert.match(skillIndex, /WebView\/native boundary drift/u);
 	assert.match(routes, /\[routes\."tauri-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/tauri-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"tauri-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.tauri-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.tauri-code-change"\][\s\S]*?revision = 5/u);
 });
 
 test('Wails code change skill covers v3 app, bridge, WebView, and packaging traps', () => {
@@ -357,7 +405,7 @@ test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain
 	assert.match(manifest, /"go-code-change"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });
 
 test('Java code change skill gates JDK tracks, JVM tuning, virtual threads, and reflection traps', () => {
@@ -471,7 +519,7 @@ test('Java code change skill gates JDK tracks, JVM tuning, virtual threads, and 
 	assert.match(manifest, /"java-code-change"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.java-code-change"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });
 
 test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-profile traps by Rust version', () => {
@@ -560,5 +608,5 @@ test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-p
 	assert.match(manifest, /"rust-code-change"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });
