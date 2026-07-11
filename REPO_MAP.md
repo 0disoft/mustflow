@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 253
+anchor_count: 256
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:a2f0dd97363cd02188c9637cfd8d02652eca62c0c5dfc9e00dbe5b8c32aa612f"
+source_fingerprint: "sha256:d6793d119f877982c1d078ee8a72c01d967f0b4ca8a10d729cd4f16b261ab209"
 ---
 
 # REPO_MAP.md
@@ -56,6 +56,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/abstraction-boundary-review/
 
 - `.mustflow/skills/abstraction-boundary-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/ada-code-change/
+
+- `.mustflow/skills/ada-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/adapter-boundary/
 
@@ -569,6 +573,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/observability-debuggability-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/pascal-code-change/
+
+- `.mustflow/skills/pascal-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/pattern-scout/
 
 - `.mustflow/skills/pattern-scout/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -580,6 +588,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/performance-budget-check/
 
 - `.mustflow/skills/performance-budget-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/php-code-change/
+
+- `.mustflow/skills/php-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/postgresql-code-change/
 

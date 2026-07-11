@@ -45,6 +45,93 @@ test('cpp code change keeps target identity and compatibility risk explicit', ()
 	assert.match(manifest, /"cpp-code-change"/u);
 });
 
+test('Ada code change separates language checks, runtime checks, SPARK proof, and tasking semantics', () => {
+	const localSkill = readText('.mustflow/skills/ada-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/ada-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /ISO\/IEC 8652:2023/u);
+	assert.match(localSkill, /GNAT Ada 2022 mode and GNAT extension mode are not equivalent/u);
+	assert.match(localSkill, /Do not infer absence of runtime errors from Ada compilation alone/u);
+	assert.match(localSkill, /Use a new `type` when values have different meaning/u);
+	assert.match(localSkill, /A predicate is not a continuous\s+watcher/u);
+	assert.match(localSkill, /Iterate arrays with their actual ranges/u);
+	assert.match(localSkill, /absence-of-runtime-error\s+proof does not by itself exclude `Storage_Error`/u);
+	assert.match(localSkill, /Atomic variables and\s+separate protected calls do not make a multi-step invariant atomic/u);
+	assert.match(localSkill, /timed entry calls as admission deadlines/u);
+	assert.match(localSkill, /A profile restriction is not a schedulability/u);
+	assert.match(localSkill, /An access type carries reachability and accessibility rules, not ownership/u);
+	assert.match(localSkill, /`Storage_Size` is not automatically an\s+exact process-wide quota/u);
+	assert.match(localSkill, /Drive periodic work from absolute releases/u);
+	assert.match(localSkill, /dynamic calls, recursion,\s+unknown external frames, and measured watermarks are not static upper bounds/u);
+	assert.match(localSkill, /generated bindings as a draft/u);
+	assert.match(localSkill, /If foreign code owns `main`, initialize the Ada runtime/u);
+	assert.match(localSkill, /Do not call a partially analyzed project fully proved/u);
+	assert.match(localSkill, /Treat every assumption and `SPARK_Mode => Off` path as trust debt/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/ada-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining Ada or SPARK risk/u);
+	assert.match(routes, /\[routes\."ada-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u);
+	for (const reason of ['code_change', 'behavior_change', 'public_api_change', 'test_change', 'data_change', 'performance_change', 'security_change', 'package_metadata_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'ada-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/ada-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"ada-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'ada-code-change', 2);
+});
+
+test('Pascal code change separates Delphi and FPC tracks, managed lifetimes, threading, and ABI', () => {
+	const localSkill = readText('.mustflow/skills/pascal-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/pascal-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Delphi or RAD Studio 13\.1, Lazarus 4\.8, and Free Pascal 3\.2\.2/u);
+	assert.match(localSkill, /Similar syntax does not establish\s+equivalent threading, memory-manager, exception, ABI/u);
+	assert.match(localSkill, /Distinguish aliases from new ordinal types/u);
+	assert.match(localSkill, /Never persist `Ord`, raw set bytes/u);
+	assert.match(localSkill, /A custom managed record is not automatic unique ownership/u);
+	assert.match(localSkill, /Treat queue APIs as potentially immediate/u);
+	assert.match(localSkill, /`FreeOnTerminate` as a no-external-reference policy/u);
+	assert.match(localSkill, /A pulse, condition, or event is not durable work/u);
+	assert.match(localSkill, /worker stack does not propagate an exception/u);
+	assert.match(localSkill, /Put C\+\+ classes, STL, templates, overloads/u);
+	assert.match(localSkill, /Initialize COM per thread/u);
+	assert.match(localSkill, /Do not use raw move, fill, or byte comparison on records containing strings/u);
+	assert.match(localSkill, /pointer derived from a temporary string or array/u);
+	assert.match(localSkill, /Dynamic-array assignment aliases one backing store/u);
+	assert.match(localSkill, /open array as a call-scoped zero-based view/u);
+	assert.match(localSkill, /Treat interface `uses` as public dependency and initialization-graph change/u);
+	assert.match(localSkill, /Before unloading a package, stop new calls/u);
+	assert.match(localSkill, /ordinary `const` as an optimization opportunity, not a guaranteed/u);
+	assert.match(localSkill, /Resolve RTTI metadata once per type/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/pascal-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining Pascal risk/u);
+	assert.match(routes, /\[routes\."pascal-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u);
+	for (const reason of ['code_change', 'behavior_change', 'public_api_change', 'test_change', 'data_change', 'performance_change', 'security_change', 'package_metadata_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'pascal-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/pascal-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"pascal-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'pascal-code-change', 2);
+});
+
 test('Node, Bun, Docker, and JavaScript code change skills keep runtime and toolchain ownership explicit', () => {
 	const nodeSkill = readText('.mustflow/skills/node-code-change/SKILL.md');
 	const templateNodeSkill = readText('templates/default/locales/en/.mustflow/skills/node-code-change/SKILL.md');
@@ -224,6 +311,50 @@ test('Deno code change skill keeps runtime, permission, package, Worker, and Dep
 	assert.match(manifest, /"deno-code-change"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.deno-code-change"\][\s\S]*?revision = 2/u);
+});
+
+test('PHP code change skill keeps request lifetime, ORM, security, FPM, and worker boundaries explicit', () => {
+	const localSkill = readText('.mustflow/skills/php-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/php-code-change/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /PHP-FPM's request reset hide stateful design/u);
+	assert.match(localSkill, /Confine container access and service location to composition roots/u);
+	assert.match(localSkill, /Do not use Eloquent models or Doctrine entities as universal/u);
+	assert.match(localSkill, /Do not replace N\+1 with an unbounded eager-loaded graph/u);
+	assert.match(localSkill, /transactional outbox and idempotent consumers/u);
+	assert.match(localSkill, /Avoid loose comparison for authentication/u);
+	assert.match(localSkill, /Do not `unserialize\(\)` untrusted data/u);
+	assert.match(localSkill, /Treat SameSite as defense in depth/u);
+	assert.match(localSkill, /Bound FPM concurrency by the smallest/u);
+	assert.match(localSkill, /For long-lived runtimes, reset application state/u);
+	assert.match(localSkill, /identified PHP 8\.5\.8 as stable and PHP 8\.6\.0 Alpha 1 as prerelease/u);
+	assert.match(localSkill, /Do not assume a dependency's `repositories` configuration propagates/u);
+	assert.match(localSkill, /Avoid repeated `array_merge\(\)` accumulation/u);
+	assert.match(localSkill, /Release a file-backed session lock/u);
+	assert.match(localSkill, /scalar argument coercion follows the calling file/u);
+	assert.match(localSkill, /Keep\s+prerelease-only features out of production code/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/php-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /remaining PHP risk/u);
+	assert.match(
+		routes,
+		/\[routes\."php-code-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 85/u,
+	);
+	for (const reason of ['code_change', 'test_change', 'docs_change', 'data_change', 'performance_change', 'security_change']) {
+		assert.ok(routeReasons(routes, 'php-code-change').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/php-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"php-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.php-code-change"\][\s\S]*?revision = 2/u);
 });
 
 test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () => {

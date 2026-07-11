@@ -62,7 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 234
+revision = 237
+translations = {}
+
+[documents."skill.ada-code-change"]
+source = "locales/en/.mustflow/skills/ada-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -818,6 +824,18 @@ translations = {}
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
 revision = 6
+translations = {}
+
+[documents."skill.php-code-change"]
+source = "locales/en/.mustflow/skills/php-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.pascal-code-change"]
+source = "locales/en/.mustflow/skills/pascal-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.powershell-code-change"]
