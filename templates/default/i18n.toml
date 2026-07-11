@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 237
+revision = 239
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -1093,6 +1093,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/performance-budget-check/SKILL.md"
 source_locale = "en"
 revision = 24
+translations = {}
+
+[documents."skill.performance-measurement-integrity-review"]
+source = "locales/en/.mustflow/skills/performance-measurement-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.pattern-scout"]

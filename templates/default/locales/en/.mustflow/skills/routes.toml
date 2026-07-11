@@ -942,6 +942,12 @@ route_type = "adjunct"
 priority = 70
 applies_to_reasons = ["performance_change", "code_change", "data_change", "ui_change", "behavior_change"]
 
+[routes."performance-measurement-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."vertical-slice-tdd"]
 category = "tests"
 route_type = "primary"

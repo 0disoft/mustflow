@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 256
+anchor_count: 257
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:d6793d119f877982c1d078ee8a72c01d967f0b4ca8a10d729cd4f16b261ab209"
+source_fingerprint: "sha256:213b1a3e57b83c82498fe8051557512206d8b8b07f22ef1efcd88cdb435df63c"
 ---
 
 # REPO_MAP.md
@@ -588,6 +588,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/performance-budget-check/
 
 - `.mustflow/skills/performance-budget-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/performance-measurement-integrity-review/
+
+- `.mustflow/skills/performance-measurement-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/php-code-change/
 

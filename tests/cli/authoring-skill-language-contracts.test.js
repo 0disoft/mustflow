@@ -10,6 +10,46 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
+test('performance measurement integrity keeps event semantics, comparison, and privacy explicit', () => {
+	const localSkill = readText('.mustflow/skills/performance-measurement-integrity-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/performance-measurement-integrity-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /An atomic increment prevents lost updates; it does not make several independently read totals/u);
+	assert.match(localSkill, /operation or trace context, not an assumed worker thread/u);
+	assert.match(localSkill, /closed-loop client would hide coordinated omission/u);
+	assert.match(localSkill, /request, key, and byte hit rates/u);
+	assert.match(localSkill, /item-weighted and batch-weighted distributions distinct/u);
+	assert.match(localSkill, /cancellation API returning success does not prove execution or side effects stopped/u);
+	assert.match(localSkill, /predeclared practical effect threshold and uncertainty rule/u);
+	assert.match(localSkill, /never rerun until a desired result appears/u);
+	assert.match(localSkill, /Treat raw CPU, heap, allocation, JFR, pprof, trace, benchmark, and compressed artifacts as\s+sensitive/u);
+	assert.match(localSkill, /Disambiguate CPU IPC, meaning retired instructions per CPU cycle, from inter-process\s+communication/u);
+	assert.match(localSkill, /If limited hardware counters were multiplexed/u);
+	assert.match(localSkill, /start cohort through terminal or deadline/u);
+	assert.match(localSkill, /client outcome, server execution outcome, and delivery outcome/u);
+	assert.match(localSkill, /conservation checks such as admitted equals terminal plus in-flight/u);
+	assert.match(localSkill, /Do not directly subtract browser, process, or host\s+monotonic clocks/u);
+	assert.match(localSkill, /Never add layer p99 values/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/performance-measurement-integrity-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."performance-measurement-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 79/u);
+	for (const reason of ['code_change', 'test_change', 'performance_change', 'security_change', 'privacy_change', 'data_change', 'docs_change', 'release_risk']) {
+		assert.ok(routeReasons(routes, 'performance-measurement-integrity-review').includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(manifest, /"\.mustflow\/skills\/performance-measurement-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"performance-measurement-integrity-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'performance-measurement-integrity-review', 2);
+});
+
 test('cpp code change keeps target identity and compatibility risk explicit', () => {
 	const localSkill = readText('.mustflow/skills/cpp-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/cpp-code-change/SKILL.md');

@@ -152,6 +152,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-auto-update-safety-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-log-evidence-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('observability-debuggability-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('performance-measurement-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('incident-triage-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('deployment-rollout-safety-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('queue-processing-integrity-review'));
@@ -273,6 +274,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('observability-debuggability-review'),
 			`${profileName} should include observability-debuggability-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('performance-measurement-integrity-review'),
+			`${profileName} should include performance-measurement-integrity-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('incident-triage-review'),
