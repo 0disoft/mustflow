@@ -23,7 +23,13 @@ mf run test
 mf run test_release
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_publish
+mf run release_npm_published_verify
+mf run release_npm_install_smoke
 ```
+
+对于 npm 发布，先用 `release_npm_version_available` 确认当前版本尚未发布；`release_npm_publish` 推送对应版本的 release tag 并触发可信发布工作流；工作流完成后用 `release_npm_published_verify` 检查 registry，随后用 `release_npm_install_smoke` 在隔离的临时项目中安装该精确版本，运行公开 CLI 别名、初始化和 strict 检查。发布需要用户明确请求，并且必须同时满足配置 intent 与宿主网络策略。
 
 `bun run release:check` 仍然是发布前关卡。`test_fast` 运行快速 CLI 回归基线，
 `test_related` 会根据变更文件选择测试，找不到匹配项时回到快速基线；两者默认使用

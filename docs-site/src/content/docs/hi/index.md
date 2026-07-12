@@ -5,6 +5,18 @@ description: mustflow द्वारा इंस्टॉल किए गए 
 
 mustflow के दस्तावेज़ उन LLM-केंद्रित फ़ाइलों और फ़ील्डों को समझाते हैं जिन्हें `mf init` उपयोगकर्ता रिपॉज़िटरी में बनाता है।
 
+## वर्कफ़्लो को नवीनतम रखना
+
+पहले उसी package manager से mustflow package update करें जिससे उसे install किया था, फिर हर mustflow root में `mf upgrade` चलाएँ। यह packages install नहीं करता; npm version जाँचने के बाद केवल तब project files update करता है जब manifest plan में local-change या manual-review blocker न हो।
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+Plan देखने के लिए `mf upgrade --dry-run` उपयोग करें। Custom workflow file overwrite होने के बजाय block होता है; आवश्यक template change merge और review करके repository के declared flow से manifest lock baseline update करें।
+
 ## यह साइट क्या समझाती है
 
 - लक्ष्य रिपॉज़िटरी में हर फ़ाइल कहाँ रखी जाती है।

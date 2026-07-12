@@ -5,6 +5,18 @@ description: Documentación para usuarios del flujo de trabajo legible por agent
 
 La documentación de mustflow explica los archivos y campos orientados solo a LLM que `mf init` crea en un repositorio de usuario.
 
+## Mantener el flujo actualizado
+
+Actualiza primero el paquete con el mismo gestor que instaló mustflow y después ejecuta `mf upgrade` en cada raíz mustflow. No instala paquetes: comprueba npm y solo actualiza archivos del proyecto cuando el plan de manifest no tiene bloqueos por cambios locales ni revisión manual.
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+Usa `mf upgrade --dry-run` para revisar el plan. Un archivo de flujo personalizado se bloquea en vez de sobrescribirse; integra y revisa el cambio de plantilla necesario y actualiza el manifest lock mediante el flujo declarado por el repositorio.
+
 ## Qué explica este sitio
 
 - Dónde se coloca cada archivo dentro del repositorio de destino.

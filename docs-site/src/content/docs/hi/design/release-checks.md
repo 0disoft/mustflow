@@ -24,7 +24,13 @@ mf run test
 mf run test_release
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_publish
+mf run release_npm_published_verify
+mf run release_npm_install_smoke
 ```
+
+npm के लिए पहले `release_npm_version_available` से current version की availability जाँचें। `release_npm_publish` उसी version का release tag push कर trusted publishing workflow शुरू करता है। workflow के बाद `release_npm_published_verify` registry जाँचता है, और `release_npm_install_smoke` isolated temporary project में exact version install करके public aliases, initialization और strict check चलाता है। Publication के लिए explicit user request, configured intent और host network policy तीनों चाहिए।
 
 `bun run release:check` publishing gate बना रहता है। `test_fast` fast CLI
 regression baseline चलाता है, `test_related` changed files से tests चुनता है और

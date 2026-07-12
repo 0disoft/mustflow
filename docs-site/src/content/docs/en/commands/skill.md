@@ -67,7 +67,21 @@ npx mf skill route --task "review prompt cache token budgets" --path src/cli/lib
 npx mf skill import https://github.com/example/agent-skills/tree/main/review/security --dry-run --json
 npx mf skill import https://github.com/example/agent-skills/blob/main/review/security/SKILL.md --install
 npx mf skill import https://github.com/example/agent-skills/tree/main/review/security --install --trust-scripts
+npx mf skill outdated --json
+npx mf skill update concurrency-review --dry-run --json
+npx mf skill update --all --trust-scripts
 ```
+
+## Maintain Imported Skills
+
+`mf skill outdated` compares installed external skills with the provenance source saved at import
+time. `mf skill update <name>` or `mf skill update --all` prepares or applies a refresh from that
+source. Use `--dry-run` to inspect the incoming change first.
+
+An external skill remains untrusted task context after an update. `--trust-scripts` can create or
+refresh command-contract fragments for supported imported scripts, but it does not execute those
+scripts. The generated intents retain explicit network and destructive approvals, so the current
+repository and host policy still decide whether an execution is allowed.
 
 ## Options
 

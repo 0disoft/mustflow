@@ -52,3 +52,15 @@ Procedure details must reside within individual `SKILL.md` files. The index shou
 - **Expected Output**: The report shape the agent should leave after using the skill.
 
 When introducing a new skill, add its route here and ensure that verification intent names stay synchronized with the skill frontmatter.
+
+## Example: Performance Measurement Integrity
+
+`performance-measurement-integrity-review` is an adjunct route for counters, timers, histograms,
+cache ratios, benchmark gates, CPU PMU evidence, communication IPC outcomes, and cross-process
+latency. It checks that a measurement has a named event, compatible denominator and clock domain,
+concurrency-safe snapshot semantics, comparable workload, and safe telemetry boundary.
+
+It complements `performance-budget-check`: the budget skill evaluates what to optimize and whether
+the result is useful, while the measurement skill checks whether the numbers justify that conclusion.
+For performance data, neither route turns a profiler, benchmark, or production query into command
+authority.

@@ -5,6 +5,18 @@ description: Documentation utilisateur du flux de travail lisible par les agents
 
 La documentation de mustflow explique les fichiers et champs destinés uniquement aux LLM que `mf init` crée dans un dépôt utilisateur.
 
+## Garder le workflow à jour
+
+Mettez d'abord à jour le paquet avec le gestionnaire qui a installé mustflow, puis lancez `mf upgrade` dans chaque racine mustflow. Il n'installe pas de paquet: il vérifie npm et ne met à jour les fichiers projet que si le plan manifest ne contient ni blocage local ni revue manuelle.
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+Utilisez `mf upgrade --dry-run` pour examiner le plan. Un fichier de workflow personnalisé est bloqué au lieu d'être écrasé; fusionnez le changement de modèle nécessaire et mettez à jour le manifest lock par le flux déclaré du dépôt.
+
 ## Ce que ce site explique
 
 - L'emplacement de chaque fichier dans le dépôt cible.

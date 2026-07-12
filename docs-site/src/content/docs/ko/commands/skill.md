@@ -51,7 +51,16 @@ skill 후보에서 만든 읽기 전용 helper 목록입니다. 스크립트를 
 ```sh
 npx mf skill route --task "change TypeScript CLI output" --path src/cli/index.ts --reason code_change
 npx mf skill route --task "review prompt cache token budgets" --path src/cli/lib/agent-context.ts --reason performance_change --json
+npx mf skill outdated --json
+npx mf skill update concurrency-review --dry-run --json
+npx mf skill update --all --trust-scripts
 ```
+
+## 가져온 스킬 유지관리
+
+`mf skill outdated`는 설치 당시 저장한 provenance source와 외부 스킬의 현재 상태를 비교합니다. `mf skill update <name>` 또는 `mf skill update --all`은 그 source에서 갱신을 미리 보거나 적용합니다. 먼저 `--dry-run`으로 들어올 변경을 확인하세요.
+
+갱신 뒤에도 외부 스킬은 신뢰되지 않은 작업 문맥입니다. `--trust-scripts`는 지원되는 가져온 스크립트의 명령 계약 fragment를 만들거나 갱신할 수 있지만 스크립트를 실행하지는 않습니다. 생성된 intent도 network·destructive 승인 조건을 유지하므로, 실제 실행 허용 여부는 현재 저장소와 호스트 정책이 결정합니다.
 
 ## 선택지
 

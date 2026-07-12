@@ -5,6 +5,18 @@ description: 面向使用者的文档，说明 mustflow 安装的代理可读工
 
 mustflow 文档说明 `mf init` 会在用户仓库中创建哪些只面向 LLM 的文件和字段。
 
+## 保持工作流为最新状态
+
+先使用安装 mustflow 的包管理器更新包，再在每个 mustflow 根目录运行 `mf upgrade`。它不会安装包；它先检查 npm 版本，只有 manifest 计划没有本地变更或人工审查阻塞项时才更新项目文件。
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+使用 `mf upgrade --dry-run` 查看计划。自定义工作流文件会被阻止而非覆盖；请合并所需模板变更，审阅后按仓库声明的流程更新 manifest lock。
+
 ## 本站说明内容
 
 - 每个文件会放在目标仓库的哪个位置。

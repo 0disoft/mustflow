@@ -56,8 +56,8 @@ scripts disabled. It uses bounded retries for transient registry propagation,
 executes both public CLI aliases through npm, verifies their reported versions,
 initializes mustflow, runs a strict check, reports the runtime environment, and
 removes the temporary state without hiding the primary failure. The publish workflow
-creates the GitHub Release for the pushed tag when needed. The publish intent
-requires explicit release/network approval before execution.
+creates the GitHub Release for the pushed tag when needed. The publish intent requires an
+explicitly requested release plus the configured intent and host network policy before execution.
 
 ## Purpose
 

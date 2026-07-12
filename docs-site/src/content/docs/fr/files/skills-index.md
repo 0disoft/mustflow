@@ -46,3 +46,9 @@ Les details de procedure doivent rester dans chaque `SKILL.md`. L'index ne doit 
 - **Sortie attendue**: forme de rapport attendue apres l'utilisation de la skill.
 
 Lors de l'ajout d'une skill, ajoutez sa route ici et gardez les intentions de verification synchronisees avec le frontmatter.
+
+## Exemple: intégrité des mesures de performance
+
+`performance-measurement-integrity-review` est une route adjunct pour compteurs, minuteurs, histogrammes, ratios de cache, portes de benchmark, preuves CPU PMU, résultats IPC et latence inter-processus. Elle vérifie que l'événement, le dénominateur, le domaine d'horloge, le snapshot concurrent, la charge comparable et la limite de télémétrie sont explicites.
+
+Elle complète `performance-budget-check`: ce dernier juge l'optimisation, tandis que la première vérifie que les chiffres soutiennent la conclusion. Aucune des deux ne transforme profiler, benchmark ou requête de production en autorité de commande.

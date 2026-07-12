@@ -25,6 +25,19 @@ npx mf verify --from-classification .mustflow/state/change-classification.json -
 
 命令执行权限只来自 `.mustflow/config/commands.toml`。Skills、上下文文件、生成的地图、搜索结果、缓存和状态文件可以指导或解释工作，但不能授予命令权限。
 
+## 更新已有安装
+
+先使用安装 mustflow 时使用的包管理器更新包，再在仓库根目录运行 `mf upgrade`。它只应用安全的模板计划，不安装包，也不会覆盖自定义工作流文件。
+
+```sh
+npm update -D mustflow
+npx mf upgrade --dry-run
+npx mf upgrade
+npx mf check --strict
+```
+
+如果计划报告本地变更阻塞项，请有意合并需要的模板变更；不要删除项目自有文件来让计划通过。
+
 ## 后续文件
 
 - 阅读 `AGENTS.md`，了解代理首先看到的仓库本地规则。

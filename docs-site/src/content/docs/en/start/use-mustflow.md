@@ -25,6 +25,22 @@ npx mf verify --from-classification .mustflow/state/change-classification.json -
 
 Command execution authority comes only from `.mustflow/config/commands.toml`. Skills, context files, generated maps, search results, cache, and state files can guide or explain work, but they do not grant command permission.
 
+## Update An Existing Install
+
+Update the package with the same package manager that installed it, then run `mf upgrade` from the
+repository root. The command checks the package version and applies only a safe template plan; it
+does not install packages and it does not overwrite customized workflow files.
+
+```sh
+npm update -D mustflow
+npx mf upgrade --dry-run
+npx mf upgrade
+npx mf check --strict
+```
+
+If the update plan reports a blocked local change, merge the relevant template change deliberately
+instead of deleting the project-owned file to make the plan pass.
+
 ## Next Files
 
 - Read `AGENTS.md` for the repository-local rules agents see first.

@@ -13,6 +13,23 @@ npx mf init --yes
 npx mf check --strict
 ```
 
+## Keep The Workflow Current
+
+Update mustflow with the package manager that installed it, then run `mf upgrade` from each
+mustflow root. `mf upgrade` never installs packages itself: it checks the npm version first and
+only applies the bundled project-file update when the manifest plan has no local-change or
+manual-review blockers.
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+Use `mf upgrade --dry-run` to inspect the update plan. A customized workflow file is intentionally
+blocked rather than overwritten; merge the relevant template change, review it, and refresh the
+manifest lock through the repository's declared workflow.
+
 After changing code, templates, schemas, or documentation, inspect the required verification before running commands.
 
 ```sh
@@ -53,11 +70,11 @@ REPO_MAP.md  # optional generated file
 │  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
-   └─ state/  # generated during use
-      └─ runs/
-         ├─ run-*/receipt.json
-         ├─ latest.index.json
-         └─ latest.json
+└─ state/  # generated during use
+   └─ runs/
+      ├─ run-*/receipt.json
+      ├─ latest.index.json
+      └─ latest.json
 ```
 
 `mf init` does not modify `README.md`, `.github/`, or root-level directories such as `docs/`, `skills/`, and `src/`.

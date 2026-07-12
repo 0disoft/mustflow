@@ -5,6 +5,19 @@ description: Install mustflow in a project and verify the workflow without guess
 
 Use this path when you own or maintain a repository and want agents to follow repository-local rules.
 
+## Mettre à jour une installation
+
+Mettez à jour le paquet avec le gestionnaire qui a installé mustflow, puis lancez `mf upgrade` depuis la racine du dépôt. Il applique seulement un plan de modèle sûr: il n'installe pas de paquet et n'écrase pas les fichiers de workflow personnalisés.
+
+```sh
+npm update -D mustflow
+npx mf upgrade --dry-run
+npx mf upgrade
+npx mf check --strict
+```
+
+Si le plan bloque un changement local, fusionnez volontairement le changement de modèle utile au lieu de supprimer le fichier du projet.
+
 ## Install
 
 ```sh

@@ -46,3 +46,9 @@ Los detalles de procedimiento deben vivir en cada `SKILL.md`. El indice solo deb
 - **Salida esperada**: forma de reporte esperada despues de usar la skill.
 
 Al introducir una nueva skill, agrega su ruta aqui y manten sincronizados los intentos de verificacion con el frontmatter de la skill.
+
+## Ejemplo: integridad de las mediciones de rendimiento
+
+`performance-measurement-integrity-review` es una ruta adjunct para contadores, temporizadores, histogramas, ratios de caché, puertas de benchmark, evidencia CPU PMU, resultados IPC y latencia entre procesos. Revisa que evento, denominador, dominio de reloj, snapshot concurrente, carga comparable y límite de telemetría sean explícitos.
+
+Complementa `performance-budget-check`: este decide si optimizar y si el resultado sirve; el primero comprueba que los números justifican esa conclusión. Ninguno convierte profiler, benchmark o consultas de producción en autoridad de comandos.

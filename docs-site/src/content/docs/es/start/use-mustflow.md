@@ -25,6 +25,19 @@ npx mf verify --from-classification .mustflow/state/change-classification.json -
 
 La autoridad para ejecutar comandos viene solo de `.mustflow/config/commands.toml`. Las skills, los archivos de contexto, los mapas generados, la búsqueda, la caché y el estado pueden guiar o explicar el trabajo, pero no conceden permiso para ejecutar comandos.
 
+## Actualizar una instalación existente
+
+Actualiza el paquete con el gestor que instaló mustflow y después ejecuta `mf upgrade` desde la raíz. Solo aplica un plan seguro de plantilla: no instala paquetes ni sobrescribe archivos de flujo personalizados.
+
+```sh
+npm update -D mustflow
+npx mf upgrade --dry-run
+npx mf upgrade
+npx mf check --strict
+```
+
+Si el plan bloquea un cambio local, integra deliberadamente el cambio de plantilla necesario; no borres el archivo propio del proyecto para forzar el resultado.
+
 ## Siguientes archivos
 
 - Lee `AGENTS.md` para ver las reglas locales que los agentes leen primero.

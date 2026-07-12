@@ -5,6 +5,19 @@ description: Install mustflow in a project and verify the workflow without guess
 
 Use this path when you own or maintain a repository and want agents to follow repository-local rules.
 
+## मौजूदा installation update करें
+
+mustflow को install करने वाले package manager से package update करें, फिर repository root में `mf upgrade` चलाएँ। यह केवल safe template plan लागू करता है; packages install नहीं करता और custom workflow files overwrite नहीं करता।
+
+```sh
+npm update -D mustflow
+npx mf upgrade --dry-run
+npx mf upgrade
+npx mf check --strict
+```
+
+यदि plan local change को block करे, तो आवश्यक template change जानबूझकर merge करें; plan pass कराने के लिए project-owned file न हटाएँ।
+
 ## Install
 
 ```sh

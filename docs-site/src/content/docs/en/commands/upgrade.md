@@ -33,6 +33,16 @@ Deno `npm:` execution is listed for visibility but remains experimental until se
 
 If a newer mustflow package exists on npm, `mf upgrade` stops before touching project files and prints package-manager update commands. Run the package update first, then run `mf upgrade` again.
 
+## Customized Workflow Files
+
+The update plan compares managed files with `manifest.lock.toml`. A customized `AGENTS.md`, command
+contract, skill index, route table, or other managed file can appear as a blocked local change. That
+is a stop state, not a prompt to delete the file or force an overwrite.
+
+Review the current template and local contract, merge only the needed change, then use the
+repository's declared manifest-lock workflow to record the reviewed baseline. Run `mf check --strict`
+afterward. `mf upgrade` does not merge custom content for you.
+
 ## Dry Run
 
 ```sh

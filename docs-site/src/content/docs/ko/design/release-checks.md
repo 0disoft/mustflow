@@ -24,7 +24,13 @@ mf run test_release
 mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_publish
+mf run release_npm_published_verify
+mf run release_npm_install_smoke
 ```
+
+npm 배포 전에는 `release_npm_version_available`로 현재 버전이 아직 비어 있는지 확인합니다. `release_npm_publish`는 해당 버전의 release tag를 푸시해 Trusted Publishing workflow와 GitHub Release 생성을 시작합니다. workflow가 끝나면 `release_npm_published_verify`로 registry를 확인하고, `release_npm_install_smoke`로 격리된 임시 프로젝트에 정확한 버전을 설치해 공개 CLI alias, 초기화, strict 검사를 실행합니다. 배포는 사용자의 명시적 요청과 구성된 intent, 호스트 네트워크 정책이 모두 있을 때만 실행합니다.
 
 `bun run release:check`는 배포 전 관문으로 유지합니다. `test_fast`는 빠른 CLI 회귀
 기준선을 실행하고, `test_related`는 변경 파일에서 관련 테스트를 고른 뒤 없으면 빠른

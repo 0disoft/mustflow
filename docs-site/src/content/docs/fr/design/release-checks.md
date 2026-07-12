@@ -24,7 +24,13 @@ mf run test
 mf run test_release
 mf run docs_validate
 mf run mustflow_check
+mf run release_npm_version_available
+mf run release_npm_publish
+mf run release_npm_published_verify
+mf run release_npm_install_smoke
 ```
+
+Pour npm, utilisez d'abord `release_npm_version_available` pour vérifier que la version est libre; `release_npm_publish` pousse le release tag correspondant et déclenche la publication de confiance; après le workflow, `release_npm_published_verify` vérifie le registre et `release_npm_install_smoke` installe la version exacte dans un projet temporaire isolé pour exercer les aliases publics, l'initialisation et le contrôle strict. La publication exige une demande utilisateur explicite, l'intent configuré et la politique réseau de l'hôte.
 
 `bun run release:check` reste la porte de publication. `test_fast` exécute la
 base rapide de régression de la CLI, `test_related` choisit les tests à partir

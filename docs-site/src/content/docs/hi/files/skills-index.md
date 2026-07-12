@@ -46,3 +46,9 @@ Procedure details individual `SKILL.md` files में रहनी चाह�
 - **Expected Output**: skill use करने के बाद expected report shape।
 
 नई skill add करते समय, उसकी route यहां add करें और verification intent names को skill frontmatter के साथ synchronized रखें।
+
+## उदाहरण: performance measurement integrity
+
+`performance-measurement-integrity-review` counters, timers, histograms, cache ratios, benchmark gates, CPU PMU evidence, communication IPC outcomes और cross-process latency के लिए adjunct route है। यह event, denominator, clock domain, concurrent snapshot, comparable workload और telemetry safety boundary को स्पष्ट रखता है।
+
+यह `performance-budget-check` को complement करता है: budget skill optimization की उपयोगिता देखती है, measurement skill निष्कर्ष के लिए उपयोग किए गए numbers की विश्वसनीयता देखती है। दोनों profiler, benchmark या production query को command authority नहीं बनाते।

@@ -46,3 +46,9 @@ description: 将代理引导到当前任务所需技能文档的索引。
 - **预期输出**：使用技能后代理应留下的报告形态。
 
 引入新技能时，请在此处添加路由，并确保验证意图名称与技能 frontmatter 保持同步。
+
+## 示例：性能测量完整性
+
+`performance-measurement-integrity-review` 是处理计数器、计时器、直方图、缓存比率、基准门禁、CPU PMU 证据、通信 IPC 结果和跨进程延迟的 adjunct route。它检查测量事件、分母与时钟域、并发快照、比较工作负载和遥测安全边界是否明确。
+
+它补充 `performance-budget-check`：前者检查用于结论的数字是否可信，后者判断该优化是否值得和有用。两者都不会把 profiler、benchmark 或生产查询变成命令权限。

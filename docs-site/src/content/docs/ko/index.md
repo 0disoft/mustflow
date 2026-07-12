@@ -13,6 +13,18 @@ npx mf init --yes
 npx mf check --strict
 ```
 
+## 워크플로우 최신화
+
+mustflow를 설치한 패키지 관리자로 패키지를 먼저 갱신한 뒤, 각 mustflow 루트에서 `mf upgrade`를 실행합니다. `mf upgrade`는 패키지를 설치하지 않습니다. npm 버전을 확인한 다음, manifest 계획에 로컬 변경 또는 수동 검토 차단 항목이 없을 때만 프로젝트 파일을 갱신합니다.
+
+```sh
+bun update -g --latest
+mf upgrade
+mf check --strict
+```
+
+`mf upgrade --dry-run`으로 계획을 먼저 확인하세요. 사용자 지정 워크플로우 파일은 덮어쓰지 않고 차단됩니다. 필요한 템플릿 변경만 병합하고 검토한 뒤, 저장소가 선언한 절차로 manifest lock 기준선을 갱신합니다.
+
 코드, 템플릿, 스키마, 문서를 바꾼 뒤에는 명령을 실행하기 전에 필요한 검증을 먼저 확인합니다.
 
 ```sh
@@ -53,11 +65,11 @@ REPO_MAP.md  # 선택 생성
 │  ├─ routes.toml
 │  ├─ INDEX.md
 │  └─ */SKILL.md
-   └─ state/  # 사용 중 생성
-      └─ runs/
-         ├─ run-*/receipt.json
-         ├─ latest.index.json
-         └─ latest.json
+└─ state/  # 사용 중 생성
+   └─ runs/
+      ├─ run-*/receipt.json
+      ├─ latest.index.json
+      └─ latest.json
 ```
 
 `mf init`은 `README.md`, `.github/`, 루트의 일반 `docs/`, `skills/`, `src/` 같은 프로젝트 기본 디렉터리를 건드리지 않습니다.
