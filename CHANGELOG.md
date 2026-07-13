@@ -6,6 +6,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+### Fixed
+
+- Strengthened the Svelte and state-machine skills against invalid runes-mode component bindings,
+  premature DOM initialization, silent imperative setup failures, and incorrect initial lifecycle states.
+- Synchronized `code/outline` CLI and documentation claims with its existing Astro, Svelte, Go,
+  Rust, and Python support, and added a contract test that rejects future language-list drift.
+
 ### Added
 
 - Added the `small-service-platform-architecture-review` built-in skill so agents review
@@ -34,6 +41,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Changed the default approval profile so configured agent-allowed dependency installs and network
+  commands run without a second repository approval gate, while dependency upgrades, migrations,
+  secrets, releases, destructive commands, cross-repository changes, and Git writes remain gated.
 - Strengthened installed `AGENTS.md` source-anchor guidance so agents know when to use
   source-index search scopes while keeping anchors and SQLite rows navigation-only rather than
   command or verification authority.

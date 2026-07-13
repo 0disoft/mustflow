@@ -889,7 +889,7 @@ translations = {}
 [documents."skill.svelte-code-change"]
 source = "locales/en/.mustflow/skills/svelte-code-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.tailwind-code-change"]
@@ -1146,7 +1146,7 @@ translations = {}
 [documents."skill.state-machine-pattern"]
 source = "locales/en/.mustflow/skills/state-machine-pattern/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.strategy-pattern"]

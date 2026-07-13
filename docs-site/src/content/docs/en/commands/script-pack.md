@@ -6,7 +6,8 @@ description: Lists and runs bundled mustflow utility scripts under one command n
 `mf script-pack` exposes bundled utility scripts without turning every small checker into a new
 top-level command.
 
-The bundled scripts include `code/outline`, which scans TypeScript and JavaScript files for
+The bundled scripts include `code/outline`, which scans TypeScript, JavaScript, Astro, Svelte, Go,
+Rust, and Python files for
 symbol headers, line ranges, and source-anchor metadata, `code/dependency-graph`, which traces bounded
 relative import graph edges, `code/change-impact`, which analyzes git-diff impact and verification
 hints, `code/symbol-read`, which reads a focused source snippet by
@@ -88,7 +89,8 @@ npx mf script-pack run code/outline scan src --json
 npx mf script-pack run code/outline scan src/cli/commands/script-pack.ts --max-files 20
 ```
 
-`code/outline` is read-only. It scans supported TypeScript and JavaScript files for declaration
+`code/outline` is read-only. It scans supported TypeScript, JavaScript, Astro, Svelte, Go, Rust, and
+Python files for declaration
 headers and `mf:anchor` comments, then reports each symbol's path, language, kind, name, start
 line, end line, signature, export flag, async flag, static return metadata, and content hash.
 Anchor metadata is reported separately from symbols and includes id, path, metadata line range,
@@ -99,7 +101,8 @@ and conservative behavior labels such as `value`, `void`, `mixed`, `implicit_und
 `throws_only`, or `unknown`. Use it before reading large source files line window by line. The
 outline is an orientation aid, not an AST refactoring engine or runtime value tracer.
 
-Supported extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, and `.cjs`.
+Supported extensions are `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.astro`,
+`.svelte`, `.go`, `.rs`, and `.py`.
 Directory scans skip common generated, cache, vendor, and build directories such as `.git`,
 `.mustflow/cache`, `node_modules`, `dist`, `build`, `coverage`, `.next`, and `.turbo`.
 

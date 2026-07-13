@@ -45,6 +45,50 @@ import {
 	writeFileSync,
 } from './helpers/text-budget-contracts.js';
 
+const CODE_OUTLINE_LANGUAGE_NAMES = ['TypeScript', 'JavaScript', 'Astro', 'Svelte', 'Go', 'Rust', 'Python'];
+
+test('code-outline public summaries cover every supported language family', () => {
+	const sourceFiles = [
+		'src/cli/i18n/en.ts',
+		'src/cli/i18n/es.ts',
+		'src/cli/i18n/fr.ts',
+		'src/cli/i18n/hi.ts',
+		'src/cli/i18n/ko.ts',
+		'src/cli/i18n/zh.ts',
+	];
+
+	for (const sourceFile of sourceFiles) {
+		const source = readFileSync(sourceFile, 'utf8');
+		const summary = source.match(/"scriptPack\.script\.codeOutline\.summary":\s*"([^"]+)"/u)?.[1] ?? '';
+		const help = source.match(/"codeOutline\.help\.summary":\s*"([^"]+)"/u)?.[1] ?? '';
+
+		for (const language of CODE_OUTLINE_LANGUAGE_NAMES) {
+			assert.match(summary, new RegExp(`\\b${language}\\b`, 'u'), `${sourceFile} catalog summary omits ${language}`);
+			assert.match(help, new RegExp(`\\b${language}\\b`, 'u'), `${sourceFile} help summary omits ${language}`);
+		}
+	}
+
+	const schema = JSON.parse(readFileSync('schemas/code-outline-report.schema.json', 'utf8'));
+	assert.deepEqual(schema.$defs.language.enum, [
+		'typescript',
+		'tsx',
+		'javascript',
+		'jsx',
+		'javascript-module',
+		'javascript-commonjs',
+		'astro',
+		'svelte',
+		'go',
+		'rust',
+		'python',
+	]);
+
+	const docs = readFileSync('docs-site/src/content/docs/en/commands/script-pack.md', 'utf8');
+	for (const extension of ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs', '.astro', '.svelte', '.go', '.rs', '.py']) {
+		assert.ok(docs.includes(`\`${extension}\``), `script-pack docs omit ${extension}`);
+	}
+});
+
 test('script-pack catalog exposes routing metadata for agent script selection', () => {
 	const projectPath = createTempProject();
 

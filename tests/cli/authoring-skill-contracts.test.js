@@ -93,6 +93,20 @@ test('architecture pattern routes carry data-driven context signals', () => {
 	);
 });
 
+test('state machine skill protects the initial state and first transition contract', () => {
+	const localSkill = readText('.mustflow/skills/state-machine-pattern/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/state-machine-pattern/SKILL.md');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /intended initial state, the user-visible entry state/u);
+	assert.match(localSkill, /Do not initialize directly into an active state such as `PLAYING`, `RUNNING`, or `PROCESSING`/u);
+	assert.match(localSkill, /Model the first user or system action as a real transition/u);
+	assert.match(localSkill, /missing runtime prerequisites produce a visible failure or unavailable action instead of a silent no-op/u);
+	assert.match(localSkill, /Test the declared initial state and the first permitted transition/u);
+	assert.match(i18n, /\[documents\."skill\.state-machine-pattern"\][\s\S]*?revision = 5/u);
+});
+
 test('route metadata can declare checked skill dependencies', () => {
 	const routes = readText('.mustflow/skills/routes.toml');
 	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');

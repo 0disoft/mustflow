@@ -349,6 +349,13 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(mustflowConfig, /max_total_output_mb = 8/);
 		assert.match(mustflowConfig, /max_failures_per_intent = 2/);
 		assert.match(mustflowConfig, /on_limit = "stop_and_report"/);
+		const approvalDefaults = mustflowConfig.match(/\[approval\]\nrequired_for = \[([\s\S]*?)\n\]/)?.[1] ?? '';
+		assert.doesNotMatch(approvalDefaults, /"dependency_install"/);
+		assert.doesNotMatch(approvalDefaults, /"network_access"/);
+		assert.match(approvalDefaults, /"dependency_upgrade"/);
+		assert.match(approvalDefaults, /"database_migration"/);
+		assert.match(approvalDefaults, /"secret_access"/);
+		assert.match(approvalDefaults, /"release"/);
 		assert.match(mustflowConfig, /\[retention\.run_receipts\]\nstore = "repo_local_ignored"/);
 		assert.match(mustflowConfig, /\[retention\.knowledge\]\nenabled = false\nstore = "repo_local_ignored"/);
 		assert.match(mustflowConfig, /\[retention\.handoffs\]\nstore = "repo_local_ignored"/);

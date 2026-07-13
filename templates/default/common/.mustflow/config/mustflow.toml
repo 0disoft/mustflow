@@ -321,9 +321,7 @@ on_limit = "stop_and_report"
 required_for = [
   "git_commit",
   "git_push",
-  "dependency_install",
   "dependency_upgrade",
-  "network_access",
   "database_migration",
   "destructive_command",
   "secret_access",

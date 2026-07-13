@@ -406,6 +406,11 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	assert.match(localSkill, /Use `SvelteMap`, `SvelteSet`, `SvelteDate`, `SvelteURL`/u);
 	assert.match(localSkill, /Keep `\$effect` dependencies narrow and synchronous/u);
 	assert.match(localSkill, /Treat props as parent-owned/u);
+	assert.match(localSkill, /do not expose local `\$state` through an `export \{ local as prop \}` alias/u);
+	assert.match(localSkill, /Declare a bindable prop through `\$props\(\)` and `\$bindable\(\)`/u);
+	assert.match(localSkill, /Do not remove a child component merely to hide a broken DOM-reference handoff/u);
+	assert.match(localSkill, /Treat `bind:this` values as unavailable before mount/u);
+	assert.match(localSkill, /Do not silently return from required imperative initialization/u);
 	assert.match(localSkill, /Treat snippets as typed render callbacks/u);
 	assert.match(localSkill, /Presence in current official docs does not by itself prove stable support/u);
 	assert.match(localSkill, /snapshot checked on 2026-07-11, SvelteKit remote functions were\s+experimental/u);
@@ -427,7 +432,7 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/svelte-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"svelte-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 5/u);
 });
 
 test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runtime risks explicit', () => {

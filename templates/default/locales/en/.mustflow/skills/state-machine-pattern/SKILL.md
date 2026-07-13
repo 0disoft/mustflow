@@ -2,7 +2,7 @@
 mustflow_doc: skill.state-machine-pattern
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: state-machine-pattern
@@ -66,6 +66,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 ## Required Inputs
 
 - The entity and state field under change.
+- The intended initial state, the user-visible entry state, and the first event or command that should leave it.
 - Complete state list and which states are terminal.
 - Complete event list and the facts each event carries.
 - Current places that change state, validate actions, check state, or render available actions.
@@ -118,6 +119,8 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 5. Write the transition table first.
    - Include every source state, allowed event, guard name, target state, and effect description.
    - Include terminal states explicitly with no outgoing transitions when they are truly terminal.
+   - Declare the initial state explicitly and verify it matches the real entry experience. Do not initialize directly into an active state such as `PLAYING`, `RUNNING`, or `PROCESSING` when the user must first see a menu, confirmation, setup, or start action.
+   - Model the first user or system action as a real transition. Test that the expected entry action leaves the initial state and that missing runtime prerequisites produce a visible failure or unavailable action instead of a silent no-op.
    - Do not hide transition rules inside handler branches, repository filters, database queries, adapter code, or UI code.
    - Do not let direct `deleted_at` assignment bypass allowed archive, soft-delete, restore, purge, anonymize, or redirect transitions when deletion is a meaningful lifecycle.
 6. Keep guards pure.
@@ -167,6 +170,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
     - For important domains, document state list, event list, transition table, terminal states, guards, effects, concurrency method, duplicate-event handling, and any cross-machine invariants.
     - Diagrams are secondary. The code transition table is the source of truth.
 17. Test from the transition table.
+    - Test the declared initial state and the first permitted transition before testing later lifecycle branches.
     - Test every valid transition.
     - Test representative invalid transitions, especially terminal states and dangerous skipped states.
     - Test guard success and guard failure separately.

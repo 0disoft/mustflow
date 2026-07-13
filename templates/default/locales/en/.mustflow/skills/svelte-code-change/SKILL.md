@@ -2,7 +2,7 @@
 mustflow_doc: skill.svelte-code-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: svelte-code-change
@@ -98,6 +98,10 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 20. Keep `$effect` dependencies narrow and synchronous. Read dependencies before `await`, `setTimeout`, or callbacks; use `untrack` for incidental logging, snapshots, or non-dependency reads.
 21. Return cleanup from effects that create subscriptions, intervals, observers, sockets, editors, charts, canvas loops, or external library instances.
 22. Treat props as parent-owned. Use callback props for changes and `$bindable` only for narrow form-control-like two-way APIs. Preserve wrapper binding chains or convert them to explicit callbacks.
+    - In Svelte 5 runes mode, do not expose local `$state` through an `export { local as prop }` alias and expect a parent `bind:` directive to update. Declare a bindable prop through `$props()` and `$bindable()` when two-way binding is the intended public contract.
+    - Do not remove a child component merely to hide a broken DOM-reference handoff. Prefer keeping canvas, editor, chart, media, or other imperative resource creation and cleanup in the component that owns the DOM node. When a parent must coordinate initialization, expose an explicit ready callback carrying the node or initialized handle after the child has mounted.
+    - Treat `bind:this` values as unavailable before mount and possibly unavailable again after conditional unmount. Do not assume a parent `onMount` runs after a child-provided reference has propagated through an invalid or indirect binding chain.
+    - Do not silently return from required imperative initialization when the DOM node is unexpectedly absent. Distinguish an expected conditional absence from a broken ownership or binding contract, expose the failure during development, and provide a bounded reinitialization path when the node can appear later.
 23. In Svelte 5, treat DOM event handlers as props. When spreading rest props through wrappers, intentionally compose external handlers with internal policy instead of relying on spread order.
 24. Treat snippets as typed render callbacks. Require optional snippet guards, pass row or slot-like data as parameters, and avoid hidden parent-state capture in reusable library components.
 25. In the official-source snapshot checked on 2026-07-11, SvelteKit remote functions were
@@ -141,6 +145,7 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 - Use `$state.snapshot` before sending proxy state to serializers, workers, chart libraries, equality tools, or external APIs that should see plain data.
 - Use `$derived` for calculations from props, route data, page state, URL state, or local state.
 - Use `$effect` only for browser-side effects, subscriptions, DOM, canvas, analytics, timers, third-party browser libraries, and cleanup.
+- Keep imperative DOM resources in the component that owns the bound node when practical. If ownership must cross a component boundary, use an explicit `$bindable` prop or ready callback and test the handoff instead of exporting local rune state by alias.
 - Use stores for external streams or manual subscribe/unsubscribe interop, not ordinary component state.
 - Use context for parent-owned values shared down the component tree, especially request-scoped layout data.
 - Do not reassign reactive context objects after placing them in context; update their properties or pass getter functions when needed.

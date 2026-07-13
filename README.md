@@ -302,7 +302,7 @@ mf run mustflow_update_apply
 | `mf script-pack list` | List bundled script packs, script refs, routing hints, side-effect flags, input/output labels, and JSON schema files. |
 | `mf script-pack suggest --changed --json` | Rank optional read-only helpers for current changed files without running those helpers or granting command authority. |
 | `mf script-pack suggest --path <path> --phase before_change` | Rank helpers for an explicit path and workflow phase before deciding which script to run. |
-| `mf script-pack run code/outline scan <path...> --json` | Scan supported source files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
+| `mf script-pack run code/outline scan <path...> --json` | Scan TypeScript, JavaScript, Astro, Svelte, Go, Rust, and Python files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
 | `mf script-pack run code/dependency-graph scan <path...> --json` | Trace bounded relative import, export, require, and dynamic import edges for TypeScript and JavaScript source files. |
 | `mf script-pack run code/module-boundary check <path...> --json` | Check configured module-boundary import rules, import cycles, public entrypoints, feature imports, and shared budgets. |
 | `mf script-pack run code/change-impact analyze --base HEAD --json` | Analyze changed files and return bounded impact candidates, script-pack hints, and verification intent hints. |
