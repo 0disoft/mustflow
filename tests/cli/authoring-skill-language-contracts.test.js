@@ -465,6 +465,44 @@ test('Wails code change skill covers v3 app, bridge, WebView, and packaging trap
 	assert.match(i18n, /\[documents\."skill\.wails-code-change"\][\s\S]*?revision = 2/u);
 });
 
+test('WebView2 code change skill covers runtime, profile, bridge, lifecycle, and deployment traps', () => {
+	const webview2Skill = readText('.mustflow/skills/webview2-code-change/SKILL.md');
+	const templateWebview2Skill = readText(
+		'templates/default/locales/en/.mustflow/skills/webview2-code-change/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(webview2Skill, templateWebview2Skill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(webview2Skill, /Chromium process group, a persistent browser profile, and a native RPC boundary/u);
+	assert.match(webview2Skill, /Do not let XAML or\s+constructor `Source` start an implicit default initialization first/u);
+	assert.match(webview2Skill, /Do not infer Runtime capability from the NuGet version alone/u);
+	assert.match(webview2Skill, /parse and compare exact normalized scheme, host, and effective port/u);
+	assert.match(webview2Skill, /acquire\s+its deferral, enter `try`, and complete exactly once in `finally`/u);
+	assert.match(webview2Skill, /Prefer Evergreen unless exact binary reproducibility/u);
+	assert.match(webview2Skill, /Do not delete a UDF because initialization threw an unclassified exception/u);
+	assert.match(webview2Skill, /Recreating one window while another shares the UDF/u);
+	assert.match(webview2Skill, /distinguish `DownloadStarting\.Handled` from `Cancel`/u);
+	assert.match(webview2Skill, /Diagnose memory by ownership/u);
+	assert.match(webview2Skill, /Correlate page performance marks/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/webview2-code-change\/SKILL\.md/u);
+	assert.match(skillIndex, /implicit `Source` initialization/u);
+	assert.match(
+		routes,
+		/\[routes\."webview2-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/webview2-code-change\/SKILL\.md"/u);
+	assert.match(manifest, /"webview2-code-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.webview2-code-change"\][\s\S]*?revision = 2/u);
+});
+
 test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain traps by Go version', () => {
 	const goSkill = readText('.mustflow/skills/go-code-change/SKILL.md');
 	const templateGoSkill = readText('templates/default/locales/en/.mustflow/skills/go-code-change/SKILL.md');

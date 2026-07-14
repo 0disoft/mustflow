@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 257
+anchor_count: 259
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:213b1a3e57b83c82498fe8051557512206d8b8b07f22ef1efcd88cdb435df63c"
+source_fingerprint: "sha256:8d3f3d8a2c237e93c28c51e370d9959533010656271efe313082abb4571847d6"
 ---
 
 # REPO_MAP.md
@@ -448,6 +448,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/godot-code-change/
 
 - `.mustflow/skills/godot-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/hetzner-cloud-change/
+
+- `.mustflow/skills/hetzner-cloud-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/heuristic-candidate-selection/
 
@@ -908,6 +912,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/website-task-friction-review/
 
 - `.mustflow/skills/website-task-friction-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/webview2-code-change/
+
+- `.mustflow/skills/webview2-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/writing-elegance/
 

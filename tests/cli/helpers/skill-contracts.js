@@ -4,7 +4,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
-const skillsIndexRevision = 239;
+
+function readSkillsIndexRevision() {
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const revision = /^revision: (\d+)$/mu.exec(skillIndex)?.[1];
+	assert.ok(revision, 'missing numeric skills index revision');
+	return Number(revision);
+}
 
 export function readText(relativePath) {
 	return readFileSync(path.join(projectRoot, ...relativePath.split('/')), 'utf8');
@@ -55,6 +61,7 @@ export function assertI18nSkillDocument(i18n, skillName, revision) {
 }
 
 export function assertSkillsIndexRevision(i18n) {
+	const skillsIndexRevision = readSkillsIndexRevision();
 	assert.match(
 		i18n,
 		new RegExp(`\\[documents\\."skills\\.index"\\][\\s\\S]*?revision = ${skillsIndexRevision}`, 'u'),

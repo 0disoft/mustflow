@@ -332,6 +332,15 @@ test('fast baseline keeps lightweight command and workflow contracts', () => {
 	assert.equal(report.selected.includes('pages-workflow.test.js'), true);
 });
 
+test('skill contract mode selects the changed skill shard and install surface', () => {
+	const report = listSuite('skill-contracts', ['.mustflow/skills/hetzner-cloud-change/SKILL.md']);
+
+	assert.deepEqual([...report.selected].sort(), [
+		'authoring-skill-operations-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+	]);
+});
+
 test('fast baseline keeps harness safety checks but excludes heavier feature suites', () => {
 	const report = listSuite('fast');
 

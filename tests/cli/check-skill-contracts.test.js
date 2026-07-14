@@ -1,8 +1,33 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { test } from 'node:test';
-import { cloneProjectFixture, createTempProject, initProject, projectRoot, removeTempProject, runCli } from './helpers/cli-harness.js';
+import { after, before, test } from 'node:test';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProjectInProcess,
+	projectRoot,
+	removeTempProject,
+	runCliInProcess,
+} from './helpers/cli-harness.js';
+
+let initializedSkillProject;
+
+before(async () => {
+	initializedSkillProject = createTempProject('mustflow-skill-base-');
+	await initProjectInProcess(initializedSkillProject);
+});
+
+after(() => {
+	if (initializedSkillProject) {
+		removeTempProject(initializedSkillProject);
+	}
+});
+
+function createInitializedSkillProject() {
+	assert.ok(initializedSkillProject, 'initialized skill fixture is unavailable');
+	return cloneProjectFixture(initializedSkillProject, 'mustflow-skill-check-');
+}
 
 function readText(filePath) {
 	return readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
@@ -41,12 +66,11 @@ function trySymlink(targetPath, linkPath) {
 	}
 }
 
-test('strict check rejects symlinked skill index reads', (t) => {
-	const projectPath = createTempProject();
+test('strict check rejects symlinked skill index reads', async (t) => {
+	const projectPath = createInitializedSkillProject();
 	const outsidePath = createTempProject('mustflow-outside-');
 
 	try {
-		initProject(projectPath);
 		const skillIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const outsideIndexPath = path.join(outsidePath, 'INDEX.md');
 		writeFileSync(outsideIndexPath, readText(skillIndexPath));
@@ -58,7 +82,7 @@ test('strict check rejects symlinked skill index reads', (t) => {
 			return;
 		}
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -73,17 +97,16 @@ test('strict check rejects symlinked skill index reads', (t) => {
 	}
 });
 
-test('strict check fails unknown skill command intent metadata references', () => {
-	const projectPath = createTempProject();
+test('strict check fails unknown skill command intent metadata references', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readText(skillPath).replace('    - lint', '    - lint\n    - deploy_prod');
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -104,11 +127,10 @@ test('strict check fails unknown skill command intent metadata references', () =
 	}
 });
 
-test('strict check warns for conflicting skill index routes without failing', () => {
-	const projectPath = createTempProject();
+test('strict check warns for conflicting skill index routes without failing', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		writeRouteShadowSkill(projectPath, 'route-shadow');
 		writeRouteShadowSkill(projectPath, 'route-catch-all');
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
@@ -140,7 +162,7 @@ priority = 95
 			['[project]', 'name = "example"', 'version = "0.1.0"', ''].join('\n'),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 		const warningIds = new Set(
 			check.issueDetails.filter((issue) => issue.severity === 'warning').map((issue) => issue.id),
@@ -170,11 +192,10 @@ priority = 95
 	}
 });
 
-test('strict check fails skill index route drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill index route drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const skillsIndex = readText(skillsIndexPath)
 			.replace(/^\| Code changes need review before report \|.*\n/mu, '')
@@ -185,7 +206,7 @@ test('strict check fails skill index route drift', () => {
 		writeFileSync(skillsIndexPath, skillsIndex);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -218,11 +239,10 @@ test('strict check fails skill index route drift', () => {
 	}
 });
 
-test('strict check fails skill route metadata drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill route metadata drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath)
 			.replace(/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\napplies_to_reasons = \["code_change", "behavior_change"\]\n/u, '\n')
@@ -240,7 +260,7 @@ test('strict check fails skill route metadata drift', () => {
 		writeFileSync(routesPath, routes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -275,11 +295,10 @@ test('strict check fails skill route metadata drift', () => {
 	}
 });
 
-test('strict check fails invalid skill route dependency semantics', () => {
-	const projectPath = createTempProject();
+test('strict check fails invalid skill route dependency semantics', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath).concat(
 			[
@@ -294,7 +313,7 @@ test('strict check fails invalid skill route dependency semantics', () => {
 		writeFileSync(routesPath, routes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 		const expectedSuggestIssue = [
 			'Strict: .mustflow/skills/routes.toml route "code-review"',
@@ -330,11 +349,10 @@ test('strict check fails invalid skill route dependency semantics', () => {
 	}
 });
 
-test('strict check fails skill route category section drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill route category section drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath).replace(
 			/(\[routes\."code-review"\]\n)category = "general_code"/u,
@@ -343,7 +361,7 @@ test('strict check fails skill route category section drift', () => {
 		writeFileSync(routesPath, routes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -360,11 +378,10 @@ test('strict check fails skill route category section drift', () => {
 	}
 });
 
-test('strict check fails skill route golden fixture mismatches', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill route golden fixture mismatches', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
 			JSON.stringify(
@@ -385,7 +402,7 @@ test('strict check fails skill route golden fixture mismatches', () => {
 			),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -400,17 +417,16 @@ test('strict check fails skill route golden fixture mismatches', () => {
 	}
 });
 
-test('strict check fails invalid skill route golden fixture shape', () => {
-	const projectPath = createTempProject();
+test('strict check fails invalid skill route golden fixture shape', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
 			JSON.stringify({ schema_version: '1', cases: [{ id: 'missing-paths' }] }, null, 2),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -425,11 +441,10 @@ test('strict check fails invalid skill route golden fixture shape', () => {
 	}
 });
 
-test('strict check fails invalid skill route fixture expectation arrays', () => {
-	const projectPath = createTempProject();
+test('strict check fails invalid skill route fixture expectation arrays', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'skills', 'route-fixtures.json'),
 			JSON.stringify(
@@ -450,7 +465,7 @@ test('strict check fails invalid skill route fixture expectation arrays', () => 
 			),
 		);
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -465,12 +480,11 @@ test('strict check fails invalid skill route fixture expectation arrays', () => 
 	}
 });
 
-test('strict check fails generated template profiles without selectable main routes', () => {
-	const projectPath = createTempProject();
+test('strict check fails generated template profiles without selectable main routes', async () => {
+	const projectPath = createInitializedSkillProject();
 	const templatePath = cloneProjectFixture(path.join(projectRoot, 'templates', 'default'), 'mustflow-template-');
 
 	try {
-		initProject(projectPath);
 		writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify({ name: 'example', version: '0.1.0' }, null, 2));
 		const routesPath = path.join(templatePath, 'locales', 'en', '.mustflow', 'skills', 'routes.toml');
 		const routes = ['security-privacy-review', 'config-env-change', 'auth-permission-change'].reduce(
@@ -484,7 +498,7 @@ test('strict check fails generated template profiles without selectable main rou
 		writeFileSync(routesPath, routes);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json'], {
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json'], {
 			env: {
 				...process.env,
 				MUSTFLOW_DEV_TEMPLATE_ROOT: templatePath,
@@ -508,11 +522,10 @@ test('strict check fails generated template profiles without selectable main rou
 	}
 });
 
-test('strict check fails skill index route table shape drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill index route table shape drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillsIndexPath = path.join(projectPath, '.mustflow', 'skills', 'INDEX.md');
 		const skillsIndex = readText(skillsIndexPath).replace(
 			/^\| Code changes need review before report \|.*\n/mu,
@@ -521,7 +534,7 @@ test('strict check fails skill index route table shape drift', () => {
 		writeFileSync(skillsIndexPath, skillsIndex);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -537,17 +550,16 @@ test('strict check fails skill index route table shape drift', () => {
 	}
 });
 
-test('strict check fails non-procedure skill metadata', () => {
-	const projectPath = createTempProject();
+test('strict check fails non-procedure skill metadata', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readText(skillPath).replace('  mustflow_kind: procedure', '  mustflow_kind: contract');
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -567,17 +579,16 @@ test('strict check fails non-procedure skill metadata', () => {
 	}
 });
 
-test('strict check fails unsupported skill schema metadata', () => {
-	const projectPath = createTempProject();
+test('strict check fails unsupported skill schema metadata', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readText(skillPath).replace('  mustflow_schema: "1"', '  mustflow_schema: "2"');
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -592,17 +603,16 @@ test('strict check fails unsupported skill schema metadata', () => {
 	}
 });
 
-test('strict check fails skill name identity drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill name identity drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readText(skillPath).replace('name: code-review', 'name: diff-review');
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -618,11 +628,10 @@ test('strict check fails skill name identity drift', () => {
 	}
 });
 
-test('strict check fails skill package identity drift', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill package identity drift', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readText(skillPath)
 			.replace('  pack_id: mustflow.core\n', '')
@@ -630,7 +639,7 @@ test('strict check fails skill package identity drift', () => {
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -652,17 +661,16 @@ test('strict check fails skill package identity drift', () => {
 	}
 });
 
-test('strict check fails skill command permission claims', () => {
-	const projectPath = createTempProject();
+test('strict check fails skill command permission claims', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = `${readText(skillPath)}\nThis skill authorizes agents to run deployment commands.\n`;
 		writeFileSync(skillPath, skill);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -683,11 +691,10 @@ test('strict check fails skill command permission claims', () => {
 	}
 });
 
-test('strict check fails unsafe skill resource declarations', () => {
-	const projectPath = createTempProject();
+test('strict check fails unsafe skill resource declarations', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillDir = path.join(projectPath, '.mustflow', 'skills', 'code-review');
 		const scriptsDir = path.join(skillDir, 'scripts');
 		mkdirSync(scriptsDir, { recursive: true });
@@ -718,7 +725,7 @@ test('strict check fails unsafe skill resource declarations', () => {
 		mkdirSync(orphanSkillDir, { recursive: true });
 		writeFileSync(path.join(orphanSkillDir, 'resources.toml'), 'schema_version = "1"\n');
 
-		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const result = await runCliInProcess(projectPath, ['check', '--strict', '--json']);
 		const check = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
@@ -777,16 +784,15 @@ test('strict check fails unsafe skill resource declarations', () => {
 	}
 });
 
-test('fails when a skill omits a required section', () => {
-	const projectPath = createTempProject();
+test('fails when a skill omits a required section', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
 		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: verification -->\r?\n/u, ''));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCliInProcess(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Missing required skill section ids/);
@@ -797,16 +803,15 @@ test('fails when a skill omits a required section', () => {
 	}
 });
 
-test('fails when a skill omits an extended contract section', () => {
-	const projectPath = createTempProject();
+test('fails when a skill omits an extended contract section', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
 		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: preconditions -->\r?\n/u, ''));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCliInProcess(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Missing required skill section ids/);
@@ -817,16 +822,15 @@ test('fails when a skill omits an extended contract section', () => {
 	}
 });
 
-test('fails when a skill omits its output format contract', () => {
-	const projectPath = createTempProject();
+test('fails when a skill omits its output format contract', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
 		writeFileSync(skillPath, skill.replace(/<!-- mustflow-section: output-format -->\r?\n/u, ''));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCliInProcess(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Missing required skill section ids/);
@@ -837,17 +841,16 @@ test('fails when a skill omits its output format contract', () => {
 	}
 });
 
-test('accepts localized skill headings when stable section ids remain', () => {
-	const projectPath = createTempProject();
+test('accepts localized skill headings when stable section ids remain', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
 		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md');
 		const skill = readFileSync(skillPath, 'utf8');
 		writeFileSync(skillPath, skill.replace('## Verification', '## Checks'));
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
-		const result = runCli(projectPath, ['check']);
+		const result = await runCliInProcess(projectPath, ['check']);
 
 		assert.equal(result.status, 0);
 		assert.match(result.stdout, /mustflow check passed/);

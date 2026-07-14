@@ -1,4 +1,8 @@
-export function createTestSelection(allCliTests) {
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+export function createTestSelection(allCliTests, options = {}) {
+	const projectRoot = options.projectRoot;
 	const checkTests = [
 		'check.test.js',
 		'check-command-contracts.test.js',
@@ -69,6 +73,47 @@ export function createTestSelection(allCliTests) {
 		'package-release-workflow-contracts.test.js',
 		'package-template-skill-contracts.test.js',
 	];
+	const skillInstallSurfaceTest = 'skill-install-surface-contracts.test.js';
+	const skillContractShardPattern = /^authoring-skill(?:-[a-z0-9-]+)?-contracts\.test\.js$/u;
+	const authoringSkillContractTests = allCliTests.filter((name) => skillContractShardPattern.test(name));
+	const skillContractTestsBySkill = new Map();
+
+	if (projectRoot) {
+		for (const testName of authoringSkillContractTests) {
+			const source = readFileSync(path.join(projectRoot, 'tests', 'cli', testName), 'utf8');
+			const skillPattern = /(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/([a-z0-9-]+)\/SKILL\.md/gu;
+
+			for (const match of source.matchAll(skillPattern)) {
+				const tests = skillContractTestsBySkill.get(match[1]) ?? new Set();
+				tests.add(testName);
+				skillContractTestsBySkill.set(match[1], tests);
+			}
+		}
+	}
+
+	function skillContractTestsForSkill(skillName) {
+		return uniqueExisting([
+			...(skillContractTestsBySkill.get(skillName) ?? []),
+			skillInstallSurfaceTest,
+		]);
+	}
+
+	function skillContractTestsForFiles(files) {
+		const selected = new Set([skillInstallSurfaceTest]);
+		const skillPathPattern = /^(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/([a-z0-9-]+)\/SKILL\.md$/u;
+
+		for (const file of files) {
+			const skillName = skillPathPattern.exec(file)?.[1];
+			if (!skillName) {
+				continue;
+			}
+			for (const testName of skillContractTestsForSkill(skillName)) {
+				selected.add(testName);
+			}
+		}
+
+		return uniqueExisting([...selected]);
+	}
 	const scriptPackContractTests = [
 		'script-pack-catalog-contracts.test.js',
 		'script-pack-code-boundary-contracts.test.js',
@@ -142,7 +187,15 @@ export function createTestSelection(allCliTests) {
 	const releaseTests = [...packageContractTests, 'package-template.test.js'];
 	const cliTests = allCliTests.filter((name) => !releaseTests.includes(name));
 	const coverageTests = fastTests;
-	const inProcessCliTests = new Set(['check.test.js', 'contract-lint.test.js', 'next.test.js', 'onboard.test.js', ...verifyTests]);
+	const inProcessCliTests = new Set([
+		'check-skill-contracts.test.js',
+		'check.test.js',
+		'contract-lint.test.js',
+		'explain-skills.test.js',
+		'next.test.js',
+		'onboard.test.js',
+		...verifyTests,
+	]);
 	const envSensitiveInProcessCliTests = new Set(['verify-plan-scheduler.test.js']);
 	const commandTestNames = new Set(allCliTests);
 	const commandRelatedTests = new Map([
@@ -179,7 +232,36 @@ export function createTestSelection(allCliTests) {
 
 	const relatedRules = [
 		{ match: /^schemas\//u, tests: schemaSmokeTests },
-		{ match: /^templates\/default\/locales\/en\/\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
+		{
+			match: /^\.mustflow\/config\/manifest\.lock\.toml$/u,
+			tests: ['check.test.js', 'update.test.js', 'manifest-lock-accept-go.test.js'],
+			terminal: true,
+		},
+		{
+			match: /^\.mustflow\/skills\/([a-z0-9-]+)\/SKILL\.md$/u,
+			testsForMatch: ([, skillName]) => skillContractTestsForSkill(skillName),
+			terminal: true,
+		},
+		{
+			match: /^templates\/default\/locales\/en\/\.mustflow\/skills\/([a-z0-9-]+)\/SKILL\.md$/u,
+			testsForMatch: ([, skillName]) => skillContractTestsForSkill(skillName),
+			terminal: true,
+		},
+		{
+			match: /^(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/(?:INDEX\.md|routes\.toml|router\.toml)$/u,
+			tests: [skillInstallSurfaceTest, 'authoring-skill-contracts.test.js'],
+			terminal: true,
+		},
+		{
+			match: /^templates\/default\/(?:i18n|manifest)\.toml$/u,
+			tests: [skillInstallSurfaceTest],
+			terminal: true,
+		},
+		{
+			match: /^tests\/cli\/helpers\/skill-contracts\.js$/u,
+			tests: [...authoringSkillContractTests, skillInstallSurfaceTest],
+			terminal: true,
+		},
 		{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js', 'package-template.test.js'] },
 		{ match: /^package\.json$/u, tests: [...packageContractTests, 'package-template.test.js', ...versioningTests] },
 		{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
@@ -461,6 +543,10 @@ export function createTestSelection(allCliTests) {
 					tests,
 					note: 'changed file matched a related-test rule',
 				});
+
+				if (rule.terminal) {
+					break;
+				}
 			}
 
 			if (!matchedRule) {
@@ -546,6 +632,7 @@ export function createTestSelection(allCliTests) {
 			cli: cliTests,
 			coverage: coverageTests,
 			release: releaseTests,
+			'skill-contracts': skillContractTestsForFiles(files),
 			full: allCliTests,
 			'full-auto': allCliTests,
 			'full-profile': allCliTests,

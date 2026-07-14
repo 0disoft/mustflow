@@ -1,6 +1,6 @@
 {
   "name": "mustflow",
-  "version": "2.115.13",
+  "version": "2.115.14",
   "description": "Agent workflow documents and CLI for mustflow repository roots.",
   "type": "module",
   "license": "MIT-0",
@@ -32,6 +32,7 @@
     "test:related": "node scripts/run-cli-tests.mjs --build=auto related",
     "test:related:cached": "node scripts/run-cli-tests.mjs related-cached",
     "test:related:profile": "node scripts/run-cli-tests.mjs --build related-profile",
+    "test:skill-contracts": "node scripts/run-cli-tests.mjs skill-contracts",
     "test:cli": "node scripts/run-cli-tests.mjs --build cli",
     "test:coverage": "node scripts/run-cli-tests.mjs --build coverage",
     "test:audit": "node scripts/audit-tests.mjs --json",

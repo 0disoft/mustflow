@@ -99,6 +99,17 @@ test('related selection maps command config changes to contract surfaces', () =>
 	assert.equal(selected.has('package-template.test.js'), false);
 });
 
+test('related selection maps the derived manifest lock to lock consumers without full fallback', () => {
+	const report = selectRelated(['.mustflow/config/manifest.lock.toml']);
+
+	assert.deepEqual(report.selected.sort(), [
+		'check.test.js',
+		'manifest-lock-accept-go.test.js',
+		'update.test.js',
+	]);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+});
+
 test('related selection maps package metadata helper changes to command consumers', () => {
 	const selected = selectedFor(['src/cli/lib/package-info.ts']);
 
@@ -309,13 +320,13 @@ test('related selection reports release-sensitive template changes', () => {
 	]);
 });
 
-test('related selection maps template skill changes to authoring contracts and template checks', () => {
+test('related selection maps template skill changes only to their authoring shard and install surface', () => {
 	const selected = selectedFor(['templates/default/locales/en/.mustflow/skills/cpp-code-change/SKILL.md']);
 
-	assert.equal(selected.has('authoring-skill-contracts.test.js'), true);
-	assert.equal(selected.has('package-template.test.js'), true);
-	assert.equal(selected.has('init.test.js'), true);
-	assert.equal(selected.has('update.test.js'), true);
+	assert.deepEqual([...selected].sort(), [
+		'authoring-skill-language-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+	]);
 });
 
 test('related selection widens unmapped source and helper changes instead of using fast fallback', () => {
@@ -344,9 +355,44 @@ test('related selection maps init command changes to default template installati
 	assert.equal(selected.has('workflow.test.js'), true);
 });
 
-test('related selection maps skill changes to authoring skill contracts', () => {
+test('related selection maps source skill changes only to their authoring shard and install surface', () => {
 	const selected = selectedFor(['.mustflow/skills/cpp-code-change/SKILL.md']);
 
-	assert.equal(selected.has('authoring-skill-contracts.test.js'), true);
-	assert.equal(selected.has('authoring-fixtures.test.js'), false);
+	assert.deepEqual([...selected].sort(), [
+		'authoring-skill-language-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+	]);
+});
+
+test('related selection resolves an operations skill to the operations shard', () => {
+	const sourceSelected = selectedFor(['.mustflow/skills/hetzner-cloud-change/SKILL.md']);
+	const templateSelected = selectedFor([
+		'templates/default/locales/en/.mustflow/skills/hetzner-cloud-change/SKILL.md',
+	]);
+	const expected = [
+		'authoring-skill-operations-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+	];
+
+	assert.deepEqual([...sourceSelected].sort(), expected);
+	assert.deepEqual([...templateSelected].sort(), expected);
+});
+
+test('related selection keeps skill index and manifest checks on the lightweight install surface', () => {
+	assert.deepEqual(selectedFor(['.mustflow/skills/INDEX.md']), new Set([
+		'authoring-skill-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+	]));
+	assert.deepEqual(selectedFor(['templates/default/manifest.toml']), new Set([
+		'skill-install-surface-contracts.test.js',
+	]));
+});
+
+test('shared skill contract helper changes stay inside authoring contract coverage', () => {
+	const selected = selectedFor(['tests/cli/helpers/skill-contracts.js']);
+	const full = listSuite('full');
+
+	assert.equal(selected.has('skill-install-surface-contracts.test.js'), true);
+	assert.equal([...selected].every((name) => name.startsWith('authoring-skill') || name === 'skill-install-surface-contracts.test.js'), true);
+	assert.ok(selected.size < full.selected.length);
 });

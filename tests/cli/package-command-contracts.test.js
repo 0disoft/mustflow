@@ -81,6 +81,25 @@ test('source repository exposes related-test profiling as a bounded diagnostic i
 	assert.match(profileIntent, /required_after = \["performance_change", "verification_performance_review"\]/u);
 });
 
+test('source repository exposes a bounded fast skill contract intent', () => {
+	const intent = /\[intents\.test_skill_contracts\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const coverage = /\[intents\.test_skill_contracts\.covers\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const cost = /\[intents\.test_skill_contracts\.cost\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(intent, '');
+	assert.match(intent, /argv = \["bun", "run", "test:skill-contracts"\]/u);
+	assert.match(intent, /timeout_seconds = 120/u);
+	assert.match(intent, /stdin = "closed"/u);
+	assert.match(intent, /writes = \[\]/u);
+	assert.match(intent, /network = false/u);
+	assert.match(intent, /destructive = false/u);
+	assert.match(intent, /required_after = \[\]/u);
+	assert.match(coverage, /surfaces = \["mustflow_skill_contracts"\]/u);
+	assert.match(coverage, /templates\/default\/manifest\.toml/u);
+	assert.match(cost, /expected_seconds = 20/u);
+	assert.match(cost, /cost_tier = "low"/u);
+});
+
 test('source repository keeps build out of ordinary code-change verification', () => {
 	const buildIntent = /\[intents\.build\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 

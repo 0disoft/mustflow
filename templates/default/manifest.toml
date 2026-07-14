@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.115.13"
+version = "2.115.14"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -132,6 +132,8 @@ creates = [
   ".mustflow/skills/tailwind-code-change/SKILL.md",
   ".mustflow/skills/tauri-code-change/SKILL.md",
   ".mustflow/skills/wails-code-change/SKILL.md",
+  ".mustflow/skills/webview2-code-change/SKILL.md",
+  ".mustflow/skills/hetzner-cloud-change/SKILL.md",
   ".mustflow/skills/typescript-code-change/SKILL.md",
   ".mustflow/skills/unocss-code-change/SKILL.md",
   ".mustflow/skills/cli-option-contract-review/SKILL.md",
@@ -373,6 +375,8 @@ minimal = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "command-contract-authoring",
@@ -550,6 +554,8 @@ patterns = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "command-contract-authoring",
@@ -738,6 +744,8 @@ oss = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "cli-option-contract-review",
@@ -945,6 +953,8 @@ team = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "command-contract-authoring",
@@ -1136,6 +1146,8 @@ product = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "command-contract-authoring",
@@ -1333,6 +1345,8 @@ library = [
   "tailwind-code-change",
   "tauri-code-change",
   "wails-code-change",
+  "webview2-code-change",
+  "hetzner-cloud-change",
   "typescript-code-change",
   "unocss-code-change",
   "cli-option-contract-review",

@@ -1,41 +1,36 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { after, before, test } from 'node:test';
+import {
+	cloneProjectFixture,
+	createTempProject,
+	initProjectInProcess,
+	removeTempProject,
+	runCliInProcess,
+} from './helpers/cli-harness.js';
 
-const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
-const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
+let initializedSkillProject;
 
-function createTempProject() {
-	return mkdtempSync(path.join(tmpdir(), 'mustflow-explain-skills-'));
+before(async () => {
+	initializedSkillProject = createTempProject('mustflow-explain-skills-base-');
+	await initProjectInProcess(initializedSkillProject);
+});
+
+after(() => {
+	if (initializedSkillProject) {
+		removeTempProject(initializedSkillProject);
+	}
+});
+
+function createInitializedSkillProject() {
+	assert.ok(initializedSkillProject, 'initialized skill fixture is unavailable');
+	return cloneProjectFixture(initializedSkillProject, 'mustflow-explain-skills-');
 }
 
-function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
-}
-
-function runCli(cwd, args) {
-	return spawnSync(process.execPath, [cliPath, ...args], {
-		cwd,
-		encoding: 'utf8',
-	});
-}
-
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
-	assert.equal(result.status, 0, result.stderr || result.stdout);
-}
-
-test('explains skill route alignment as json', () => {
-	const projectPath = createTempProject();
+test('explains skill route alignment as json', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skills', '--json']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skills', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -51,13 +46,11 @@ test('explains skill route alignment as json', () => {
 	}
 });
 
-test('explains skill route alignment as text', () => {
-	const projectPath = createTempProject();
+test('explains skill route alignment as text', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skills']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skills']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /skill index and skill bodies are aligned/);
@@ -69,13 +62,11 @@ test('explains skill route alignment as text', () => {
 	}
 });
 
-test('explains a single skill route as json', () => {
-	const projectPath = createTempProject();
+test('explains a single skill route as json', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skill', 'mustflow.core.code-review', '--json']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skill', 'mustflow.core.code-review', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -99,13 +90,11 @@ test('explains a single skill route as json', () => {
 	}
 });
 
-test('explains single skill route selection evidence as text', () => {
-	const projectPath = createTempProject();
+test('explains single skill route selection evidence as text', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skill', 'code-review']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skill', 'code-review']);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /Skill selection evidence/);
@@ -118,13 +107,11 @@ test('explains single skill route selection evidence as text', () => {
 	}
 });
 
-test('reports an undeclared skill route without inventing a route', () => {
-	const projectPath = createTempProject();
+test('reports an undeclared skill route without inventing a route', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skill', 'missing-skill', '--json']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skill', 'missing-skill', '--json']);
 		const report = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -140,13 +127,11 @@ test('reports an undeclared skill route without inventing a route', () => {
 	}
 });
 
-test('fails explain skills when a target argument is provided', () => {
-	const projectPath = createTempProject();
+test('fails explain skills when a target argument is provided', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skills', 'extra']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skills', 'extra']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Unexpected argument: extra/);
@@ -157,13 +142,11 @@ test('fails explain skills when a target argument is provided', () => {
 	}
 });
 
-test('fails explain skill when the skill id is missing', () => {
-	const projectPath = createTempProject();
+test('fails explain skill when the skill id is missing', async () => {
+	const projectPath = createInitializedSkillProject();
 
 	try {
-		initProject(projectPath);
-
-		const result = runCli(projectPath, ['explain', 'skill']);
+		const result = await runCliInProcess(projectPath, ['explain', 'skill']);
 
 		assert.equal(result.status, 1);
 		assert.match(result.stderr, /Error: Missing skill id/);

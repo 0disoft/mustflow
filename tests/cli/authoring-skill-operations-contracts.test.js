@@ -572,3 +572,47 @@ test('backend log evidence review reconstructs backend request and job paths', (
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.backend-log-evidence-review"\][\s\S]*?revision = 4/u);
 });
+
+test('Hetzner Cloud changes preserve provider-specific failure and recovery boundaries', () => {
+	const localSkill = readText('.mustflow/skills/hetzner-cloud-change/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/hetzner-cloud-change/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /declared configuration, provider-accepted configuration, and observed runtime state/u);
+	assert.match(localSkill, /A spread Placement Group reduces same-host concentration/u);
+	assert.match(localSkill, /Private does not prove encrypted or filtered/u);
+	assert.match(localSkill, /assigned allowlists combine/u);
+	assert.match(localSkill, /no outbound rules means allow-all/u);
+	assert.match(localSkill, /rule changes do not terminate connections/u);
+	assert.match(localSkill, /Model the Network as routed L3/u);
+	assert.match(localSkill, /configuration owner: provider image automation or explicit guest config/u);
+	assert.match(localSkill, /Do not call it automatic failover/u);
+	assert.match(localSkill, /DDoS filtering,\s+WAF behavior, application abuse control, and origin authentication distinct/u);
+	assert.match(localSkill, /Do not promote an arbitrary utilization or PSI percentage/u);
+	assert.match(localSkill, /Replication is availability, not history/u);
+	assert.match(localSkill, /A Docker named volume is not a Hetzner Volume/u);
+	assert.match(localSkill, /missing or wrong mount so an empty local directory cannot become a second database/u);
+	assert.match(localSkill, /Object Storage as an object API, not POSIX/u);
+	assert.match(localSkill, /pinned CCM and CSI versions or\s+digests/u);
+	assert.match(localSkill, /Object Lock at bucket creation/u);
+	assert.match(localSkill, /never benchmark a production raw block device destructively/u);
+	assert.match(localSkill, /Prepare rebuild-first incident recovery/u);
+	assert.match(localSkill, /account for active and powered-off compute/u);
+	assert.match(localSkill, /time-sensitive values in\s+config or evidence, not as timeless prose/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/hetzner-cloud-change\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."hetzner-cloud-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/hetzner-cloud-change\/SKILL\.md"/u);
+	assert.match(manifest, /"hetzner-cloud-change"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.hetzner-cloud-change"\][\s\S]*?revision = 2/u);
+});

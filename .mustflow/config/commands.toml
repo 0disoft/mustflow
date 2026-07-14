@@ -126,6 +126,36 @@ contracts = ["related CLI regression coverage"]
 expected_seconds = 180
 cost_tier = "medium"
 
+[intents.test_skill_contracts]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the changed skill contract shard plus lightweight source, template, route, manifest, i18n, and revision checks."
+argv = ["bun", "run", "test:skill-contracts"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = []
+
+[intents.test_skill_contracts.covers]
+reasons = ["mustflow_docs_change"]
+surfaces = ["mustflow_skill_contracts"]
+paths = [
+  ".mustflow/skills/**",
+  "templates/default/locales/en/.mustflow/skills/**",
+  "templates/default/manifest.toml",
+  "templates/default/i18n.toml",
+]
+contracts = ["skill source, shard, route, index, template manifest, locale metadata, and revision alignment"]
+
+[intents.test_skill_contracts.cost]
+expected_seconds = 20
+cost_tier = "low"
+
 [intents.test_related_profile]
 status = "configured"
 lifecycle = "oneshot"

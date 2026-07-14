@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 239
+revision = 242
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -906,6 +906,18 @@ translations = {}
 
 [documents."skill.wails-code-change"]
 source = "locales/en/.mustflow/skills/wails-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.webview2-code-change"]
+source = "locales/en/.mustflow/skills/webview2-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.hetzner-cloud-change"]
+source = "locales/en/.mustflow/skills/hetzner-cloud-change/SKILL.md"
 source_locale = "en"
 revision = 2
 translations = {}

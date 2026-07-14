@@ -28,7 +28,7 @@ const distCliEntrypoint = path.join(repoRoot, 'dist', 'cli', 'index.js');
 const allCliTests = readdirSync(testsRoot)
 	.filter((name) => name.endsWith('.test.js'))
 	.sort((left, right) => left.localeCompare(right));
-const testSelection = createTestSelection(allCliTests);
+const testSelection = createTestSelection(allCliTests, { projectRoot: repoRoot });
 const {
 	dashboardTests,
 	envSensitiveInProcessCliTests,

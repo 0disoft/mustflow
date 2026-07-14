@@ -918,6 +918,18 @@ route_type = "primary"
 priority = 90
 applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "release_risk"]
 
+[routes."webview2-code-change"]
+category = "data_external"
+route_type = "primary"
+priority = 90
+applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "performance_change", "release_risk"]
+
+[routes."hetzner-cloud-change"]
+category = "data_external"
+route_type = "primary"
+priority = 90
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "workflow_change", "package_metadata_change", "performance_change", "release_risk"]
+
 [routes."process-execution-safety"]
 category = "data_external"
 route_type = "primary"

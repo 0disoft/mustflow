@@ -6,6 +6,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Narrowed skill-related test selection to the owning authoring shard and lightweight install-surface checks, added the bounded `test_skill_contracts` intent, and reused initialized fixtures plus in-process CLI execution in skill contract suites.
+
 ### Fixed
 
 - Strengthened the Svelte and state-machine skills against invalid runes-mode component bindings,
@@ -15,6 +17,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added the `hetzner-cloud-change` built-in skill so agents separate Hetzner host, location,
+  network, control-plane, account, storage, and data failure domains; verify current provider
+  contracts; preserve recovery, capacity, performance, and cost evidence; and validate Firewall,
+  L3 networking, container mounts, object semantics, and CCM or CSI compatibility before mutations.
+- Added the `webview2-code-change` built-in skill so agents treat WebView2 as a Chromium process,
+  persistent profile, privileged native bridge, lifecycle, and Runtime distribution boundary across
+  WPF, WinForms, WinUI, and Win32 hosts.
 - Added the `small-service-platform-architecture-review` built-in skill so agents review
   multi-product platforms and app factories around a shared Product Registry, identity,
   billing, credit ledger, entitlement, admin, deployment, analytics, logging, i18n, common UI,
