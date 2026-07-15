@@ -51,7 +51,7 @@ test('bug claim evidence gate keeps defect adjudication bounded and orthogonal',
 	assert.match(localClassification, /closure: confidence/u);
 	assert.match(localClassification, /Assign `regression` only/u);
 	assert.match(localDomains, /confirmed security-policy defect from a currently exploitable vulnerability/u);
-	assert.match(localDomains, /One passing rerun does not close a nondeterministic finding/u);
+	assert.match(localDomains, /One passing rerun does not\s+close a nondeterministic finding/u);
 	assert.match(localDomains, /semantic success domain from the boundary safety domain/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/bug-claim-evidence-gate\/SKILL\.md/u);
 	assert.match(skillIndex, /failing-test-as-bug collapse/u);
