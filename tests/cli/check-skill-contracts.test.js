@@ -245,7 +245,10 @@ test('strict check fails skill route metadata drift', async () => {
 	try {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath)
-			.replace(/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\napplies_to_reasons = \["code_change", "behavior_change"\]\n/u, '\n')
+			.replace(
+				/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\napplies_to_reasons = \["code_change", "behavior_change"\]\n\n\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]\n/u,
+				'\n',
+			)
 			.concat(
 				[
 					'',
@@ -300,14 +303,13 @@ test('strict check fails invalid skill route dependency semantics', async () => 
 
 	try {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
-		const routes = readText(routesPath).concat(
+		const routes = readText(routesPath).replace(
+			/\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]/u,
 			[
-				'',
 				'[routes."code-review".dependencies]',
 				'suggests_adjuncts = ["small-service-platform-architecture-review"]',
 				'conflicts_with = ["small-service-platform-architecture-review"]',
 				'unlocks_on = [{ signal = "semantic_drift", skill = "small-service-platform-architecture-review" }]',
-				'',
 			].join('\n'),
 		);
 		writeFileSync(routesPath, routes);
