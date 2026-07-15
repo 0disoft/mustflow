@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.115.14"
+version = "2.115.15"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -25,6 +25,9 @@ creates = [
   ".mustflow/skills/behavior-preserving-refactor/SKILL.md",
   ".mustflow/skills/split-refactor-residual-path-review/SKILL.md",
   ".mustflow/skills/code-review/SKILL.md",
+  ".mustflow/skills/bug-claim-evidence-gate/SKILL.md",
+  ".mustflow/skills/bug-claim-evidence-gate/references/classification.md",
+  ".mustflow/skills/bug-claim-evidence-gate/references/domain-extensions.md",
   ".mustflow/skills/ai-generated-code-hardening/SKILL.md",
   ".mustflow/skills/quality-gaming-guard/SKILL.md",
   ".mustflow/skills/abstraction-boundary-review/SKILL.md",
@@ -271,6 +274,7 @@ minimal = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",
@@ -450,6 +454,7 @@ patterns = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",
@@ -640,6 +645,7 @@ oss = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",
@@ -849,6 +855,7 @@ team = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",
@@ -1042,6 +1049,7 @@ product = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",
@@ -1241,6 +1249,7 @@ library = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
   "abstraction-boundary-review",

@@ -2,7 +2,7 @@
 mustflow_doc: skill.code-review
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: code-review
@@ -73,6 +73,9 @@ Verify that a change aligns with the request and ensure that no behavioral risks
      result is not enough to say a file is empty, missing, unused, unsafe, or buggy
    - if the same read, list, search, or path inspection repeats without new evidence, switch to
      `evidence-stall-breaker` before continuing the review
+   - submit a concrete defect candidate to `bug-claim-evidence-gate` before reporting it as a bug,
+     regression, risk, smell, or improvement; the review may generate candidates, but it must not
+     treat its own prose, a new test expectation, or repeated reflection as the final oracle
 5. Check maintainability risks that should be caught before PR readiness:
    - long `if`/`else if` dispatch over one reason, status, or type code where a `switch`, lookup table, or policy helper would clarify intent
    - user-visible strings embedded in control flow instead of the existing localization or message-catalog surface
@@ -86,7 +89,8 @@ Verify that a change aligns with the request and ensure that no behavioral risks
    - snapshot updates lacking a clear rationale
    - tests that inadvertently reintroduce removed behavior
 7. Verify the existence of relevant command intents.
-8. Document findings categorized by severity.
+8. Document adjudicated findings categorized by severity. Keep rejected candidates and unresolved
+   evidence gaps out of the confirmed finding count while reporting material gaps explicitly.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

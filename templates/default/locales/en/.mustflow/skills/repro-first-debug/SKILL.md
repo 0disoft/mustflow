@@ -2,7 +2,7 @@
 mustflow_doc: skill.repro-first-debug
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: repro-first-debug
@@ -114,7 +114,12 @@ This skill keeps debugging anchored to symptom evidence, deterministic reproduct
 15. Re-run the original reproduction path after the fix. If that path is unavailable or too broad, run the closest configured intent and report the limitation.
 16. For unreproducible fixes, define the "fixed" metric before claiming success: failure rate, invariant violation count, duplicate handling count, retry exhaustion count, DLQ growth, timeout rate, latency tail, or another symptom-specific measure.
 17. Add or keep a regression guard only when it is tied to the reproduced symptom, the instrumented invariant, or a directly observed boundary condition.
-18. Report the symptom, reproduction, hypotheses considered, observations, evidence packet, fix, original reproduction rerun, checks, and remaining risk.
+18. Before calling the symptom a bug or regression, pass the evidence packet to
+    `bug-claim-evidence-gate`. Keep trigger, allowed and actual results, applicable obligation,
+    reachability, target responsibility, counterevidence, and open gaps explicit. A reproduction
+    proves observed behavior, not by itself the authority of the expected result or the named cause.
+19. Report the symptom, reproduction, hypotheses considered, observations, adjudication, evidence
+    packet, fix, original reproduction rerun, checks, and remaining risk.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

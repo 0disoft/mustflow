@@ -6,6 +6,7 @@ const allowedPaths = new Set([
 	'AGENTS.md',
 	'.mustflow/docs/agent-workflow.md',
 	'.mustflow/config/commands.toml',
+	'.mustflow/skills/router.toml',
 ]);
 
 function toPosixRelative(value) {

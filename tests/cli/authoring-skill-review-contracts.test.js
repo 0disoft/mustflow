@@ -10,6 +10,94 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
+test('bug claim evidence gate keeps defect adjudication bounded and orthogonal', () => {
+	const skill = 'bug-claim-evidence-gate';
+	const localSkill = readText(`.mustflow/skills/${skill}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skill}/SKILL.md`);
+	const localClassification = readText(`.mustflow/skills/${skill}/references/classification.md`);
+	const templateClassification = readText(
+		`templates/default/locales/en/.mustflow/skills/${skill}/references/classification.md`,
+	);
+	const localDomains = readText(`.mustflow/skills/${skill}/references/domain-extensions.md`);
+	const templateDomains = readText(
+		`templates/default/locales/en/.mustflow/skills/${skill}/references/domain-extensions.md`,
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const router = readText('.mustflow/skills/router.toml');
+	const templateRouter = readText('templates/default/locales/en/.mustflow/skills/router.toml');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localClassification, templateClassification);
+	assert.equal(localDomains, templateDomains);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(router, templateRouter);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /candidate generation separate from adjudication/u);
+	assert.match(localSkill, /A different prompt, reviewer, model, wording/u);
+	assert.match(localSkill, /applicable obligation exists/u);
+	assert.match(localSkill, /actual result falls outside the allowed result set/u);
+	assert.match(localSkill, /responsibility is attributable to the named target system/u);
+	assert.match(localSkill, /blocked_oracle_conflict/u);
+	assert.match(localSkill, /changed hunk, fix-induced effect, new external evidence/u);
+	assert.match(localSkill, /Never report blocked or inconclusive work as clean/u);
+	assert.match(localClassification, /Claim kind.*`bug`, `risk`, `code_smell`, `improvement`/u);
+	assert.match(localClassification, /existence: confidence/u);
+	assert.match(localClassification, /causality: confidence/u);
+	assert.match(localClassification, /closure: confidence/u);
+	assert.match(localClassification, /Assign `regression` only/u);
+	assert.match(localDomains, /confirmed security-policy defect from a currently exploitable vulnerability/u);
+	assert.match(localDomains, /One passing rerun does not close a nondeterministic finding/u);
+	assert.match(localDomains, /semantic success domain from the boundary safety domain/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/bug-claim-evidence-gate\/SKILL\.md/u);
+	assert.match(skillIndex, /failing-test-as-bug collapse/u);
+	assert.match(router, /"candidate_defect", "repeated_review"/u);
+	assert.match(
+		routes,
+		/\[routes\."bug-claim-evidence-gate"\]\r?\ncategory = "bug_failure"\r?\nroute_type = "adjunct"\r?\npriority = 80/u,
+	);
+	assert.deepEqual(routeReasons(routes, skill), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'performance_change',
+		'release_risk',
+	]);
+	assert.match(routes, /suggests_adjuncts = \["bug-claim-evidence-gate"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/references\/classification\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/references\/domain-extensions\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"bug-claim-evidence-gate"/u);
+	}
+	assertI18nSkillDocument(i18n, skill, 1);
+	assertSkillsIndexRevision(i18n);
+
+	for (const integratedSkill of [
+		'code-review',
+		'repro-first-debug',
+		'failure-triage',
+		'security-privacy-review',
+		'completion-evidence-gate',
+	]) {
+		assert.match(
+			readText(`.mustflow/skills/${integratedSkill}/SKILL.md`),
+			/bug-claim-evidence-gate/u,
+			`${integratedSkill} should route candidate or closure evidence through the gate`,
+		);
+	}
+});
+
 test('heuristic candidate selection keeps broad scans cheap and bounded', () => {
 	const localSkill = readText('.mustflow/skills/heuristic-candidate-selection/SKILL.md');
 	const templateSkill = readText(

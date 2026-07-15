@@ -187,7 +187,7 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineIntent, /run_policy = "agent_allowed"/u);
 	assert.match(
 		baselineIntent,
-		/argv = \["node", "scripts\/accept-manifest-lock-baseline\.mjs", "AGENTS\.md", "\.mustflow\/docs\/agent-workflow\.md", "\.mustflow\/config\/commands\.toml"\]/u,
+		/argv = \["node", "scripts\/accept-manifest-lock-baseline\.mjs", "AGENTS\.md", "\.mustflow\/docs\/agent-workflow\.md", "\.mustflow\/config\/commands\.toml", "\.mustflow\/skills\/router\.toml"\]/u,
 	);
 	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
 	assert.match(baselineIntent, /lock = "manifest_lock_baseline"/u);

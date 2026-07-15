@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 259
+anchor_count: 260
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:8d3f3d8a2c237e93c28c51e370d9959533010656271efe313082abb4571847d6"
+source_fingerprint: "sha256:5e5e4e779b2d6e27e9b699fa90cb9359c78be14619e2ecb8e4f4be7899d55417"
 ---
 
 # REPO_MAP.md
@@ -156,6 +156,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/browser-automation-reliability-review/
 
 - `.mustflow/skills/browser-automation-reliability-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/bug-claim-evidence-gate/
+
+- `.mustflow/skills/bug-claim-evidence-gate/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/bun-code-change/
 

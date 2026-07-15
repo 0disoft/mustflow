@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 25
+revision: 26
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -223,7 +223,12 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 45. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
 46. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
 47. If the change affects an authorization, SSRF, CSRF, rate-limit, upload, download, token, business-logic, injection, logging, telemetry, cache authority, cache disclosure, admin operation, agent permission, cryptography, transport, scanner, policy-engine, rule-catalog, or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
-48. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
+48. Send each candidate defect or vulnerability to `bug-claim-evidence-gate` with the applicable
+    security policy, attacker capability, supported reachability, attacker influence, relevant
+    defenses, unauthorized outcome, current witness or exact gap, and bounded impact claim.
+    Distinguish a confirmed security-policy defect from current deployment exploitability; absence
+    of a dangerous exploit does not erase a complete safe static or mechanical witness.
+49. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

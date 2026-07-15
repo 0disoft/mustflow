@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 242
+revision = 243
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -128,7 +128,13 @@ translations = {}
 [documents."skill.code-review"]
 source = "locales/en/.mustflow/skills/code-review/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
+translations = {}
+
+[documents."skill.bug-claim-evidence-gate"]
+source = "locales/en/.mustflow/skills/bug-claim-evidence-gate/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.ai-generated-code-hardening"]
@@ -955,7 +961,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.next-action-menu"]
@@ -1051,7 +1057,7 @@ translations = {}
 [documents."skill.failure-triage"]
 source = "locales/en/.mustflow/skills/failure-triage/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.external-prompt-injection-defense"]
@@ -1170,7 +1176,7 @@ translations = {}
 [documents."skill.repro-first-debug"]
 source = "locales/en/.mustflow/skills/repro-first-debug/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.source-freshness-check"]
@@ -1218,7 +1224,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 25
+revision = 26
 translations = {}
 
 [documents."skill.security-regression-tests"]

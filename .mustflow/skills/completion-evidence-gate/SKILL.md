@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -156,6 +156,9 @@ missing, blocked, failed, stale, or only partially relevant.
    - Name changed files, command intents run, skipped checks with reasons, synchronized or deferred surfaces, and remaining risks.
    - Do not imply that skipped, manual-only, or missing command intents passed.
    - Do not hide lower-confidence evidence when direct shell commands were used instead of configured intents.
+   - Do not start a new open-ended defect discovery pass. When candidate defects, duplicate
+     findings, or unresolved closure claims remain, require the existing
+     `bug-claim-evidence-gate` decision or return a bounded reopen requirement.
 9. If the gate reveals missing required work that is safe and in scope, do that work before final reporting. Otherwise report the gap plainly.
 
 <!-- mustflow-section: postconditions -->

@@ -113,7 +113,7 @@ test('nested repository verification stays local unless the child result depends
 	assert.match(localWorkflow, /revision: 30/u);
 	assert.match(localWorkflow, /current command contract is the selected child repository's\s+contract/u);
 	assert.match(localWorkflow, /should not be listed as skipped child checks/u);
-	assert.match(localCompletionSkill, /revision: 8/u);
+	assert.match(localCompletionSkill, /revision: 9/u);
 	assert.match(localCompletionSkill, /shared parent skill does not make a parent-root intent required or runnable/u);
 	assert.match(localCompletionSkill, /Do not list unrelated parent checks as skipped child verification/u);
 	assert.match(localCompletionSkill, /Do not downgrade a verified child-only result/u);
@@ -123,7 +123,7 @@ test('nested repository verification stays local unless the child result depends
 	assert.match(i18n, /translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = 22, status = "needs_review" \}/u);
 	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 30/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 8);
+	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 9);
 });
 
 test('date number audit classifies release version impact from public contracts', () => {

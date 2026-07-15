@@ -30,6 +30,18 @@ route_type = "primary"
 priority = 50
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."code-review".dependencies]
+suggests_adjuncts = ["bug-claim-evidence-gate"]
+unlocks_on = [
+  { signal = "candidate_defect", skill = "bug-claim-evidence-gate" },
+]
+
+[routes."bug-claim-evidence-gate"]
+category = "bug_failure"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "security_change", "privacy_change", "data_change", "performance_change", "release_risk"]
+
 [routes."behavior-preserving-refactor"]
 category = "architecture_patterns"
 route_type = "primary"

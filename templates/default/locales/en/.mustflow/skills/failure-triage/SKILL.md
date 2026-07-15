@@ -2,7 +2,7 @@
 mustflow_doc: skill.failure-triage
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: failure-triage
@@ -99,6 +99,10 @@ Identify the most probable root cause of a failed command or verification step b
 11. Develop a single hypothesis and verify it using the most targeted configured intent. When the
     failure came from remote CI, also confirm the replacement run or check suite for the affected
     ref before reporting that the remote failure is fixed.
+12. When the failure may represent a defect, pass a candidate packet to
+    `bug-claim-evidence-gate` before assigning product responsibility. Preserve the observed failure
+    separately from the responsible domain; a test, fixture, environment, tool runner, or external
+    system may trigger or own the divergence without proving a product bug.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

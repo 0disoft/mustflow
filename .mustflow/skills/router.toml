@@ -32,7 +32,7 @@ steps = [
 
 [categories.bug_failure]
 label = "Bug and Failure"
-signals = ["command_failure", "failing_test", "repro", "regression", "crash", "error_log"]
+signals = ["command_failure", "failing_test", "repro", "regression", "candidate_defect", "repeated_review", "crash", "error_log"]
 
 [categories.general_code]
 label = "General Code"
