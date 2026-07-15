@@ -943,6 +943,92 @@ destructive = false
 	}
 });
 
+test('fails command contracts with unsupported approval action types', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.invalid_approval_action]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Reject an unknown approval action."
+argv = ["node", "--version"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+approval_actions = ["self_destruct"]
+`,
+		);
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /approval_actions contains unsupported action types: self_destruct/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('requires approval actions on agent-runnable Git write intents', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}
+
+[intents.unsafe_git_add]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Reject ungated staging."
+argv = ["git", "-C", ".", "add", "--", "README.md"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+network = false
+destructive = false
+
+[intents.unsafe_git_push]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Reject ungated pushes."
+argv = ["git.exe", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['check']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /git add intent unsafe_git_add must include approval_actions = \["git_commit"\]/u);
+		assert.match(result.stderr, /git push intent unsafe_git_push must include approval_actions = \["git_push"\]/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('strict check warns when bare argv executable resolves only through project-local bin', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

@@ -1799,6 +1799,7 @@ function readSkillRouteMetadataFromTomlContent(
 function validateTemplateProfileSkillRoutes(
 	profile: string,
 	files: readonly TemplateFileSource[],
+	knownSkillNames: ReadonlySet<string>,
 	issues: CheckIssue[],
 ): void {
 	const contentByPath = new Map(files.map((file) => [file.relativePath, templateFileContent(file)]));
@@ -1844,6 +1845,23 @@ function validateTemplateProfileSkillRoutes(
 		const skillName = skillRouteName(relativePath);
 		if (skillName) {
 			selectedSkillContents.set(skillName, content);
+		}
+	}
+
+	for (const [relativePath, content] of contentByPath.entries()) {
+		if (relativePath !== SKILL_INDEX_PATH && !skillRouteName(relativePath)) {
+			continue;
+		}
+
+		for (const match of content.matchAll(/`([a-z][a-z0-9-]+)`/gu)) {
+			const referencedSkill = match[1];
+
+			if (referencedSkill && knownSkillNames.has(referencedSkill) && !selectedSkillContents.has(referencedSkill)) {
+				pushStrictIssue(
+					issues,
+					`template profile "${profile}" ${relativePath} references skill "${referencedSkill}" not installed by that profile`,
+				);
+			}
 		}
 	}
 
@@ -1974,10 +1992,17 @@ function validateStrictTemplateSkillProfiles(issues: CheckIssue[]): void {
 		return;
 	}
 
+	const knownSkillNames = new Set(
+		template.manifest.creates
+			.map((relativePath) => skillRouteName(relativePath))
+			.filter((skillName): skillName is string => Boolean(skillName)),
+	);
+
 	for (const profile of template.manifest.profiles) {
 		validateTemplateProfileSkillRoutes(
 			profile,
 			getTemplateFiles(template, template.manifest.defaultLocale, profile),
+			knownSkillNames,
 			issues,
 		);
 	}

@@ -63,6 +63,7 @@ export type RunPlanReasonCode =
 	| Exclude<CommandIntentEligibilityCode, 'ok'>
 	| 'network_requires_approval'
 	| 'destructive_requires_approval'
+	| 'explicit_approval_required'
 	| 'approval_policy_unreadable'
 	| 'cwd_outside_project'
 	| 'invalid_test_target'
@@ -85,6 +86,7 @@ interface RunIntentMetadata {
 	readonly effects: readonly unknown[] | undefined;
 	readonly network: boolean | undefined;
 	readonly destructive: boolean | undefined;
+	readonly approvalActions: readonly string[];
 	readonly envPolicy: CommandEnvPolicy;
 	readonly envAllowlist: readonly string[];
 	readonly testTargets: readonly string[];
@@ -120,6 +122,7 @@ interface RunPlanBase {
 	readonly effects: readonly unknown[] | undefined;
 	readonly network: boolean | undefined;
 	readonly destructive: boolean | undefined;
+	readonly approvalActions: readonly string[];
 	readonly envPolicy: CommandEnvPolicy | null;
 	readonly envAllowlist: readonly string[];
 	readonly testTargets: readonly string[];
@@ -299,6 +302,7 @@ function readRunIntentMetadata(contract: CommandContract, intent: TomlTable): Ru
 		effects: readArray(intent, 'effects'),
 		network: readBoolean(intent, 'network'),
 		destructive: readBoolean(intent, 'destructive'),
+		approvalActions: readStringArray(intent, 'approval_actions') ?? [],
 		envPolicy: env.policy,
 		envAllowlist: env.allowlist,
 		testTargets: [],
@@ -314,7 +318,7 @@ function createApprovalBlock(
 	metadata: RunIntentMetadata,
 	approvedActions: ReadonlySet<string>,
 ): { readonly reasonCode: RunPlanReasonCode; readonly detail: string } | null {
-	const actionTypes: string[] = [];
+	const actionTypes = [...metadata.approvalActions];
 	if (metadata.network === true) {
 		actionTypes.push('network_access');
 	}
@@ -322,11 +326,12 @@ function createApprovalBlock(
 		actionTypes.push('destructive_command');
 	}
 
-	if (actionTypes.length === 0) {
+	const uniqueActionTypes = [...new Set(actionTypes)];
+	if (uniqueActionTypes.length === 0) {
 		return null;
 	}
 
-	const approvalReport = checkRepoApprovalGate(projectRoot, actionTypes);
+	const approvalReport = checkRepoApprovalGate(projectRoot, uniqueActionTypes);
 	if (approvalReport.issues.length > 0) {
 		return {
 			reasonCode: 'approval_policy_unreadable',
@@ -344,7 +349,9 @@ function createApprovalBlock(
 
 	const reasonCode = missingActions.includes('destructive_command')
 		? 'destructive_requires_approval'
-		: 'network_requires_approval';
+		: missingActions.includes('network_access')
+			? 'network_requires_approval'
+			: 'explicit_approval_required';
 
 	return {
 		reasonCode,
@@ -389,6 +396,7 @@ function createBlockedRunPlan(
 		effects: metadata?.effects,
 		network: metadata?.network,
 		destructive: metadata?.destructive,
+		approvalActions: metadata?.approvalActions ?? [],
 		envPolicy: metadata?.envPolicy ?? null,
 		envAllowlist: metadata?.envAllowlist ?? [],
 		testTargets: [],
@@ -529,6 +537,7 @@ export function createRunPlan(
 		effects: metadata.effects,
 		network: metadata.network,
 		destructive: metadata.destructive,
+		approvalActions: metadata.approvalActions,
 		envPolicy: metadata.envPolicy,
 		envAllowlist: metadata.envAllowlist,
 		testTargets,
@@ -620,6 +629,7 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		effects: plan.effects,
 		network: plan.network,
 		destructive: plan.destructive,
+		approval_actions: plan.approvalActions,
 		env_policy: plan.envPolicy,
 		env_allowlist: plan.envAllowlist,
 		test_targets: plan.testTargets,

@@ -436,6 +436,61 @@ test('default template declares profile-specific skill surfaces', async () => {
 	}
 });
 
+test('profile-filtered skill documents do not point agents at unavailable skill paths', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+	const knownSkillNames = new Set(
+		template.manifest.creates
+			.map(skillNameForTemplateCreate)
+			.filter((skillName) => skillName !== null),
+	);
+
+	for (const profile of template.manifest.profiles) {
+		const selectedSkillNames = new Set(template.manifest.skillProfiles[profile]);
+		const selectedFiles = templatesModule.getTemplateFiles(
+			template,
+			template.manifest.defaultLocale,
+			profile,
+		);
+
+		for (const file of selectedFiles) {
+			if (
+				file.relativePath !== '.mustflow/skills/INDEX.md' &&
+				!/^\.mustflow\/skills\/[^/]+\/SKILL\.md$/u.test(file.relativePath)
+			) {
+				continue;
+			}
+
+			const content = file.content ?? readFileSync(file.sourcePath, 'utf8');
+			const unavailableReferences = Array.from(content.matchAll(/`([a-z][a-z0-9-]+)`/gu), (match) => match[1])
+				.filter((skillName) => knownSkillNames.has(skillName) && !selectedSkillNames.has(skillName));
+
+			assert.deepEqual(
+				[...new Set(unavailableReferences)],
+				[],
+				`${profile} ${file.relativePath} should not reference unavailable skills`,
+			);
+		}
+	}
+
+	const productFiles = templatesModule.getTemplateFiles(
+		template,
+		template.manifest.defaultLocale,
+		'product',
+	);
+	const productIndex = productFiles.find((file) => file.relativePath === '.mustflow/skills/INDEX.md');
+	const structuredConfigSkill = productFiles.find(
+		(file) => file.relativePath === '.mustflow/skills/structured-config-change/SKILL.md',
+	);
+
+	assert.ok(productIndex?.content);
+	assert.ok(structuredConfigSkill?.content);
+	assert.doesNotMatch(productIndex.content, /`(?:public-json-contract-change|template-install-surface-sync)`/u);
+	assert.doesNotMatch(structuredConfigSkill.content, /`public-json-contract-change`/u);
+	assert.match(productIndex.content, /the closest installed route for this scope/u);
+	assert.match(structuredConfigSkill.content, /the closest installed route for this scope/u);
+});
+
 test('default template locales use localized workflow docs and canonical English skills', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const template = templatesModule.getDefaultTemplate();

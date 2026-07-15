@@ -24,6 +24,7 @@ export function executeRunPreviewCommand(
 		readonly intentName: string;
 		readonly json: boolean;
 		readonly previewMode: RunPreviewMode;
+		readonly allowApprovals: readonly string[];
 	},
 	reporter: Reporter,
 	lang: CliLang,
@@ -33,7 +34,10 @@ export function executeRunPreviewCommand(
 	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
 	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
 	const plan = profiler.measure('plan_creation', () =>
-		createRunPlan(projectRoot, contract, input.intentName, { testTargets: options.testTargets }),
+		createRunPlan(projectRoot, contract, input.intentName, {
+			testTargets: options.testTargets,
+			approvedActions: input.allowApprovals,
+		}),
 	);
 
 	profiler.measure('preview_render', () => {

@@ -150,6 +150,9 @@ function shouldIncludeTemplatePath(relativePath: string, selectedSkills: readonl
 }
 
 const SKILL_INDEX_SKILL_PATH_PATTERN = /`\.mustflow\/skills\/([^/]+)\/SKILL\.md`/u;
+const SKILL_NAME_REFERENCE_PATTERN = /`([a-z][a-z0-9-]+)`/gu;
+const SKILL_PATH_REFERENCE_PATTERN = /`\.mustflow\/skills\/([^/]+)\/SKILL\.md`/gu;
+const UNAVAILABLE_SKILL_REFERENCE_FALLBACK = 'the closest installed route for this scope';
 const SKILL_INDEX_HEADING_PATTERN = /^(#{2,3})\s+(.+?)\s*$/u;
 const SKILL_INDEX_ROUTE_CATEGORY_NAMES = [
 	'Bug and Failure',
@@ -309,6 +312,23 @@ function filterSkillIndexContent(content: string, selectedSkills: readonly strin
 	return filteredLines.join('\n').replace(/\n{3,}/gu, '\n\n');
 }
 
+function filterUnavailableSkillReferences(
+	content: string,
+	selectedSkills: readonly string[],
+	knownSkills: readonly string[],
+): string {
+	const selectedSkillSet = new Set(selectedSkills);
+	const knownSkillSet = new Set(knownSkills);
+	const replaceUnavailableReference = (reference: string, skillName: string): string =>
+		knownSkillSet.has(skillName) && !selectedSkillSet.has(skillName)
+			? UNAVAILABLE_SKILL_REFERENCE_FALLBACK
+			: reference;
+
+	return content
+		.replace(SKILL_PATH_REFERENCE_PATTERN, replaceUnavailableReference)
+		.replace(SKILL_NAME_REFERENCE_PATTERN, replaceUnavailableReference);
+}
+
 function filterSkillRouteMetadataContent(content: string, selectedSkills: readonly string[]): string {
 	const selectedSkillSet = new Set(selectedSkills);
 	let keepCurrentRoute = true;
@@ -452,6 +472,7 @@ export function getTemplateFiles(
 			? path.join(template.templateRoot, template.manifest.localesRoot, template.manifest.defaultLocale)
 			: undefined;
 	const selectedSkills = selectedSkillNames(template.manifest, profile, options);
+	const knownSkills = templateSkillNames(template.manifest.creates);
 
 	return template.manifest.creates.filter((relativePath) => shouldIncludeTemplatePath(relativePath, selectedSkills)).map((relativePath) => {
 		const localePath = localeRoot ? path.join(localeRoot, ...relativePath.split('/')) : undefined;
@@ -461,7 +482,7 @@ export function getTemplateFiles(
 		const fallbackLocalePath = sourceLocalePath && existsSync(sourceLocalePath) ? sourceLocalePath : undefined;
 		const commonSourcePath = existsSync(commonPath) ? commonPath : undefined;
 		const selectedSourcePath = localizedPath ?? fallbackLocalePath ?? commonSourcePath;
-		const content =
+		const selectedContent =
 			selectedSourcePath && relativePath === '.mustflow/skills/INDEX.md'
 				? filterSkillIndexContent(
 						readFileSync(selectedSourcePath, 'utf8'),
@@ -473,6 +494,12 @@ export function getTemplateFiles(
 							selectedSkills,
 						)
 					: undefined;
+		const content =
+			selectedSourcePath && relativePath === '.mustflow/skills/INDEX.md'
+				? filterUnavailableSkillReferences(selectedContent ?? '', selectedSkills, knownSkills)
+				: selectedSourcePath && /^\.mustflow\/skills\/[^/]+\/SKILL\.md$/u.test(relativePath)
+					? filterUnavailableSkillReferences(readFileSync(selectedSourcePath, 'utf8'), selectedSkills, knownSkills)
+					: selectedContent;
 
 		if (localizedPath) {
 			return {

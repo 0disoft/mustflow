@@ -93,6 +93,7 @@ destructive = false
 		assert.equal(preview.effects[0].path, 'dry-run-spawned.txt');
 		assert.equal(preview.network, false);
 		assert.equal(preview.destructive, false);
+		assert.deepEqual(preview.approval_actions, []);
 		assert.equal(preview.env_policy, 'minimal');
 		assert.deepEqual(preview.env_allowlist, []);
 		assert.deepEqual(preview.success_exit_codes, [0]);
@@ -180,6 +181,7 @@ test('executes approval-gated command intents only when the matching approval ac
 	const projectPath = createTempProject();
 	const networkMarkerPath = path.join(projectPath, 'network-approved.txt');
 	const destructiveMarkerPath = path.join(projectPath, 'destructive-approved.txt');
+	const gitCommitMarkerPath = path.join(projectPath, 'git-commit-approved.txt');
 
 	try {
 		initProject(projectPath);
@@ -213,6 +215,21 @@ success_exit_codes = [0]
 writes = ["destructive-approved.txt"]
 network = false
 destructive = true
+
+[intents.git_commit_marker]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run a commit-gated intent after explicit approval."
+argv = ['${process.execPath}', '-e', 'require("node:fs").writeFileSync(${JSON.stringify(gitCommitMarkerPath)}, "ran")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["git-commit-approved.txt"]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
 `,
 		);
 
@@ -243,6 +260,37 @@ destructive = true
 		assert.equal(destructiveReceipt.intent, 'destructive_marker');
 		assert.equal(destructiveReceipt.status, 'passed');
 		assert.equal(existsSync(destructiveMarkerPath), true);
+
+		const missingGitApprovalResult = runCli(projectPath, ['run', 'git_commit_marker', '--json']);
+		const missingGitApprovalPreview = JSON.parse(missingGitApprovalResult.stdout);
+
+		assert.equal(missingGitApprovalResult.status, 1);
+		assert.equal(missingGitApprovalPreview.reason_code, 'explicit_approval_required');
+		assert.deepEqual(missingGitApprovalPreview.approval_actions, ['git_commit']);
+		assert.match(missingGitApprovalPreview.detail, /git_commit/u);
+		assert.equal(existsSync(gitCommitMarkerPath), false);
+
+		const approvedGitPlanResult = runCli(projectPath, [
+			'run',
+			'git_commit_marker',
+			'--allow-approval',
+			'git_commit',
+			'--plan-only',
+			'--json',
+		]);
+		const approvedGitPlan = JSON.parse(approvedGitPlanResult.stdout);
+
+		assert.equal(approvedGitPlanResult.status, 0, approvedGitPlanResult.stderr || approvedGitPlanResult.stdout);
+		assert.equal(approvedGitPlan.runnable, true);
+		assert.deepEqual(approvedGitPlan.approval_actions, ['git_commit']);
+		assert.equal(existsSync(gitCommitMarkerPath), false);
+
+		const gitCommitResult = runCli(projectPath, ['run', 'git_commit_marker', '--allow-approval', 'git_commit', '--json']);
+		const gitCommitReceipt = JSON.parse(gitCommitResult.stdout);
+
+		assert.equal(gitCommitResult.status, 0, gitCommitResult.stderr || gitCommitResult.stdout);
+		assert.equal(gitCommitReceipt.status, 'passed');
+		assert.equal(existsSync(gitCommitMarkerPath), true);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), true);
 	} finally {
 		removeTempProject(projectPath);
@@ -273,6 +321,7 @@ test('rejects unsupported run options before planning or execution', () => {
 		assert.match(invalidApproval.stderr, /Unsupported approval action "self_destruct"/u);
 		assert.match(invalidApproval.stderr, /network_access/u);
 		assert.match(invalidApproval.stderr, /destructive_command/u);
+		assert.match(invalidApproval.stderr, /git_commit/u);
 		assert.equal(invalidApproval.stdout, '');
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 	} finally {

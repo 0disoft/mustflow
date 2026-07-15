@@ -110,5 +110,10 @@ export async function runRun(
 		return result.exitCode;
 	}
 
-	return executeRunPreviewCommand({ intentName, json, previewMode }, reporter, lang, options);
+	return executeRunPreviewCommand(
+		{ intentName, json, previewMode, allowApprovals: parsedArgs.allowApprovals },
+		reporter,
+		lang,
+		options,
+	);
 }

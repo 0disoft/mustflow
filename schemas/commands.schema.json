@@ -210,6 +210,24 @@
         },
         "network": { "type": "boolean" },
         "destructive": { "type": "boolean" },
+        "approval_actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "git_commit",
+              "git_push",
+              "dependency_install",
+              "dependency_upgrade",
+              "network_access",
+              "database_migration",
+              "destructive_command",
+              "secret_access",
+              "release",
+              "cross_repository_change"
+            ]
+          }
+        },
         "required_after": {
           "type": "array",
           "items": { "type": "string" }

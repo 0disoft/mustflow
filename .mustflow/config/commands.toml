@@ -636,6 +636,7 @@ writes = []
 effects = [{ type = "write", mode = "replace", lock = "npm_release_channel", concurrency = "exclusive" }]
 network = true
 destructive = false
+approval_actions = ["release"]
 required_after = ["release_risk", "before_publish"]
 
 [intents.release_npm_published_verify]
@@ -727,8 +728,63 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
+[intents.release_stage_v2_115_16]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed files for the 2.115.16 approval-routing release."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "package.json", "schemas/commands.schema.json", "src/cli/commands/run.ts", "src/cli/commands/run/args.ts", "src/cli/commands/run/execution.ts", "src/cli/commands/run/preview.ts", "src/cli/lib/run-plan.ts", "src/cli/lib/templates.ts", "src/cli/lib/validation/constants.ts", "src/cli/lib/validation/index.ts", "src/core/approval-actions.ts", "src/core/command-contract-validation.ts", "templates/default/common/.mustflow/config/commands.toml", "templates/default/manifest.toml", "tests/cli/check-command-contracts.test.js", "tests/cli/package-command-contracts.test.js", "tests/cli/package-metadata-contracts.test.js", "tests/cli/package-release-workflow-contracts.test.js", "tests/cli/package-template.test.js", "tests/cli/run-preview.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_commit_v2_115_16]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.115.16 approval-routing release with a fixed message."
+argv = ["git", "commit", "-m", "fix(workflow): make approval-gated intents executable"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_115_16]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.115.16 release commit from local main to origin main."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
 [intents.git_commit]
 status = "manual_only"
-description = "Create a Git commit."
-reason = "Creating a commit requires explicit user approval."
-agent_action = "do_not_commit_report_suggestion_only"
+description = "Create an unscoped Git commit."
+reason = "A generic commit cannot safely choose reviewed paths or a commit message."
+agent_action = "author_bounded_repo_specific_stage_and_commit_intents_after_explicit_user_request"
+approval_actions = ["git_commit"]
+
+[intents.git_push]
+status = "manual_only"
+description = "Push an unspecified Git ref."
+reason = "A generic push cannot safely choose the remote and ref."
+agent_action = "author_bounded_repo_specific_push_intent_after_explicit_user_request"
+approval_actions = ["git_push"]

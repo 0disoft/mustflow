@@ -113,6 +113,7 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 			break;
 		case 'network_requires_approval':
 		case 'destructive_requires_approval':
+		case 'explicit_approval_required':
 		case 'approval_policy_unreadable':
 			message = t(lang, 'run.error.approvalRequired', {
 				intent: plan.intentName,

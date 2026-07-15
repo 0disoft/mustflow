@@ -9,9 +9,9 @@ import {
 	type CliOptionSpec,
 } from '../../lib/option-parser.js';
 import { ALLOW_UNTRUSTED_ROOT_OPTION } from '../../lib/run-root-trust.js';
+import { APPROVAL_ACTION_TYPE_SET, APPROVAL_ACTION_TYPES } from '../../../core/approval-actions.js';
 
 const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
-const SUPPORTED_RUN_APPROVAL_ACTIONS = new Set(['network_access', 'destructive_command']);
 const RUN_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--dry-run', kind: 'boolean' },
@@ -41,7 +41,7 @@ export function hasRunHelpOption(args: readonly string[]): boolean {
 }
 
 export function getSupportedRunApprovalActions(): readonly string[] {
-	return [...SUPPORTED_RUN_APPROVAL_ACTIONS].sort((left, right) => left.localeCompare(right));
+	return [...APPROVAL_ACTION_TYPES].sort((left, right) => left.localeCompare(right));
 }
 
 function getAllowApprovalValues(parsed: ReturnType<typeof parseCliOptions>): readonly string[] {
@@ -54,7 +54,7 @@ function getAllowApprovalValues(parsed: ReturnType<typeof parseCliOptions>): rea
 }
 
 function findInvalidApprovalAction(values: readonly string[]): string | null {
-	return values.find((value) => !SUPPORTED_RUN_APPROVAL_ACTIONS.has(value)) ?? null;
+	return values.find((value) => !APPROVAL_ACTION_TYPE_SET.has(value)) ?? null;
 }
 
 export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
@@ -125,7 +125,11 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf run test', 'mf run lint --json', 'mf run release_npm_version_available --allow-approval network_access --json'],
+			examples: [
+				'mf run test',
+				'mf run lint --json',
+				'mf run release_npm_publish --allow-approval release --allow-approval network_access --json',
+			],
 			exitCodes: [
 				{
 					label: '0',

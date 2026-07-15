@@ -141,18 +141,7 @@ export const ALLOWED_PROMPT_CACHE_STRATEGIES = new Set(['stable_prefix']);
 export const ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES = new Set(['hash_verified']);
 export const ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES = new Set(['task_relevant_only']);
 export const ALLOWED_BUDGET_LIMIT_ACTIONS = new Set(['stop_and_handoff', 'stop_and_report']);
-export const ALLOWED_APPROVAL_GATES = new Set([
-	'git_commit',
-	'git_push',
-	'dependency_install',
-	'dependency_upgrade',
-	'network_access',
-	'database_migration',
-	'destructive_command',
-	'secret_access',
-	'release',
-	'cross_repository_change',
-]);
+export { APPROVAL_ACTION_TYPE_SET as ALLOWED_APPROVAL_GATES } from '../../../core/approval-actions.js';
 export const ALLOWED_APPROVAL_ACTIONS = new Set(['stop_and_request_approval']);
 export const ALLOWED_ISOLATION_PREFERENCES = new Set(['none', 'git_worktree', 'sandbox']);
 export const ALLOWED_REFRESH_MODES = new Set(['checkpoint']);

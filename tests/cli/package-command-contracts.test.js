@@ -200,6 +200,30 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineScript, /markManifestLockFileCustomized/u);
 });
 
+test('Git write contracts require explicit approval and bounded release commands', () => {
+	const templateCommitIntent = /\[intents\.git_commit\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
+	const templatePushIntent = /\[intents\.git_push\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
+	const stageIntent = /\[intents\.release_stage_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(templateCommitIntent, /status = "manual_only"/u);
+	assert.match(templateCommitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(templateCommitIntent, /author_bounded_repo_specific_stage_and_commit_intents/u);
+	assert.match(templatePushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(templatePushIntent, /author_bounded_repo_specific_push_intent/u);
+
+	assert.match(stageIntent, /status = "configured"/u);
+	assert.match(stageIntent, /argv = \["git", "add", "--"/u);
+	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
+	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
+	assert.match(commitIntent, /argv = \["git", "commit", "-m", "fix\(workflow\): make approval-gated intents executable"\]/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.match(pushIntent, /network = true/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

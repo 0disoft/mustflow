@@ -379,6 +379,14 @@ required_after = ["before_final_report", "commit_message_suggestion"]
 
 [intents.git_commit]
 status = "manual_only"
-description = "Create a Git commit."
-reason = "Creating a commit requires explicit user approval."
-agent_action = "do_not_commit_report_suggestion_only"
+description = "Create an unscoped Git commit."
+reason = "A generic commit cannot safely choose reviewed paths or a commit message."
+agent_action = "author_bounded_repo_specific_stage_and_commit_intents_after_explicit_user_request"
+approval_actions = ["git_commit"]
+
+[intents.git_push]
+status = "manual_only"
+description = "Push an unspecified Git ref."
+reason = "A generic push cannot safely choose the remote and ref."
+agent_action = "author_bounded_repo_specific_push_intent_after_explicit_user_request"
+approval_actions = ["git_push"]

@@ -33,6 +33,7 @@ import {
 } from './command-contract-rules.js';
 import { MAX_COMMAND_OUTPUT_BYTES, commandMaxOutputBytesLimitMessage } from './command-output-limits.js';
 import { SUCCESS_EXIT_CODES_CONTRACT_DESCRIPTION, successExitCodesAreValid } from './success-exit-codes.js';
+import { APPROVAL_ACTION_TYPE_SET } from './approval-actions.js';
 
 const COMMAND_INPUT_TYPES = new Set(['path', 'enum', 'boolean', 'integer', 'literal']);
 const COMMAND_INPUT_NAME_PATTERN = /^[a-z][a-z0-9_]*$/u;
@@ -119,6 +120,82 @@ function validateStringArrayField(
 	const value = table[key];
 	if (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string' || entry.trim().length === 0)) {
 		issues.push(commandContractIssue(`${label} must be a string array`));
+	}
+}
+
+function validateApprovalActions(
+	intentName: string,
+	intent: TomlTable,
+	issues: CommandContractValidationIssue[],
+): void {
+	validateStringArrayField(intent, 'approval_actions', `[commands.intents.${intentName}].approval_actions`, issues);
+	const approvalActions = readStringArray(intent, 'approval_actions');
+	if (!approvalActions) {
+		return;
+	}
+
+	const unsupported = [...new Set(approvalActions.filter((action) => !APPROVAL_ACTION_TYPE_SET.has(action)))];
+	if (unsupported.length > 0) {
+		issues.push(
+			commandContractIssue(
+				`[commands.intents.${intentName}].approval_actions contains unsupported action types: ${unsupported.join(', ')}`,
+			),
+		);
+	}
+}
+
+function readGitSubcommand(argv: readonly string[]): string | null {
+	if (normalizeCommandExecutableName(argv[0] ?? '') !== 'git') {
+		return null;
+	}
+
+	const optionsWithSeparateValue = new Set(['-C', '-c', '--exec-path', '--git-dir', '--work-tree', '--namespace']);
+	for (let index = 1; index < argv.length; index += 1) {
+		const argument = argv[index] ?? '';
+		if (optionsWithSeparateValue.has(argument)) {
+			index += 1;
+			continue;
+		}
+		if (argument.startsWith('-')) {
+			continue;
+		}
+		return argument;
+	}
+
+	return null;
+}
+
+function validateSensitiveGitApprovalActions(
+	intentName: string,
+	intent: TomlTable,
+	issues: CommandContractValidationIssue[],
+): void {
+	if (intent.status !== 'configured' || intent.run_policy !== 'agent_allowed') {
+		return;
+	}
+
+	const argv = readStringArray(intent, 'argv');
+	if (!argv) {
+		return;
+	}
+
+	const gitSubcommand = readGitSubcommand(argv);
+	const requiredAction = gitSubcommand === 'add' || gitSubcommand === 'commit'
+		? 'git_commit'
+		: gitSubcommand === 'push'
+			? 'git_push'
+			: null;
+	if (!requiredAction) {
+		return;
+	}
+
+	const approvalActions = readStringArray(intent, 'approval_actions') ?? [];
+	if (!approvalActions.includes(requiredAction)) {
+		issues.push(
+			commandContractIssue(
+				`Agent-runnable git ${gitSubcommand} intent ${intentName} must include approval_actions = ["${requiredAction}"]`,
+			),
+		);
 	}
 }
 
@@ -712,6 +789,8 @@ function validateCommandIntent(
 	);
 	validateBooleanField(intent, 'allow_shell', `[commands.intents.${intentName}].allow_shell`, issues);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
+	validateApprovalActions(intentName, intent, issues);
+	validateSensitiveGitApprovalActions(intentName, intent, issues);
 	validateBooleanField(
 		intent,
 		ALLOW_ENV_INHERITANCE_RISKS_KEY,
