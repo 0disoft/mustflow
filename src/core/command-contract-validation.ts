@@ -144,61 +144,6 @@ function validateApprovalActions(
 	}
 }
 
-function readGitSubcommand(argv: readonly string[]): string | null {
-	if (normalizeCommandExecutableName(argv[0] ?? '') !== 'git') {
-		return null;
-	}
-
-	const optionsWithSeparateValue = new Set(['-C', '-c', '--exec-path', '--git-dir', '--work-tree', '--namespace']);
-	for (let index = 1; index < argv.length; index += 1) {
-		const argument = argv[index] ?? '';
-		if (optionsWithSeparateValue.has(argument)) {
-			index += 1;
-			continue;
-		}
-		if (argument.startsWith('-')) {
-			continue;
-		}
-		return argument;
-	}
-
-	return null;
-}
-
-function validateSensitiveGitApprovalActions(
-	intentName: string,
-	intent: TomlTable,
-	issues: CommandContractValidationIssue[],
-): void {
-	if (intent.status !== 'configured' || intent.run_policy !== 'agent_allowed') {
-		return;
-	}
-
-	const argv = readStringArray(intent, 'argv');
-	if (!argv) {
-		return;
-	}
-
-	const gitSubcommand = readGitSubcommand(argv);
-	const requiredAction = gitSubcommand === 'add' || gitSubcommand === 'commit'
-		? 'git_commit'
-		: gitSubcommand === 'push'
-			? 'git_push'
-			: null;
-	if (!requiredAction) {
-		return;
-	}
-
-	const approvalActions = readStringArray(intent, 'approval_actions') ?? [];
-	if (!approvalActions.includes(requiredAction)) {
-		issues.push(
-			commandContractIssue(
-				`Agent-runnable git ${gitSubcommand} intent ${intentName} must include approval_actions = ["${requiredAction}"]`,
-			),
-		);
-	}
-}
-
 function validatePositiveIntegerField(
 	table: TomlTable,
 	key: string,
@@ -790,7 +735,6 @@ function validateCommandIntent(
 	validateBooleanField(intent, 'allow_shell', `[commands.intents.${intentName}].allow_shell`, issues);
 	validateStringArrayField(intent, 'env_allowlist', `[commands.intents.${intentName}].env_allowlist`, issues);
 	validateApprovalActions(intentName, intent, issues);
-	validateSensitiveGitApprovalActions(intentName, intent, issues);
 	validateBooleanField(
 		intent,
 		ALLOW_ENV_INHERITANCE_RISKS_KEY,

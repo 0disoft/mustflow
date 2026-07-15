@@ -131,7 +131,6 @@ test('fails unsafe command lifecycle contracts', () => {
 				'',
 			].join('\n'),
 		);
-
 		const result = runCli(projectPath, ['check']);
 
 		assert.equal(result.status, 1);
@@ -979,7 +978,7 @@ approval_actions = ["self_destruct"]
 	}
 });
 
-test('requires approval actions on agent-runnable Git write intents', () => {
+test('keeps legacy agent-runnable Git write intents valid for runtime approval inference', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
 	try {
@@ -1018,12 +1017,11 @@ network = true
 destructive = false
 `,
 		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
 		const result = runCli(projectPath, ['check']);
 
-		assert.equal(result.status, 1);
-		assert.match(result.stderr, /git add intent unsafe_git_add must include approval_actions = \["git_commit"\]/u);
-		assert.match(result.stderr, /git push intent unsafe_git_push must include approval_actions = \["git_push"\]/u);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
 	} finally {
 		removeTempProject(projectPath);
 	}

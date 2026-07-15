@@ -291,6 +291,44 @@ approval_actions = ["git_commit"]
 		assert.equal(gitCommitResult.status, 0, gitCommitResult.stderr || gitCommitResult.stdout);
 		assert.equal(gitCommitReceipt.status, 'passed');
 		assert.equal(existsSync(gitCommitMarkerPath), true);
+
+		appendIntent(
+			projectPath,
+			`
+[intents.legacy_git_add]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Infer commit approval for an existing Git staging intent."
+argv = ["git", "-C", ".", "add", "--", "README.md"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+network = false
+destructive = false
+`,
+		);
+
+		const legacyBlockedResult = runCli(projectPath, ['run', 'legacy_git_add', '--plan-only', '--json']);
+		const legacyBlockedPlan = JSON.parse(legacyBlockedResult.stdout);
+		assert.equal(legacyBlockedResult.status, 1);
+		assert.equal(legacyBlockedPlan.reason_code, 'explicit_approval_required');
+		assert.match(legacyBlockedPlan.detail, /git_commit/u);
+
+		const legacyApprovedResult = runCli(projectPath, [
+			'run',
+			'legacy_git_add',
+			'--allow-approval',
+			'git_commit',
+			'--plan-only',
+			'--json',
+		]);
+		const legacyApprovedPlan = JSON.parse(legacyApprovedResult.stdout);
+		assert.equal(legacyApprovedResult.status, 0, legacyApprovedResult.stderr || legacyApprovedResult.stdout);
+		assert.equal(legacyApprovedPlan.runnable, true);
+		assert.deepEqual(legacyApprovedPlan.approval_actions, []);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), true);
 	} finally {
 		removeTempProject(projectPath);

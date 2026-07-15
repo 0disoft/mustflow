@@ -203,9 +203,9 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 test('Git write contracts require explicit approval and bounded release commands', () => {
 	const templateCommitIntent = /\[intents\.git_commit\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
 	const templatePushIntent = /\[intents\.git_push\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
-	const stageIntent = /\[intents\.release_stage_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const commitIntent = /\[intents\.release_commit_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const pushIntent = /\[intents\.release_push_main_v2_115_16\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stageIntent = /\[intents\.release_stage_v2_115_17\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_115_17\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_115_17\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 
 	assert.match(templateCommitIntent, /status = "manual_only"/u);
 	assert.match(templateCommitIntent, /approval_actions = \["git_commit"\]/u);
@@ -217,7 +217,7 @@ test('Git write contracts require explicit approval and bounded release commands
 	assert.match(stageIntent, /argv = \["git", "add", "--"/u);
 	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
 	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
-	assert.match(commitIntent, /argv = \["git", "commit", "-m", "fix\(workflow\): make approval-gated intents executable"\]/u);
+	assert.match(commitIntent, /argv = \["git", "commit", "-m", "fix\(workflow\): infer approvals for legacy Git intents"\]/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
 	assert.match(pushIntent, /network = true/u);

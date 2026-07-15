@@ -37,6 +37,7 @@ import {
 } from '../../core/command-output-limits.js';
 import type { RunCommandMode } from '../../core/run-receipt.js';
 import { checkRepoApprovalGate } from '../../core/repo-approval-gate.js';
+import { inferCommandApprovalActions } from '../../core/approval-actions.js';
 import { normalizeSuccessExitCodes } from '../../core/success-exit-codes.js';
 import { normalizeSafeTestTargetPath, TEST_TARGET_PATH_ERROR } from '../../core/test-target-paths.js';
 import {
@@ -318,7 +319,10 @@ function createApprovalBlock(
 	metadata: RunIntentMetadata,
 	approvedActions: ReadonlySet<string>,
 ): { readonly reasonCode: RunPlanReasonCode; readonly detail: string } | null {
-	const actionTypes = [...metadata.approvalActions];
+	const actionTypes = [
+		...metadata.approvalActions,
+		...inferCommandApprovalActions(metadata.commandArgv ?? []),
+	];
 	if (metadata.network === true) {
 		actionTypes.push('network_access');
 	}

@@ -728,12 +728,12 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
-[intents.release_stage_v2_115_16]
+[intents.release_stage_v2_115_17]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Stage only the reviewed files for the 2.115.16 approval-routing release."
-argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "package.json", "schemas/commands.schema.json", "src/cli/commands/run.ts", "src/cli/commands/run/args.ts", "src/cli/commands/run/execution.ts", "src/cli/commands/run/preview.ts", "src/cli/lib/run-plan.ts", "src/cli/lib/templates.ts", "src/cli/lib/validation/constants.ts", "src/cli/lib/validation/index.ts", "src/core/approval-actions.ts", "src/core/command-contract-validation.ts", "templates/default/common/.mustflow/config/commands.toml", "templates/default/manifest.toml", "tests/cli/check-command-contracts.test.js", "tests/cli/package-command-contracts.test.js", "tests/cli/package-metadata-contracts.test.js", "tests/cli/package-release-workflow-contracts.test.js", "tests/cli/package-template.test.js", "tests/cli/run-preview.test.js"]
+description = "Stage only the reviewed files for the 2.115.17 legacy Git approval inference hotfix."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "package.json", "src/cli/lib/run-plan.ts", "src/core/approval-actions.ts", "src/core/command-contract-validation.ts", "templates/default/manifest.toml", "tests/cli/check-command-contracts.test.js", "tests/cli/package-command-contracts.test.js", "tests/cli/package-metadata-contracts.test.js", "tests/cli/run-preview.test.js"]
 cwd = "."
 timeout_seconds = 60
 stdin = "closed"
@@ -744,12 +744,12 @@ network = false
 destructive = false
 approval_actions = ["git_commit"]
 
-[intents.release_commit_v2_115_16]
+[intents.release_commit_v2_115_17]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Commit the reviewed 2.115.16 approval-routing release with a fixed message."
-argv = ["git", "commit", "-m", "fix(workflow): make approval-gated intents executable"]
+description = "Commit the reviewed 2.115.17 legacy Git approval inference hotfix with a fixed message."
+argv = ["git", "commit", "-m", "fix(workflow): infer approvals for legacy Git intents"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
@@ -760,11 +760,11 @@ network = false
 destructive = false
 approval_actions = ["git_commit"]
 
-[intents.release_push_main_v2_115_16]
+[intents.release_push_main_v2_115_17]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Push the reviewed 2.115.16 release commit from local main to origin main."
+description = "Push the reviewed 2.115.17 hotfix commit from local main to origin main."
 argv = ["git", "push", "origin", "main"]
 cwd = "."
 timeout_seconds = 120
