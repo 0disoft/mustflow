@@ -89,6 +89,12 @@ route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."command-pattern".dependencies]
+unlocks_on = [
+  { signal = "budget_reservation", skill = "credit-ledger-integrity-review" },
+  { signal = "reservation_settlement", skill = "transaction-boundary-integrity-review" },
+]
+
 [routes."command-pattern".contexts]
 file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
 layers = ["application", "service", "workflow", "queue", "mutation"]
@@ -203,6 +209,76 @@ layers = ["domain", "workflow", "lifecycle", "state"]
 pattern_categories = ["state_transition", "lifecycle_model", "allowed_action"]
 positive_terms = ["allowed", "history", "irreversible", "lifecycle", "phase", "state", "status", "transition", "workflow"]
 negative_terms = ["algorithm", "pricing", "provider", "strategy", "variant", "wrapper"]
+
+[routes."durable-workflow-orchestration"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."durable-workflow-orchestration".dependencies]
+requires_skills = ["execution-ledger-integrity-review"]
+suggests_adjuncts = ["idempotency-integrity-review", "retry-policy-integrity-review"]
+unlocks_on = [
+  { signal = "commit_publish_split", skill = "dual-write-consistency" },
+  { signal = "child_join_cancel", skill = "structured-concurrency-supervision-review" },
+]
+
+[routes."durable-workflow-orchestration".contexts]
+positive_terms = ["activity", "checkpoint", "compensate", "compensation", "durable", "orchestration", "resume", "saga", "workflow"]
+negative_terms = ["agentic", "llm", "prompt", "tool-call"]
+
+[routes."dual-write-consistency"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."dual-write-consistency".dependencies]
+suggests_adjuncts = ["transaction-boundary-integrity-review", "queue-processing-integrity-review"]
+
+[routes."dual-write-consistency".contexts]
+positive_terms = ["after-commit", "commit-publish", "dual-write", "outbox", "publish", "reconcile", "reconciliation", "transactional-outbox"]
+negative_terms = ["approval", "budget", "child", "credit", "ledger", "llm", "policy", "supervisor", "tool"]
+
+[routes."structured-concurrency-supervision-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."structured-concurrency-supervision-review".dependencies]
+suggests_adjuncts = ["concurrency-invariant-review", "async-timing-boundary-review"]
+
+[routes."structured-concurrency-supervision-review".contexts]
+positive_terms = ["cancel", "cancellation", "child", "join", "nursery", "parent", "sibling", "supervisor", "taskgroup"]
+negative_terms = ["distributed", "fencing", "lease", "leased", "outbox", "worker"]
+
+[routes."execution-ledger-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."execution-ledger-integrity-review".dependencies]
+suggests_adjuncts = ["idempotency-integrity-review", "transaction-boundary-integrity-review"]
+
+[routes."execution-ledger-integrity-review".contexts]
+positive_terms = ["attempt", "checkpoint", "effect", "execution", "ledger", "receipt", "replay", "sequence"]
+negative_terms = ["accounting", "balance", "billing", "credit", "points", "settlement", "wallet"]
+
+[routes."policy-decision-integrity-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."policy-decision-integrity-review".dependencies]
+suggests_adjuncts = ["business-rule-leakage-review", "api-access-control-review"]
+
+[routes."policy-decision-integrity-review".contexts]
+positive_terms = ["allow", "approval", "capability", "decision", "deny", "explain", "obligation", "policy", "reason", "scope", "version"]
+negative_terms = ["discount", "pricing", "provider-selection", "strategy"]
 
 [routes."result-option"]
 category = "architecture_patterns"
@@ -420,6 +496,12 @@ route_type = "adjunct"
 priority = 71
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"]
 
+[routes."parser-engineering-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 79
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "data_change"]
+
 [routes."type-state-modeling-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -612,11 +694,22 @@ route_type = "primary"
 priority = 82
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "docs_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change"]
 
+[routes."api-contract-change".dependencies]
+unlocks_on = [
+  { signal = "contract_version_migration", skill = "migration-safety-check" },
+  { signal = "contract_version_migration", skill = "contract-sync-check" },
+]
+
 [routes."backend-reliability-change"]
 category = "general_code"
 route_type = "primary"
 priority = 84
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
+
+[routes."backend-reliability-change".dependencies]
+unlocks_on = [
+  { signal = "commit_publish_split", skill = "dual-write-consistency" },
+]
 
 [routes."http-delivery-streaming"]
 category = "general_code"
@@ -773,6 +866,16 @@ category = "general_code"
 route_type = "primary"
 priority = 70
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."agent-execution-control-review".dependencies]
+unlocks_on = [
+  { signal = "capability_scoped_tool", skill = "policy-decision-integrity-review" },
+  { signal = "capability_scoped_tool", skill = "security-flow-review" },
+]
+
+[routes."agent-execution-control-review".contexts]
+positive_terms = ["autonomy", "capability", "executor", "guardrail", "handoff", "interrupt", "planner", "resume", "tool-call"]
+negative_terms = ["benchmark", "eval", "grader", "judge", "score", "trajectory"]
 
 [routes."browser-automation-reliability-review"]
 category = "general_code"
@@ -1025,6 +1128,11 @@ category = "security_privacy"
 route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
+
+[routes."auth-permission-change".dependencies]
+unlocks_on = [
+  { signal = "allow_deny_approval", skill = "policy-decision-integrity-review" },
+]
 
 [routes."api-access-control-review"]
 category = "security_privacy"

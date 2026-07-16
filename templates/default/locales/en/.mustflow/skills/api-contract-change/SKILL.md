@@ -2,7 +2,7 @@
 mustflow_doc: skill.api-contract-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: api-contract-change
@@ -50,6 +50,7 @@ The goal is to keep runtime behavior, type contracts, generated artifacts, calle
 - The change is a purely private implementation refactor with no request, response, generated type, client, docs, status, or error behavior change.
 - The task is only authentication or authorization policy with no API contract change; use `auth-permission-change`.
 - The task is only CLI output contract; use `cli-output-contract-review`.
+- The changed schema is a private in-flight workflow or checkpoint representation rather than a caller-facing API; use `durable-workflow-orchestration` for workflow semantics and `migration-safety-check` for old-to-new persisted transformation.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

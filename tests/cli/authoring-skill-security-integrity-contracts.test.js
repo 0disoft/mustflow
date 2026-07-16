@@ -151,7 +151,7 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	assert.match(manifest, /"\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credit-ledger-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('error message integrity review keeps failures actionable and safe', () => {

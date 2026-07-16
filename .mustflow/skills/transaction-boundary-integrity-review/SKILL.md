@@ -2,7 +2,7 @@
 mustflow_doc: skill.transaction-boundary-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: transaction-boundary-integrity-review
@@ -50,6 +50,8 @@ The review question is not "is there a transaction?" It is "does the read -> dec
 - The task is primarily retries, queue reliability, provider deadlines, health checks, outbox processing, or operational failure handling; use `backend-reliability-change`.
 - The task is payment, credit, wallet, or ledger specific and the transaction issue is only one part of money-event integrity; use `payment-integrity-review` or `credit-ledger-integrity-review` first.
 - The transaction is a tiny single-row write with no prior decision, no concurrency-sensitive invariant, no external side effect, no retry, and no framework propagation risk.
+- The main problem is convergence after a database, broker, provider, or second database commits independently; use `dual-write-consistency`. This skill owns each local transaction boundary only.
+- The main problem is compensation order or resumable recovery across those commits; use `durable-workflow-orchestration`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -127,13 +129,14 @@ The review question is not "is there a transaction?" It is "does the read -> dec
     - Email, cache eviction, queue publish, HTTP API calls, payment provider calls, object storage writes, file uploads, and search indexing do not roll back with the database.
     - Prefer after-commit hooks for non-critical callbacks and outbox records for durable side effects that must eventually happen.
     - Remember that an after-commit callback failure does not roll back an already committed database transaction.
+    - When the database and external system can commit independently, route convergence to `dual-write-consistency`; keep this review limited to the local transaction's reads, decisions, writes, commit, and after-commit handoff.
 11. Review transaction width and resource pressure.
     - Do not hold locks or connections across HTTP API calls, file uploads, sleeps, large loops, slow calculations, logging sinks, JSON serialization, queue waits, or user-controlled waits.
     - Timeouts do not undo already-sent external effects.
     - `REQUIRES_NEW`, nested service calls, and transaction-per-item loops can exhaust connection pools.
 12. Review multi-database and transaction-manager scope.
     - A transaction annotation or helper may cover only one data source, ORM session, connection, or transaction manager.
-    - Cross-database updates, external services, caches, search indexes, queues, and object storage need outbox, saga, compensation, reconciliation, or manual recovery rather than pretend single-transaction atomicity.
+    - Cross-database, broker, and provider convergence belongs to `dual-write-consistency`; ordered compensation and resumable recovery belong to `durable-workflow-orchestration`. Do not pretend one local transaction owns either protocol.
 13. Review advisory and distributed locks.
     - PostgreSQL session-level advisory locks can survive rollback and require release or session end.
     - Transaction-level advisory locks release at transaction end and are usually safer for short critical sections.

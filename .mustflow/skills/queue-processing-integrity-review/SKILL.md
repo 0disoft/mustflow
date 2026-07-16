@@ -2,7 +2,7 @@
 mustflow_doc: skill.queue-processing-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: queue-processing-integrity-review
@@ -49,6 +49,9 @@ The core question is not "is the worker running?" It is "when does this code dec
 - The task is primarily transaction isolation, rollback, outbox, after-commit, or read-decision-write atomicity; use `transaction-boundary-integrity-review` first and this skill for broker settlement.
 - The task is primarily database query speed, cache correctness, API latency, or generic hot-path performance with no broker, worker, or redelivery surface.
 - The queue path is read-only telemetry where dropped or duplicate messages are explicitly acceptable and no state, audit, billing, permission, notification, or external side effect depends on it.
+- The main problem is producer database commit versus broker publish convergence; use `dual-write-consistency` and keep this skill for producer confirmation and consumer settlement evidence.
+- The queued work is a resumable multi-step business workflow with checkpoints, callbacks, or compensation; use `durable-workflow-orchestration`.
+- The main problem is unjoined child tasks, cancellation propagation, deadlines, or orphan work after a handler returns; use `structured-concurrency-supervision-review`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -99,10 +102,11 @@ The core question is not "is the worker running?" It is "when does this code dec
    - Require permanent-failure classification, retry count, backoff, jitter, DLQ threshold, and a reason that helps replay or discard safely.
 5. Check producer confirmation.
    - A producer that only calls `send` or `publish` may not know the broker durably accepted the message.
-   - If local DB commit and queue publish are separate, require outbox, transactional publish support, reconciliation, or a reported split-brain risk.
+   - If local DB commit and queue publish are separate, route the convergence protocol to `dual-write-consistency`; do not redefine it as queue settlement.
 6. Review async handler ownership.
    - If processing returns a promise, future, coroutine, goroutine, thread, or background task, settlement must wait for the actual work or explicitly record durable handoff.
    - Fire-and-forget work after ack is message loss unless the handoff itself is durable and observable.
+   - Route parent-child join, cancellation, deadline, and orphan prevention to `structured-concurrency-supervision-review` when the handler spawns child tasks.
 7. Review batch settlement.
    - Batch commit after mixed success can skip failed items.
    - Per-item failure handling, partial commit boundaries, ordered stop-on-failure behavior, or replay-safe idempotency should be explicit.

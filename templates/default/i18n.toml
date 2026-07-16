@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 243
+revision = 245
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -74,7 +74,7 @@ translations = {}
 [documents."skill.adapter-boundary"]
 source = "locales/en/.mustflow/skills/adapter-boundary/SKILL.md"
 source_locale = "en"
-revision = 13
+revision = 14
 translations = {}
 
 [documents."skill.artifact-integrity-check"]
@@ -92,7 +92,7 @@ translations = {}
 [documents."skill.api-contract-change"]
 source = "locales/en/.mustflow/skills/api-contract-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.http-api-semantics-review"]
@@ -181,6 +181,36 @@ translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
 source = "locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.dual-write-consistency"]
+source = "locales/en/.mustflow/skills/dual-write-consistency/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.durable-workflow-orchestration"]
+source = "locales/en/.mustflow/skills/durable-workflow-orchestration/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.execution-ledger-integrity-review"]
+source = "locales/en/.mustflow/skills/execution-ledger-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.policy-decision-integrity-review"]
+source = "locales/en/.mustflow/skills/policy-decision-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.structured-concurrency-supervision-review"]
+source = "locales/en/.mustflow/skills/structured-concurrency-supervision-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
@@ -401,6 +431,12 @@ source_locale = "en"
 revision = 4
 translations = {}
 
+[documents."skill.parser-engineering-review"]
+source = "locales/en/.mustflow/skills/parser-engineering-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.type-state-modeling-review"]
 source = "locales/en/.mustflow/skills/type-state-modeling-review/SKILL.md"
 source_locale = "en"
@@ -422,7 +458,7 @@ translations = {}
 [documents."skill.concurrency-invariant-review"]
 source = "locales/en/.mustflow/skills/concurrency-invariant-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.failure-integrity-review"]
@@ -470,7 +506,7 @@ translations = {}
 [documents."skill.idempotency-integrity-review"]
 source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.retry-policy-integrity-review"]
@@ -482,13 +518,13 @@ translations = {}
 [documents."skill.queue-processing-integrity-review"]
 source = "locales/en/.mustflow/skills/queue-processing-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.transaction-boundary-integrity-review"]
 source = "locales/en/.mustflow/skills/transaction-boundary-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.testability-boundary-review"]
@@ -985,7 +1021,7 @@ translations = {}
 [documents."skill.public-json-contract-change"]
 source = "locales/en/.mustflow/skills/public-json-contract-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.provenance-license-gate"]
@@ -1003,7 +1039,7 @@ translations = {}
 [documents."skill.command-pattern"]
 source = "locales/en/.mustflow/skills/command-pattern/SKILL.md"
 source_locale = "en"
-revision = 13
+revision = 14
 translations = {}
 
 [documents."skill.command-contract-authoring"]
@@ -1092,7 +1128,7 @@ translations = {}
 [documents."skill.migration-safety-check"]
 source = "locales/en/.mustflow/skills/migration-safety-check/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.multi-agent-work-coordination"]
@@ -1164,7 +1200,7 @@ translations = {}
 [documents."skill.state-machine-pattern"]
 source = "locales/en/.mustflow/skills/state-machine-pattern/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.strategy-pattern"]
@@ -1332,7 +1368,7 @@ translations = {}
 [documents."skill.llm-token-cost-control-review"]
 source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.llm-response-latency-review"]
@@ -1344,7 +1380,7 @@ translations = {}
 [documents."skill.agent-execution-control-review"]
 source = "locales/en/.mustflow/skills/agent-execution-control-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.browser-automation-reliability-review"]

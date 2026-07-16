@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 260
+anchor_count: 266
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:5e5e4e779b2d6e27e9b699fa90cb9359c78be14619e2ecb8e4f4be7899d55417"
+source_fingerprint: "sha256:7d444c4241f1bbcdcf4c2851106b44113cdedba8aafa615c8cc91f4c33f64133"
 ---
 
 # REPO_MAP.md
@@ -365,9 +365,17 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/docs-update/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/dual-write-consistency/
+
+- `.mustflow/skills/dual-write-consistency/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/duckdb-code-change/
 
 - `.mustflow/skills/duckdb-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/durable-workflow-orchestration/
+
+- `.mustflow/skills/durable-workflow-orchestration/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/elysia-code-change/
 
@@ -380,6 +388,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/evidence-stall-breaker/
 
 - `.mustflow/skills/evidence-stall-breaker/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/execution-ledger-integrity-review/
+
+- `.mustflow/skills/execution-ledger-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/external-prompt-injection-defense/
 
@@ -581,6 +593,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/observability-debuggability-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/parser-engineering-review/
+
+- `.mustflow/skills/parser-engineering-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/pascal-code-change/
 
 - `.mustflow/skills/pascal-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -604,6 +620,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/php-code-change/
 
 - `.mustflow/skills/php-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/policy-decision-integrity-review/
+
+- `.mustflow/skills/policy-decision-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/postgresql-code-change/
 
@@ -796,6 +816,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/structure-first-engineering/
 
 - `.mustflow/skills/structure-first-engineering/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/structured-concurrency-supervision-review/
+
+- `.mustflow/skills/structured-concurrency-supervision-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/structured-config-change/
 

@@ -17,6 +17,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added the `parser-engineering-review` built-in skill so agents review lexer and parser work
+  across recovery, Unicode, precedence and associativity, incremental reparsing, resource limits,
+  hostile input, and stable diagnostic contracts instead of checking only valid-input AST output.
+- Added the `dual-write-consistency`, `durable-workflow-orchestration`,
+  `structured-concurrency-supervision-review`, `execution-ledger-integrity-review`, and
+  `policy-decision-integrity-review` built-in skills with explicit ownership boundaries for
+  commit-versus-publish gaps, durable retries and compensation, child-task supervision,
+  append-only execution evidence, and deny-preserving policy decisions.
 - Added the `hetzner-cloud-change` built-in skill so agents separate Hetzner host, location,
   network, control-plane, account, storage, and data failure domains; verify current provider
   contracts; preserve recovery, capacity, performance, and cost evidence; and validate Firewall,
@@ -50,6 +58,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Changed skill-route dependency selection so required skills and matching unlocks are selected
+  before generic suggestions, and narrowed adjacent pattern, transaction, queue, idempotency,
+  agent-control, ledger, migration, API, and JSON skills to hand off durable execution ownership.
 - Changed the default approval profile so configured agent-allowed dependency installs and network
   commands run without a second repository approval gate, while dependency upgrades, migrations,
   secrets, releases, destructive commands, cross-repository changes, and Git writes remain gated.

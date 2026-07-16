@@ -2,7 +2,7 @@
 mustflow_doc: skill.public-json-contract-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: public-json-contract-change
@@ -43,6 +43,7 @@ Protect automation consumers from silent JSON, JSONL, stream, schema, fixture, a
 - The task changes only human-readable CLI text, color, help wording, warnings, or deprecations; use `cli-output-contract-review`.
 - The JSON is an HTTP, OpenAPI, GraphQL, RPC, or SDK request/response contract; use `api-contract-change`.
 - The task is only a broad template or docs alignment check with no JSON contract; use `contract-sync-check` or a narrower template skill.
+- The JSON is a private persisted workflow/checkpoint or execution-ledger representation; use the owning `durable-workflow-orchestration` or `execution-ledger-integrity-review` skill for meaning, plus `migration-safety-check` for old-to-new schema transformation.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

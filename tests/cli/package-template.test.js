@@ -44,6 +44,14 @@ const technologySkillNames = [
 	'unocss-code-change',
 	'vue-code-change',
 ];
+const durableExecutionSkillNames = [
+	'dual-write-consistency',
+	'durable-workflow-orchestration',
+	'execution-ledger-integrity-review',
+	'migration-safety-check',
+	'policy-decision-integrity-review',
+	'structured-concurrency-supervision-review',
+];
 
 function collectRelativeFiles(directory) {
 	const files = [];
@@ -191,6 +199,16 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(template.manifest.skillProfiles.library.includes(skillName), `library should include ${skillName}`);
 	}
 	for (const profileName of template.manifest.profiles) {
+		for (const skillName of durableExecutionSkillNames) {
+			assert.ok(
+				template.manifest.skillProfiles[profileName].includes(skillName),
+				`${profileName} should include ${skillName}`,
+			);
+		}
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('parser-engineering-review'),
+			`${profileName} should include parser-engineering-review`,
+		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('config-env-change'),
 			`${profileName} should include config-env-change`,

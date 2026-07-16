@@ -72,6 +72,185 @@
       "required_adjuncts": [
         "api-access-control-review"
       ]
+    },
+    {
+      "id": "dual-write-db-commit-publish",
+      "task": "Review the database commit and event publish split; a crash after commit must reconcile through an outbox",
+      "paths": [
+        "src/orders/commit-publish.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "typescript-code-change",
+      "required_candidates": [
+        "dual-write-consistency",
+        "transaction-boundary-integrity-review"
+      ],
+      "required_adjuncts": [
+        "dual-write-consistency"
+      ]
+    },
+    {
+      "id": "durable-workflow-compensation",
+      "task": "Implement durable workflow orchestration with checkpoint resume and saga compensation after a failed activity",
+      "paths": [
+        "src/workflows/order-saga.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "durable-workflow-orchestration",
+      "required_candidates": [
+        "durable-workflow-orchestration",
+        "execution-ledger-integrity-review"
+      ],
+      "required_adjuncts": [
+        "execution-ledger-integrity-review"
+      ]
+    },
+    {
+      "id": "leased-worker-stale-write",
+      "task": "Review a leased distributed worker whose expired owner can still perform a stale write and require fencing",
+      "paths": [
+        "src/workers/leased-writer.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "concurrency-invariant-review"
+      ],
+      "forbidden_candidates": [
+        "structured-concurrency-supervision-review"
+      ]
+    },
+    {
+      "id": "capability-scoped-llm-tool",
+      "task": "Gate an LLM tool call by a capability scoped server policy decision with explicit allow deny reason",
+      "paths": [
+        "src/agents/tools/delete-record.ts"
+      ],
+      "reasons": [
+        "security_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-execution-control-review",
+      "required_candidates": [
+        "policy-decision-integrity-review"
+      ],
+      "required_adjuncts": [
+        "policy-decision-integrity-review",
+        "security-flow-review"
+      ]
+    },
+    {
+      "id": "append-only-execution-replay",
+      "task": "Replay a durable workflow execution from an append-only ledger without repeating an already committed effect receipt",
+      "paths": [
+        "src/workflows/execution-ledger.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "durable-workflow-orchestration",
+      "required_candidates": [
+        "execution-ledger-integrity-review"
+      ],
+      "required_adjuncts": [
+        "execution-ledger-integrity-review"
+      ]
+    },
+    {
+      "id": "allow-deny-approval-policy",
+      "task": "Change authorization policy combination for explicit allow deny and pending approval with decision reasons",
+      "paths": [
+        "src/auth/policy-engine.ts"
+      ],
+      "reasons": [
+        "security_change",
+        "public_api_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "policy-decision-integrity-review"
+      ],
+      "required_adjuncts": [
+        "policy-decision-integrity-review"
+      ]
+    },
+    {
+      "id": "child-task-join-cancel",
+      "task": "Orchestrate a durable workflow parent that must join child tasks and cancel siblings after failure",
+      "paths": [
+        "src/workflows/child-supervision.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "durable-workflow-orchestration",
+      "required_candidates": [
+        "structured-concurrency-supervision-review"
+      ],
+      "required_adjuncts": [
+        "execution-ledger-integrity-review",
+        "structured-concurrency-supervision-review"
+      ]
+    },
+    {
+      "id": "contract-version-migration",
+      "task": "Change an API contract version and migrate existing clients and fixtures through a compatibility window",
+      "paths": [
+        "openapi/contracts-v2.yaml"
+      ],
+      "reasons": [
+        "migration_change",
+        "public_api_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "api-contract-change",
+      "required_candidates": [
+        "api-contract-change"
+      ],
+      "required_adjuncts": [
+        "migration-safety-check",
+        "contract-sync-check"
+      ]
+    },
+    {
+      "id": "budget-reservation-settlement",
+      "task": "Implement a command that reserves a credit budget then captures releases and settles it against a wallet balance",
+      "paths": [
+        ".mustflow/skills/command-pattern/SKILL.md"
+      ],
+      "reasons": [
+        "code_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "command-pattern",
+      "required_candidates": [
+        "credit-ledger-integrity-review"
+      ],
+      "required_adjuncts": [
+        "credit-ledger-integrity-review",
+        "transaction-boundary-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "execution-ledger-integrity-review"
+      ]
     }
   ]
 }

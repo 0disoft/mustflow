@@ -2,7 +2,7 @@
 mustflow_doc: skill.state-machine-pattern
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: state-machine-pattern
@@ -29,7 +29,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Keep lifecycle state changes in one explicit rule system.
+Keep one entity's lifecycle state changes in one explicit rule system.
 
 The state machine pattern applies when an entity moves through meaningful lifecycle states and the allowed actions, errors, follow-up work, or audit expectations depend on the current state. The core artifact is not a class hierarchy. The core artifact is the transition table: current state, event, guard, next state, and effects as data.
 
@@ -59,6 +59,7 @@ Use this skill to prevent scattered `if`, `switch`, direct assignment, silent no
 - State does not affect allowed actions.
 - The code is a pure calculation, formatter, mapper, parser, or local UI-only state update.
 - A simple create, read, update, delete flow only distinguishes active and deleted and has no meaningful transition rules, recovery behavior, retention behavior, or audit need.
+- The lifecycle coordinates multiple independently persisted entities, services, process-loss recovery, callbacks, or compensation; use `durable-workflow-orchestration`. Keep this skill for each entity's local transition rules.
 
 Two states can still require this skill when the lifecycle is meaningful, such as active to suspended to deleted, deleted being irreversible, or suspension requiring audit and authorization.
 
@@ -165,7 +166,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 15. Split state machines when one state string explodes.
     - If payment, fulfillment, refund, moderation, or account status change independently, use separate state machines.
     - State-machine splits require explicit cross-machine invariants, such as fulfillment not shipping before payment succeeds.
-    - Put cross-machine coordination in a domain service, command handler, workflow, or pure policy that calls the smaller machines.
+   - Put same-commit cross-machine coordination in a domain service, command handler, or pure policy. Route independently persisted multi-entity coordination, process-loss recovery, callbacks, and compensation to `durable-workflow-orchestration`.
 16. Document only the useful lifecycle contract.
     - For important domains, document state list, event list, transition table, terminal states, guards, effects, concurrency method, duplicate-event handling, and any cross-machine invariants.
     - Diagrams are secondary. The code transition table is the source of truth.
@@ -183,6 +184,7 @@ Two states can still require this skill when the lifecycle is meaningful, such a
 
 - State cannot be changed outside the transition function or dispatch path.
 - Every allowed transition is visible in one transition table.
+- The transition table governs one entity lifecycle; it does not claim durable orchestration across independently persisted entities or services.
 - Impossible transitions return explicit errors instead of being ignored.
 - Guards are pure and external facts are passed through context.
 - External work is represented through pending, success, and failure events, with effects executed after persistence.

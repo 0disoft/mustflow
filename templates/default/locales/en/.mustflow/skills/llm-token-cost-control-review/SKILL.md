@@ -2,7 +2,7 @@
 mustflow_doc: skill.llm-token-cost-control-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-token-cost-control-review
@@ -50,6 +50,9 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 - The main risk is cloud account, infrastructure, SaaS, quota, budget, tag, retention, or provider-account spend guardrails outside the model-call payload; use `cloud-cost-guardrail-review`.
 - The main risk is rate-limit fairness, throttling, quota counters, concurrency limits, 429 response behavior, or protected-resource definition; use `rate-limit-integrity-review`.
 - The task only edits user-visible copy and does not affect LLM payload, model choice, retry behavior, or cost telemetry.
+- The budget is prepaid, stored-value, or money-equivalent credit with reserve, capture, and release accounting; use `credit-ledger-integrity-review`.
+- The main contract is provenance for allow, block, downgrade, limit, or obligation decisions; use `policy-decision-integrity-review`.
+- The main contract is accepted-work reservation persistence; use `command-pattern`. This skill owns token estimates, caps, and cost-per-success evidence.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -67,6 +70,7 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 - Output ledger: output schema size, repeated key length, patch versus full-output policy, `max_output_tokens`, reasoning budget, retry repair inputs, validator errors, and incomplete-response handling.
 - Routing ledger: deterministic prefilters, small-model router, expensive-model escalation rule, batch or flex eligibility, predicted-output eligibility, image or file preprocessing, and fallback behavior.
 - Observability ledger: input tokens, cached tokens when exposed by the provider, output tokens, reasoning tokens when exposed or billable, retry count, validation failure count, cache hit rate, cost per successful task, model, endpoint, prompt version, tool version, schema version, and budget breach events.
+- Boundary ledger: token estimates and caps owned here; accepted-work reservation persistence owned by `command-pattern`; prepaid or money-equivalent reserve, capture, and release owned by `credit-ledger-integrity-review`; allow, block, downgrade, and obligation provenance owned by `policy-decision-integrity-review`.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions

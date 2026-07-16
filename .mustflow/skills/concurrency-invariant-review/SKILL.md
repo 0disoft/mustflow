@@ -2,7 +2,7 @@
 mustflow_doc: skill.concurrency-invariant-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: concurrency-invariant-review
@@ -50,6 +50,7 @@ The review question is not "is the code correct in this order?" The stronger que
 - The task is only memory retention, listener cleanup, timer cleanup, or native resource lifetime; use `memory-lifetime-review` first unless cleanup can race with concurrent work.
 - The task is only backend retries, queues, idempotency, outbox, health, cache, or external-call deadlines; use `backend-reliability-change` first and this skill only for concurrent ownership and invariant timing.
 - The task is only error handling truthfulness; use `failure-integrity-review` first.
+- The main problem is parent-child task trees, join, cancellation propagation, deadlines, shutdown ownership, or orphan prevention rather than a shared-resource invariant; use `structured-concurrency-supervision-review`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -139,6 +140,7 @@ The review question is not "is the code correct in this order?" The stronger que
     - Shutdown should define stop-accepting, drain, cancel, flush, close, and in-flight side-effect ownership.
     - `closed = true` is not enough if futures, workers, sockets, buffers, queues, or async continuations keep running.
     - Mutexes, semaphores, read-write locks, connection checkouts, rate-limit tokens, and permits must release on every exception path.
+    - Route parent-child join, cancellation propagation, deadline inheritance, and orphan prevention to `structured-concurrency-supervision-review`; keep shared-resource ownership and invariant timing here.
 15. Check deadlocks and starvation as wait-for systems.
     - A thread stack dump alone is not enough. Build a wait-for graph that connects threads, locks, condition variables, futures, queues, pool workers, callbacks, and external waits.
     - Separate lock-order deadlock, lost notification, callback reentry, sync-over-async, and thread-pool starvation; a saturated pool can freeze progress without any mutex cycle.

@@ -2,7 +2,7 @@
 mustflow_doc: skill.command-pattern
 locale: en
 canonical: true
-revision: 13
+revision: 14
 lifecycle: mustflow-owned
 authority: procedure
 name: command-pattern
@@ -29,7 +29,7 @@ metadata:
 <!-- mustflow-section: purpose -->
 ## Purpose
 
-Model a state-changing user or system intent as one clear execution unit.
+Model one accepted state-changing user or system intent and its local commit as one clear execution unit. This skill does not own the full durable lifecycle after acceptance.
 
 A command is not a decorative wrapper around a button handler or function. It is the application-level unit that gathers input validation, authorization, domain object loading, domain rule execution, state changes, transaction boundaries, idempotency, audit evidence, event recording, failure handling, retry decisions, and observability around one intent.
 
@@ -73,6 +73,9 @@ Use commands to make these questions answerable later:
 - The only problem is business logic mixed with I/O; use `pure-core-imperative-shell` first and let this skill shape the shell execution unit when state changes need command semantics.
 - The only problem is provider, SDK, database, file, webhook, queue, cache, or framework object leakage; use `adapter-boundary` and `dependency-injection`.
 - The only problem is that several already-owned subsystem steps need one stable caller-facing entry point; use `facade-pattern` unless the operation also needs command payload, context, idempotency, audit, retry, transaction, outbox, or queue semantics.
+- The work spans multiple durable steps, checkpoints, process loss, callbacks, or compensation; use `durable-workflow-orchestration`. The command may accept or start that workflow, but does not redefine its lifecycle.
+- The main contract is truthful run, attempt, checkpoint, or effect evidence across executions; use `execution-ledger-integrity-review`.
+- The main contract derives allow, deny, limit, downgrade, or obligation decisions; use `policy-decision-integrity-review`. The command consumes the decision.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -88,7 +91,7 @@ Use commands to make these questions answerable later:
 - Work-acceptance response policy, such as immediate success, queued status, processing status, or accepted response; job status vocabulary; deduplication key; attempt limit; next-run time; lock expiry; dead-letter handling; and worker ownership.
 - Queue contract details when work crosses a queue: queue name, business urgency, job id, job type, schema version, created time, run-after time, attempt count, idempotency key, request or trace context, safe payload reference, retry categories, timeout, dead-letter target, ordering requirement, and manual replay rule.
 - AI work accounting when relevant: feature key, model key, usage ledger entry, user request id, provider call id, pricing snapshot, cache-hit type, retry grouping, cost limit, and whether failed or unknown calls require reconciliation before retry.
-- AI policy decision when relevant: estimated cost, remaining budget, selected model, fallback model, blocked reason, maximum input tokens, maximum output tokens, maximum tool calls, maximum agent steps, timeout, and whether provider budgets are only secondary guardrails.
+- AI policy decision when relevant: the already-derived allow, deny, limit, downgrade, or obligation result that the command consumes without redefining policy.
 - Cost-bearing work accounting when relevant: value unit, cost unit, workspace or account quota, shared tenant credit pool, free-plan limit, user-action fan-out, usage event, rollup target, and whether retries or duplicate jobs can double-count cost.
 - Idempotency layers for request acceptance, job execution, provider calls, and incoming webhooks, including scope, request hash, duplicate result behavior, and different-payload conflict behavior.
 - Existing local conventions for result types, option types, domain errors, repositories, gateways, unit of work, outbox, audit logs, command buses, and tests.
@@ -173,9 +176,9 @@ Use commands to make these questions answerable later:
    - Schedule follow-up work only after the command decision is persisted.
    - For payment, point, credit, inventory, entitlement, subscription, coupon, and refund commands, prefer append-only ledgers or action records as the evidence source. Treat summary balances or statuses as derived or transactionally updated read state.
    - For ordinary content, account, and workflow commands, persist the core state and outbox or job records before triggering analytics, email, search indexing, AI processing, statistics, cache purge, or feed refresh work.
-   - For cost-bearing AI commands, persist the accepted work, idempotency decision, usage-limit decision, and job or outbox record before a worker performs model calls. Record actual usage, retry grouping, cache-hit type, pricing snapshot, and provider outcome after the call.
-   - For agentic AI commands, persist the policy decision and hard caps before the first model call. Steps, tool calls, total tokens, elapsed time, and cost should be bounded by the command or job contract, not by provider defaults or operator memory.
-   - For any cost-bearing command, check plan, tenant, quota, credit, request-size, and rate limits before accepting the work when possible. Record usage intent or reserved quota before fan-out work starts, then reconcile actual usage after workers and provider calls complete.
+   - For cost-bearing AI commands, persist accepted work and reservation consumption before a worker performs model calls. `credit-ledger-integrity-review` owns prepaid or money-equivalent reserve, capture, and release invariants; `llm-token-cost-control-review` owns token estimates and caps.
+   - For agentic AI commands, consume and persist the policy decision and accepted-work limits before the first model call. Route policy derivation to `policy-decision-integrity-review` and multi-step resume or compensation to `durable-workflow-orchestration`.
+   - A command may consume an existing reservation or quota allocation, but it must not redefine credit-ledger balance invariants. Keep accepted-work reservation persistence here and reserve, capture, and release accounting in `credit-ledger-integrity-review`.
    - When one command creates many internal jobs, record the causation relationship so thumbnails, OCR, AI calls, embeddings, search indexing, notifications, logs, analytics exports, and webhooks can be attributed to the original user action without losing retry or cost detail.
    - For HTTP acceptance of long-running work, persist the command result, job row, or outbox row in the same local transaction, then return the created resource identifier and current status. Do not make the HTTP request wait for the worker's external side effect unless the product contract truly requires immediate completion.
    - For external API work, persist the internal intent before the provider call becomes the only record. Payment, email, map, AI, search, file, and webhook follow-up commands should leave enough local evidence to answer what was attempted, why, for whom, and how to retry or reconcile it later.
@@ -236,6 +239,7 @@ Use commands to make these questions answerable later:
    - Put exhausted or poison jobs into a dead-letter or manual-review state with safe error metadata instead of retrying forever.
    - Treat a queued failure as hidden until metrics, alerts, or operator review make it visible. Track queue depth, job age, retry count, failure rate, dead-letter growth, provider rate-limit pressure, and manual replay results for important queues.
    - Define the smallest operator actions that make the command recoverable at 03:00: resend a specific email, reprocess a specific webhook, retry a specific AI job, rebuild a specific search index, reconcile a specific payment attempt, or temporarily disable one provider-backed feature.
+   - When these steps must resume deterministically across process loss, callbacks, checkpoints, or compensation, hand the accepted command to `durable-workflow-orchestration`. When run, attempt, checkpoint, and effect receipts are the source of truth, use `execution-ledger-integrity-review`.
 17. Test command behavior.
     - Cover success, required input absence, invalid input, unauthorized actor, missing resource, state conflict, domain invariant failure, duplicate retry with same payload, duplicate key with different payload, transaction rollback, outbox creation, dependency failure, retryability, non-retryability, and concurrency conflicts.
     - Use fake repositories and gateways for handler unit tests.
@@ -250,7 +254,7 @@ Use commands to make these questions answerable later:
 - The handler has injected dependencies and handles one command.
 - Authorization, idempotency, transaction boundaries, outbox behavior, retry classification, concurrency protection, observability, and audit requirements are explicit where relevant.
 - Request, trace, command, job, cron, webhook, correlation, and causation identifiers are explicit where the command crosses asynchronous or external boundaries.
-- HTTP acceptance, durable job or outbox creation, worker ownership, queue separation, deduplication, retry budget, dead-letter behavior, and reconciliation rules are explicit when long-running or external work is involved.
+- HTTP acceptance and the local durable handoff are explicit; full multi-step resume, checkpoint, callback, and compensation semantics are owned by `durable-workflow-orchestration`.
 - Credit, quota, tenant-limit, usage-event, fan-out attribution, and retry-cost behavior are explicit when one command consumes high-cost resources or creates multiple internal jobs.
 - Expected command failures are returned as typed values.
 - External effects do not run inside local database transactions.

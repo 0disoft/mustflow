@@ -2,7 +2,7 @@
 mustflow_doc: skill.credit-ledger-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: credit-ledger-integrity-review
@@ -47,6 +47,7 @@ Review credit, point, and wallet balance code as an accounting ledger, not a bal
 - The task only reviews general business-rule placement without a balance, ledger, wallet, credit, point, or reconciliation surface; use `business-rule-leakage-review`.
 - The task only designs a generic lifecycle state machine with no ledger, amount, idempotency, balance, reservation, expiry, or reconciliation risk; use `state-machine-pattern`.
 - The task only reviews cache correctness for a non-balance value; use `cache-integrity-review`.
+- The task only reviews soft token, step, concurrency, request-count, or rate budgets that are not prepaid or money-equivalent; use the relevant LLM cost, agent execution, concurrency, or rate-limit skill.
 - The task requires production balance corrections, real refunds, data migrations, or direct database repair without explicit user approval and configured command support.
 
 <!-- mustflow-section: required-inputs -->
@@ -98,6 +99,7 @@ Review credit, point, and wallet balance code as an accounting ledger, not a bal
 16. Consume expiry lots deliberately. When credits expire, inspect FIFO, LIFO, earliest-expiry-first, or policy-specific lot allocation. Record lot-level consumption so later refund and audit can reconstruct the path.
 17. Race expiry and usage. Expiry batches must use the same ledger, lock, idempotency, and conditional update rules as user requests. Flag direct batch subtraction that bypasses wallet safeguards.
 18. Separate reservation from capture. Model reserved, captured, released, failed, expired, cancelled, and partially refunded states when credits are held before final purchase, fulfillment, or external payment completion.
+    - This ledger owns atomic reserve, capture, and release and the balance invariant. Commands and durable workflows may consume those operations but must not redefine balance availability, ownership, or accounting transitions.
 19. Draw allowed state transitions. Prevent arbitrary `status = REFUNDED`, `status = CAPTURED`, or `status = EXPIRED` writes. Each transition should have a guard, cause, effect, and idempotency rule.
 20. Preserve queue ordering or tolerate reordering. If deduction, cancellation, refund, or expiry events use a queue, prove user, wallet, or transaction-level ordering, or make each consumer robust to reordered events.
 21. Treat message redelivery as normal. Producers, queues, schedulers, and webhooks can duplicate events. Consumer-side ledger mutation must be idempotent with durable dedupe records.
@@ -117,6 +119,7 @@ Review credit, point, and wallet balance code as an accounting ledger, not a bal
 - The credit surface has balance, ledger-entry, source identity, atomicity, amount/unit, ownership, expiry/lot, reservation, queue/cache, audit, and reconciliation maps.
 - Any mutable-balance-only path, missing source key, weak idempotency comparison, non-atomic deduction, wrong lock target, float amount, hidden rounding policy, missing DB invariant, duplicate ledger risk, generic refund, expiry race, cache-trusted deduction, stale replica read, unaudited admin adjustment, or missing reconciliation is fixed or reported with evidence.
 - Tests or explicit verification cover the highest-risk concurrency, failure, duplicate, expiry, reservation, refund, cache, and reconciliation paths available in the current scope.
+- Soft operational budgets remain outside this ledger unless they represent prepaid or money-equivalent value.
 
 <!-- mustflow-section: verification -->
 ## Verification

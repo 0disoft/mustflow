@@ -104,7 +104,7 @@ test('state machine skill protects the initial state and first transition contra
 	assert.match(localSkill, /Model the first user or system action as a real transition/u);
 	assert.match(localSkill, /missing runtime prerequisites produce a visible failure or unavailable action instead of a silent no-op/u);
 	assert.match(localSkill, /Test the declared initial state and the first permitted transition/u);
-	assert.match(i18n, /\[documents\."skill\.state-machine-pattern"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.state-machine-pattern"\][\s\S]*?revision = 6/u);
 });
 
 test('route metadata can declare checked skill dependencies', () => {

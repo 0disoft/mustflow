@@ -743,6 +743,7 @@ function collectDependencySignals(
 ): Set<string> {
 	const dependencySignals = new Set(reasons);
 	const inputTerms = new Set([...taskTerms, ...pathTerms]);
+	const hasAnyInputTerm = (...terms: readonly string[]): boolean => terms.some((term) => inputTerms.has(term));
 
 	if (
 		inputTerms.has('output') &&
@@ -765,6 +766,50 @@ function collectDependencySignals(
 		(inputTerms.has('next') && inputTerms.has('action'))
 	) {
 		dependencySignals.add('concrete_followup_exists');
+	}
+
+	if (
+		hasAnyInputTerm('commit', 'committed') &&
+		hasAnyInputTerm('publish', 'published', 'publisher') &&
+		hasAnyInputTerm('split', 'outbox', 'reconcile', 'reconciliation')
+	) {
+		dependencySignals.add('commit_publish_split');
+	}
+
+	if (
+		inputTerms.has('capability') &&
+		hasAnyInputTerm('scope', 'scoped') &&
+		hasAnyInputTerm('tool', 'tools')
+	) {
+		dependencySignals.add('capability_scoped_tool');
+	}
+
+	if (inputTerms.has('allow') && inputTerms.has('deny') && inputTerms.has('approval')) {
+		dependencySignals.add('allow_deny_approval');
+	}
+
+	if (
+		inputTerms.has('contract') &&
+		inputTerms.has('version') &&
+		hasAnyInputTerm('migrate', 'migrated', 'migration')
+	) {
+		dependencySignals.add('contract_version_migration');
+	}
+
+	const hasReservationTerm = hasAnyInputTerm('reserve', 'reserved', 'reserves', 'reservation');
+	if (inputTerms.has('budget') && hasReservationTerm) {
+		dependencySignals.add('budget_reservation');
+	}
+	if (hasReservationTerm && hasAnyInputTerm('settle', 'settled', 'settles', 'settlement')) {
+		dependencySignals.add('reservation_settlement');
+	}
+
+	if (
+		hasAnyInputTerm('child', 'children') &&
+		hasAnyInputTerm('join', 'joined') &&
+		hasAnyInputTerm('cancel', 'cancelled', 'cancellation')
+	) {
+		dependencySignals.add('child_join_cancel');
 	}
 
 	return dependencySignals;
@@ -847,14 +892,14 @@ function selectAdjuncts(
 		addDependencySkill(skill, `route_dependency:requires:${selectedMain.skill}`);
 	}
 
-	for (const skill of selectedMain.route_card.route_dependencies.suggests_adjuncts) {
-		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
-	}
-
 	for (const unlockRule of selectedMain.route_card.route_dependencies.unlocks_on) {
 		if (hasDependencySignal(unlockRule.signal, dependencySignals, taskTerms, pathTerms)) {
 			addDependencySkill(unlockRule.skill, `route_dependency:unlocked_by:${selectedMain.skill}:${unlockRule.signal}`);
 		}
+	}
+
+	for (const skill of selectedMain.route_card.route_dependencies.suggests_adjuncts) {
+		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
 	}
 
 	if (selected.length >= DEFAULT_MAX_ADJUNCTS) {

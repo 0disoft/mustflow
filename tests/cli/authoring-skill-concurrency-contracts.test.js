@@ -485,5 +485,5 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(manifest, /"\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md"/u);
 	assert.match(manifest, /"concurrency-invariant-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 3/u);
 });

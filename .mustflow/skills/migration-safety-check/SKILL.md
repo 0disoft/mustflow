@@ -2,7 +2,7 @@
 mustflow_doc: skill.migration-safety-check
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: migration-safety-check
@@ -44,6 +44,7 @@ Keep migrations reversible, scoped, and verified before they affect data, schema
 - Documentation or final reports claim that backup, restore, cache rebuild, index rebuild, or analytics migration is safe, tested, repeatable, or complete.
 - Documentation or final reports claim that a migration is safe, complete, reversible, idempotent, or already applied.
 - A change could make older installed projects, existing lock files, generated files, caches, or user-edited documents incompatible.
+- Persisted workflow, checkpoint, run, attempt, or execution-ledger schema versions need an old-to-new transformation while preserving in-flight data.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -51,6 +52,7 @@ Keep migrations reversible, scoped, and verified before they affect data, schema
 - The change is a small local refactor with no persisted, generated, installed, or user data surface.
 - The task only edits inert documentation and makes no claim about applying or validating a migration.
 - The migration would require live production access, destructive actions, or manual operator approval that is outside the current command contract.
+- The task defines workflow progression, checkpoint semantics, compensation order, run truth, attempt truth, effect truth, or public JSON meaning. Use the owning workflow, execution-ledger, or public-contract skill; this skill owns only the old-to-new transformation.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -92,6 +94,7 @@ Keep migrations reversible, scoped, and verified before they affect data, schema
 1. Identify the migration surface and classify it as code, schema, data, configuration, template, generated state, cache, package metadata, or documentation.
    For content systems, also classify whether it touches inline page content, body files, frontmatter, lifecycle states, slug history, redirects, taxonomy, assets, facts, claims, sources, site exposure, search index, feeds, sitemaps, analytics events, exports, or public API projections.
 2. Record the source state, target state, expected affected paths, and whether the change must support old and new states during transition.
+   - For persisted workflow, checkpoint, run, attempt, or execution-ledger versions, preserve identity, ownership, terminal-state meaning, and referential links while transforming old records to the new schema. Do not redefine workflow semantics or ledger truth in the migration.
    - Prefer an expand, backfill, switch, and shrink sequence for live schema and API changes: add the new shape, support old and new reads or writes, migrate data, switch readers, then remove the old shape only after compatibility is proven.
    - Treat rollback as more than `down` migration. Distinguish schema rollback, data rollback, app rollback, and operational restore. A `down` file does not recover deleted or overwritten data unless the original values were preserved.
    - Prefer forward-only recovery for live systems: if a change fails after partial application, use a corrective migration or compatibility patch unless a tested restore path proves a rewind is safer.

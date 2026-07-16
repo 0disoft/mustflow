@@ -80,7 +80,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('queue processing integrity review catches message settlement traps', () => {
@@ -159,7 +159,7 @@ test('queue processing integrity review catches message settlement traps', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"queue-processing-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.queue-processing-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.queue-processing-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('retry policy integrity review catches amplification and unsafe replay', () => {
@@ -318,7 +318,7 @@ test('transaction boundary integrity review catches atomicity and side-effect tr
 	assert.match(manifest, /"\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"transaction-boundary-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.transaction-boundary-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.transaction-boundary-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('testability boundary review exposes hidden decisions and test friction', () => {
@@ -397,4 +397,164 @@ test('testability boundary review exposes hidden decisions and test friction', (
 	assert.match(manifest, /"testability-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.testability-boundary-review"\][\s\S]*?revision = 1/u);
+});
+
+test('durable execution skills keep distinct ownership and synchronized install contracts', () => {
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+	const cases = [
+		{
+			name: 'dual-write-consistency',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 82,
+			phrases: [
+				'independently committed',
+				'outbox',
+				'reconciliation',
+				'exactly-once',
+				'workflow-step, terminal-state, and compensation-state recovery',
+			],
+		},
+		{
+			name: 'durable-workflow-orchestration',
+			category: 'general_code',
+			routeType: 'primary',
+			priority: 85,
+			phrases: [
+				'workflow instance',
+				'process loss',
+				'compensation',
+				'state schema',
+				'distinct operation type and idempotency namespace',
+				'delivery, consumer-application, and projection convergence',
+			],
+		},
+		{
+			name: 'execution-ledger-integrity-review',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 82,
+			phrases: ['append-only execution ledger', 'effect receipt', 'monotonic sequence', 'replay'],
+		},
+		{
+			name: 'policy-decision-integrity-review',
+			category: 'security_privacy',
+			routeType: 'adjunct',
+			priority: 82,
+			phrases: [
+				'require-approval',
+				'obligations',
+				'policy version',
+				'attenuation',
+				'Human approval must not silently override a deny',
+				'parent capability ID',
+			],
+		},
+		{
+			name: 'structured-concurrency-supervision-review',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 81,
+			phrases: ['bounded fan-out', 'sibling failure', 'late results', 'join'],
+		},
+	];
+
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assertSkillsIndexRevision(i18n);
+
+	for (const entry of cases) {
+		const localSkill = readText(`.mustflow/skills/${entry.name}/SKILL.md`);
+		const templateSkill = readText(
+			`templates/default/locales/en/.mustflow/skills/${entry.name}/SKILL.md`,
+		);
+
+		assert.equal(localSkill, templateSkill, `${entry.name} source and template must match`);
+		assert.match(localSkill, /^revision: 1$/mu);
+		for (const phrase of entry.phrases) {
+			assert.ok(localSkill.includes(phrase), `${entry.name} should preserve ${phrase}`);
+		}
+		assert.ok(skillIndex.includes(`.mustflow/skills/${entry.name}/SKILL.md`));
+		assert.match(
+			routes,
+			new RegExp(
+				`\\[routes\\."${entry.name}"\\]\\r?\\ncategory = "${entry.category}"\\r?\\nroute_type = "${entry.routeType}"\\r?\\npriority = ${entry.priority}`,
+				'u',
+			),
+		);
+		assert.ok(manifest.includes(`".mustflow/skills/${entry.name}/SKILL.md"`));
+		assert.match(
+			i18n,
+			new RegExp(`\\[documents\\."skill\\.${entry.name}"\\][\\s\\S]*?revision = 1`, 'u'),
+		);
+	}
+});
+
+test('existing skills hand off durable execution ownership instead of absorbing it', () => {
+	const expectations = {
+		'adapter-boundary': ['dual-write-consistency', 'policy-decision-integrity-review'],
+		'command-pattern': [
+			'durable-workflow-orchestration',
+			'execution-ledger-integrity-review',
+			'policy-decision-integrity-review',
+			'credit-ledger-integrity-review',
+			'llm-token-cost-control-review',
+		],
+		'state-machine-pattern': ['durable-workflow-orchestration'],
+		'agent-execution-control-review': [
+			'structured-concurrency-supervision-review',
+			'durable-workflow-orchestration',
+			'execution-ledger-integrity-review',
+			'policy-decision-integrity-review',
+			'Permit attenuation only',
+			'server-known arguments',
+			'Canonicalize defaulted and omitted tool arguments',
+		],
+		'idempotency-integrity-review': [
+			'dual-write-consistency',
+			'execution-ledger-integrity-review',
+			'durable-workflow-orchestration',
+		],
+		'queue-processing-integrity-review': [
+			'dual-write-consistency',
+			'durable-workflow-orchestration',
+			'structured-concurrency-supervision-review',
+		],
+		'transaction-boundary-integrity-review': [
+			'dual-write-consistency',
+			'durable-workflow-orchestration',
+		],
+		'concurrency-invariant-review': ['structured-concurrency-supervision-review'],
+		'api-contract-change': ['durable-workflow-orchestration', 'migration-safety-check'],
+		'public-json-contract-change': [
+			'durable-workflow-orchestration',
+			'execution-ledger-integrity-review',
+			'migration-safety-check',
+		],
+		'migration-safety-check': [
+			'Persisted workflow, checkpoint, run, attempt, or execution-ledger schema versions',
+			'this skill owns only the old-to-new transformation',
+		],
+		'llm-token-cost-control-review': [
+			'credit-ledger-integrity-review',
+			'policy-decision-integrity-review',
+			'command-pattern',
+		],
+		'credit-ledger-integrity-review': [
+			'soft token, step, concurrency, request-count, or rate budgets',
+			'Commands and durable workflows may consume those operations',
+		],
+	};
+
+	for (const [skillName, phrases] of Object.entries(expectations)) {
+		const skill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+		for (const phrase of phrases) {
+			assert.ok(skill.includes(phrase), `${skillName} should hand off ${phrase}`);
+		}
+	}
 });

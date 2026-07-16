@@ -358,8 +358,8 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(manifest, /"http-delivery-streaming"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
-	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 13/u);
+	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 4/u);

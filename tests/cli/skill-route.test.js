@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -24,8 +24,12 @@ function runCli(cwd, args) {
 	});
 }
 
-function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+function initProject(projectPath, profile = null) {
+	const result = runCli(projectPath, [
+		'init',
+		'--yes',
+		...(profile ? ['--profile', profile] : []),
+	]);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
@@ -218,6 +222,64 @@ test('surfaces route dependency metadata in compact route cards', () => {
 	);
 });
 
+test('prioritizes required and matched unlock dependencies over generic suggestions', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath, 'patterns');
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const routes = readFileSync(routesPath, 'utf8');
+		const dependencyPattern =
+			/\[routes\."state-machine-pattern"\.dependencies\]\r?\nconflicts_with = \["strategy-pattern"\]/u;
+		assert.match(routes, dependencyPattern);
+		writeFileSync(
+			routesPath,
+			routes.replace(
+				dependencyPattern,
+				`[routes."state-machine-pattern".dependencies]\nconflicts_with = ["strategy-pattern"]\nrequires_skills = ["transaction-boundary-integrity-review"]\nsuggests_adjuncts = ["queue-processing-integrity-review"]\nunlocks_on = [\n  { signal = "state_transition", skill = "credit-ledger-integrity-review" },\n]`,
+			),
+		);
+
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Refactor state-machine-pattern state transition status phase lifecycle and irreversible history',
+			'--path',
+			'.mustflow/skills/state-machine-pattern/SKILL.md',
+			'--reason',
+			'code_change',
+			'--max-candidates',
+			'10',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.selected.main.skill, 'state-machine-pattern');
+		assert.deepEqual(
+			report.selected.adjuncts.map((candidate) => candidate.skill),
+			['transaction-boundary-integrity-review', 'credit-ledger-integrity-review'],
+		);
+		assert.ok(
+			report.selected.adjuncts[0].selection_reasons.includes(
+				'route_dependency:requires:state-machine-pattern',
+			),
+		);
+		assert.ok(
+			report.selected.adjuncts[1].selection_reasons.includes(
+				'route_dependency:unlocked_by:state-machine-pattern:state_transition',
+			),
+		);
+		assert.equal(
+			report.selected.adjuncts.some((candidate) => candidate.skill === 'queue-processing-integrity-review'),
+			false,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('keeps LLM token cost routes discoverable without reading the full index in the prompt', () => {
 	const projectPath = createTempProject();
 
@@ -279,8 +341,8 @@ test('prints a compact text skill route report', () => {
 	assert.match(result.stdout, /selected_adjuncts: cli-output-contract-review, completion-evidence-gate/);
 	assert.match(result.stdout, /Candidates/);
 	assert.match(result.stdout, /Dependency reads/);
-	assert.match(result.stdout, /- cli-output-contract-review[\s\S]*?route_dependency:suggested_by:public-json-contract-change/u);
-	assert.match(result.stdout, /- completion-evidence-gate[\s\S]*?route_dependency:suggested_by:public-json-contract-change/u);
+	assert.match(result.stdout, /- cli-output-contract-review[\s\S]*?route_dependency:unlocked_by:public-json-contract-change:machine_output_changed/u);
+	assert.match(result.stdout, /- completion-evidence-gate[\s\S]*?route_dependency:unlocked_by:public-json-contract-change:schema_or_fixture_changed/u);
 	assert.match(result.stdout, /Read plan/);
 	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/public-json-contract-change\/SKILL\.md/);
 	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/cli-output-contract-review\/SKILL\.md/);

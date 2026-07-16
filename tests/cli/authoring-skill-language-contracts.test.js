@@ -10,6 +10,56 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
+test('parser engineering review keeps source, recovery, incremental, Unicode, and hostile-input contracts explicit', () => {
+	const localSkill = readText('.mustflow/skills/parser-engineering-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/parser-engineering-review/SKILL.md');
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const signal of [
+		'lossless CST',
+		'UTF-16 offset',
+		'left binding power',
+		'right associativity',
+		'fixed character radius is not a',
+		'ParseBudget',
+		'wireBytes',
+		'workUnits',
+		'same immutable parse result',
+		'do not reset counters at transformation or subgrammar boundaries',
+		'One-shot input versus multiple chunk partitions',
+		'Full-parse versus incremental-parse differential tests',
+		'phenomenon while shrinking failures',
+	]) {
+		assert.ok(localSkill.includes(signal), `parser skill should include ${signal}`);
+	}
+	assert.match(localSkill, /reach EOF, consume at least one input unit, or emit a bounded/u);
+	assert.match(localSkill, /unvalidated second parse is not sufficient/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/parser-engineering-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."parser-engineering-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 79/u);
+	assert.deepEqual(routeReasons(routes, 'parser-engineering-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'data_change',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/parser-engineering-review\/SKILL\.md"/u);
+	assert.match(manifest, /"parser-engineering-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'parser-engineering-review', 1);
+});
+
 test('performance measurement integrity keeps event semantics, comparison, and privacy explicit', () => {
 	const localSkill = readText('.mustflow/skills/performance-measurement-integrity-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/performance-measurement-integrity-review/SKILL.md');

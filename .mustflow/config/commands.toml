@@ -728,12 +728,80 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
-[intents.release_stage_v2_115_17]
+[intents.release_stage_v2_116_0]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Stage only the reviewed files for the 2.115.17 legacy Git approval inference hotfix."
-argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "package.json", "src/cli/lib/run-plan.ts", "src/core/approval-actions.ts", "src/core/command-contract-validation.ts", "templates/default/manifest.toml", "tests/cli/check-command-contracts.test.js", "tests/cli/package-command-contracts.test.js", "tests/cli/package-metadata-contracts.test.js", "tests/cli/run-preview.test.js"]
+description = "Stage only the reviewed parser, durable execution, routing, template, contract, and release files for 2.116.0."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/adapter-boundary/SKILL.md",
+  ".mustflow/skills/agent-execution-control-review/SKILL.md",
+  ".mustflow/skills/api-contract-change/SKILL.md",
+  ".mustflow/skills/command-pattern/SKILL.md",
+  ".mustflow/skills/concurrency-invariant-review/SKILL.md",
+  ".mustflow/skills/credit-ledger-integrity-review/SKILL.md",
+  ".mustflow/skills/dual-write-consistency/SKILL.md",
+  ".mustflow/skills/durable-workflow-orchestration/SKILL.md",
+  ".mustflow/skills/execution-ledger-integrity-review/SKILL.md",
+  ".mustflow/skills/idempotency-integrity-review/SKILL.md",
+  ".mustflow/skills/llm-token-cost-control-review/SKILL.md",
+  ".mustflow/skills/migration-safety-check/SKILL.md",
+  ".mustflow/skills/parser-engineering-review/SKILL.md",
+  ".mustflow/skills/policy-decision-integrity-review/SKILL.md",
+  ".mustflow/skills/public-json-contract-change/SKILL.md",
+  ".mustflow/skills/queue-processing-integrity-review/SKILL.md",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/state-machine-pattern/SKILL.md",
+  ".mustflow/skills/structured-concurrency-supervision-review/SKILL.md",
+  ".mustflow/skills/transaction-boundary-integrity-review/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "package.json",
+  "src/core/skill-route-resolution.ts",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/adapter-boundary/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/agent-execution-control-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/api-contract-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/command-pattern/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/concurrency-invariant-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/dual-write-consistency/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/durable-workflow-orchestration/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/execution-ledger-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/migration-safety-check/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/parser-engineering-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/policy-decision-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/public-json-contract-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/queue-processing-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/locales/en/.mustflow/skills/state-machine-pattern/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/structured-concurrency-supervision-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/transaction-boundary-integrity-review/SKILL.md",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-agent-automation-contracts.test.js",
+  "tests/cli/authoring-skill-architecture-ai-contracts.test.js",
+  "tests/cli/authoring-skill-concurrency-contracts.test.js",
+  "tests/cli/authoring-skill-contracts.test.js",
+  "tests/cli/authoring-skill-delivery-contracts.test.js",
+  "tests/cli/authoring-skill-docs-workflow-contracts.test.js",
+  "tests/cli/authoring-skill-language-contracts.test.js",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/package-template.test.js",
+  "tests/cli/skill-route.test.js",
+]
 cwd = "."
 timeout_seconds = 60
 stdin = "closed"
@@ -744,12 +812,35 @@ network = false
 destructive = false
 approval_actions = ["git_commit"]
 
-[intents.release_commit_v2_115_17]
+[intents.release_staged_diff_v2_116_0]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Commit the reviewed 2.115.17 legacy Git approval inference hotfix with a fixed message."
-argv = ["git", "commit", "-m", "fix(workflow): infer approvals for legacy Git intents"]
+description = "Inspect the exact staged path set for the reviewed 2.116.0 release before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_116_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.116.0 parser and durable execution skill release with a fixed evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "✨ feat(skills): add parser and durable execution reviews",
+  "-m",
+  "Add six review skills, narrow overlapping ownership, and synchronize routing plus installed templates.",
+  "-m",
+  "Validation: mf run test_skill_contracts; mf run mustflow_check; mf run build; mf run lint; mf run docs_validate_fast; mf run test_release",
+]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
@@ -760,11 +851,11 @@ network = false
 destructive = false
 approval_actions = ["git_commit"]
 
-[intents.release_push_main_v2_115_17]
+[intents.release_push_main_v2_116_0]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Push the reviewed 2.115.17 hotfix commit from local main to origin main."
+description = "Push the reviewed 2.116.0 skill release commit from local main to origin main."
 argv = ["git", "push", "origin", "main"]
 cwd = "."
 timeout_seconds = 120
@@ -774,6 +865,62 @@ writes = []
 network = true
 destructive = false
 approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_116_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.116.0 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_main_runs_v2_116_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.116.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "30", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_publish_runs_v2_116_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.116.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_release_v2_116_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.116.0 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.116.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
 
 [intents.git_commit]
 status = "manual_only"

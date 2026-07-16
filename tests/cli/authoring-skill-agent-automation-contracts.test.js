@@ -57,7 +57,7 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(manifest, /"\.mustflow\/skills\/agent-execution-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-execution-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 2/u);
 });
 
 test('browser automation reliability review rejects click scripts without state evidence', () => {

@@ -2,7 +2,7 @@
 mustflow_doc: skill.idempotency-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: idempotency-integrity-review
@@ -50,6 +50,8 @@ The review question is not "is this POST protected?" It is "if the same business
 - The task is primarily stale shared state, lock scope, or generic interleaving with no duplicate logical operation or retry surface; use `race-condition-review` or `concurrency-invariant-review`.
 - The task is primarily swallowed failures, false success, timeout honesty, queue ack/nack honesty, fallback defaults, or public error contracts; use `failure-integrity-review`.
 - The operation is a pure read with no hidden write, usage charge, read receipt, analytics commitment, cache mutation that matters, external call, or durable side effect.
+- The main failure is divergence after two systems can commit independently; use `dual-write-consistency` first. Keep duplicate delivery and duplicate intent handling here.
+- The main failure is a lying or incomplete run, attempt, checkpoint, or effect receipt; use `execution-ledger-integrity-review`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -133,9 +135,9 @@ The review question is not "is this POST protected?" It is "if the same business
     - Use business keys such as `settlement_date + merchant_id`, `campaign_id + user_id`, import file row identity, period key, or run source ID instead of loose "already processed yesterday" checks.
 16. Review outbox and inbox pairing.
     - DB change plus message publish can split when either side succeeds alone.
-    - Use an outbox for durable outgoing effects and an inbox or applied-event record for incoming duplicate delivery when the workflow crosses process boundaries.
+    - Route the convergence protocol for independently committed effects to `dual-write-consistency`. Keep inbox, applied-event, and duplicate-delivery handling in this skill.
 17. Review saga compensation.
-    - Compensation actions such as cancel, refund, release stock, revoke entitlement, or restore credits also need idempotency keys tied to the original action.
+    - Route compensation order and resumable saga state to `durable-workflow-orchestration`. Compensation actions such as cancel, refund, release stock, revoke entitlement, or restore credits still need idempotency keys tied to the original action here.
     - Double compensation can be worse than the original failure.
 18. Review `PROCESSING` and lease recovery.
     - A `PROCESSING` row without lease, heartbeat, timeout, owner, or reconciliation can permanently block retries after a crash.

@@ -374,7 +374,7 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 5/u);
 });
 
 test('LLM response latency review keeps first useful output measurable', () => {

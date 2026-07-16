@@ -2,7 +2,7 @@
 mustflow_doc: skill.adapter-boundary
 locale: en
 canonical: true
-revision: 13
+revision: 14
 lifecycle: mustflow-owned
 authority: procedure
 name: adapter-boundary
@@ -66,6 +66,8 @@ Use the port as a change-isolation contract. Before changing the implementation 
 - The task only needs broad ownership, cohesion, or future-change spread review before deciding whether a port is the right repair; use `module-boundary-review` or `change-blast-radius-review` first.
 - The only problem is hidden construction or global lookup of a dependency; use `dependency-injection` first, then return here only if external data, errors, or protocol behavior also need a boundary.
 - The operation coordinates several already-translated ports, repositories, queues, caches, or providers behind one caller-facing workflow; use `facade-pattern` for that high-level entry point while keeping this skill for each external boundary.
+- The main problem is convergence after two databases, a database and broker, or a database and provider can commit independently; use `dual-write-consistency`. Keep this skill only for request, response, identifier, and failure translation at each external boundary.
+- The main problem is deriving or proving an allow, block, or downgrade decision for a provider or model call; use `policy-decision-integrity-review`. An adapter may carry the decision and translate the selected provider request, but must not redefine the policy.
 - The task is a disposable one-off script that is not imported, repeated, tested, used in production, or connected to external systems.
 - The repository already has a more specific local integration skill that fully covers the boundary.
 
@@ -87,7 +89,7 @@ Use the port as a change-isolation contract. Before changing the implementation 
 - Provider failure policy: timeout, retryable status categories, backoff and jitter rule, rate-limit handling, circuit-breaker behavior, bulkhead or queue isolation, idempotency key support, unknown-result reconciliation, and dead-letter handling when available.
 - Observability portability policy: request id, trace id, span id, correlation id, causation id, user or anonymous id, tenant or organization id, job run id, webhook event id, event schema version, and which context fields are propagated, redacted, hashed, or kept internal.
 - AI usage policy when AI models are involved: feature key, model key, user request id, provider call id, token usage fields, cached-input treatment, pricing snapshot, cost unit, retry grouping, cache key hash, prompt/output retention rule, and plan-limit behavior.
-- AI gateway policy when AI models are involved: preflight estimate, hard limit, selected model, fallback model, blocked reason, remaining budget, maximum input and output tokens, maximum tool calls, maximum agent steps, maximum retries, timeout, provider-console budget role, and emergency kill switch.
+- AI policy handoff when AI models are involved: the already-derived decision, selected provider or model, limits, and reason fields that the adapter must translate without recomputing allow, block, or downgrade policy.
 - API contract risk: stable resource ids, public identifiers, pagination, machine-readable status, safe error codes, field omission, private file URL handling, and whether the response shape is domain-oriented or screen-component-oriented.
 - Relevant command-intent contract entries for tests, builds, docs, template checks, release checks, and mustflow validation.
 
@@ -179,7 +181,7 @@ Use the port as a change-isolation contract. Before changing the implementation 
    - Provider identifiers for payments, email, maps, search, AI, and storage are mappings. Internal orders, entitlements, emails, locations, documents, jobs, and file objects should remain product-owned resources even when the provider performs the work.
 9. Keep database transactions and external side effects separate by default.
    - Do not call external APIs inside database transactions unless a local rule explicitly justifies the risk.
-   - Use explicit states, an outbox, an action ledger, or a reconciliation path when database changes and external effects must be coordinated.
+   - When independently committed database, broker, or provider effects must converge, route the convergence protocol to `dual-write-consistency`; this skill owns only the local port translation and failure mapping.
 10. Harden webhooks and duplicate delivery.
     - Verify signatures before trusting payloads.
     - Preserve the raw body or safe raw reference when needed for verification and replay.
@@ -196,8 +198,7 @@ Use the port as a change-isolation contract. Before changing the implementation 
     - Capture token usage, cached input usage when available, latency, provider request id, model, status, pricing snapshot, and integer cost unit after the provider response or failure.
     - Classify AI caches as app response cache, provider prompt cache, embedding cache, or search-result cache. Store cache key hashes or safe identifiers, not raw prompts or confidential user content.
    - Apply plan, request-size, model-tier, token, request-count, and cost limits before the provider call where possible; update actual usage after the call.
-   - Treat provider budgets and rate limits as secondary guardrails unless the provider is proven to enforce a hard stop before cost. Product-owned preflight policy should decide allow, block, downgrade, or queue before the provider call.
-   - Enforce agent-specific caps such as maximum steps, tool calls, total tokens, total cost, and timeout before running autonomous or multi-call AI work.
+   - Consume an already-derived product policy decision before the provider call. Route allow, block, downgrade, fallback, and obligation derivation to `policy-decision-integrity-review`; translate only the selected request and provider result here.
    - Validate structured output before returning it.
     - Return internal purpose-level outputs such as summaries, classifications, recommendations, or extracted fields.
 12. Make observability safe and useful.
@@ -223,7 +224,7 @@ Use the port as a change-isolation contract. Before changing the implementation 
 - Ports are named in internal business language and expose only internal input, output, and error types.
 - Preserved consumer contracts are explicit, and implementation changes behind adapters do not force unrelated caller, DTO, test, workflow, or neighboring-module edits.
 - Provider dashboards, hosted settings, and SDK payloads do not become the only source for core business facts, search policy, queue failure policy, analytics event definitions, email customer state, or file ownership.
-- Public URLs, provider identity claims, image variants, entitlement decisions, and AI policy decisions are represented as product-owned contracts before provider-specific syntax reaches callers.
+- Public URLs, provider identity claims, image variants, entitlement decisions, and AI policy decision results are translated as product-owned contracts before provider-specific syntax reaches callers; policy derivation remains outside the adapter.
 - Streaming and delivery transport details such as SSE ids, WebTransport datagrams, content-coding variants, fallback paths, and CDN cache keys are contained at adapter boundaries before core logic receives product-level events or commands.
 - Critical external SDKs are contained behind internal use-case contracts so provider names, SDK types, and dashboard assumptions do not spread through core logic.
 - Inbound adapters validate and translate before calling use cases.
@@ -232,7 +233,7 @@ Use the port as a change-isolation contract. Before changing the implementation 
 - Request, trace, user, tenant, job, cron, and webhook identifier propagation is explicit where diagnostic continuity matters, and telemetry backend details do not leak into core logic.
 - Circuit-breaker, bulkhead, dead-letter, and reconciliation behavior is explicit where provider failure can spread beyond the integration.
 - AI model boundaries centralize provider calls, cost attribution, usage recording, pricing snapshots, cache-hit classification, plan limits, and redacted prompt or output handling when AI calls are cost-bearing.
-- AI gateway boundaries enforce preflight hard limits, model fallback, agent-loop caps, provider-budget fallback assumptions, and emergency disable behavior when cost-bearing or autonomous AI work exists.
+- AI adapters consume bounded product decisions and translate selected provider calls without owning allow, block, downgrade, or fallback policy.
 - Tests cover core behavior through fakes and adapter behavior through mapping, error, and boundary tests.
 
 <!-- mustflow-section: verification -->
@@ -275,7 +276,7 @@ Prefer the narrowest configured test or build intent that proves the affected bo
 - Outbound request, response, and error mapping handled
 - Timeout, retry, circuit-breaker, bulkhead, idempotency, duplicate, dead-letter, and reconciliation behavior handled or explicitly deferred
 - AI usage, cost, pricing snapshot, cache-hit, retry grouping, plan-limit, and redacted observability behavior handled or explicitly deferred when relevant
-- AI gateway preflight limit, model fallback, agent cap, and kill-switch behavior handled or explicitly deferred when relevant
+- AI policy decision handed off to `policy-decision-integrity-review` and translated without re-derivation when relevant
 - Security and redaction surfaces checked
 - Observability identifier propagation and backend portability checked when relevant
 - Tests, fixtures, fakes, or contract checks added or reused
