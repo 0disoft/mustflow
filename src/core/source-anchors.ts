@@ -176,12 +176,24 @@ function sourceAnchorPathPartIsIgnored(part: string, ignoredDirectoryNames: Read
 	);
 }
 
+function directoryIsLinkedGitCheckout(directoryPath: string): boolean {
+	try {
+		return statSync(path.join(directoryPath, '.git')).isFile();
+	} catch {
+		return false;
+	}
+}
+
 function listFilesRecursive(root: string, options: SourceAnchorFileDiscoveryOptions, current = root, depth = 0): string[] {
 	if (!existsSync(current)) {
 		return [];
 	}
 
 	if (depth > MAX_SOURCE_ANCHOR_DIRECTORY_DEPTH) {
+		return [];
+	}
+
+	if (depth > 0 && directoryIsLinkedGitCheckout(current)) {
 		return [];
 	}
 

@@ -728,6 +728,145 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
+[intents.release_stage_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed linked-worktree source-anchor fix and synchronized 2.116.1 release metadata."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "package.json",
+  "src/core/source-anchors.ts",
+  "templates/default/manifest.toml",
+  "tests/cli/check-source-anchors.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.116.1 release before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.116.1 linked-worktree source-anchor fix with an evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "🐛 fix(check): ignore linked Git worktrees",
+  "-m",
+  "Exclude nested checkouts whose .git marker is a file while preserving root and ordinary nested repository scanning.",
+  "-m",
+  "Validation: mf run test_related; mf run mustflow_check; mf run build; mf run lint; mf run test_release",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.116.1 fix commit from local main to origin main."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.116.1 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_main_runs_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.116.1 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "30", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_publish_runs_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.116.1 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_release_v2_116_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.116.1 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.116.1", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
 [intents.release_stage_v2_116_0]
 status = "configured"
 lifecycle = "oneshot"

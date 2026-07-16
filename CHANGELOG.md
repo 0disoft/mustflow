@@ -10,6 +10,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Fixed
 
+- Excluded linked Git worktrees and submodule-style checkouts from root source-anchor discovery so
+  strict validation does not report duplicate anchors from independent checkout copies while
+  ordinary nested repositories remain discoverable.
 - Strengthened the Svelte and state-machine skills against invalid runes-mode component bindings,
   premature DOM initialization, silent imperative setup failures, and incorrect initial lifecycle states.
 - Synchronized `code/outline` CLI and documentation claims with its existing Astro, Svelte, Go,

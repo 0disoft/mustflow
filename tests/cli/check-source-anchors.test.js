@@ -334,6 +334,48 @@ test('strict check does not scan source anchors through symlinked directories', 
 	}
 });
 
+test('strict check skips linked Git worktrees without hiding ordinary nested repositories', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'projects', 'nested', '.git'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'projects', 'nested', 'src'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'worktrees', 'linked', 'src'), { recursive: true });
+		writeFileSync(
+			path.join(projectPath, 'src', 'owned.ts'),
+			['// mf:anchor workspace.owned', 'export const owned = true;', ''].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'projects', 'nested', 'src', 'nested.ts'),
+			['// mf:anchor nested.owned', 'export const nested = true;', ''].join('\n'),
+		);
+		writeFileSync(
+			path.join(projectPath, 'worktrees', 'linked', '.git'),
+			'gitdir: ../../.git/worktrees/linked\n',
+		);
+		writeFileSync(
+			path.join(projectPath, 'worktrees', 'linked', 'src', 'duplicate.ts'),
+			['// mf:anchor workspace.owned', 'export const duplicate = true;', ''].join('\n'),
+		);
+
+		assert.deepEqual(listSourceAnchorFiles(projectPath), [
+			'projects/nested/src/nested.ts',
+			'src/owned.ts',
+		]);
+
+		const result = runCli(projectPath, ['check', '--strict', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(check.ok, true);
+		assert.equal(check.issueDetails.some((issue) => issue.id === 'mustflow.source_anchor.duplicate_id'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('source anchor discovery refuses explicitly followed symlink targets outside the project root', (t) => {
 	const projectPath = createTempProject();
 	const outsidePath = createTempProject('mustflow-source-anchor-outside-');
