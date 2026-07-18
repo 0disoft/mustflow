@@ -7,9 +7,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 ## Unreleased
 
 - Narrowed skill-related test selection to the owning authoring shard and lightweight install-surface checks, added the bounded `test_skill_contracts` intent, and reused initialized fixtures plus in-process CLI execution in skill contract suites.
-- Relaxed npm release cleanliness checks only for an unstaged `.mustflow/review/docs.toml`
-  update while continuing to reject staged queue changes, deletion or rename records, untracked
-  files, and every other dirty path.
+- Made npm releases commit-snapshot based: staged, unstaged, untracked, renamed, and deleted
+  working-tree changes no longer block agents, while release identity comes only from committed
+  `HEAD` and active merge, rebase, cherry-pick, revert, bisect, or sequencer operations still stop.
 
 ### Changed
 

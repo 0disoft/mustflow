@@ -1,28 +1,57 @@
-import { readFileSync } from 'node:fs';
 import { request } from 'node:https';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+	readCommittedReleasePackageJson,
+	readWorkingTreeReleasePackageJson,
+} from './lib/release-package-identity.mjs';
+
 const projectRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
-const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const expectAvailable = args.has('--expect-available');
 const expectPublished = args.has('--expect-published');
+const fromHead = args.has('--from-head');
+
+function readOptionValue(optionName) {
+	const optionIndex = rawArgs.indexOf(optionName);
+	if (optionIndex < 0) {
+		return undefined;
+	}
+
+	const value = rawArgs[optionIndex + 1];
+	if (!value || value.startsWith('--')) {
+		console.error(`${optionName} requires a value.`);
+		process.exit(2);
+	}
+
+	return value;
+}
+
+const explicitPackageName = readOptionValue('--package-name');
+const explicitPackageVersion = readOptionValue('--package-version');
 
 if (expectAvailable === expectPublished) {
 	console.error('Use exactly one expectation: --expect-available or --expect-published.');
 	process.exit(2);
 }
 
-if (typeof packageJson.name !== 'string' || packageJson.name.length === 0) {
-	console.error('package.json must define a package name.');
+if ((explicitPackageName === undefined) !== (explicitPackageVersion === undefined)) {
+	console.error('Use --package-name and --package-version together.');
 	process.exit(2);
 }
 
-if (typeof packageJson.version !== 'string' || packageJson.version.length === 0) {
-	console.error('package.json must define a package version.');
+if (fromHead && explicitPackageName !== undefined) {
+	console.error('Do not combine --from-head with explicit package identity options.');
 	process.exit(2);
 }
+
+const packageJson = explicitPackageName !== undefined
+	? { name: explicitPackageName, version: explicitPackageVersion }
+	: fromHead
+		? readCommittedReleasePackageJson(projectRoot)
+		: readWorkingTreeReleasePackageJson(projectRoot);
 
 function encodeRegistryPackagePath(packageName) {
 	const encoded = encodeURIComponent(packageName);

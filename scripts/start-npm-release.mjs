@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-	findAllowedReleaseStatusEntries,
-	findBlockingReleaseStatusEntries,
-} from './lib/release-working-tree-policy.mjs';
+import { readCommittedReleasePackageJson } from './lib/release-package-identity.mjs';
+import { evaluateReleaseWorkingTree } from './lib/release-working-tree-policy.mjs';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const args = new Set(process.argv.slice(2));
@@ -40,18 +38,40 @@ function run(command, commandArgs, options = {}) {
 	return { status: result.status ?? 1, stdout, stderr };
 }
 
-function requireCleanGitTree() {
+function warnAboutWorkingTreeChanges() {
 	const status = run('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], {
 		preserveStdout: true,
 	}).stdout;
-	const blockingEntries = findBlockingReleaseStatusEntries(status);
-	if (blockingEntries.length > 0) {
-		fail(`Refusing to start npm release with a dirty working tree:\n${blockingEntries.join('\n')}`);
+	const policy = evaluateReleaseWorkingTree(status);
+	if (policy.hasChanges) {
+		console.warn(
+			'Proceeding from committed HEAD while leaving staged, unstaged, and untracked working-tree changes outside the release.',
+		);
+	}
+}
+
+function requireNoGitOperationInProgress() {
+	const markers = [
+		['merge', 'MERGE_HEAD'],
+		['rebase', 'rebase-merge'],
+		['rebase', 'rebase-apply'],
+		['cherry-pick', 'CHERRY_PICK_HEAD'],
+		['revert', 'REVERT_HEAD'],
+		['bisect', 'BISECT_LOG'],
+		['sequencer', 'sequencer'],
+	];
+	const activeOperations = new Set();
+
+	for (const [operation, marker] of markers) {
+		const gitPath = run('git', ['rev-parse', '--git-path', marker]).stdout;
+		const absoluteGitPath = path.isAbsolute(gitPath) ? gitPath : path.resolve(projectRoot, gitPath);
+		if (existsSync(absoluteGitPath)) {
+			activeOperations.add(operation);
+		}
 	}
 
-	const allowedEntries = findAllowedReleaseStatusEntries(status);
-	if (allowedEntries.length > 0) {
-		console.warn('Proceeding with the unstaged documentation review queue change left outside the release commit.');
+	if (activeOperations.size > 0) {
+		fail(`Refusing to release while Git operation(s) are in progress: ${[...activeOperations].join(', ')}.`);
 	}
 }
 
@@ -109,36 +129,30 @@ function pushReleaseTag(tagName, head) {
 	}
 }
 
-function readPackageJson() {
-	const packageJson = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
-
-	if (typeof packageJson.name !== 'string' || packageJson.name.length === 0) {
-		fail('package.json must define a package name.');
-	}
-
-	if (typeof packageJson.version !== 'string' || packageJson.version.length === 0) {
-		fail('package.json must define a package version.');
-	}
-
-	return packageJson;
-}
-
 if (!args.has('--yes')) {
 	fail('Refusing to start npm release without --yes. Use the configured release_npm_publish intent.');
 }
 
-const packageJson = readPackageJson();
-const tagName = `v${packageJson.version}`;
-
-if (!/^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(tagName)) {
-	fail(`package.json version "${packageJson.version}" is not a valid release tag version.`);
-}
-
 try {
-	requireCleanGitTree();
+	warnAboutWorkingTreeChanges();
+	requireNoGitOperationInProgress();
 	const head = requireMainAtOrigin();
+	const packageJson = readCommittedReleasePackageJson(projectRoot, head);
+	const tagName = `v${packageJson.version}`;
+
+	if (!/^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(tagName)) {
+		fail(`${head}:package.json version "${packageJson.version}" is not a valid release tag version.`);
+	}
+
 	requireTagAvailable(tagName);
-	run('node', ['scripts/check-npm-release-version.mjs', '--expect-available']);
+	run('node', [
+		'scripts/check-npm-release-version.mjs',
+		'--expect-available',
+		'--package-name',
+		packageJson.name,
+		'--package-version',
+		packageJson.version,
+	]);
 	pushReleaseTag(tagName, head);
 	console.log(`Pushed release tag ${tagName} at ${head}. The publish-npm workflow should publish ${packageJson.name}@${packageJson.version} and create the GitHub Release.`);
 } catch (error) {

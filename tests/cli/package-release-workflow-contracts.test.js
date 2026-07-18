@@ -15,9 +15,9 @@ import {
 	smokePublishedPackage,
 } from '../../scripts/lib/npm-release-install-smoke.mjs';
 import {
-	findAllowedReleaseStatusEntries,
-	findBlockingReleaseStatusEntries,
+	evaluateReleaseWorkingTree,
 } from '../../scripts/lib/release-working-tree-policy.mjs';
+import { readCommittedReleasePackageJson } from '../../scripts/lib/release-package-identity.mjs';
 
 import {
 	assert,
@@ -166,6 +166,7 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /scripts\/start-npm-release\.mjs/u);
 	assert.match(sourceCommandContract, /--expect-available/u);
 	assert.match(sourceCommandContract, /--expect-published/u);
+	assert.match(sourceCommandContract, /--from-head/u);
 	assert.match(sourceCommandContract, /network = true/u);
 	assert.match(sourceCommandContract, /destructive = false/u);
 	assert.match(sourceCommandContract, /\[resources\.npm_release_channel\]/u);
@@ -173,9 +174,12 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
 	assert.match(startNpmReleaseScript, /Refusing to start npm release without --yes/u);
 	assert.match(startNpmReleaseScript, /git', \['status', '--porcelain=v1', '-z', '--untracked-files=all'\]/u);
-	assert.match(startNpmReleaseScript, /findBlockingReleaseStatusEntries/u);
+	assert.match(startNpmReleaseScript, /evaluateReleaseWorkingTree/u);
+	assert.match(startNpmReleaseScript, /requireNoGitOperationInProgress/u);
+	assert.match(startNpmReleaseScript, /readCommittedReleasePackageJson/u);
 	assert.match(startNpmReleaseScript, /git', \['ls-remote', 'origin', 'refs\/heads\/main'\]/u);
-	assert.match(startNpmReleaseScript, /scripts\/check-npm-release-version\.mjs', '--expect-available'/u);
+	assert.match(startNpmReleaseScript, /'--package-name'/u);
+	assert.match(startNpmReleaseScript, /'--package-version'/u);
 	assert.match(startNpmReleaseScript, /git', \['tag', tagName, head\]/u);
 	assert.match(startNpmReleaseScript, /git', \['push', 'origin', `refs\/tags\/\$\{tagName\}`\]/u);
 	assert.doesNotMatch(startNpmReleaseScript, /gh', \['release', 'create'/u);
@@ -188,20 +192,45 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(guardedStart.stderr, /Refusing to start npm release without --yes/u);
 });
 
-test('npm release working-tree policy permits only an unstaged documentation review queue update', () => {
-	const allowedStatus = ' M .mustflow/review/docs.toml\0';
-	assert.deepEqual(findAllowedReleaseStatusEntries(allowedStatus), [' M .mustflow/review/docs.toml']);
-	assert.deepEqual(findBlockingReleaseStatusEntries(allowedStatus), []);
+test('npm release working-tree policy leaves all index and worktree changes outside the committed release', () => {
+	assert.deepEqual(evaluateReleaseWorkingTree(''), {
+		hasChanges: false,
+		releaseSource: 'committed-head',
+	});
 
 	for (const [name, status] of [
+		['unstaged review queue', ' M .mustflow/review/docs.toml\0'],
 		['staged review queue', 'M  .mustflow/review/docs.toml\0'],
 		['deleted review queue', ' D .mustflow/review/docs.toml\0'],
 		['modified source', ' M scripts/start-npm-release.mjs\0'],
 		['untracked source', '?? release-notes.tmp\0'],
 		['rename record', 'R  moved-review.toml\0.mustflow/review/docs.toml\0'],
 	]) {
-		assert.notEqual(findBlockingReleaseStatusEntries(status).length, 0, name);
+		assert.deepEqual(evaluateReleaseWorkingTree(status), {
+			hasChanges: true,
+			releaseSource: 'committed-head',
+		}, name);
 	}
+});
+
+test('npm release metadata is read from an explicit immutable Git revision', () => {
+	const calls = [];
+	const packageJson = readCommittedReleasePackageJson('C:\\fixture', '0123456789abcdef', {
+		spawnSync(command, args, options) {
+			calls.push({ command, args, options });
+			return {
+				status: 0,
+				stdout: '{"name":"mustflow","version":"9.9.9"}\n',
+				stderr: '',
+			};
+		},
+	});
+
+	assert.deepEqual(packageJson, { name: 'mustflow', version: '9.9.9' });
+	assert.equal(calls.length, 1);
+	assert.equal(calls[0].command, 'git');
+	assert.deepEqual(calls[0].args, ['show', '0123456789abcdef:package.json']);
+	assert.equal(calls[0].options.cwd, 'C:\\fixture');
 });
 
 test('published npm install smoke verifies the isolated user installation path', () => {
@@ -221,6 +250,7 @@ test('published npm install smoke verifies the isolated user installation path',
 
 	assert.match(releaseInstallSmokeScript, /smokePublishedPackage/u);
 	assert.match(releaseInstallSmokeScript, /formatSmokeError/u);
+	assert.match(releaseInstallSmokeScript, /readCommittedReleasePackageJson/u);
 });
 
 test('published npm smoke executes both public aliases and a strict consumer workflow', async () => {

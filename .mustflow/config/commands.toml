@@ -611,8 +611,8 @@ required_after = ["release_risk", "before_publish"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Verify the package.json version is not already published to the npm registry before creating a release tag."
-argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-available"]
+description = "Verify the committed HEAD package version is not already published to the npm registry before creating a release tag."
+argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-available", "--from-head"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
@@ -626,7 +626,7 @@ required_after = ["release_risk", "before_publish", "package_metadata_change"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Push the release tag for package.json version, triggering the trusted npm publish workflow and GitHub Release creation."
+description = "Push the committed HEAD package version tag, leaving concurrent working-tree changes outside the trusted npm publish workflow and GitHub Release."
 argv = ["node", "scripts/start-npm-release.mjs", "--yes"]
 cwd = "."
 timeout_seconds = 120
@@ -643,8 +643,8 @@ required_after = ["release_risk", "before_publish"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Verify the package.json version exists in the npm registry after the publish workflow completes."
-argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-published"]
+description = "Verify the committed HEAD package version exists in the npm registry after the publish workflow completes."
+argv = ["node", "scripts/check-npm-release-version.mjs", "--expect-published", "--from-head"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
@@ -658,8 +658,8 @@ required_after = ["release_risk"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Install the exact package.json version from npm into an isolated OS temporary project, verify both CLI bins, initialize mustflow, run a strict check, and remove the project."
-argv = ["node", "scripts/smoke-npm-release-install.mjs"]
+description = "Install the exact committed HEAD package version from npm into an isolated OS temporary project, verify both CLI bins, initialize mustflow, run a strict check, and remove the project."
+argv = ["node", "scripts/smoke-npm-release-install.mjs", "--from-head"]
 cwd = "."
 timeout_seconds = 300
 stdin = "closed"
@@ -1326,6 +1326,149 @@ writes = []
 network = true
 destructive = false
 approval_actions = ["git_push"]
+
+[intents.release_stage_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed committed-HEAD release policy, its contracts, and synchronized 2.116.4 release metadata."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "package.json",
+  "scripts/check-npm-release-version.mjs",
+  "scripts/lib/release-package-identity.mjs",
+  "scripts/lib/release-working-tree-policy.mjs",
+  "scripts/smoke-npm-release-install.mjs",
+  "scripts/start-npm-release.mjs",
+  "templates/default/manifest.toml",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/package-release-workflow-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.116.4 release before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.116.4 committed-HEAD release policy with a fixed evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "🐛 fix(release): isolate releases from working tree",
+  "-m",
+  "Allow staged, unstaged, untracked, renamed, and deleted local work while deriving immutable release identity only from the committed HEAD snapshot and still rejecting active Git operations or remote-main drift.",
+  "-m",
+  "Validation: mf run test_related; mf run test_release; mf run lint; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.116.4 release-policy commit from local main to origin main."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.116.4 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_main_runs_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.116.4 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "30", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_publish_runs_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.116.4 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_release_v2_116_4]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.116.4 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.116.4", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
 
 [intents.git_commit]
 status = "manual_only"
