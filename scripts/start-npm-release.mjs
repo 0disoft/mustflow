@@ -4,6 +4,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+	findAllowedReleaseStatusEntries,
+	findBlockingReleaseStatusEntries,
+} from './lib/release-working-tree-policy.mjs';
+
 const projectRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const args = new Set(process.argv.slice(2));
 
@@ -24,7 +29,7 @@ function run(command, commandArgs, options = {}) {
 		throw result.error;
 	}
 
-	const stdout = result.stdout.trim();
+	const stdout = options.preserveStdout ? result.stdout : result.stdout.trim();
 	const stderr = result.stderr.trim();
 
 	if (!options.allowFailure && result.status !== 0) {
@@ -36,9 +41,17 @@ function run(command, commandArgs, options = {}) {
 }
 
 function requireCleanGitTree() {
-	const status = run('git', ['status', '--short']).stdout;
-	if (status.length > 0) {
-		fail(`Refusing to start npm release with a dirty working tree:\n${status}`);
+	const status = run('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], {
+		preserveStdout: true,
+	}).stdout;
+	const blockingEntries = findBlockingReleaseStatusEntries(status);
+	if (blockingEntries.length > 0) {
+		fail(`Refusing to start npm release with a dirty working tree:\n${blockingEntries.join('\n')}`);
+	}
+
+	const allowedEntries = findAllowedReleaseStatusEntries(status);
+	if (allowedEntries.length > 0) {
+		console.warn('Proceeding with the unstaged documentation review queue change left outside the release commit.');
 	}
 }
 

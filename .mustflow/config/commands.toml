@@ -1243,6 +1243,90 @@ writes = []
 network = true
 destructive = false
 
+[intents.release_stage_v2_116_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed npm release working-tree policy, its contracts, and synchronized 2.116.3 release metadata."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "package.json",
+  "scripts/lib/release-working-tree-policy.mjs",
+  "scripts/start-npm-release.mjs",
+  "templates/default/manifest.toml",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/package-release-workflow-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_116_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.116.3 release before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_116_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.116.3 npm release working-tree policy with a fixed evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "fix(release): allow unstaged docs review queue",
+  "-m",
+  "Permit only the unstaged documentation review queue during npm release while preserving every other working-tree cleanliness guard.",
+  "-m",
+  "Validation: mf run test_related; mf run test_release; mf run lint; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_116_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.116.3 release-policy commit from local main to origin main."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
 [intents.git_commit]
 status = "manual_only"
 description = "Create an unscoped Git commit."

@@ -14,6 +14,10 @@ import {
 	createNpmRunner,
 	smokePublishedPackage,
 } from '../../scripts/lib/npm-release-install-smoke.mjs';
+import {
+	findAllowedReleaseStatusEntries,
+	findBlockingReleaseStatusEntries,
+} from '../../scripts/lib/release-working-tree-policy.mjs';
 
 import {
 	assert,
@@ -168,7 +172,8 @@ test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /lock = "npm_release_channel"/u);
 	assert.match(sourceCommandContract, /MUSTFLOW_NPM_REGISTRY_URL/u);
 	assert.match(startNpmReleaseScript, /Refusing to start npm release without --yes/u);
-	assert.match(startNpmReleaseScript, /git', \['status', '--short'\]/u);
+	assert.match(startNpmReleaseScript, /git', \['status', '--porcelain=v1', '-z', '--untracked-files=all'\]/u);
+	assert.match(startNpmReleaseScript, /findBlockingReleaseStatusEntries/u);
 	assert.match(startNpmReleaseScript, /git', \['ls-remote', 'origin', 'refs\/heads\/main'\]/u);
 	assert.match(startNpmReleaseScript, /scripts\/check-npm-release-version\.mjs', '--expect-available'/u);
 	assert.match(startNpmReleaseScript, /git', \['tag', tagName, head\]/u);
@@ -181,6 +186,22 @@ test('source repository declares bounded npm registry release checks', () => {
 	});
 	assert.equal(guardedStart.status, 1);
 	assert.match(guardedStart.stderr, /Refusing to start npm release without --yes/u);
+});
+
+test('npm release working-tree policy permits only an unstaged documentation review queue update', () => {
+	const allowedStatus = ' M .mustflow/review/docs.toml\0';
+	assert.deepEqual(findAllowedReleaseStatusEntries(allowedStatus), [' M .mustflow/review/docs.toml']);
+	assert.deepEqual(findBlockingReleaseStatusEntries(allowedStatus), []);
+
+	for (const [name, status] of [
+		['staged review queue', 'M  .mustflow/review/docs.toml\0'],
+		['deleted review queue', ' D .mustflow/review/docs.toml\0'],
+		['modified source', ' M scripts/start-npm-release.mjs\0'],
+		['untracked source', '?? release-notes.tmp\0'],
+		['rename record', 'R  moved-review.toml\0.mustflow/review/docs.toml\0'],
+	]) {
+		assert.notEqual(findBlockingReleaseStatusEntries(status).length, 0, name);
+	}
 });
 
 test('published npm install smoke verifies the isolated user installation path', () => {
