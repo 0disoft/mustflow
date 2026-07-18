@@ -241,6 +241,32 @@ suggests_adjuncts = ["transaction-boundary-integrity-review", "queue-processing-
 positive_terms = ["after-commit", "commit-publish", "dual-write", "outbox", "publish", "reconcile", "reconciliation", "transactional-outbox"]
 negative_terms = ["approval", "budget", "child", "credit", "ledger", "llm", "policy", "supervisor", "tool"]
 
+[routes."two-phase-transition-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 84
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."two-phase-transition-integrity-review".dependencies]
+suggests_adjuncts = ["idempotency-integrity-review", "dual-write-consistency", "execution-ledger-integrity-review"]
+
+[routes."two-phase-transition-integrity-review".contexts]
+positive_terms = ["activate", "admission", "commit", "cutover", "decision", "epoch", "fencing", "generation", "handoff", "in-doubt", "lease", "owner", "prepare", "promote", "protocol", "reconcile", "session", "transition", "unknown-outcome"]
+negative_terms = ["database-2pc-only", "llm", "prompt", "tool-call"]
+
+[routes."session-handoff-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 86
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."session-handoff-integrity-review".dependencies]
+suggests_adjuncts = ["two-phase-transition-integrity-review", "idempotency-integrity-review", "execution-ledger-integrity-review", "dual-write-consistency"]
+
+[routes."session-handoff-integrity-review".contexts]
+positive_terms = ["agent-handoff", "application-ack", "auth-grant", "bidirectional-cursor", "command-ledger", "connection-generation", "conversation-cursor", "drained-redirector", "handoff-envelope", "handoff-reconciler", "handoff-ticket", "make-before-break", "owner-epoch", "quiesce", "resume-ticket", "resume-too-old", "session-handoff", "session-migration", "shadow-target", "split-brain", "stale-writer", "state-hash", "stream-handoff", "target-acceptance", "tombstone", "tool-ledger", "vector-cursor"]
+negative_terms = ["design-handoff", "implementation-plan", "private-agent-files", "read-only-transcript", "restart-summary", "stateless-request"]
+
 [routes."structured-concurrency-supervision-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -502,6 +528,62 @@ route_type = "adjunct"
 priority = 79
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "data_change"]
 
+[routes."parser-engineering-review".contexts]
+positive_terms = ["analysis-invalidation", "ast-lowering", "ast-serialization", "ast-verifier", "concrete-syntax-tree", "cst", "error-node", "hir-lowering", "lossless-cst", "missing-token", "node-id", "origin-map", "parser", "persistent-node-id", "rewrite-termination", "source-trivia", "surface-ast", "syntax-rewriter", "syntax-tree", "tree-transformer", "tree-visitor", "trivia-attachment", "wire-schema"]
+negative_terms = ["structured-config-parse-only"]
+
+[routes."name-resolution-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."name-resolution-integrity-review".dependencies]
+suggests_adjuncts = ["incident-triage-review", "compiler-engineering-review", "interpreter-engineering-review", "dependency-reality-check", "module-boundary-review", "cache-integrity-review", "observability-debuggability-review"]
+
+[routes."name-resolution-integrity-review".contexts]
+positive_terms = ["argument-dependent-lookup", "authoritative-dns", "bazel-repository-mapping", "class-loader", "cmake-find-package", "conditional-exports", "connection-pool-dns", "container-dns", "delegation", "dns-cache", "dns64", "dnssec", "doh", "edns", "extension-method", "glue-record", "gradle-variant", "happy-eyeballs", "headless-service", "https-record", "import-resolution", "kubernetes-dns", "loader-identity", "macro-hygiene", "module-cache", "module-resolution", "name-resolution", "namespace-package", "ndots", "negative-dns-cache", "nodata", "nss-state-machine", "nxdomain", "package-exports", "peer-dependency-context", "proxy-dns", "recursive-dns", "resolution-trace", "resolver-api", "resolver-path", "scope-shadowing", "search-suffix", "serve-stale", "split-dns", "svcb", "temporal-dead-zone", "ttl-cutover", "two-phase-lookup", "variant-selection"]
+negative_terms = ["dependency-install-only", "dns-record-authoring-only", "domain-registration-only", "linker-symbol-only", "route-matching-only"]
+
+[routes."compiler-engineering-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."compiler-engineering-review".dependencies]
+suggests_adjuncts = ["parser-engineering-review", "formal-verification-review", "fuzz-harness-review", "race-condition-review", "memory-lifetime-review", "test-design-guard"]
+
+[routes."compiler-engineering-review".contexts]
+positive_terms = ["abi", "allocation-identity", "analysis-generation", "analysis-invalidation", "analysis-preservation", "archive-extraction", "assembler", "binary-export", "binary-id", "borrow-checker", "build-id", "canonical-form", "capture-analysis", "codegen", "comdat", "compiler", "compiler-testing", "crash-dump", "crash-symbolication", "critical-edge", "data-layout", "dead-code-elimination", "debug-symbol", "diagnostic-span", "differential-testing", "dominance", "dsym", "dwarf", "dynamic-loading", "dynamic-symbol", "effect-system", "elf", "exceptional-edge", "export-allowlist", "fact-provenance", "feature-interaction", "gnu-ld", "hir", "identical-code-folding", "import-library", "interposition", "ir", "ir-layer", "lcssa", "lifetime-epoch", "link-map", "link-order", "linker", "lir", "load-address", "loader-binding", "lowering-legality", "lto", "mach-o", "machine-ir", "mangling", "memoryssa", "metamorphic-testing", "mir", "miscompile", "object-format", "optimization-pass", "ownership-token", "pass-ordering", "pdb", "pe-coff", "phi-node", "plugin-abi", "plugin-loader", "pointer-provenance", "progressive-lowering", "property-testing", "relocation", "return-address", "section-gc", "section-reachability", "sealed-block", "semantic-refinement", "semantic-type", "source-location", "split-dwarf", "ssa", "ssa-destruction", "staged-verifier", "static-link", "storage-type", "strip-symbols", "symbol-server", "symbol-table", "symbol-versioning", "symbol-visibility", "thinlto", "transformation-coverage", "typed-hir", "unwind", "unwind-info", "verifier", "well-defined-program", "wrong-code"]
+negative_terms = ["application-build-only", "application-test-only", "css-compiler", "dependency-install", "template-compiler"]
+
+[routes."interpreter-engineering-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 80
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."interpreter-engineering-review".dependencies]
+suggests_adjuncts = ["parser-engineering-review", "compiler-engineering-review", "error-message-integrity-review", "fuzz-harness-review", "memory-lifetime-review"]
+
+[routes."interpreter-engineering-review".contexts]
+positive_terms = ["ast-interpreter", "bytecode", "closure", "completion-value", "diagnostic-fingerprint", "environment-chain", "ephemeron", "evaluation-order", "garbage-collector", "interpreter", "native-function", "opcode", "operator-dispatch", "resolver", "runtime-value", "sandbox-budget", "semantic-oracle", "upvalue", "virtual-machine", "vm", "write-barrier"]
+negative_terms = ["host-runtime-upgrade", "jvm-runtime-only", "python-runtime-only", "shell-interpreter", "template-renderer-only"]
+
+[routes."formal-verification-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."formal-verification-review".dependencies]
+suggests_adjuncts = ["race-condition-review", "two-phase-transition-integrity-review", "idempotency-integrity-review", "memory-lifetime-review", "compiler-engineering-review"]
+
+[routes."formal-verification-review".contexts]
+positive_terms = ["action-invariant", "alloy", "assumption-manifest", "bounded-model-checking", "cegar", "contract-proof", "dafny", "dpor", "fairness-assumption", "formal-verification", "hoare-logic", "ic3", "inductive-invariant", "invariant-proof", "kani", "lean", "linearizability", "liveness-proof", "model-based-testing", "model-checking", "partial-order-reduction", "proof-assistant", "proof-obligation", "prophecy-variable", "refinement-map", "rocq", "sat-unsat-unknown", "smt", "solver-theory", "state-explosion", "stuttering-refinement", "theorem-prover", "tla-plus", "trace-invariant", "total-correctness", "unsat-core", "vacuous-proof", "weak-memory-model", "weakest-precondition"]
+negative_terms = ["schema-validation-only", "static-type-check-only", "unit-test-only", "validation-library-only"]
+
 [routes."type-state-modeling-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -514,6 +596,52 @@ route_type = "adjunct"
 priority = 77
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
+[routes."race-condition-review".dependencies]
+suggests_adjuncts = ["concurrency-invariant-review", "memory-lifetime-review", "async-timing-boundary-review"]
+
+[routes."race-condition-review".contexts]
+positive_terms = ["aba", "atomic", "data-race", "happens-before", "interleaving", "linearizability", "lock-free", "race", "reclamation", "schedule", "semaphore", "thread"]
+negative_terms = ["layout", "pricing", "prompt", "translation"]
+
+[routes."input-event-synchronization-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
+
+[routes."input-event-synchronization-review".dependencies]
+suggests_adjuncts = ["race-condition-review", "input-boundary-validation-review", "performance-measurement-integrity-review"]
+
+[routes."input-event-synchronization-review".contexts]
+positive_terms = ["altgraph", "clipboard-sync", "cloud-gaming", "coalesced-event", "composition-sync", "device-input", "drag", "focus-loss", "gamepad", "ime", "input-ack", "input-epoch", "input-event", "input-jitter", "input-loop", "keyboard", "lost-capture", "mouse", "pointer", "raw-input", "remote-desktop", "remote-input", "remote-kvm", "stuck-key", "surface-epoch", "wheel"]
+negative_terms = ["form-validation", "prompt-input", "request-body", "text-field-only"]
+
+[routes."modal-loop-reentrancy-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
+
+[routes."modal-loop-reentrancy-review".dependencies]
+suggests_adjuncts = ["ui-dispatch-lifecycle-review", "input-event-synchronization-review"]
+
+[routes."modal-loop-reentrancy-review".contexts]
+positive_terms = ["deferred-delete", "dialog-exec", "dialog-generation", "dispatcher-frame", "message-pump", "modal-depth", "modal-loop", "modal-session", "nested-event-loop", "owner-disable", "process-events", "reentrancy", "run-loop-mode", "sendmessage", "sent-message", "show-dialog", "sync-ui-wait", "try-complete", "ui-deadlock"]
+negative_terms = ["accessibility-only", "css-modal", "database-deadlock", "transaction-lock"]
+
+[routes."ui-dispatch-lifecycle-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
+
+[routes."ui-dispatch-lifecycle-review".dependencies]
+suggests_adjuncts = ["race-condition-review", "async-timing-boundary-review", "modal-loop-reentrancy-review"]
+
+[routes."ui-dispatch-lifecycle-review".contexts]
+positive_terms = ["begininvoke", "blocking-queued", "bound-model", "delete-later", "dispatchqueue-main", "dispatcher", "event-loop", "gui-freeze", "invoke-required", "mainactor", "native-handle", "object-affinity", "progress-callback", "runlater", "stale-ui-callback", "sync-context", "thread-affinity", "ui-dispatch", "ui-epoch", "ui-queue", "view-lifecycle", "window-closing"]
+negative_terms = ["css-modal", "database-dispatch", "pure-render", "server-queue"]
+
 [routes."async-timing-boundary-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -525,6 +653,10 @@ category = "general_code"
 route_type = "adjunct"
 priority = 76
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
+
+[routes."concurrency-invariant-review".contexts]
+positive_terms = ["concurrency", "fencing", "lease", "leased", "owner", "shared", "stale-write", "worker"]
+negative_terms = ["css", "layout", "prompt", "translation"]
 
 [routes."failure-integrity-review"]
 category = "general_code"
@@ -573,6 +705,13 @@ category = "general_code"
 route_type = "adjunct"
 priority = 80
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."idempotency-integrity-review".dependencies]
+suggests_adjuncts = ["transaction-boundary-integrity-review", "queue-processing-integrity-review", "race-condition-review"]
+
+[routes."idempotency-integrity-review".contexts]
+positive_terms = ["aggregate-version", "dedupe", "duplicate-request", "effect-id", "fencing-token", "generation-token", "idempotency-key", "operation-id", "out-of-order", "response-replay", "sequence-gap", "stale-completion", "stale-write", "unknown-outcome"]
+negative_terms = ["database-2pc-only", "lock-order-only", "pure-read", "query-only"]
 
 [routes."retry-policy-integrity-review"]
 category = "general_code"
@@ -1087,6 +1226,12 @@ route_type = "adjunct"
 priority = 40
 applies_to_reasons = ["test_change", "behavior_change"]
 
+[routes."fuzz-harness-review"]
+category = "tests"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["test_change", "behavior_change", "performance_change", "security_change"]
+
 [routes."test-suite-performance-review"]
 category = "tests"
 route_type = "primary"
@@ -1151,6 +1296,12 @@ category = "security_privacy"
 route_type = "adjunct"
 priority = 78
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."input-boundary-validation-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "performance_change"]
 
 [routes."security-flow-review"]
 category = "security_privacy"

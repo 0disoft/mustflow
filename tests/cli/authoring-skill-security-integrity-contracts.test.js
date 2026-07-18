@@ -378,6 +378,8 @@ test('api access control review keeps API authorization object scoped', () => {
 test('file upload security review follows uploaded files through storage and serving', () => {
 	const localSkill = readText('.mustflow/skills/file-upload-security-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/file-upload-security-review/SKILL.md');
+	const localReference = readText('.mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md');
+	const templateReference = readText('templates/default/locales/en/.mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md');
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
 	const routes = readText('.mustflow/skills/routes.toml');
@@ -386,20 +388,29 @@ test('file upload security review follows uploaded files through storage and ser
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /full lifecycle/u);
 	assert.match(localSkill, /Upload entrypoint ledger/u);
 	assert.match(localSkill, /File identity ledger/u);
+	assert.match(localSkill, /Storage-access ledger/u);
 	assert.match(localSkill, /Validation ledger/u);
 	assert.match(localSkill, /Processing ledger/u);
 	assert.match(localSkill, /Serving ledger/u);
+	assert.match(localSkill, /Byte-lineage ledger/u);
+	assert.match(localSkill, /Decoded-resource ledger/u);
+	assert.match(localSkill, /Remote-fetch ledger/u);
 	assert.match(localSkill, /Draw the file lifecycle/u);
+	assert.match(localSkill, /Prove each accepted format and reachable parser is required/u);
 	assert.match(localSkill, /Treat frontend restrictions as usability only/u);
 	assert.match(localSkill, /Decode and normalize before extension checks/u);
 	assert.match(localSkill, /Prefer allowlists over blocklists/u);
 	assert.match(localSkill, /Validate the final storage name and key/u);
+	assert.match(localSkill, /opaque file id/u);
+	assert.match(localSkill, /raw local paths and object-store keys private/u);
 	assert.match(localSkill, /Prove path containment/u);
+	assert.match(localSkill, /directories are not a security boundary/u);
 	assert.match(localSkill, /Prevent overwrite and key guessing/u);
 	assert.match(localSkill, /Keep uploaded bytes outside executable web roots/u);
 	assert.match(localSkill, /Do not trust request MIME labels/u);
@@ -408,6 +419,8 @@ test('file upload security review follows uploaded files through storage and ser
 	assert.match(localSkill, /Treat SVG and HTML as active content/u);
 	assert.match(localSkill, /Treat PDF and Office documents as active document bundles/u);
 	assert.match(localSkill, /Review archive extraction as the main feature/u);
+	assert.match(localSkill, /complete bounded entry set before the first write/u);
+	assert.match(localSkill, /sparse logical size and allocated storage/u);
 	assert.match(localSkill, /Review CSV import and export for formula injection/u);
 	assert.match(localSkill, /Review remote URL import as SSRF plus upload/u);
 	assert.match(localSkill, /Keep scanner and conversion work behind a publication gate/u);
@@ -417,12 +430,32 @@ test('file upload security review follows uploaded files through storage and ser
 	assert.match(localSkill, /Enforce tenant boundaries in storage keys and metadata/u);
 	assert.match(localSkill, /Recheck authorization at download and preview time/u);
 	assert.match(localSkill, /Set response headers deliberately/u);
+	assert.match(localSkill, /Content-Disposition` filenames as presentation only/u);
+	assert.match(localSkill, /immutable build manifest/u);
 	assert.match(localSkill, /Treat filename display as an injection surface/u);
+	assert.match(localSkill, /stable policy code/u);
 	assert.match(localSkill, /Apply resource limits at every layer/u);
 	assert.match(localSkill, /Revalidate chunked and multipart uploads at assembly time/u);
 	assert.match(localSkill, /Review upload endpoint auth, CSRF, and rate limits/u);
 	assert.match(localSkill, /Check storage cleanup without breaking authorization/u);
 	assert.match(localSkill, /Test denial cases from the attacker's path/u);
+	assert.match(localSkill, /Classify each finding as publication-blocking/u);
+	assert.match(localSkill, /is not containment/u);
+	assert.match(localSkill, /immutable quarantine object version and digest/u);
+	assert.match(localSkill, /Count actual bytes emitted while streaming extraction/u);
+	assert.match(localSkill, /Bind one validated address to the socket/u);
+	assert.match(localSkill, /explicit coder or delegate allowlists/u);
+	assert.match(localReference, /Byte lineage and immutable objects/u);
+	assert.match(localReference, /Keep these identities separate/u);
+	assert.match(localReference, /Prefix agreement is not authorization/u);
+	assert.match(localReference, /Decoded media and document budgets/u);
+	assert.match(localReference, /Archive extraction ledger/u);
+	assert.match(localReference, /File-directory prefix graph/u);
+	assert.match(localReference, /Sparse entries require both logical-size and actual\s+storage budgets/u);
+	assert.match(localReference, /Remote-fetch SSRF ledger/u);
+	assert.match(localReference, /Layer responsibility handoff/u);
+	assert.match(localReference, /UTF-8 `filename\*`/u);
+	assert.match(localReference, /Denial and differential test matrix/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/file-upload-security-review\/SKILL\.md/u);
 	assert.match(skillIndex, /file-upload-security triage/u);
 	assert.match(skillIndex, /happy-path-only upload tests/u);
@@ -442,9 +475,10 @@ test('file upload security review follows uploaded files through storage and ser
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/SKILL\.md"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/references\/file-upload-parser-ssrf-resource-checklist\.md"/u);
 	assert.match(manifest, /"file-upload-security-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 3/u);
 });
 
 test('security flow review traces source-to-sink security boundaries', () => {

@@ -728,6 +728,188 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
+[intents.release_stage_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed systems-integrity skill suite, synchronized templates, contracts, and 2.116.2 release metadata."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/compiler-engineering-review",
+  ".mustflow/skills/cross-platform-filesystem-safety",
+  ".mustflow/skills/file-upload-security-review",
+  ".mustflow/skills/formal-verification-review",
+  ".mustflow/skills/fuzz-harness-review",
+  ".mustflow/skills/idempotency-integrity-review",
+  ".mustflow/skills/input-boundary-validation-review",
+  ".mustflow/skills/input-event-synchronization-review",
+  ".mustflow/skills/interpreter-engineering-review",
+  ".mustflow/skills/modal-loop-reentrancy-review",
+  ".mustflow/skills/name-resolution-integrity-review",
+  ".mustflow/skills/parser-engineering-review",
+  ".mustflow/skills/race-condition-review",
+  ".mustflow/skills/session-handoff-integrity-review",
+  ".mustflow/skills/two-phase-transition-integrity-review",
+  ".mustflow/skills/ui-dispatch-lifecycle-review",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "package.json",
+  "templates/default/i18n.toml",
+  "templates/default/manifest.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/locales/en/.mustflow/skills/compiler-engineering-review",
+  "templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety",
+  "templates/default/locales/en/.mustflow/skills/file-upload-security-review",
+  "templates/default/locales/en/.mustflow/skills/formal-verification-review",
+  "templates/default/locales/en/.mustflow/skills/fuzz-harness-review",
+  "templates/default/locales/en/.mustflow/skills/idempotency-integrity-review",
+  "templates/default/locales/en/.mustflow/skills/input-boundary-validation-review",
+  "templates/default/locales/en/.mustflow/skills/input-event-synchronization-review",
+  "templates/default/locales/en/.mustflow/skills/interpreter-engineering-review",
+  "templates/default/locales/en/.mustflow/skills/modal-loop-reentrancy-review",
+  "templates/default/locales/en/.mustflow/skills/name-resolution-integrity-review",
+  "templates/default/locales/en/.mustflow/skills/parser-engineering-review",
+  "templates/default/locales/en/.mustflow/skills/race-condition-review",
+  "templates/default/locales/en/.mustflow/skills/session-handoff-integrity-review",
+  "templates/default/locales/en/.mustflow/skills/two-phase-transition-integrity-review",
+  "templates/default/locales/en/.mustflow/skills/ui-dispatch-lifecycle-review",
+  "tests/cli/authoring-skill-agent-automation-contracts.test.js",
+  "tests/cli/authoring-skill-concurrency-contracts.test.js",
+  "tests/cli/authoring-skill-delivery-contracts.test.js",
+  "tests/cli/authoring-skill-language-contracts.test.js",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/package-template.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.116.2 release before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.116.2 systems-integrity skill suite with a fixed evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "✨ feat(skills): add systems integrity review suite",
+  "-m",
+  "Add and deepen parser, compiler, concurrency, UI lifecycle, input, filesystem, upload, fuzzing, and verification procedures with synchronized installed templates.",
+  "-m",
+  "Validation: mf run test_skill_contracts; mf run test; mf run mustflow_check; mf run lint; mf run docs_validate; mf run test_release",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.116.2 skill release commit from local main to origin main."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.116.2 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_main_runs_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.116.2 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "30", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_publish_runs_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.116.2 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
+[intents.release_github_release_v2_116_2]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.116.2 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.116.2", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+
 [intents.release_stage_v2_116_1]
 status = "configured"
 lifecycle = "oneshot"

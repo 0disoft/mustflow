@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 245
+revision = 277
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -191,6 +191,18 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.two-phase-transition-integrity-review"]
+source = "locales/en/.mustflow/skills/two-phase-transition-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.session-handoff-integrity-review"]
+source = "locales/en/.mustflow/skills/session-handoff-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
 [documents."skill.durable-workflow-orchestration"]
 source = "locales/en/.mustflow/skills/durable-workflow-orchestration/SKILL.md"
 source_locale = "en"
@@ -254,7 +266,7 @@ translations = {}
 [documents."skill.file-upload-security-review"]
 source = "locales/en/.mustflow/skills/file-upload-security-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.error-message-integrity-review"]
@@ -434,7 +446,31 @@ translations = {}
 [documents."skill.parser-engineering-review"]
 source = "locales/en/.mustflow/skills/parser-engineering-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 4
+translations = {}
+
+[documents."skill.name-resolution-integrity-review"]
+source = "locales/en/.mustflow/skills/name-resolution-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.compiler-engineering-review"]
+source = "locales/en/.mustflow/skills/compiler-engineering-review/SKILL.md"
+source_locale = "en"
+revision = 6
+translations = {}
+
+[documents."skill.interpreter-engineering-review"]
+source = "locales/en/.mustflow/skills/interpreter-engineering-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.formal-verification-review"]
+source = "locales/en/.mustflow/skills/formal-verification-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.type-state-modeling-review"]
@@ -446,7 +482,25 @@ translations = {}
 [documents."skill.race-condition-review"]
 source = "locales/en/.mustflow/skills/race-condition-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
+translations = {}
+
+[documents."skill.input-event-synchronization-review"]
+source = "locales/en/.mustflow/skills/input-event-synchronization-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.modal-loop-reentrancy-review"]
+source = "locales/en/.mustflow/skills/modal-loop-reentrancy-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.ui-dispatch-lifecycle-review"]
+source = "locales/en/.mustflow/skills/ui-dispatch-lifecycle-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.async-timing-boundary-review"]
@@ -506,7 +560,7 @@ translations = {}
 [documents."skill.idempotency-integrity-review"]
 source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.retry-policy-integrity-review"]
@@ -1051,7 +1105,7 @@ translations = {}
 [documents."skill.cross-platform-filesystem-safety"]
 source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 9
 translations = {}
 
 [documents."skill.pure-core-imperative-shell"]
@@ -1321,6 +1375,18 @@ translations = {}
 source = "locales/en/.mustflow/skills/test-design-guard/SKILL.md"
 source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.fuzz-harness-review"]
+source = "locales/en/.mustflow/skills/fuzz-harness-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.input-boundary-validation-review"]
+source = "locales/en/.mustflow/skills/input-boundary-validation-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.test-maintenance"]

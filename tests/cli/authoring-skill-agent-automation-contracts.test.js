@@ -264,6 +264,12 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	const filesystemTemplate = readText(
 		'templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md',
 	);
+	const filesystemReference = readText(
+		'.mustflow/skills/cross-platform-filesystem-safety/references/path-containment-handle-checklist.md',
+	);
+	const filesystemReferenceTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety/references/path-containment-handle-checklist.md',
+	);
 	const filePathSkill = readText('.mustflow/skills/file-path-cross-platform-change/SKILL.md');
 	const filePathTemplate = readText(
 		'templates/default/locales/en/.mustflow/skills/file-path-cross-platform-change/SKILL.md',
@@ -277,6 +283,7 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.equal(commandContractSkill, commandContractTemplate);
 	assert.equal(cliOutputSkill, cliOutputTemplate);
 	assert.equal(filesystemSkill, filesystemTemplate);
+	assert.equal(filesystemReference, filesystemReferenceTemplate);
 	assert.equal(filePathSkill, filePathTemplate);
 	assert.equal(lineEndingSkill, lineEndingTemplate);
 	assert.equal(processSkill, processTemplate);
@@ -329,6 +336,27 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.match(filesystemSkill, /app-owned staging directory/u);
 	assert.match(filesystemSkill, /Do not delete a user-selected final destination/u);
 	assert.match(filesystemSkill, /inotify watch limit rather than a full disk/u);
+	assert.match(filesystemSkill, /opened object capability and its verified identity/u);
+	assert.match(filesystemSkill, /decode that component exactly once/u);
+	assert.match(filesystemSkill, /RESOLVE_BENEATH/u);
+	assert.match(filesystemSkill, /O_NOFOLLOW.*only the final component/u);
+	assert.match(filesystemSkill, /same HANDLE/u);
+	assert.match(filesystemSkill, /hard links separately from symlinks/u);
+	assert.match(filesystemSkill, /queue delay turns a path string into stale authority/u);
+	assert.match(filesystemSkill, /prior opened-handle check alone/u);
+	assert.match(filesystemSkill, /Go `os\.Root` or `os\.OpenInRoot`/u);
+	assert.match(filesystemSkill, /Java `SecureDirectoryStream`/u);
+	assert.match(filesystemSkill, /complete entry set before the first write/u);
+	assert.match(filesystemSkill, /file-versus-directory prefix conflicts/u);
+	assert.match(filesystemSkill, /sparse logical-size exhaustion/u);
+	assert.match(filesystemReference, /raw bytes -> protocol parse/u);
+	assert.match(filesystemReference, /Windows does not have a drop-in `openat2` equivalent/u);
+	assert.match(filesystemReference, /A pathname is a mutable locator, not durable authority/u);
+	assert.match(filesystemReference, /single permitted counterexample falsifies/u);
+	assert.match(filesystemReference, /Runtime root-capability APIs/u);
+	assert.match(filesystemReference, /Unix mount and bind-mount traversal is not blocked/u);
+	assert.match(filesystemReference, /filesystem provider/u);
+	assert.match(filesystemReference, /archive-supplied uid/u);
 	assert.match(filePathSkill, /clone or checkout destinations/u);
 	assert.match(filePathSkill, /repository clone or checkout destinations/u);
 	assert.match(filePathSkill, /path_too_long/u);

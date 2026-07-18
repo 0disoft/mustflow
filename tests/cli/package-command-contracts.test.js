@@ -203,14 +203,14 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 test('Git write contracts require explicit approval and bounded release commands', () => {
 	const templateCommitIntent = /\[intents\.git_commit\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
 	const templatePushIntent = /\[intents\.git_push\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
-	const stageIntent = /\[intents\.release_stage_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const commitIntent = /\[intents\.release_commit_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const pushIntent = /\[intents\.release_push_main_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const githubAuthIntent = /\[intents\.release_github_auth_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const githubMainRunsIntent = /\[intents\.release_github_main_runs_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const githubPublishRunsIntent = /\[intents\.release_github_publish_runs_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const githubReleaseIntent = /\[intents\.release_github_release_v2_116_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stageIntent = /\[intents\.release_stage_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubAuthIntent = /\[intents\.release_github_auth_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubMainRunsIntent = /\[intents\.release_github_main_runs_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubPublishRunsIntent = /\[intents\.release_github_publish_runs_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubReleaseIntent = /\[intents\.release_github_release_v2_116_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 
 	assert.match(templateCommitIntent, /status = "manual_only"/u);
 	assert.match(templateCommitIntent, /approval_actions = \["git_commit"\]/u);
@@ -220,15 +220,22 @@ test('Git write contracts require explicit approval and bounded release commands
 
 	assert.match(stageIntent, /status = "configured"/u);
 	assert.match(stageIntent, /argv = \[\s*"git",\s*"add",\s*"--"/u);
-	assert.match(stageIntent, /"\.mustflow\/skills\/parser-engineering-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/parser-engineering-review"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/session-handoff-integrity-review"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/file-upload-security-review"/u);
 	assert.match(stageIntent, /"CHANGELOG\.md"/u);
 	assert.match(stageIntent, /"REPO_FLOW\.md"/u);
+	assert.match(stageIntent, /"REPO_MAP\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
 	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
 	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
+	assert.doesNotMatch(stageIntent, /"\.mustflow\/review\/docs\.toml"/u);
 	assert.match(stagedDiffIntent, /argv = \["git", "diff", "--cached", "--name-status"\]/u);
 	assert.match(stagedDiffIntent, /writes = \[\]/u);
 	assert.match(stagedDiffIntent, /network = false/u);
-	assert.match(commitIntent, /"✨ feat\(skills\): add parser and durable execution reviews"/u);
+	assert.match(commitIntent, /"✨ feat\(skills\): add systems integrity review suite"/u);
 	assert.match(commitIntent, /"Validation: mf run test_skill_contracts;/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
@@ -237,7 +244,7 @@ test('Git write contracts require explicit approval and bounded release commands
 	assert.match(githubAuthIntent, /argv = \["gh", "auth", "status"\]/u);
 	assert.match(githubMainRunsIntent, /"gh", "run", "list", "--repo", "0disoft\/mustflow", "--branch", "main"/u);
 	assert.match(githubPublishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
-	assert.match(githubReleaseIntent, /"gh", "release", "view", "v2\.116\.0"/u);
+	assert.match(githubReleaseIntent, /"gh", "release", "view", "v2\.116\.2"/u);
 	for (const githubIntent of [githubAuthIntent, githubMainRunsIntent, githubPublishRunsIntent, githubReleaseIntent]) {
 		assert.match(githubIntent, /writes = \[\]/u);
 		assert.match(githubIntent, /network = true/u);

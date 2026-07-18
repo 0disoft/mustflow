@@ -115,6 +115,171 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
+test('ui dispatch lifecycle review rejects stale queued work on the right thread', () => {
+	const localSkill = readText('.mustflow/skills/ui-dispatch-lifecycle-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/ui-dispatch-lifecycle-review/SKILL.md',
+	);
+	const localReference = readText(
+		'.mustflow/skills/ui-dispatch-lifecycle-review/references/ui-dispatch-lifecycle-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/ui-dispatch-lifecycle-review/references/ui-dispatch-lifecycle-checklist.md',
+	);
+	const localAffinityReference = readText(
+		'.mustflow/skills/ui-dispatch-lifecycle-review/references/ui-affinity-event-loop-checklist.md',
+	);
+	const templateAffinityReference = readText(
+		'templates/default/locales/en/.mustflow/skills/ui-dispatch-lifecycle-review/references/ui-affinity-event-loop-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.equal(localAffinityReference, templateAffinityReference);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	assert.match(localSkill, /scheduling onto an affinity context/u);
+	assert.match(localSkill, /Distinguish process main thread from the toolkit's UI event thread/u);
+	assert.match(localSkill, /UI getters and bound models as affinity-sensitive/u);
+	assert.match(localSkill, /Captured context is a scheduling address/u);
+	assert.match(localSkill, /Deferred deletion posted to a stopped or never-started loop/u);
+	assert.match(localSkill, /inside the UI callback immediately before mutation/u);
+	assert.match(localSkill, /ABA cycle/u);
+	assert.match(localSkill, /Transfer immutable payload ownership/u);
+	assert.match(localSkill, /Treat native handles and visual attachment as generations/u);
+	assert.match(localSkill, /Model closing asynchronously/u);
+	assert.match(localSkill, /Keep cancellation and gate ownership local/u);
+	assert.match(localSkill, /UI Dispatch and Lifecycle Checklist/u);
+	assert.match(localSkill, /UI Affinity and Event Loop Checklist/u);
+	assert.match(localReference, /Application-time guard/u);
+	assert.match(localReference, /Ordering and ABA/u);
+	assert.match(localReference, /Cancellation ownership/u);
+	assert.match(localReference, /Closing state machine/u);
+	assert.match(localReference, /Queue pressure and progress/u);
+	assert.match(localReference, /Responsiveness diagnosis/u);
+	assert.match(localReference, /closed or retired views receive zero state mutations/u);
+	assert.match(localAffinityReference, /Owner identity/u);
+	assert.match(localAffinityReference, /Affinity creation/u);
+	assert.match(localAffinityReference, /Object graphs and bound models/u);
+	assert.match(localAffinityReference, /Await and continuation context/u);
+	assert.match(localAffinityReference, /Event-loop availability/u);
+	assert.match(localAffinityReference, /Blocking and wait graphs/u);
+	assert.match(localAffinityReference, /Deletion and shutdown/u);
+	assert.match(localAffinityReference, /every UI or bound object has one known owner/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/ui-dispatch-lifecycle-review\/SKILL\.md/u);
+	assert.match(skillIndex, /thread-affine UI objects/u);
+	assert.match(
+		routes,
+		/\[routes\."ui-dispatch-lifecycle-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 82/u,
+	);
+	assert.match(routes, /"native-handle"/u);
+	assert.match(routes, /"thread-affinity"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/ui-dispatch-lifecycle-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/ui-dispatch-lifecycle-review\/references\/ui-dispatch-lifecycle-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/ui-dispatch-lifecycle-review\/references\/ui-affinity-event-loop-checklist\.md"/u,
+	);
+	assert.match(manifest, /"ui-dispatch-lifecycle-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.ui-dispatch-lifecycle-review"\][\s\S]*?revision = 2/u,
+	);
+});
+
+
+test('modal loop reentrancy review catches nested dispatch and stale continuation', () => {
+	const localSkill = readText('.mustflow/skills/modal-loop-reentrancy-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/modal-loop-reentrancy-review/SKILL.md',
+	);
+	const localReference = readText(
+		'.mustflow/skills/modal-loop-reentrancy-review/references/modal-loop-reentrancy-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/modal-loop-reentrancy-review/references/modal-loop-reentrancy-checklist.md',
+	);
+	const localLifetimeReference = readText(
+		'.mustflow/skills/modal-loop-reentrancy-review/references/nested-modal-state-lifetime-checklist.md',
+	);
+	const templateLifetimeReference = readText(
+		'templates/default/locales/en/.mustflow/skills/modal-loop-reentrancy-review/references/nested-modal-state-lifetime-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.equal(localLifetimeReference, templateLifetimeReference);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	assert.match(localSkill, /synchronous call-stack reentrancy/u);
+	assert.match(localSkill, /Build a wait-for graph that includes delivery context/u);
+	assert.match(localSkill, /Deadlock has a closed wait cycle/u);
+	assert.match(localSkill, /Reject manual pumping as completion proof/u);
+	assert.match(localSkill, /Break the current callback stack/u);
+	assert.match(localSkill, /exactly once/u);
+	assert.match(localSkill, /Preserve capability-bearing picker results/u);
+	assert.match(localSkill, /Modal Loop and Reentrancy Checklist/u);
+	assert.match(localSkill, /Nested Modal State and Lifetime Checklist/u);
+	assert.match(localSkill, /Set the admission state before any call that may pump/u);
+	assert.match(localSkill, /TryComplete\(sessionId, result\)/u);
+	assert.match(localSkill, /hidden and closed as different lifecycles/u);
+	assert.match(localSkill, /return does not prove the caller object survived/u);
+	assert.match(localReference, /Failure classification/u);
+	assert.match(localReference, /Outer-frame inventory/u);
+	assert.match(localReference, /Framework behavior matrix/u);
+	assert.match(localReference, /Asynchronous interaction contract/u);
+	assert.match(localReference, /Tracing without observer effects/u);
+	assert.match(localReference, /Fault matrix/u);
+	assert.match(localReference, /modal depth is bounded by policy/u);
+	assert.match(localLifetimeReference, /Execution model/u);
+	assert.match(localLifetimeReference, /Session admission/u);
+	assert.match(localLifetimeReference, /Completion and commit authority/u);
+	assert.match(localLifetimeReference, /Nested ownership/u);
+	assert.match(localLifetimeReference, /Deferred destruction and shutdown/u);
+	assert.match(localLifetimeReference, /Async continuation ordering/u);
+	assert.match(localLifetimeReference, /every modal result commits at most once/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/modal-loop-reentrancy-review\/SKILL\.md/u);
+	assert.match(skillIndex, /callbacks that can reenter before the outer handler returns/u);
+	assert.match(
+		routes,
+		/\[routes\."modal-loop-reentrancy-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 83/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/modal-loop-reentrancy-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/modal-loop-reentrancy-review\/references\/modal-loop-reentrancy-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/modal-loop-reentrancy-review\/references\/nested-modal-state-lifetime-checklist\.md"/u,
+	);
+	assert.match(manifest, /"modal-loop-reentrancy-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.modal-loop-reentrancy-review"\][\s\S]*?revision = 2/u,
+	);
+});
+
+
 test('quadratic scan review catches disguised pairwise scans and indexable joins', () => {
 	const localSkill = readText('.mustflow/skills/quadratic-scan-review/SKILL.md');
 	const templateSkill = readText(
@@ -248,6 +413,12 @@ test('type state modeling review makes impossible states unrepresentable', () =>
 test('race condition review traces stale shared-state interleavings', () => {
 	const localSkill = readText('.mustflow/skills/race-condition-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/race-condition-review/SKILL.md');
+	const localReference = readText(
+		'.mustflow/skills/race-condition-review/references/race-reproduction-memory-model-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/race-condition-review/references/race-reproduction-memory-model-checklist.md',
+	);
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
 	const routes = readText('.mustflow/skills/routes.toml');
@@ -256,10 +427,11 @@ test('race condition review traces stale shared-state interleavings', () => {
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /shared state/u);
-	assert.match(localSkill, /Preserve the incident file/u);
+	assert.match(localSkill, /Classify and preserve the incident/u);
 	assert.match(localSkill, /random seed/u);
 	assert.match(localSkill, /worker or thread count/u);
 	assert.match(localSkill, /check-then-act/u);
@@ -297,16 +469,33 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(localSkill, /Fake immutable/u);
 	assert.match(localSkill, /`sleep`-based race tests/u);
 	assert.match(localSkill, /Shake the schedule, not only the load/u);
-	assert.match(localSkill, /happens-before logs/u);
+	assert.match(localSkill, /happens-before graph/u);
 	assert.match(localSkill, /race detectors, thread sanitizers/u);
+	assert.match(localSkill, /logical race condition from an unsynchronized conflicting memory access/u);
+	assert.match(localSkill, /forbidden outcome/u);
+	assert.match(localSkill, /actual decision trace/u);
+	assert.match(localSkill, /bounded per-actor event buffers/u);
+	assert.match(localSkill, /ABA and tag-wrap story/u);
+	assert.match(localSkill, /linearization point/u);
+	assert.match(localReference, /Defect classification/u);
+	assert.match(localReference, /dynamic run covers only the executed path and schedule/u);
+	assert.match(localReference, /Ownership and backing-storage map/u);
+	assert.match(localReference, /Deterministic actor harness/u);
+	assert.match(localReference, /actual decision trace[\s\S]{0,80}seed/u);
+	assert.match(localReference, /bounded per-actor ring buffer/u);
+	assert.match(localReference, /Primitive selection/u);
+	assert.match(localReference, /Publication and memory ordering/u);
+	assert.match(localReference, /CAS, ABA, and reclamation/u);
+	assert.match(localReference, /Linearizability/u);
 	assert.match(localSkill, /log order/iu);
 	assert.match(localSkill, /state-machine review/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/u);
 	assert.match(skillIndex, /race-condition triage for shared state/u);
-	assert.match(skillIndex, /stale read after await/u);
-	assert.match(skillIndex, /queue duplicate or out-of-order damage/u);
+	assert.match(skillIndex, /stale reads after `await`/u);
+	assert.match(skillIndex, /duplicate side effect/u);
 	assert.match(routes, /\[routes\."race-condition-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 77/u);
+	assert.match(routes, /positive_terms = \["aba", "atomic", "data-race", "happens-before", "interleaving", "linearizability", "lock-free", "race", "reclamation", "schedule", "semaphore", "thread"\]/u);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -319,9 +508,13 @@ test('race condition review traces stale shared-state interleavings', () => {
 		'data_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/race-condition-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/race-condition-review\/references\/race-reproduction-memory-model-checklist\.md"/u,
+	);
 	assert.match(manifest, /"race-condition-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 4/u);
 });
 
 test('async timing boundary review replaces arbitrary waits with completion signals', () => {
@@ -471,6 +664,10 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(skillIndex, /thread-local tenant leak/u);
 	assert.match(routes, /\[routes\."concurrency-invariant-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 76/u);
+	assert.match(
+		routes,
+		/\[routes\."concurrency-invariant-review"\.contexts\][\s\S]*positive_terms = \["concurrency", "fencing", "lease", "leased", "owner", "shared", "stale-write", "worker"\]/u,
+	);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -486,4 +683,87 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(manifest, /"concurrency-invariant-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 3/u);
+});
+
+test('input event synchronization review treats input as a lossy session protocol', () => {
+	const localSkill = readText('.mustflow/skills/input-event-synchronization-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/input-event-synchronization-review/SKILL.md',
+	);
+	const localReference = readText(
+		'.mustflow/skills/input-event-synchronization-review/references/input-session-state-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/input-event-synchronization-review/references/input-session-state-checklist.md',
+	);
+	const localRemoteReference = readText(
+		'.mustflow/skills/input-event-synchronization-review/references/remote-input-transport-interaction-checklist.md',
+	);
+	const templateRemoteReference = readText(
+		'templates/default/locales/en/.mustflow/skills/input-event-synchronization-review/references/remote-input-transport-interaction-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.equal(localRemoteReference, templateRemoteReference);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	assert.match(localSkill, /lossy, session-scoped state-reconstruction protocol/u);
+	assert.match(localSkill, /CancelAll\(reason, oldEpoch\)/u);
+	assert.match(localSkill, /per source and device/u);
+	assert.match(localSkill, /suppressed held state/u);
+	assert.match(localSkill, /one immutable batch per frame or simulation tick/u);
+	assert.match(localSkill, /representative coalesced event or its original samples/u);
+	assert.match(localSkill, /pointer, generation, and owner/u);
+	assert.match(localSkill, /AltGraph/u);
+	assert.match(localSkill, /Input Session State Checklist/u);
+	assert.match(localSkill, /Remote Input Transport and Interaction Checklist/u);
+	assert.match(localSkill, /Transport receipt is not application acceptance/u);
+	assert.match(localSkill, /feedback loops by provenance/u);
+	assert.match(localSkill, /Choose exactly one IME authority/u);
+	assert.match(localSkill, /capture-to-present stages/u);
+	assert.match(localReference, /Identity and order/u);
+	assert.match(localReference, /Loss and lifecycle recovery/u);
+	assert.match(localReference, /Modifier and text composition/u);
+	assert.match(localReference, /Movement and coalescing/u);
+	assert.match(localReference, /Fault matrix/u);
+	assert.match(localReference, /every active control terminates by release or cancel/u);
+	assert.match(localRemoteReference, /Envelope and semantic delivery/u);
+	assert.match(localRemoteReference, /Acknowledgment layers/u);
+	assert.match(localRemoteReference, /Origin lineage and loop prevention/u);
+	assert.match(localRemoteReference, /Reconnect and neutralization/u);
+	assert.match(localRemoteReference, /Clipboard protocol/u);
+	assert.match(localRemoteReference, /Causal diagnostics/u);
+	assert.match(localRemoteReference, /Invariants and repair/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/input-event-synchronization-review\/SKILL\.md/u);
+	assert.match(skillIndex, /input can be lost, duplicated, reordered,[^|]*merged/u);
+	assert.match(
+		routes,
+		/\[routes\."input-event-synchronization-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 82/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/input-event-synchronization-review\/SKILL\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/input-event-synchronization-review\/references\/input-session-state-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/input-event-synchronization-review\/references\/remote-input-transport-interaction-checklist\.md"/u,
+	);
+	assert.match(manifest, /"input-event-synchronization-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.input-event-synchronization-review"\][\s\S]*?revision = 2/u,
+	);
 });

@@ -50,7 +50,9 @@ const durableExecutionSkillNames = [
 	'execution-ledger-integrity-review',
 	'migration-safety-check',
 	'policy-decision-integrity-review',
+	'session-handoff-integrity-review',
 	'structured-concurrency-supervision-review',
+	'two-phase-transition-integrity-review',
 ];
 
 function collectRelativeFiles(directory) {
@@ -208,6 +210,22 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('parser-engineering-review'),
 			`${profileName} should include parser-engineering-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('name-resolution-integrity-review'),
+			`${profileName} should include name-resolution-integrity-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('compiler-engineering-review'),
+			`${profileName} should include compiler-engineering-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('interpreter-engineering-review'),
+			`${profileName} should include interpreter-engineering-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('formal-verification-review'),
+			`${profileName} should include formal-verification-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('config-env-change'),

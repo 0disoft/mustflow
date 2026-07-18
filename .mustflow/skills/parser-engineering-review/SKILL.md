@@ -2,11 +2,11 @@
 mustflow_doc: skill.parser-engineering-review
 locale: en
 canonical: true
-revision: 1
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: parser-engineering-review
-description: Apply this skill when a lexer, tokenizer, grammar, parser, CST, AST lowering pass, operator table, error recovery path, incremental parser, Unicode source-position layer, large-input path, parser resource limit, or parser fuzz harness is created, changed, reviewed, debugged, or reported.
+description: Apply this skill when a lexer, tokenizer, grammar, parser, lossless CST, surface AST, AST-to-HIR lowering pass, tree visitor, transformer or transactional rewriter, persistent node identity, tree serialization or compatibility format, tree schema or verifier, trivia or syntax-origin model, operator table, error recovery path, incremental parser, Unicode source-position layer, large-input path, parser resource limit, or parser fuzz harness is created, changed, reviewed, debugged, or reported.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -38,8 +38,11 @@ fail within bounded CPU and memory on malformed or hostile input.
 ## Use When
 
 - Lexer rules, modes, trivia, raw or cooked token values, or token spans change.
-- Grammar, parser algorithm, CST shape, AST lowering, operator precedence or associativity,
-  formatter grouping, or semantic handoff changes.
+- Grammar, parser algorithm, CST shape, surface AST schema, AST or HIR lowering, origin mapping,
+  trivia attachment, tree identity or verification, operator precedence or associativity, formatter
+  grouping, or semantic handoff changes.
+- Visitor order, immutable transformation, rewrite conflict or termination policy, snapshot handles,
+  analysis invalidation, tree serialization, schema evolution, or bounded decoding changes.
 - Invalid-input diagnostics, repair, synchronization, delimiter handling, or IDE recovery changes.
 - Incremental parsing, source buffers, changed ranges, cancellation, Unicode positions, streaming
   decode, large-file behavior, parser limits, or fuzzing needs implementation or review.
@@ -57,6 +60,8 @@ fail within bounded CPU and memory on malformed or hostile input.
 - The task only changes upload, archive, transport, or container limits outside the parser pipeline;
   use the applicable security or boundary skill.
 - The task is cosmetic formatting with no parse-print, grouping, or source-preservation contract.
+- The task only changes a general fuzz target, corpus, mutator, instrumentation, campaign, or
+  artifact-triage boundary without changing parser semantics; use `fuzz-harness-review`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -65,6 +70,14 @@ fail within bounded CPU and memory on malformed or hostile input.
   input size.
 - Lexer rules and modes, grammar or parser code, tree schemas, lowering and formatting paths, and
   current valid and invalid fixtures.
+- The tree-layer contract: information preserved or discarded by tokens, CST, surface AST, HIR or
+  core trees, side tables, and every source-aware or semantic consumer of those layers.
+- Traversal and persistence contracts when applicable: visit order and edge model, transform result
+  algebra, edit conflict and commit rules, rewrite termination, handle generations, preserved
+  analyses, artifact lifetime, wire schema, compatibility window, decode budgets, and verifier layers.
+- The token contract when lexing is in scope: canonical span unit, raw and cooked representations,
+  diagnostics and trivia ownership, longest-match and tie policy, keyword policy, literal grammar,
+  Unicode profile, lexical goals, streaming outcomes, and incremental restart state.
 - The parser role: batch compiler, editor service, protocol boundary, configuration loader, query
   engine, or another explicit consumer.
 - Existing resource limits, incremental snapshot model, diagnostics contract, fuzz harness, and
@@ -130,21 +143,69 @@ does not bound earlier transformations.
 
 ### 4. Enforce lexer progress and fidelity
 
+When lexing or tokenization is in scope, read
+[lexer-tokenization-checklist.md](references/lexer-tokenization-checklist.md) before accepting the
+token contract, implementation, or test matrix.
+
 - Require every lexer step to reach EOF, consume at least one input unit, or emit a bounded
   synthetic token while changing state. An error token must cover real input unless it represents a
   declared zero-width insertion.
-- Declare longest-match behavior and lexical precedence. Separate prefix, infix, postfix, trivia,
-  contextual keyword, and mode-specific decisions instead of relying on rule order folklore.
+- Distinguish a committed source EOF from a temporary buffer boundary. Return `NeedMoreInput` only
+  while a current candidate can still become valid and the source EOF is unknown; once EOF is
+  committed, emit one final token, one bounded malformed or unterminated token, or the terminal EOF
+  outcome. Never repeat a zero-width error or EOF token.
+- Implement longest match around the last accepting checkpoint, not the first accepting state.
+  Compare candidate extent before an explicit, stable tie priority; keep comparison end separate
+  from token end when lookahead or trailing context participates. Reject unresolved equal-length,
+  equal-priority overlaps instead of letting source declaration order become an accidental contract.
+- Scan a complete identifier before exact hard-keyword reclassification. Keep contextual keywords
+  as identifiers or parser-consumed hints, and define whether escapes, normalization, or case
+  folding affect the semantic spelling used for lookup.
+- Treat follower restrictions, such as a forbidden identifier start after a number or a dot that
+  belongs to a range or member access, as lexical boundary predicates. Preserve one bounded
+  malformed token when the language contract requires one diagnostic instead of a misleading valid
+  prefix followed by unrelated tokens.
+- Restrict candidate rules by the current lexical mode or parser-supplied lexical goal. Use stack
+  frames for nested interpolation, raw-string delimiters, comments, and embedded expressions; a
+  single inside-string boolean is not sufficient.
 - Make mode stacks and restart checkpoints serializable when incremental lexing is supported.
-- Preserve token raw spans, trivia, invalid bytes or characters, and recovery provenance needed by a
-  lossless CST and precise diagnostics.
+  Relex until both token content and restart state converge, not for a fixed line or character
+  radius.
+- Preserve token raw spans, raw spelling or source slices, cooked values or invalid states, trivia,
+  newline effects, invalid bytes or characters, token-local diagnostics, and recovery provenance
+  needed by a lossless CST and precise diagnostics.
+- Keep diagnosis separate from rendering. Record a stable code and arguments plus the opener or
+  first-fault span, related termination span, consumed recovery span, origin span, snapshot, and
+  mode. Coalesce cascades by contamination region, and validate automatic fix-its by applying them
+  to a temporary snapshot and relexing until token and outgoing-state convergence.
 
 ### 5. Separate CST, AST, and semantic meaning
 
+When CST shape, AST schema, lowering, syntax origins, tree identity, trivia attachment, or tree
+verification is in scope, read
+[cst-ast-lowering-checklist.md](references/cst-ast-lowering-checklist.md) before accepting the layer
+contract or test matrix.
+
+When visitor order, transformation, rewriting, structural sharing, persistent syntax identity,
+snapshot handles, or analysis preservation is in scope, read
+[tree-traversal-rewrite-checklist.md](references/tree-traversal-rewrite-checklist.md).
+
+When a tree or analysis snapshot is serialized, cached, exchanged across versions, migrated,
+decoded from untrusted bytes, or fuzzed as a format, read
+[tree-serialization-compatibility-checklist.md](references/tree-serialization-compatibility-checklist.md).
+
 - Let a lossless CST account for every source byte exactly once through tokens, trivia, skipped
-  input, and error nodes. Represent missing tokens as zero-width nodes at a precise insertion point.
-- Lower CST to AST in a separate pass. Preserve explicit grouping when formatting, refactoring, or
-  diagnostics depend on the user's parentheses.
+  input, and unexpected syntax. Represent missing tokens as zero-width evidence at a precise
+  insertion point without printing them as user-written text.
+- Write a CST-to-AST loss ledger. For every removed wrapper, delimiter, spelling, grouping, recovery
+  marker, or source relation, name the lowering stage and the consumer contract that permits loss.
+- Keep a surface AST distinct from HIR or core trees when source tools need user-written constructs
+  but semantic consumers need normalized forms. Preserve evaluation count, order, scope, receiver
+  identity, errors, and origins through desugaring.
+- Distinguish absent, missing, synthetic, empty, elided, and erroneous states. Never turn malformed
+  syntax into an ordinary executable name, literal, operand, or delimiter merely to complete a node.
+- Keep node identity, source span, structural hash, syntax reference, and phase side-table generation
+  separate. Run a phase-specific verifier after parsing and every material lowering step.
 - Keep name resolution, type rules, assignment validity, and other semantic rejection outside the
   syntax layer unless the grammar contract explicitly owns them.
 
@@ -201,6 +262,9 @@ Bound speculative work and memoization under the same parser budget.
 - Store enough restart state for lexical mode, delimiter or indentation context, and parser state.
   Reparse until both token content and restart state converge; a fixed character radius is not a
   correctness boundary.
+- Treat checkpoint serialization as a continuation contract: restoring a checkpoint and lexing the
+  suffix must match uninterrupted lexing. Use hashes only to reject unequal blocks quickly; verify
+  canonical token fields and complete outgoing state before declaring convergence.
 - Prefer relative subtree positions and aggregate lengths so a prefix edit does not rewrite every
   following absolute offset. Use rope, piece-tree, or equivalent chunked storage instead of forcing
   a full source string.
@@ -215,9 +279,13 @@ Bound speculative work and memoization under the same parser budget.
   long those chunks remain valid.
 - Prefer compact nodes, arenas, tree buffers, and indexed side tables over one heavyweight object per
   token or node. Measure retained source, token, tree, diagnostic, and downstream-analysis memory.
+- Define snapshot ownership so a tiny long-lived token cannot retain an obsolete multi-gigabyte
+  buffer. Keep hot token records compact, move uncommon payloads to side tables, and defer literal
+  cooking, normalization, and interning until a consumer requests them under its own budget.
 - Support partial parsing only with a declared incomplete-tree contract and cancellation behavior.
-- Measure p50, p95, and p99 edit latency, bytes reread, nodes reused, allocations, post-processing
-  time, and peak memory. Throughput on one clean file is not incremental-performance evidence.
+- Measure p50, p95, and p99 edit latency, `relexedBytesPerEdit`, reused-token or node ratio,
+  allocations per edit, diagnostic latency, post-processing time, and peak live memory. Throughput
+  on one clean file is not incremental-performance evidence.
 
 ### 12. Share one hostile-input budget
 
@@ -248,18 +316,26 @@ nested and composed parsers; do not reset counters at transformation or subgramm
 
 ### 13. Build a parser-specific test matrix
 
+When a coverage-guided fuzz harness, corpus, custom mutator, feedback signal, sanitizer matrix,
+campaign lifecycle, or artifact-triage path is in scope, apply `fuzz-harness-review` as the campaign
+owner while keeping this skill responsible for parser-specific semantics and invariants.
+
 Cover all applicable lanes:
 
 - Valid corpus, invalid corpus, and near-valid single insert, delete, and replace mutations.
 - Token-span coverage, lossless CST reconstruction, parse-print-parse grouping, and full-consumption
   properties.
+- Generated lexer-boundary matrices for operator prefixes, keyword prefixes, numeric followers,
+  dot-versus-range cases, string prefixes, raw delimiters, escapes, comment newline effects, EOF,
+  invalid encoding, and rule-order permutation where explicit priority should make order irrelevant.
 - Operator pair and triple AST matrices, postfix chains, ternary forms, comparison chains, and
   forbidden mixes.
 - Full-parse versus incremental-parse differential tests over versioned edit sequences.
 - One-shot input versus multiple chunk partitions, including boundaries inside multibyte sequences,
   escapes, numbers, comments, and delimiters.
-- Normalized differential oracles against an independent implementation when available, plus
-  round-trip and metamorphic properties that do not require identical internal trees.
+- Normalized differential oracles against an intentionally independent implementation when
+  available, plus scanner-state serialize/deserialize continuation, round-trip, and preconditioned
+  metamorphic properties that do not require identical internal trees.
 - Structured grammar-aware mutation, sanitizer or fault-injection lanes where supported, and
   boundary cases immediately below, at, and above every budget.
 - Growth-rate checks for time, work units, allocations, and retained bytes. Preserve the triggering
@@ -283,6 +359,14 @@ Unicode correctness, or hostile-input safety.
 
 - Input is consumed fully or rejected explicitly, and every preserved source unit has an accountable
   raw span.
+- CST, surface AST, HIR or core tree, origin map, and side-table information-loss boundaries are
+  explicit, and missing or erroneous syntax cannot masquerade as normal executable meaning.
+- Tree traversal, immutable transformation, transactional rewrite, persistent-handle, analysis-
+  invalidation, serialization, compatibility, bounded-decoding, and verifier contracts are explicit
+  when those surfaces exist.
+- Lexer candidate selection, tie priority, identifier and keyword spelling, literal boundaries,
+  lexical goals, newline effects, Unicode profile, and malformed-token recovery are explicit rather
+  than inherited from host-library behavior.
 - Lexer, speculation, recovery, and incremental reparsing have observable progress or budget exits.
 - Position units and conversions are explicit at every external boundary.
 - Operator grouping is defined by executable data and proven by AST-shape tests.
@@ -322,8 +406,10 @@ Unicode correctness, or hostile-input safety.
 Report:
 
 - Parser role and contract boundary.
-- Source, token, tree, operator, recovery, incremental, Unicode, storage, and budget decisions that
-  were applicable.
+- Source, token-selection, identifier and keyword, literal, mode and lexical-goal, CST, surface AST,
+  lowering, origin, traversal, transformation, rewriting, tree identity and verifier, serialization,
+  compatibility, operator, recovery, incremental, Unicode, storage, and budget decisions that were
+  applicable.
 - Files changed and compatibility behavior preserved or intentionally changed.
 - Positive, boundary, counterexample, chunking, differential, and resource-limit evidence.
 - Configured verification intents and results.

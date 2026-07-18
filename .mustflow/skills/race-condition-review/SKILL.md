@@ -2,11 +2,11 @@
 mustflow_doc: skill.race-condition-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: race-condition-review
-description: Apply this skill when code is created, changed, reviewed, or reported and shared state can be observed across interleaving execution flows, including check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, tryLock, timeout or retry behavior, cache miss fill, lazy initialization, atomics and memory ordering, database transaction races, uniqueness, distributed locks, fencing tokens, idempotency state records, atomic file creation, event or outbox ordering, inbox or dedupe consumers, per-key serialization, queue duplicates, shutdown, cancellation, timers, close/send races, shared collections, object reuse, fake immutability, sleep-based race tests, log ordering, and state-machine transitions.
+description: Apply this skill when code is created, changed, reviewed, reproduced, or reported and shared state can be observed across interleaving execution flows, including logical race versus data-race classification, forbidden-outcome assertions, deterministic schedule gates, record and replay, happens-before evidence, check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, mutex, semaphore, condition, channel, atomic and memory ordering choices, CAS and ABA, concurrent memory reclamation, linearizability, database transaction races, distributed locks, queues, shutdown, cancellation, object reuse, and schedule-sensitive tests.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -32,6 +32,10 @@ metadata:
 Find race conditions by tracing which shared facts can become stale before code acts on them.
 
 The review question is not "does this code use threads?" The stronger question is "does code read a shared value, keep a meaning in its head for more than one step, and then let another execution flow change that meaning before the action?" Race bugs appear in async servers, queues, database writes, caches, filesystems, timers, shutdown paths, and event streams even when the language runtime has a single event loop.
+
+Distinguish a logical race condition from an unsynchronized conflicting memory access. A dynamic
+data-race detector can expose the latter on executed paths without proving that higher-level
+check-then-act, ordering, ownership, or linearizability invariants are safe.
 
 <!-- mustflow-section: use-when -->
 ## Use When
@@ -62,6 +66,17 @@ The review question is not "does this code use threads?" The stronger question i
 - Idempotency and ownership rule: business idempotency key, processing/succeeded/failed record state, duplicate-in-progress behavior, fencing token or generation owner, and whether same-key work is serialized while unrelated keys can run concurrently.
 - Evidence surface: existing tests, fixtures, schema constraints, command intents, logs, metrics, sequence numbers, request ids, transaction ids, versions, or manual-only concurrency evidence.
 - Incident file when a concurrency failure was observed: test name, seed, worker or thread count, scheduler settings, timeout, input, build hash, OS/runtime version, environment slice, and exact failure time when available.
+- Defect classification and oracle: forbidden outcome, logical race, data race, lifetime violation,
+  deadlock, starvation, or ordering failure, plus the exact assertion that distinguishes failure.
+- Schedule evidence: actor count, deterministic gate decisions, scheduler seed, decision trace,
+  synchronization edges, input and schedule reductions, and record/replay trace when available.
+- Native-memory evidence when applicable: compiler and flags, architecture, optimization level,
+  atomic orderings, linearization point, allocator behavior, address reuse, reclamation protocol,
+  and sanitizer class.
+
+Read [references/race-reproduction-memory-model-checklist.md](references/race-reproduction-memory-model-checklist.md)
+when an incident is intermittent, native threads or lock-free structures are involved, primitive
+selection is disputed, or a race-free or linearizable claim needs schedule evidence.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -84,9 +99,19 @@ The review question is not "does this code use threads?" The stronger question i
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Preserve the incident file before changing code when a race was observed.
-   - Capture the failing test or workflow name, random seed, worker or thread count, scheduler or CPU-affinity setting when relevant, timeout, input, build hash, OS/runtime version, environment variables that affect scheduling, and exact failure time.
-   - Do not replace a missing incident file with "ran many times"; repeated passing runs are weaker than one reproducible failing condition.
+1. Classify and preserve the incident before changing code.
+   - Define one machine-checkable forbidden outcome such as two successful reservations for one
+     unit, a callback after close, a removed object becoming visible again, or a history with no
+     valid sequential explanation.
+   - Distinguish a logical race condition, data race, lifetime violation, deadlock, starvation, and
+     ordering failure. Do not treat one detector class as proof about the others.
+   - Capture the failing test or workflow name, input, worker or thread count, deterministic gate or
+     scheduler decisions, random seed, timeout, executable and build hash, compiler and flags,
+     linked runtime, OS, architecture, CPU count, allocator, optimization level, environment values
+     that affect scheduling, and exact failure time when available.
+   - Treat a dynamic detector pass as evidence only for the paths and schedule that executed. Do not
+     replace a missing incident capsule with "ran many times"; repeated passing runs are weaker than
+     one reproducible failing condition.
 2. Name the shared fact. State the exact value or invariant another execution flow could change: balance, status, cache entry, uniqueness, queue offset, file existence, socket state, collection membership, timer owner, shutdown flag, or object ownership.
 3. Build a stale-read ledger.
    - For each shared state read, mark every later `await`, I/O, DB call, callback, event publish, queue insertion, lock release, timer, retry, cancellation, shutdown, close, send, or function call before the action.
@@ -113,6 +138,16 @@ The review question is not "does this code use threads?" The stronger question i
    - Double-checked locking needs a memory-ordering story in runtimes where construction visibility is not automatically safe.
 10. Review atomics and memory ordering.
    - Atomics protect a specific operation on a specific value. They do not automatically make surrounding objects, arrays, maps, or multi-field invariants safe.
+   - Check which write becomes visible to which read through a continuous happens-before edge. A
+     relaxed flag does not publish ordinary payload by itself, and several atomics do not form one
+     transaction over a multi-field invariant.
+   - Keep retryable compare-and-swap calculations free of external effects until the update wins, or
+     bind those effects to an idempotent durable identity.
+   - Treat pointer equality, object identity, and object lifetime as separate claims. CAS-based
+     structures need an ABA and tag-wrap story plus a memory-reclamation protocol such as a verified
+     hazard, epoch, RCU, or reference-counting design.
+   - Name each operation's linearization point and validate completed histories against a sequential
+     model when final-state assertions cannot expose an invalid intermediate history.
    - Check acquire/release or stronger memory ordering where the language exposes it, and report missing expertise or evidence instead of guessing.
 11. Review database races.
     - A database transaction does not erase a race by itself. Check isolation level, row locks, predicate locks, uniqueness, conditional updates, and whether `SELECT` then `UPDATE` can be invalidated before commit.
@@ -140,11 +175,23 @@ The review question is not "does this code use threads?" The stronger question i
     - Object pooling, buffer reuse, mutable DTO reuse, and reused request contexts are unsafe if async work can still hold references.
     - Fake immutable objects with mutable internals, getters, shared maps, or cached arrays should be treated as mutable shared state.
 17. Review tests and logs with suspicion.
-    - `sleep`-based race tests are usually probability tests. Prefer deterministic barriers, fake schedulers, controlled promises, version assertions, unique constraints, or repeated stress only as supplementary evidence.
-    - Shake the schedule, not only the load: widen context-switch windows with configured deterministic barriers, fake schedulers, controlled yields, delay injection, or repeated stress harnesses only when the repository command contract allows them.
-    - Logging can hide or change a race. Log order is not event order across threads, processes, async tasks, buffers, or machines.
-    - Use happens-before logs at handoff points such as queue push/pop, mutex unlock/lock, atomic release/acquire, promise/future completion, channel send/receive, callback registration/execution, plus monotonic sequence numbers, request ids, transaction ids, version columns, or state transition logs when ordering is evidence.
-    - Treat race detectors, thread sanitizers, deterministic record/replay, profilers, kernel tracing, or stress tools as configured or manual diagnostics only; never infer raw commands from the tool names.
+   - `sleep`-based race tests are usually probability tests. Prefer deterministic barriers, fake schedulers, controlled promises, version assertions, unique constraints, or repeated stress only as supplementary evidence.
+   - Shake the schedule, not only the load: widen context-switch windows with configured deterministic barriers, fake schedulers, controlled yields, delay injection, or repeated stress harnesses only when the repository command contract allows them.
+   - Reduce the reproducer to the smallest useful actors, shared object, operations, and arbiter.
+     Force meaningful windows after shared reads, validation, lock release, compare-and-swap load,
+     cancellation checks, removal, and publication rather than delaying arbitrary function entries.
+   - Explore schedules systematically when a bounded scheduler exists. For randomized disruption,
+     preserve both the seed and the actual decision trace; seed alone may not replay after thread,
+     timer, or random-call counts change.
+   - Minimize the failing input and the schedule. Remove unrelated operations, actors, switches, and
+     delay points while preserving the same forbidden outcome and defect class.
+   - Logging can hide or change a race. Log order is not event order across threads, processes, async tasks, buffers, or machines.
+   - Prefer bounded per-actor event buffers over a contended global logger. Build a happens-before
+     graph from actor-local order and synchronization edges such as queue push/pop, mutex
+     unlock/lock, atomic release/acquire, promise or future completion, channel send/receive,
+     callback registration/execution, and thread start/join. A timestamp order alone is not a
+     visibility proof.
+   - Treat race detectors, thread sanitizers, deterministic record/replay, profilers, kernel tracing, or stress tools as configured or manual diagnostics only; never infer raw commands from the tool names.
 18. Escalate broad status fields into state-machine review.
     - If values such as `pending`, `processing`, `done`, `failed`, `cancelled`, `closed`, or `deleted` drive behavior, draw allowed transitions and reject stale concurrent transitions.
     - Use `state-machine-pattern` when the race fix needs a transition table, event union, transition log, retry reconciliation, or effect ordering.
@@ -159,6 +206,10 @@ The review question is not "does this code use threads?" The stronger question i
 - Database, cache, queue, event, filesystem, cancellation, shutdown, timer, close/send, collection, and object-reuse races are checked where relevant.
 - Idempotency processing states, duplicate-in-progress behavior, fencing tokens, outbox/inbox handoffs, and per-key serialization are checked where relevant.
 - Tests or configured verification cover the highest-risk concurrency invariant when feasible.
+- Incident evidence distinguishes logical races, data races, lifetime failures, and other timing
+  defects without treating a detector pass as universal proof.
+- The highest-risk reproducer has a forbidden-outcome oracle, bounded actor model, replayable
+  schedule evidence, and minimized input or named evidence gaps when feasible.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -184,17 +235,23 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 - If the invariant cannot be named, stop and report that the code is not reviewable for races yet.
 - If a fix requires a schema constraint, isolation change, outbox, queue contract, state-machine transition, or idempotency store outside the current scope, report the missing durable boundary instead of adding a local lock that cannot enforce it.
 - If deterministic race proof is not configured, report the missing manual evidence and complete the configured checks that are available.
+- If a detector finds a data race, preserve that finding without inflating it into every possible
+  business impact; if the detector is clean, do not upgrade the result to logical race safety.
+- If a schedule cannot replay, preserve the full decision trace and environment capsule before
+  changing the code or shrinking the reproducer further.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
 
 - Shared state and invariant reviewed
-- Incident file captured or reported missing
+- Defect class, forbidden outcome, and incident capsule captured or reported missing
+- Actor model, schedule gates, replay evidence, and input or schedule minimization
 - Interleaving points checked
 - Check-then-act and read-modify-write findings
 - Async stale-read, lock scope/order, tryLock/timeout/retry, cache/lazy init, atomic/memory ordering, database transaction, uniqueness, distributed lock, idempotency, filesystem, event/outbox, queue, shutdown, cancellation, timer, close/send, shared collection, object reuse, fake immutable, test, log, and state-machine checks where relevant
 - Idempotency record states, fencing token, inbox or dedupe, per-key serialization, and duplicate-in-progress checks where relevant
 - Race fixes made or recommended
+- Primitive choice, happens-before graph, memory ordering, ABA, reclamation, and linearizability evidence where relevant
 - Tests or verification evidence
 - Command intents run
 - Skipped concurrency diagnostics and reasons

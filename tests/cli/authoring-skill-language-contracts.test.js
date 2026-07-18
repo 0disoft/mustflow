@@ -13,6 +13,30 @@ import {
 test('parser engineering review keeps source, recovery, incremental, Unicode, and hostile-input contracts explicit', () => {
 	const localSkill = readText('.mustflow/skills/parser-engineering-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/parser-engineering-review/SKILL.md');
+	const localLexerChecklist = readText(
+		'.mustflow/skills/parser-engineering-review/references/lexer-tokenization-checklist.md',
+	);
+	const templateLexerChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/parser-engineering-review/references/lexer-tokenization-checklist.md',
+	);
+	const localCstAstChecklist = readText(
+		'.mustflow/skills/parser-engineering-review/references/cst-ast-lowering-checklist.md',
+	);
+	const templateCstAstChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/parser-engineering-review/references/cst-ast-lowering-checklist.md',
+	);
+	const localTraversalChecklist = readText(
+		'.mustflow/skills/parser-engineering-review/references/tree-traversal-rewrite-checklist.md',
+	);
+	const templateTraversalChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/parser-engineering-review/references/tree-traversal-rewrite-checklist.md',
+	);
+	const localSerializationChecklist = readText(
+		'.mustflow/skills/parser-engineering-review/references/tree-serialization-compatibility-checklist.md',
+	);
+	const templateSerializationChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/parser-engineering-review/references/tree-serialization-compatibility-checklist.md',
+	);
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
 	const routes = readText('.mustflow/skills/routes.toml');
@@ -21,8 +45,13 @@ test('parser engineering review keeps source, recovery, incremental, Unicode, an
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
+	assert.equal(localLexerChecklist, templateLexerChecklist);
+	assert.equal(localCstAstChecklist, templateCstAstChecklist);
+	assert.equal(localTraversalChecklist, templateTraversalChecklist);
+	assert.equal(localSerializationChecklist, templateSerializationChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 4$/mu);
 	for (const signal of [
 		'lossless CST',
 		'UTF-16 offset',
@@ -37,11 +66,89 @@ test('parser engineering review keeps source, recovery, incremental, Unicode, an
 		'One-shot input versus multiple chunk partitions',
 		'Full-parse versus incremental-parse differential tests',
 		'phenomenon while shrinking failures',
+		'CST-to-AST loss ledger',
+		'surface AST distinct from HIR or core trees',
+		'phase-specific verifier',
+		'tree-traversal-rewrite-checklist.md',
+		'tree-serialization-compatibility-checklist.md',
 	]) {
 		assert.ok(localSkill.includes(signal), `parser skill should include ${signal}`);
 	}
 	assert.match(localSkill, /reach EOF, consume at least one input unit, or emit a bounded/u);
+	assert.match(localSkill, /last accepting checkpoint, not the first accepting state/u);
+	assert.match(localSkill, /references\/lexer-tokenization-checklist\.md/u);
+	assert.match(localSkill, /references\/cst-ast-lowering-checklist\.md/u);
+	assert.match(localSkill, /apply `fuzz-harness-review` as the campaign\s+owner/u);
 	assert.match(localSkill, /unvalidated second parse is not sufficient/u);
+	for (const signal of [
+		'[startByte, endByte)',
+		'comparisonEnd',
+		'contextual keywords',
+		'XID_Start',
+		'position encoding',
+		'one `insideString` boolean',
+		'`1..2`',
+		'one bounded malformed token',
+		'a fixed character radius',
+		'`NeedMoreInput`',
+		'`faultOffset`',
+		'`recoverySpan`',
+		'`relexedBytesPerEdit`',
+		'`ResourceLimitExceeded(kind, offset, observed, limit)`',
+		'`(canonicalKind, rawStart, rawEnd, flags)`',
+		'Checkpoint serialize/deserialize',
+		'Treat NUL as input data',
+	]) {
+		assert.ok(localLexerChecklist.includes(signal), `lexer checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Layer contract ledger',
+		'Lossless CST invariants',
+		'Surface AST boundary',
+		'AST schema and local invariants',
+		'Absence, recovery, and synthetic states',
+		'CST-to-AST loss ledger',
+		'Evaluation order, scope, and reference semantics',
+		'Keep `NodeId`, source span, and structural hash distinct',
+		'generation-aware side tables',
+		'Tree verification',
+		'Compare incremental CST, AST, origin maps, and side-table invalidation',
+		'recovery never forges a',
+	]) {
+		assert.ok(localCstAstChecklist.includes(signal), `CST and AST checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Responsibility split',
+		'Visitor | One immutable snapshot',
+		'Transformation result algebra',
+		'`Keep` for unchanged identity and structure',
+		'Edit collection and conflict resolution',
+		'Handles and identity across snapshots',
+		'`Alive`, `Replaced`, `Deleted`, `Ambiguous`, `WrongDocument`, or `OutOfDate`',
+		'Default unproven analyses to invalid',
+		'Rewrite termination',
+		'Tree and graph traversal',
+		'Publish the new root and compatible analysis',
+		'rewrite idempotence',
+	]) {
+		assert.ok(localTraversalChecklist.includes(signal), `tree traversal checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Artifact lifetime contract',
+		'Memory model and wire schema',
+		'Header and early rejection',
+		'Schema evolution and presence',
+		'Bounded decoding',
+		'Two-phase graph reconstruction',
+		'Validation layers',
+		'Deterministic encoding',
+		'Cross-version and migration matrix',
+		'Do not serialize raw snapshot-local IDs',
+		'Fuzz targets and oracles',
+		'oracles, not campaign authority',
+	]) {
+		assert.ok(localSerializationChecklist.includes(signal), `tree serialization checklist should include ${signal}`);
+	}
 	assert.match(skillIndex, /\.mustflow\/skills\/parser-engineering-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."parser-engineering-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 79/u);
 	assert.deepEqual(routeReasons(routes, 'parser-engineering-review'), [
@@ -55,9 +162,1015 @@ test('parser engineering review keeps source, recovery, incremental, Unicode, an
 		'data_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/parser-engineering-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/parser-engineering-review\/references\/lexer-tokenization-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/parser-engineering-review\/references\/cst-ast-lowering-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/parser-engineering-review\/references\/tree-traversal-rewrite-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/parser-engineering-review\/references\/tree-serialization-compatibility-checklist\.md"/u,
+	);
 	assert.match(manifest, /"parser-engineering-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'parser-engineering-review', 1);
+	assertI18nSkillDocument(i18n, 'parser-engineering-review', 4);
+});
+
+test('compiler engineering review localizes semantics and owns test, differential, generator, IR, ABI, and linker oracles', () => {
+	const localSkill = readText('.mustflow/skills/compiler-engineering-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/SKILL.md',
+	);
+	const localIrChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/miscompile-reduction-ir-checklist.md',
+	);
+	const templateIrChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/miscompile-reduction-ir-checklist.md',
+	);
+	const localIrDesignChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/ir-design-ssa-pass-pipeline-checklist.md',
+	);
+	const templateIrDesignChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/ir-design-ssa-pass-pipeline-checklist.md',
+	);
+	const localBoundaryChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/compiler-diagnostics-abi-linker-checklist.md',
+	);
+	const templateBoundaryChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/compiler-diagnostics-abi-linker-checklist.md',
+	);
+	const localDebugChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/debug-symbol-symbolication-checklist.md',
+	);
+	const templateDebugChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/debug-symbol-symbolication-checklist.md',
+	);
+	const localTestStrategyChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/compiler-test-strategy-differential-checklist.md',
+	);
+	const templateTestStrategyChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/compiler-test-strategy-differential-checklist.md',
+	);
+	const localGeneratorChecklist = readText(
+		'.mustflow/skills/compiler-engineering-review/references/compiler-generators-properties-checklist.md',
+	);
+	const templateGeneratorChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/compiler-engineering-review/references/compiler-generators-properties-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localIrChecklist, templateIrChecklist);
+	assert.equal(localIrDesignChecklist, templateIrDesignChecklist);
+	assert.equal(localBoundaryChecklist, templateBoundaryChecklist);
+	assert.equal(localDebugChecklist, templateDebugChecklist);
+	assert.equal(localTestStrategyChecklist, templateTestStrategyChecklist);
+	assert.equal(localGeneratorChecklist, templateGeneratorChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 6$/mu);
+	for (const signal of [
+		'stage-local semantic contracts',
+		'semantic-distance and oracle-cost',
+		'Freeze the reproduction universe',
+		'Prove the input has defined meaning',
+		'Build an interestingness predicate for the original defect',
+		'Separate acceptance, structured',
+		'Find the first divergence by execution position',
+		'Reduce one axis at a time, then alternate axes',
+		'Assign artifacts separately',
+		'Record transformation or rewrite identity',
+		'Compare incremental analysis updates with independent full recomputation',
+		'Treat diagnostics as structured outputs',
+		'Test ABI across independent producers and consumers',
+		'Differentially execute defined inputs across independent compiler lineages',
+		'Model linker resolution as a small graph',
+		'Treat the final link as selection, reachability, relocation, and loader preparation',
+		'Perturb hash seed, worker count, schedule',
+		'Define executable properties and metamorphic relations at each stage',
+		'as a relation graph',
+		'Apply `fuzz-harness-review` when campaign determinism',
+		'Define each IR layer as a semantic contract',
+		'Review the pass pipeline as a contract graph',
+		'Track compiler facts as proof-carrying state with explicit lifetimes',
+		'Treat debug and crash artifacts as an immutable derivative graph',
+	]) {
+		assert.ok(localSkill.includes(signal), `compiler skill should include ${signal}`);
+	}
+	for (const signal of [
+		'Reproduction universe',
+		'Definedness gate',
+		'Interestingness predicate',
+		'First-divergence localization',
+		'Translation validation',
+		'Reduction matrix',
+		'CFG and SSA matrix',
+		'Incremental analysis differential',
+		'Poison and deferred choice',
+		'Borrow and dataflow checking',
+		'earliest failing stage or pass instance',
+	]) {
+		assert.ok(localIrChecklist.includes(signal), `compiler IR checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'IR semantic contract',
+		'Layer decision ledger',
+		'Source AST HIR MIR and LIR boundaries',
+		'Lowering information budget',
+		'Mixed-level legality',
+		'Effects and speculation',
+		'Semantic storage ABI and machine types',
+		'Explicit conversion values',
+		'Ownership capability tokens',
+		'Ownership ABI and borrow flow',
+		'Lifetime allocation view and provenance',
+		'Fact provenance scope and generation',
+		'Effect capture and speculation axes',
+		'Memory model and SSA limits',
+		'Exceptional suspension and deoptimization control',
+		'Value symbol and source identity',
+		'Verifier ownership',
+		'IR mutation transaction',
+		'Canonical-form windows',
+		'Text form replay and version boundary',
+		'Phi edge semantics',
+		'Phi placement and sealed construction',
+		'Phi select and speculation',
+		'Critical duplicate and exceptional edges',
+		'CFG mutation and SSA repair',
+		'Loop closure and irreducible control',
+		'SSA destruction',
+		'Pass contracts',
+		'Information-aware pass ordering',
+		'Normalization and cleanup budgets',
+		'Inlining promotion and scalarization',
+		'Propagation CFG simplification and deletion',
+		'Loop transformation pipeline',
+		'Target-lowering boundary',
+		'Instrumentation profile and debug placement',
+		'Pipeline interaction evidence',
+	]) {
+		assert.ok(
+			localIrDesignChecklist.includes(signal),
+			`compiler IR design checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Structured diagnostics',
+		'Source coordinates',
+		'Macro, include, and generated provenance',
+		'Recovery and fix-its',
+		'ABI producer-consumer matrix',
+		'Layout and calling-convention probes',
+		'Object metadata',
+		'Machine-code pipeline',
+		'Link resolution graph',
+		'Object-format and symbol-namespace matrix',
+		'Linux ELF with GNU `ld`',
+		'`.symtab`',
+		'`.dynsym`',
+		'Archive extraction and section reachability',
+		'ordinary GNU `ld` static-archive baseline',
+		'Relocation contract',
+		'Static and dynamic resolution',
+		'Visibility, export, and import boundaries',
+		'Language linkage and complete ABI identity',
+		'Stable C and plugin boundaries',
+		'Dynamic loading and plugin lifecycle',
+		'Dependency retention and binding time',
+		'Interposition and exported data',
+		'Loader scopes and namespaces',
+		'Runtime symbol lookup',
+		'Activation and retirement',
+		'Relaxation and boundary generation',
+		'Cross-target evidence',
+	]) {
+		assert.ok(localBoundaryChecklist.includes(signal), `compiler boundary checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Symbol asset taxonomy',
+		'Binary identity and matching keys',
+		'Artifact lineage',
+		'ELF separated debug information',
+		'PE and PDB artifacts',
+		'Mach-O and dSYM artifacts',
+		'Public private and source assets',
+		'Crash capture boundary',
+		'Address and frame semantics',
+		'Immutable symbol store',
+		'Stripping policy',
+		'Elimination pipeline',
+		'Reachability roots',
+		'Identical-code folding',
+		'LTO identity and ABI',
+		'Optimized debug limits',
+		'Cross-platform artifact matrix',
+		'Symbolication canary',
+	]) {
+		assert.ok(localDebugChecklist.includes(signal), `compiler debug checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Semantic-distance and oracle-cost ladder',
+		'Stage boundary contracts',
+		'Oracle separation',
+		'Feature-interaction grid',
+		'Execution lanes',
+		'Corpus classes',
+		'Transformation activation coverage',
+		'Oracle sensitivity checks',
+		'Determinism perturbation',
+		'Cadence and failure budgets',
+		'Implementation lineage map',
+		'Option and execution-tier lattice',
+		'Canonical execution outcome',
+		'Runtime input vectors',
+		'Definedness and permitted variation',
+		'First-divergence evidence',
+	]) {
+		assert.ok(
+			localTestStrategyChecklist.includes(signal),
+			`compiler test strategy checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Generator contract',
+		'Valid and invalid lanes',
+		'Stage-specific harness matrix',
+		'Lexer generation',
+		'Parser generation and edit sequences',
+		'Type and semantic generation',
+		'Constraint-solver properties',
+		'Source-level optimizer generation',
+		'IR generation and mutation',
+		'Pass-transition graphs',
+		'Stage-local property ledger',
+		'Round-trip laws',
+		'Alpha-renaming and binding laws',
+		'Dead-code relations',
+		'Independent reorder relations',
+		'Extraction and inlining relations',
+		'Algebraic and refinement relations',
+		'Relation graphs',
+		'Structure-aware shrinking',
+		'Semantic coverage',
+	]) {
+		assert.ok(localGeneratorChecklist.includes(signal), `compiler generator checklist should include ${signal}`);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/compiler-engineering-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."compiler-engineering-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 81/u,
+	);
+	assert.deepEqual(routeReasons(routes, 'compiler-engineering-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'data_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/compiler-engineering-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/miscompile-reduction-ir-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/ir-design-ssa-pass-pipeline-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/compiler-diagnostics-abi-linker-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/debug-symbol-symbolication-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/compiler-test-strategy-differential-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/compiler-engineering-review\/references\/compiler-generators-properties-checklist\.md"/u,
+	);
+	assert.match(manifest, /"compiler-engineering-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'compiler-engineering-review', 6);
+});
+
+test('name resolution integrity review traces DNS, language, module, package, loader, and cache identity', () => {
+	const localSkill = readText('.mustflow/skills/name-resolution-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/name-resolution-integrity-review/SKILL.md',
+	);
+	const localDnsChecklist = readText(
+		'.mustflow/skills/name-resolution-integrity-review/references/dns-network-resolution-checklist.md',
+	);
+	const templateDnsChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/name-resolution-integrity-review/references/dns-network-resolution-checklist.md',
+	);
+	const localLanguageChecklist = readText(
+		'.mustflow/skills/name-resolution-integrity-review/references/language-symbol-resolution-checklist.md',
+	);
+	const templateLanguageChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/name-resolution-integrity-review/references/language-symbol-resolution-checklist.md',
+	);
+	const localModuleChecklist = readText(
+		'.mustflow/skills/name-resolution-integrity-review/references/module-package-loader-resolution-checklist.md',
+	);
+	const templateModuleChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/name-resolution-integrity-review/references/module-package-loader-resolution-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localDnsChecklist, templateDnsChecklist);
+	assert.equal(localLanguageChecklist, templateLanguageChecklist);
+	assert.equal(localModuleChecklist, templateModuleChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	for (const signal of [
+		'Diagnose name-resolution defects as disagreements about the resolver',
+		'requester -> execution space -> input form',
+		'textual identity',
+		'resolved identity',
+		'loaded identity',
+		'behavioral identity',
+		'Build a resolution ledger',
+		'Enumerate candidates before choosing a fix',
+		'Treat cache as part of semantics',
+		'Compare like with like',
+		'actual resolver API',
+		'Continue one boundary beyond resolution',
+		'Convert the defect into a differential fixture',
+	]) {
+		assert.ok(localSkill.includes(signal), `name resolution skill should include ${signal}`);
+	}
+	assert.match(localSkill, /whether a prior\s+connection or pool entry bypassed fresh lookup/u);
+	for (const signal of [
+		'Execution-space capsule',
+		'Resolver API and runtime behavior',
+		'Resolver stack',
+		'Query transformation',
+		'Split DNS and route selection',
+		'Recursive, authoritative, and delegation boundaries',
+		'Proxy and application resolution ownership',
+		'Local name sources',
+		'Cache and freshness ledger',
+		'Response taxonomy',
+		'Transport and message size',
+		'DNSSEC and validation',
+		'CDN and resolver location',
+		'Alias and service records',
+		'Container and cluster name scopes',
+		'Address selection, connection reuse, and routing',
+		'Evidence matrix',
+		'direct DNS protocol probe proves one server',
+		'name-service switch is a state machine',
+		'per-entry upper freshness bound',
+		'Compare all authoritative servers',
+		'DNS TTL expiry does not close',
+	]) {
+		assert.ok(localDnsChecklist.includes(signal), `DNS resolution checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Resolution contract',
+		'Binding and initialization',
+		'Namespaces and syntactic position',
+		'Candidate collection and selection',
+		'Delayed and multi-phase lookup',
+		'Generated-code and macro hygiene',
+		'Language-specific traps',
+		'Runtime identity after lookup',
+		'Resolution diagnostics',
+		'Test matrix',
+	]) {
+		assert.ok(
+			localLanguageChecklist.includes(signal),
+			`language resolution checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Resolution capsule',
+		'Coordinate, artifact, and instance identity',
+		'Search roots and mappings',
+		'Conditions, variants, and features',
+		'Loader and cache identity',
+		'Node and package exports',
+		'Peer-context and strict-layout packages',
+		'Python import paths and namespace packages',
+		'JVM class loaders',
+		'Go module ownership',
+		'Cargo feature resolution',
+		'Maven conflict mediation',
+		'Gradle variant selection',
+		'CMake package discovery',
+		'Bazel repository mapping',
+		'Build, test, deploy, and release graph parity',
+	]) {
+		assert.ok(
+			localModuleChecklist.includes(signal),
+			`module resolution checklist should include ${signal}`,
+		);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/name-resolution-integrity-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."name-resolution-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 82/u,
+	);
+	assert.deepEqual(routeReasons(routes, 'name-resolution-integrity-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/name-resolution-integrity-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/name-resolution-integrity-review\/references\/dns-network-resolution-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/name-resolution-integrity-review\/references\/language-symbol-resolution-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/name-resolution-integrity-review\/references\/module-package-loader-resolution-checklist\.md"/u,
+	);
+	assert.match(manifest, /"name-resolution-integrity-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'name-resolution-integrity-review', 2);
+});
+
+test('interpreter engineering review keeps semantics, diagnostics, GC, oracles, and execution explicit', () => {
+	const localSkill = readText('.mustflow/skills/interpreter-engineering-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/interpreter-engineering-review/SKILL.md',
+	);
+	const localSemanticsChecklist = readText(
+		'.mustflow/skills/interpreter-engineering-review/references/interpreter-semantics-runtime-checklist.md',
+	);
+	const templateSemanticsChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/interpreter-engineering-review/references/interpreter-semantics-runtime-checklist.md',
+	);
+	const localExecutionChecklist = readText(
+		'.mustflow/skills/interpreter-engineering-review/references/interpreter-execution-closure-performance-checklist.md',
+	);
+	const templateExecutionChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/interpreter-engineering-review/references/interpreter-execution-closure-performance-checklist.md',
+	);
+	const localDiagnosticsChecklist = readText(
+		'.mustflow/skills/interpreter-engineering-review/references/interpreter-diagnostics-recovery-checklist.md',
+	);
+	const templateDiagnosticsChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/interpreter-engineering-review/references/interpreter-diagnostics-recovery-checklist.md',
+	);
+	const localGcChecklist = readText(
+		'.mustflow/skills/interpreter-engineering-review/references/interpreter-gc-verification-checklist.md',
+	);
+	const templateGcChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/interpreter-engineering-review/references/interpreter-gc-verification-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localSemanticsChecklist, templateSemanticsChecklist);
+	assert.equal(localExecutionChecklist, templateExecutionChecklist);
+	assert.equal(localDiagnosticsChecklist, templateDiagnosticsChecklist);
+	assert.equal(localGcChecklist, templateGcChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	for (const signal of [
+		'explicit language-semantics and runtime system',
+		'Freeze semantics before implementation mechanics',
+		'Separate semantic type, runtime kind, and storage tag',
+		'purpose-specific directed conversions',
+		'`Handled`, `Declined`, and `Thrown`',
+		'Resolve compound assignment targets once as a `Place`',
+		'Resolve names before hot execution',
+		'Keep lexical scope distinct from the call stack',
+		'Unify nonlocal completion',
+		'Build diagnostics as structured data and separate fault domains',
+		'Diagnostic rendering must not call guest conversion',
+		'Harden the native boundary',
+		'Inject deterministic host services',
+		'Enforce multi-dimensional budgets',
+		'If both engines exist, keep one semantic test corpus',
+		'Make object liveness and movement explicit',
+		'Define weak, finalization, reference-count, and external-resource semantics',
+		'Build a semantic oracle matrix',
+		'preserve the exact failure fingerprint',
+		'Apply `fuzz-harness-review` when harness determinism',
+	]) {
+		assert.ok(localSkill.includes(signal), `interpreter skill should include ${signal}`);
+	}
+	for (const signal of [
+		'Semantic matrix',
+		'Runtime value model',
+		'Conversion and operator dispatch',
+		'semantic type',
+		'`Handled(value)`, `Declined`, and `Thrown(error)`',
+		'Evaluation order',
+		'Completion and cleanup',
+		'Native boundary',
+		'Deterministic services',
+		'Resource budgets',
+		'Semantic differential tests',
+	]) {
+		assert.ok(
+			localSemanticsChecklist.includes(signal),
+			`interpreter semantics checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Structured diagnostic envelope',
+		'Source snapshot and range contract',
+		'Recovered-input provenance',
+		'Cause graph and suppression',
+		'Safe runtime value rendering',
+		'Logical guest stacks',
+		'Dynamic dispatch evidence',
+		'Stable codes and fingerprints',
+		'Fix validation',
+		'Diagnostic contract tests',
+	]) {
+		assert.ok(
+			localDiagnosticsChecklist.includes(signal),
+			`interpreter diagnostics checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Runtime root API',
+		'Safepoints and temporary values',
+		'Object construction and publication',
+		'Write barriers',
+		'Moving objects and handles',
+		'Generations and remembered sets',
+		'Weak containers and ephemerons',
+		'Finalization and resurrection',
+		'Reference-count reentrancy',
+		'Heap verifier and stress modes',
+		'Canonical outcomes and independent oracles',
+		'Definedness and metamorphic relations',
+		'Executable semantic properties',
+		'Structure-aware reduction',
+		'Semantic coverage and replay',
+	]) {
+		assert.ok(localGcChecklist.includes(signal), `interpreter GC checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Engine selection',
+		'Bytecode contract',
+		'Name resolution',
+		'Frame and slot layout',
+		'Closures and upvalues',
+		'Compiled-code caches',
+		'Performance measurement',
+		'Dispatch and specialization',
+		'Memory and GC retention',
+	]) {
+		assert.ok(
+			localExecutionChecklist.includes(signal),
+			`interpreter execution checklist should include ${signal}`,
+		);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/interpreter-engineering-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."interpreter-engineering-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 80/u,
+	);
+	assert.deepEqual(routeReasons(routes, 'interpreter-engineering-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/interpreter-engineering-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/interpreter-engineering-review\/references\/interpreter-semantics-runtime-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/interpreter-engineering-review\/references\/interpreter-execution-closure-performance-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/interpreter-engineering-review\/references\/interpreter-diagnostics-recovery-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/interpreter-engineering-review\/references\/interpreter-gc-verification-checklist\.md"/u,
+	);
+	assert.match(manifest, /"interpreter-engineering-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'interpreter-engineering-review', 2);
+});
+
+test('formal verification review keeps claims, assumptions, bounds, trust, and proof CI explicit', () => {
+	const localSkill = readText('.mustflow/skills/formal-verification-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/formal-verification-review/SKILL.md',
+	);
+	const localContractsChecklist = readText(
+		'.mustflow/skills/formal-verification-review/references/formal-contracts-modeling-checklist.md',
+	);
+	const templateContractsChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/formal-verification-review/references/formal-contracts-modeling-checklist.md',
+	);
+	const localBoundsChecklist = readText(
+		'.mustflow/skills/formal-verification-review/references/formal-memory-bounds-ci-checklist.md',
+	);
+	const templateBoundsChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/formal-verification-review/references/formal-memory-bounds-ci-checklist.md',
+	);
+	const localConcurrencyChecklist = readText(
+		'.mustflow/skills/formal-verification-review/references/formal-concurrency-model-checking-smt-checklist.md',
+	);
+	const templateConcurrencyChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/formal-verification-review/references/formal-concurrency-model-checking-smt-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localContractsChecklist, templateContractsChecklist);
+	assert.equal(localBoundsChecklist, templateBoundsChecklist);
+	assert.equal(localConcurrencyChecklist, templateConcurrencyChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 2$/mu);
+	for (const signal of [
+		'scoped claim about an explicit model',
+		'State the theorem or counterexample claim precisely',
+		'Map the model to reality',
+		'Select a verification family by property',
+		'Separate state, action, and trace properties',
+		'Prove safety through a genuinely inductive strengthening',
+		'Define the abstraction direction',
+		'Model nondeterminism as an adversarial choice',
+		'Justify every atomic action and state-space reduction',
+		'Define preconditions as caller obligations',
+		'Derive obligations backward from the postcondition',
+		'Build loop and recursion proofs with three separate duties',
+		'Write frame conditions',
+		'Separate safety, progress, termination, and liveness',
+		'Make boundedness visible',
+		'Test reachability and vacuity',
+		'Classify every tool outcome',
+		'Encode SMT obligations with the executable semantics',
+		'Treat solver evidence as an artifact to validate',
+		'Record the trusted computing base',
+		'Replay counterexamples against the real implementation',
+		'Maintain an executable refinement map',
+		'Derive model-based tests from the same transition and observation vocabulary',
+		'Pin the verification environment',
+		'Keep one assumption manifest',
+		'Check logical contract compatibility',
+		'Ratchet verification debt',
+	]) {
+		assert.ok(localSkill.includes(signal), `formal verification skill should include ${signal}`);
+	}
+	for (const signal of [
+		'Claim envelope',
+		'Precondition ownership',
+		'Weakest-precondition reasoning',
+		'Loop and recursion obligations',
+		'Processed-region invariants',
+		'Partial and total correctness',
+		'Ghost and old state',
+		'Frame conditions',
+		'Aliasing and memory regions',
+		'Object invariants and reentrancy',
+		'Abnormal outcomes',
+		'Machine and mathematical values',
+		'Vacuity and reachability',
+		'Verification-family selection',
+		'Safety, progress, and liveness',
+		'Fairness assumptions',
+		'Scope and bounded search',
+		'Result taxonomy',
+		'Trusted computing base',
+	]) {
+		assert.ok(
+			localContractsChecklist.includes(signal),
+			`formal contracts checklist should include ${signal}`,
+		);
+	}
+	for (const signal of [
+		'Target arithmetic semantics',
+		'Pre-operation overflow obligations',
+		'Casts and shifts',
+		'Index construction',
+		'Pointer validity',
+		'Range overlap',
+		'Allocation lifetime state machine',
+		'Boundary partitions',
+		'Bounded-check completeness',
+		'Nondeterministic unsafe and FFI harnesses',
+		'Counterexample replay',
+		'Verification lanes',
+		'Toolchain and solver pinning',
+		'CI result mapping',
+		'Proof cost telemetry',
+		'Vacuity and sensitivity jobs',
+		'Assumption manifest',
+		'Contract compatibility',
+		'Verification-debt ratchet',
+		'Executable refinement map',
+		'Proof brittleness',
+	]) {
+		assert.ok(localBoundsChecklist.includes(signal), `formal bounds checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Property layers',
+		'Inductive safety obligations',
+		'Trace histories and linearizability',
+		'Refinement and stuttering',
+		'Abstraction direction',
+		'Adversarial nondeterminism',
+		'Atomicity claims',
+		'Deadlock livelock and starvation',
+		'Weak-memory boundary',
+		'Network and epoch behavior',
+		'Crash and recovery state',
+		'Duplicate effects and result replay',
+		'Property-directed slicing',
+		'Identity symmetry and role abstraction',
+		'Partial-order and stateless exploration',
+		'Reduction soundness',
+		'Bound ladders and lossy search',
+		'Abstraction refinement and inductive strengthening',
+		'Compositional proof and cutoff claims',
+		'Model-based test bridge',
+		'SMT result question',
+		'Theory and representation selection',
+		'SSA paths loops and memory',
+		'Datatypes and uninterpreted functions',
+		'Quantifiers triggers and incremental contexts',
+		'Unsat evidence and replay',
+	]) {
+		assert.ok(
+			localConcurrencyChecklist.includes(signal),
+			`formal concurrency checklist should include ${signal}`,
+		);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/formal-verification-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."formal-verification-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 83/u,
+	);
+	assert.deepEqual(routeReasons(routes, 'formal-verification-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/formal-verification-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/formal-verification-review\/references\/formal-contracts-modeling-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/formal-verification-review\/references\/formal-memory-bounds-ci-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/formal-verification-review\/references\/formal-concurrency-model-checking-smt-checklist\.md"/u,
+	);
+	assert.match(manifest, /"formal-verification-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'formal-verification-review', 2);
+});
+
+test('fuzz harness review keeps reachability, oracles, corpus, feedback, and reproduction explicit', () => {
+	const localSkill = readText('.mustflow/skills/fuzz-harness-review/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/fuzz-harness-review/SKILL.md');
+	const localChecklist = readText(
+		'.mustflow/skills/fuzz-harness-review/references/fuzz-harness-campaign-checklist.md',
+	);
+	const templateChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/fuzz-harness-review/references/fuzz-harness-campaign-checklist.md',
+	);
+	const localOracleChecklist = readText(
+		'.mustflow/skills/fuzz-harness-review/references/fuzz-oracle-triage-ci-checklist.md',
+	);
+	const templateOracleChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/fuzz-harness-review/references/fuzz-oracle-triage-ci-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localChecklist, templateChecklist);
+	assert.equal(localOracleChecklist, templateOracleChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const signal of [
+		'Coverage is a search signal, not the oracle',
+		'Build a target matrix',
+		'Make one iteration deterministic and isolated',
+		'Turn bad outcomes into explicit oracles',
+		'Design complementary input lanes',
+		'Verify instrumentation and feedback reach the target',
+		'Maintain corpus and dictionary as source artifacts',
+		'Fuzz state, failures, and environment',
+		'Diagnose a coverage plateau',
+		'Make artifacts independently reproducible',
+		'Split sanitizer and assertion lanes by purpose',
+		'artifact bytes its only entropy',
+		'stable semantic result envelope',
+		'exact normalized failure predicate',
+		'Do not invent replay counts',
+		'Keep campaigns and CI assets from rotting',
+		'Do not launch a watcher, server, background fuzzer',
+	]) {
+		assert.ok(localSkill.includes(signal), `fuzz harness skill should include ${signal}`);
+	}
+	for (const signal of [
+		'Property-based entropy and abstract inputs',
+		'Semantic result envelopes',
+		'Differential and metamorphic oracle ledger',
+		'Stable property and crash identities',
+		'Reproduction capsule and flaky classification',
+		'Exact minimization and shrinking',
+		'Trigger, detection, and root cause',
+		'Sanitizer and assertion lanes',
+		'CI cadence and asset classes',
+		'Regression promotion and negative controls',
+	]) {
+		assert.ok(localOracleChecklist.includes(signal), `fuzz oracle checklist should include ${signal}`);
+	}
+	for (const signal of [
+		'Raw lane',
+		'Structured lane',
+		'Repair, mismatch, and overflow lanes',
+		'collision or cardinality risk',
+		'minimal seed basis',
+		'N-th allocation',
+		'operation or message sequence',
+		'last meaningful frontier',
+		'clean process',
+		'long-running local or external campaign state',
+	]) {
+		assert.ok(localChecklist.includes(signal), `fuzz harness checklist should include ${signal}`);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/fuzz-harness-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."fuzz-harness-review"\]\r?\ncategory = "tests"\r?\nroute_type = "adjunct"\r?\npriority = 82/u);
+	assert.deepEqual(routeReasons(routes, 'fuzz-harness-review'), [
+		'test_change',
+		'behavior_change',
+		'performance_change',
+		'security_change',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/fuzz-harness-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/fuzz-harness-review\/references\/fuzz-harness-campaign-checklist\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/fuzz-harness-review\/references\/fuzz-oracle-triage-ci-checklist\.md"/u,
+	);
+	assert.match(manifest, /"fuzz-harness-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'fuzz-harness-review', 2);
+});
+
+test('input boundary validation keeps representation, identity, parser, sink, and budget contracts explicit', () => {
+	const localSkill = readText('.mustflow/skills/input-boundary-validation-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/input-boundary-validation-review/SKILL.md',
+	);
+	const localChecklist = readText(
+		'.mustflow/skills/input-boundary-validation-review/references/input-boundary-security-checklist.md',
+	);
+	const templateChecklist = readText(
+		'templates/default/locales/en/.mustflow/skills/input-boundary-validation-review/references/input-boundary-security-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localChecklist, templateChecklist);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const signal of [
+		'Build a representation ledger',
+		'Decode each protocol layer exactly once',
+		'Define canonicalization per field',
+		'Parse one complete value under one policy',
+		'Separate syntax, semantics, and authority',
+		'Keep data out of executable grammar',
+		'Budget hostile structure before materialization',
+		'Delay side effects until acceptance',
+		'validating one string and reparsing another is a split boundary',
+		'A valid UUID, tenant id, path, or enum is not permission',
+		'does not make untrusted template source safe',
+	]) {
+		assert.ok(localSkill.includes(signal), `input boundary skill should include ${signal}`);
+	}
+	for (const signal of [
+		'Representation ledger',
+		'Field identity policy',
+		'Confusable skeletons are collision or review signals',
+		'gateway validates the first duplicate',
+		'option parsing for operands',
+		'CSV quoting is not formula',
+		'bounded child views across transformations',
+		'Gateway-versus-application',
+		'earliest stable rejection stage',
+	]) {
+		assert.ok(localChecklist.includes(signal), `input boundary checklist should include ${signal}`);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/input-boundary-validation-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."input-boundary-validation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"\r?\npriority = 83/u);
+	assert.deepEqual(routeReasons(routes, 'input-boundary-validation-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'public_api_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'test_change',
+		'performance_change',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/input-boundary-validation-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/input-boundary-validation-review\/references\/input-boundary-security-checklist\.md"/u,
+	);
+	assert.match(manifest, /"input-boundary-validation-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'input-boundary-validation-review', 1);
 });
 
 test('performance measurement integrity keeps event semantics, comparison, and privacy explicit', () => {

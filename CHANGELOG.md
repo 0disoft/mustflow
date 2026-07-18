@@ -8,6 +8,118 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 - Narrowed skill-related test selection to the owning authoring shard and lightweight install-surface checks, added the bounded `test_skill_contracts` intent, and reused initialized fixtures plus in-process CLI execution in skill contract suites.
 
+### Changed
+
+- Added `compiler-engineering-review` for stage-local compiler correctness, with frozen reproduction
+  universes, definedness gates, IR semantic and effect contracts, AST/HIR/typed-HIR/MIR/LIR layer
+  ledgers, information-loss-aware progressive lowering, mixed-level legality, semantic and storage
+  type separation, explicit semantic/storage/ABI/machine conversion values, non-forgeable ownership
+  capabilities, function ownership ABI and CFG borrow flow, lifetime/allocation/view/provenance
+  separation, scoped fact origin and generation tracking, preserve/recompute/weaken/drop metadata
+  transitions, effect/capture/speculation separation, memory and exceptional-control contracts,
+  stable value/symbol/source identities, ordered stage verifiers, schema-derived builders, focused
+  negative verifier mutation, independent ownership/layout/ABI/refinement checks, conservative
+  invalidation and replay formats, edge-sensitive phi semantics, sealed SSA construction,
+  critical and exceptional edge handling, transactional CFG and analysis updates, loop-closed and
+  irreducible control, parallel-copy SSA destruction, consumer-owned canonical-form windows,
+  pass contract graphs, information-aware ordering, bounded cleanup cycles, staged inlining,
+  promotion and scalarization, loop and target pipelines, instrumentation placement, pipeline
+  interaction evidence, exact wrong-code predicates, first-divergence localization,
+  multi-axis reduction, IR and machine verification, analysis recomputation, CFG and SSA invariants,
+  structured diagnostics and source mapping, transactional fix-it checks, cross-producer ABI probes,
+  structural object evidence, regular and loader-visible symbol namespace separation, archive-member
+  extraction and section-reachability traces, relocation ownership, static versus dynamic resolution,
+  visibility and final export/import allowlists, language linkage versus complete ABI identity,
+  versioned C plugin tables, dependency retention and lazy-binding gates, interposition and exported-
+  data contracts, loader scope and namespace evidence, typed runtime symbol lookup, plugin activation
+  and quiescent retirement, platform-specific ELF, PE/COFF, and Mach-O contracts, runtime/public/debug/
+  unwind/source symbol-asset separation, final-binary identity and architecture matching, immutable
+  separated-debug lineage, split DWARF, PDB and dSYM retention, minimal crash capture, precise-PC and
+  return-address semantics, immutable symbol stores, strip policy by artifact class, DCE/LTO/archive/
+  section-GC/ICF stage separation, LTO ABI preservation, optimized-debug limitations, external
+  symbolication canaries, machine-stage localization, semantic assembly round trips, linker resolution
+  graphs, generated boundary fixtures,
+  cross-target evidence levels, semantic-distance and
+  oracle-cost test ladders, feature-interaction grids, separate compile/link/execute lanes, corpus
+  ownership, transformation-activation coverage, determinism perturbation, lineage-aware differential
+  matrices, canonical outcomes, well-defined generators, stage-local properties, metamorphic relation
+  graphs, structure-aware shrinking, and change-gate, periodic, canary, and release evidence lanes.
+- Added `name-resolution-integrity-review` for tracing one spelling through requester and execution
+  space, normalized and expanded candidates, namespace and lookup phase, search or routing graph,
+  precedence and rejection reasons, cache freshness, selected object, loaded instance, and observed
+  behavior. The skill separates application DNS from direct queries, split-DNS routes, proxy-side
+  lookup, resolver API and runtime mode, NSS status actions, search suffixes, local discovery,
+  recursive, authoritative, delegation and glue boundaries, authoritative-server divergence,
+  per-cache TTL and cutover timing, negative and stale caches, DNS transport and validation, CDN and
+  service-record selection, container and cluster name scopes, actual address selection, connection
+  reuse and re-resolution, language binding and initialization, shadowing,
+  associated and delayed lookup, macro hygiene, extension precedence, package export conditions,
+  peer and feature contexts, Python namespace packages, JVM class-loader identity, Go module
+  ownership, Maven mediation, Gradle variants, CMake discovery, Bazel repository mappings, and
+  build/test/deploy/release resolver parity.
+- Added `interpreter-engineering-review` for explicit guest semantics, semantic-type/runtime-kind/
+  storage-tag separation, directed conversions, observable operator dispatch and assignment places,
+  typed executable IR, centralized values and sentinels, resolver slots and shared closure cells,
+  unified completion, structured diagnostics and recovery provenance, safe rendering and logical
+  guest stacks, VM root and barrier APIs, moving handles, generational and ephemeron invariants,
+  bounded finalization and shutdown, deterministic host services, multi-dimensional budgets,
+  canonical outcomes, semantic properties, metamorphic and differential oracles, structure-aware
+  reduction, versioned executable caches, and profile-first runtime optimization.
+- Added `formal-verification-review` for precisely scoped proof claims, model-to-implementation
+  ledgers, state/action/trace property separation, inductive strengthening, linearizable histories,
+  stuttering refinement, abstraction direction, adversarial schedules and failures, justified
+  atomicity, weak-memory boundaries, network and crash-recovery models, property-directed slicing,
+  symmetry and partial-order reduction soundness, bound ladders, CEGAR and compositional proof,
+  model-based test bridges, solver-theory selection, SSA and memory encodings, quantifier and trigger
+  stability, unsat evidence and replay, caller-owned preconditions, weakest-precondition reasoning, useful loop invariants and
+  termination variants, ghost and frame conditions, abnormal postconditions, machine integer and
+  memory semantics, safety/liveness/fairness separation, bounded-search completeness, vacuity and
+  negative controls, explicit result taxonomies, trusted-computing-base and assumption manifests,
+  counterexample replay, executable refinement maps, logical contract compatibility, proof-cost and
+  brittleness tracking, verification-debt ratchets, and change-gate through release evidence lanes.
+- Added and strengthened `session-handoff-integrity-review` for live runtime, streaming, and
+  AI-agent session transfers, with single-writer owner epochs, snapshot-plus-delta and multi-store
+  cursor continuity, tombstones and absolute expiry, schema compatibility, current authorization
+  evaluation, target-bound one-time resume credentials, bidirectional application acknowledgments,
+  bounded replay, make-before-break drain, complete message and media cutover, command and effect
+  ledgers, typed context envelopes, status-query recovery, deterministic failpoints, and full-history
+  invariant checks.
+- Added and strengthened `ui-dispatch-lifecycle-review` so UI-thread dispatch is treated as
+  affinity scheduling rather than freshness proof, with per-instance owners, native handle
+  creation boundaries, bound-model and object-graph ownership, pure-data worker transfer, await
+  continuation review, event-loop liveness, owner-context deletion, explicit wait graphs,
+  application-time generations, cancellation ownership, ordered shutdown, queue-pressure
+  telemetry, controllable dispatchers, virtual time, and deterministic lifecycle races.
+- Added and strengthened `modal-loop-reentrancy-review` so blocking dialogs, nested event loops,
+  message pumping, synchronous UI waits, run-loop modes, dispatcher frames, portal requests, and
+  host callbacks use pre-pump session admission, coherent outer-stack invariants, delivery-aware
+  wait graphs, session-scoped completion and loop exit, one commit authority, nested owner-disable
+  and capture ownership, weak lifetime generations, hidden-dialog reuse policy, idempotent cleanup,
+  stale-input invalidation, low-overhead tracing, and deterministic reentry fixtures.
+- Added and strengthened `input-event-synchronization-review` so local and remote keyboard,
+  pointer, wheel, device, focus, capture, IME, clipboard, and surface paths use semantic delivery
+  classes, source and interaction epochs, gap recovery, explicit cancellation, application-level
+  acknowledgments, origin-lineage loop guards, per-owner arbitration, reconnect neutralization,
+  immutable tick batches, bounded causal diagnostics, virtual-clock replay, and adversarial
+  invariants.
+- Strengthened `idempotency-integrity-review` so retries retain one business operation identity,
+  ordering is scoped to the owning aggregate, causal versions and fences replace timestamps,
+  sequence gaps remain recoverable, stale completions fail at the authoritative write, and
+  cancellation, single-flight, FIFO naming, leases, or ordinary tests are not mistaken for durable
+  duplicate or ordering proof.
+- Strengthened `two-phase-transition-integrity-review` so admission is a durable reversible
+  promise, commit is an irreversible decision distinct from effect completion, client timeouts
+  preserve unknown outcomes, authority and execution states remain separate, and versioned recovery
+  workers, admission backpressure, operator evidence, transition journals, and safety-plus-liveness
+  fault checks own limbo instead of hiding it behind failed status strings.
+- Strengthened `race-condition-review` so agents distinguish logical races from data races and
+  lifetime failures, define forbidden outcomes, preserve replayable environment and schedule
+  capsules, force and minimize meaningful interleavings, build happens-before evidence without
+  logger-created synchronization, choose primitives by ownership semantics, and review atomic
+  publication, CAS side effects, ABA, reclamation, and linearizability separately.
+- Strengthened `cross-platform-filesystem-safety` so traversal reviews follow one decode and immutable-segment pipeline, resolve below trusted root descriptors, handles, or verified runtime capabilities, verify opened-object identity, preserve same-handle use, and treat hard links, mounts, reparse points, queued paths, archive destination graphs, metadata, sparse files, provider fallbacks, and destructive-operation races as separate boundaries.
+- Strengthened `file-upload-security-review` so public APIs authorize opaque file ids before resolving exact storage keys, raw locators stay behind one storage adapter, archive extraction preflights the whole destination graph and metadata policy, downloads isolate presentation filenames from storage identity, and static serving uses immutable manifests instead of filesystem probing.
+
 ### Fixed
 
 - Excluded linked Git worktrees and submodule-style checkouts from root source-anchor discovery so
@@ -20,6 +132,18 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Added
 
+- Added the `two-phase-transition-integrity-review` built-in skill so agents review generalized
+  prepare-and-commit handoffs around one atomic authority and generation cutover, immutable prepared
+  inputs, fencing, live-input continuity, idempotent recovery, and post-commit cleanup instead of
+  mistaking leases, notifications, or a health probe for transfer correctness.
+- Added the `input-boundary-validation-review` built-in skill so agents trace untrusted input from
+  raw bytes through strict decoding, field-specific canonicalization, one parser, typed semantic
+  validation, authorization, resource budgets, and structure-preserving sinks instead of treating
+  denylists, generic sanitizers, or parse success as a security boundary.
+- Added the `fuzz-harness-review` built-in skill so agents review target partitioning, deterministic
+  reset, semantic and resource oracles, raw and structured mutation lanes, instrumentation,
+  feedback, corpora, stateful sequences, campaign plateaus, and independently reproducible
+  artifacts instead of treating coverage growth or CPU time as proof.
 - Added the `parser-engineering-review` built-in skill so agents review lexer and parser work
   across recovery, Unicode, precedence and associativity, incremental reparsing, resource limits,
   hostile input, and stable diagnostic contracts instead of checking only valid-input AST output.
@@ -61,6 +185,25 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ### Changed
 
+- Strengthened `fuzz-harness-review` with deterministic property-based entropy, semantic result
+  envelopes, stable property and divergence identities, exact crash predicates, byte-plus-semantic
+  shrinking, trigger/detection/root-cause separation, purpose-specific sanitizer lanes, negative
+  controls, and distinct seed, coverage, crash, and semantic-regression CI lifecycles.
+- Strengthened `file-upload-security-review` with exact immutable object-version and digest binding,
+  decoded media and parser budgets, streaming archive output accounting and entry-type rejection,
+  DNS-address pinning and per-redirect SSRF validation, parser capability isolation, and denial
+  tests that prove rejected or partially processed bytes never reach publication.
+- Strengthened `parser-engineering-review` with installed lexer/tokenization and CST-to-AST lowering
+  checklists covering longest-match checkpoints, identifier and keyword policy, literal recovery,
+  lexical modes and goals, Unicode positions, EOF and streaming behavior, lossless source ownership,
+  surface AST versus HIR boundaries, typed absence and error states, deterministic trivia attachment,
+  syntax origins, evaluation-order-safe desugaring, read-only visitors, immutable transformers,
+  transactional rewriters, typed edit outcomes, deterministic conflict resolution, rewrite
+  termination, persistent handles, conservative analysis invalidation, cache versus durable tree
+  formats, bounded two-phase decoding, wire/structural/semantic/phase validation, deterministic
+  encoding, cross-version matrices, node/snapshot/side-table identity, staged tree verifiers,
+  incremental convergence, hostile-input budgets, and differential, fuzz, property, and generated
+  collision tests.
 - Changed skill-route dependency selection so required skills and matching unlocks are selected
   before generic suggestions, and narrowed adjacent pattern, transaction, queue, idempotency,
   agent-control, ledger, migration, API, and JSON skills to hand off durable execution ownership.

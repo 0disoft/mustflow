@@ -21,11 +21,19 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
 	const manifest = readText('templates/default/manifest.toml');
 	const i18n = readText('templates/default/i18n.toml');
+	const localReference = readText(
+		'.mustflow/skills/idempotency-integrity-review/references/operation-ordering-stale-write-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/idempotency-integrity-review/references/operation-ordering-stale-write-checklist.md',
+	);
 
 	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /duplicate intent integrity/u);
+	assert.match(localSkill, /^revision: 3$/mu);
+	assert.match(localSkill, /operation identity plus state-validity integrity/u);
 	assert.match(localSkill, /Operation identity ledger/u);
 	assert.match(localSkill, /Side-effect ledger/u);
 	assert.match(localSkill, /Durable dedupe evidence/u);
@@ -57,6 +65,17 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.match(localSkill, /Distributed locks/u);
 	assert.match(localSkill, /same request twice/u);
 	assert.match(localSkill, /duplicate key with changed payload/u);
+	assert.match(localSkill, /ordering scope and authority token/u);
+	assert.match(localSkill, /ahead-with-a-gap/u);
+	assert.match(localSkill, /failed compare-and-swap as a stale decision/u);
+	assert.match(localSkill, /Process-local single-flight reduces duplicate load/u);
+	assert.match(localSkill, /Operation Identity, Ordering, and Stale-Write Checklist/u);
+	assert.match(localReference, /One failure model/u);
+	assert.match(localReference, /Atomic duplicate admission/u);
+	assert.match(localReference, /Causal tokens and gaps/u);
+	assert.match(localReference, /Stale completion rejection/u);
+	assert.match(localReference, /Adversarial tests/u);
+	assert.match(localReference, /Reconciliation invariants/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/u);
 	assert.match(skillIndex, /idempotency-integrity triage/u);
 	assert.match(skillIndex, /duplicate business commands/u);
@@ -78,9 +97,13 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/idempotency-integrity-review\/references\/operation-ordering-stale-write-checklist\.md"/u,
+	);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('queue processing integrity review catches message settlement traps', () => {
@@ -421,6 +444,87 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			],
 		},
 		{
+			name: 'two-phase-transition-integrity-review',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 84,
+			revision: 2,
+			phrases: [
+				'old committed owner authoritative',
+				'atomic conditional commit',
+				'active_transition_id',
+				'fencing token',
+				'cutoff sequence',
+				'shadow execution',
+				'network calls',
+				'reverse transition',
+				'admission as a durable promise',
+				'observer knowledge',
+				'admission backpressure',
+			],
+			reference: 'references/two-phase-transition-checklist.md',
+			referencePhrases: [
+				'Authority invariant',
+				'Phase and command matrix',
+				'Lease and fencing matrix',
+				'Failure-injection matrix',
+				'state together with the last processed sequence',
+			],
+			additionalReference: 'references/admission-decision-recovery-checklist.md',
+			additionalReferencePhrases: [
+				'Three state axes',
+				'Unknown outcomes',
+				'Recovery ownership and backpressure',
+				'Identity and idempotency',
+				'Operator decisions',
+				'Safety and liveness',
+			],
+		},
+		{
+			name: 'session-handoff-integrity-review',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 86,
+			revision: 2,
+			phrases: [
+				'authority cutover with state and effect continuity',
+				'Pair every snapshot with a source revision',
+				'per-store cursor vector',
+				'Make target readiness session-specific',
+				'Enforce fencing at final sinks',
+				'Treat timeout and lost response as observer `UNKNOWN`',
+				'For AI-agent sessions, separate runtime context from model-visible context',
+				'one-purpose, one-time handoff or resume ticket',
+				'Track independent client-to-server and server-to-client',
+				'Cut over only at complete application boundaries',
+				'pending approval identity',
+				'Test the history, not only the final row',
+			],
+			reference: 'references/session-handoff-protocol-checklist.md',
+			referencePhrases: [
+				'Protocol invariants',
+				'Transfer-class inventory',
+				'Live commands and quiescence',
+				'Target acceptance',
+				'AI-agent context envelope',
+				'Tools, artifacts, output, and approvals',
+				'Fault matrix',
+				'History properties',
+			],
+			additionalReference: 'references/session-auth-stream-resume-checklist.md',
+			additionalReferencePhrases: [
+				'Consistent state boundary',
+				'Hidden state, expiry, and deletion',
+				'Cursor and acknowledgment semantics',
+				'Handoff and resume credentials',
+				'Authorization freshness and delegation',
+				'Bidirectional replay and resume',
+				'Make-before-break and drain',
+				'Message, compression, and media boundaries',
+				'Early-data replay',
+			],
+		},
+		{
 			name: 'durable-workflow-orchestration',
 			category: 'general_code',
 			routeType: 'primary',
@@ -469,13 +573,14 @@ test('durable execution skills keep distinct ownership and synchronized install 
 	assertSkillsIndexRevision(i18n);
 
 	for (const entry of cases) {
+		const revision = entry.revision ?? 1;
 		const localSkill = readText(`.mustflow/skills/${entry.name}/SKILL.md`);
 		const templateSkill = readText(
 			`templates/default/locales/en/.mustflow/skills/${entry.name}/SKILL.md`,
 		);
 
 		assert.equal(localSkill, templateSkill, `${entry.name} source and template must match`);
-		assert.match(localSkill, /^revision: 1$/mu);
+		assert.match(localSkill, new RegExp(`^revision: ${revision}$`, 'mu'));
 		for (const phrase of entry.phrases) {
 			assert.ok(localSkill.includes(phrase), `${entry.name} should preserve ${phrase}`);
 		}
@@ -488,9 +593,38 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			),
 		);
 		assert.ok(manifest.includes(`".mustflow/skills/${entry.name}/SKILL.md"`));
+		if (entry.reference) {
+			const localReference = readText(`.mustflow/skills/${entry.name}/${entry.reference}`);
+			const templateReference = readText(
+				`templates/default/locales/en/.mustflow/skills/${entry.name}/${entry.reference}`,
+			);
+			assert.equal(localReference, templateReference, `${entry.name} reference source and template must match`);
+			for (const phrase of entry.referencePhrases) {
+				assert.ok(localReference.includes(phrase), `${entry.name} reference should preserve ${phrase}`);
+			}
+			assert.ok(manifest.includes(`".mustflow/skills/${entry.name}/${entry.reference}"`));
+		}
+		if (entry.additionalReference) {
+			const localReference = readText(`.mustflow/skills/${entry.name}/${entry.additionalReference}`);
+			const templateReference = readText(
+				`templates/default/locales/en/.mustflow/skills/${entry.name}/${entry.additionalReference}`,
+			);
+			assert.equal(
+				localReference,
+				templateReference,
+				`${entry.name} additional reference source and template must match`,
+			);
+			for (const phrase of entry.additionalReferencePhrases) {
+				assert.ok(
+					localReference.includes(phrase),
+					`${entry.name} additional reference should preserve ${phrase}`,
+				);
+			}
+			assert.ok(manifest.includes(`".mustflow/skills/${entry.name}/${entry.additionalReference}"`));
+		}
 		assert.match(
 			i18n,
-			new RegExp(`\\[documents\\."skill\\.${entry.name}"\\][\\s\\S]*?revision = 1`, 'u'),
+			new RegExp(`\\[documents\\."skill\\.${entry.name}"\\][\\s\\S]*?revision = ${revision}`, 'u'),
 		);
 	}
 });
