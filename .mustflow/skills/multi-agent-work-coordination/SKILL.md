@@ -2,7 +2,7 @@
 mustflow_doc: skill.multi-agent-work-coordination
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: multi-agent-work-coordination
@@ -54,7 +54,12 @@ Do not use this skill when:
 
 - one agent is doing a small linear task
 - the user only asks for a normal code change, review, or test run
-- the requested work is a production automation runtime rather than repository coordination
+- the requested work decides whether several agents in a production runtime beat one, or designs
+  orchestrator-worker topology, role diversity, correlated-error controls, artifact ownership, and
+  central verification; use `agent-runtime-multi-worker-review`
+- the requested work separates durable agent state from queued short-lived workers, ephemeral
+  sandboxes, temporary credentials, or a trusted effect broker; use
+  `agent-runtime-isolation-review`
 - the requested work designs an LLM product agent's planner, executor, verifier, tool gates, approval or interrupt state, durable resume behavior, loop budgets, handoffs, guardrails, or trace outcome evaluation; use `agent-execution-control-review`
 - the repository or host instructions forbid starting workers or long-running processes
 

@@ -2,11 +2,11 @@
 mustflow_doc: skill.retry-policy-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: retry-policy-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and retry loops, SDK or client retry configs, backoff, jitter, timeout, deadline, Retry-After, retry predicates, layered retries, circuit breakers, bulkheads, token buckets, queue redelivery, broker retries, cancellation-aware sleeps, or retry observability can amplify failure, duplicate side effects, hide permanent errors, exhaust pools, or overload dependencies.
+description: Apply this skill when code or an agent runtime repeats, repairs, reroutes, replans, or stops after failures and retry loops, prompt correction, model or tool fallback, SDK configs, backoff, jitter, timeout, deadline, Retry-After, retry predicates, layered retries, circuit breakers, queue redelivery, cancellation, or retry observability can amplify failure, duplicate effects, hide permanent errors, or repeat the same unsupported recovery action.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -39,6 +39,9 @@ The review question is not "does this code retry?" It is "when the dependency is
 - Code creates, changes, reviews, or reports retry loops, SDK retry options, client retry middleware, `while true`, `for (;;)`, recursive retry, `maxAttempts`, `maxRetries`, `maxElapsedTime`, `deadline`, `timeout`, `sleep`, `delay`, backoff, jitter, `Retry-After`, circuit breaker, bulkhead, token bucket, rate limiter, or cancellation-aware retry behavior.
 - HTTP, database, Redis, queue, stream, object storage, payment, email, notification, file upload, webhook, scheduler, batch, worker, or provider calls can be repeated after failure, timeout, cancellation, rate limit, lock conflict, transaction retry, or redelivery.
 - A workflow has retries in more than one layer, such as caller retry plus service retry plus SDK retry plus load balancer retry plus queue redelivery plus broker retry.
+- An agent can repeat the same prompt, add validator feedback, choose another model or tool, replan,
+  request more privilege, or stop, and the correct recovery depends on whether new trustworthy
+  information changes the failure mechanism.
 - A review or final report claims a path is resilient, retry-safe, backoff-protected, rate-limit-aware, idempotent, transient-only, bounded, cancellation-safe, or protected by a circuit breaker, bulkhead, pool, timeout, or queue retry policy.
 
 <!-- mustflow-section: do-not-use-when -->
@@ -57,10 +60,17 @@ The review question is not "does this code retry?" It is "when the dependency is
 - Layered retry ledger: caller, API handler, service, SDK, driver, proxy, load balancer, queue, worker, scheduler, and provider retries with per-layer max attempts and elapsed-time budget.
 - Attempt budget: max attempts, max elapsed time, per-attempt timeout, total deadline, cancellation signal, sleep behavior, and whether DNS, TLS, connection checkout, pool wait, request body upload, response streaming, and response parsing are inside the budget.
 - Retry predicate: exception types, status codes, provider errors, timeout classes, rate-limit responses, transient versus permanent failure, unknown outcome, cancellation, validation errors, authorization errors, and programmer bugs.
+- Recovery-action ledger: normalized failure class and signature, new external evidence, same-request
+  retry, corrected-input or prompt repair, alternate model, alternate tool or data source, local or
+  workflow replan, stop or human handoff, expected recovery value, added latency and cost, duplicate
+  risk, remaining budget, and why the action changes the failure mechanism.
 - Side-effect and idempotency ledger: logical operation, idempotency key, key scope, request body hash, conditional write, transaction boundary, lock boundary, provider call, stream or upload body replayability, queue ack or commit, and committed response boundary.
 - Backoff and jitter policy: fixed sleep, exponential backoff, cap, jitter type, `Retry-After` parsing, clock skew, maximum delay, per-key backoff, global backoff, and reset after success.
 - Overload and throttling evidence: pool sizes, concurrency limit, bulkhead, token bucket, circuit breaker state, retry queue size, rate-limit budget, per-tenant or per-key fairness, and dependency-specific limits.
 - Observability and test evidence: attempt logs, per-attempt spans, retry metrics, retry exhaustion metrics, `Retry-After` values, request id, correlation id, cancellation tests, permanent-failure tests, timeout-budget tests, and configured command intents.
+- For model-directed recovery, external verifier evidence, repeated state-action-error signature,
+  route version, tool capability ceiling, plan version, and whether a self-critique or resampling path
+  has an independent way to select the correct result.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -149,6 +159,31 @@ The review question is not "does this code retry?" It is "when the dependency is
     - Good tests cover permanent failure not retried, max attempts, max elapsed time, total deadline, cancellation during sleep, retry-after parsing and clamping, jitter boundedness, idempotency key reuse, unknown outcome, pool or concurrency limit, and wrapper cause preservation.
     - If deterministic timing tests are hard, use fake clocks, injected sleeper, injected retry policy, or local test helpers already present in the repository.
     - If configured integration evidence is missing, report static risk and the missing manual or integration proof instead of approving the retry path.
+18. Choose among recovery actions, not only retry or fail.
+    - Compare same-request retry, corrected input or prompt, alternate model, alternate tool or source,
+      local replan, workflow replan, stop, and human handoff for the normalized failure class.
+    - Continue only when current evidence says the action has positive remaining value after latency,
+      cost, risk, duplicate-effect exposure, and consumed budgets. Use repository policy rather than a
+      universal attempt count.
+19. Require new trustworthy information for repair loops.
+    - Correct a prompt or model output with compiler errors, failed tests, schema paths,
+      postcondition mismatches, source conflicts, provider status, or another external signal.
+    - Do not treat the same model rereading its own answer, generic "think harder" text, or an
+      unverified critique as new evidence.
+20. Repeat the identical request only when the failure is plausibly transient and the operation is
+    replay-safe, or when independent sampling has an external verifier that can choose a valid
+    result. If no verifier can distinguish candidates, resampling does not establish correctness.
+21. Change model, tool, source, or plan only when it changes the failure mechanism. Switching models
+    cannot repair missing evidence; repeating search cannot repair a stale source without a changed
+    query or source; replanning cannot erase an UNKNOWN external effect.
+22. Stop repeated failure signatures. Hash or normalize the relevant state, proposed action, error
+    class, validator output, and route or tool version. When the same signature recurs without new
+    evidence, stop the local loop and take one declared higher-level recovery or handoff rather than
+    spending the remaining cap blindly.
+23. Keep safety failures attenuation-only. Prompt injection, policy denial, secret exposure,
+    unauthorized tools, and insufficient privilege do not justify a stronger model or wider
+    capability. Isolate the input, narrow tools, return to read or draft mode, request explicit
+    authority, or stop.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -156,6 +191,8 @@ The review question is not "does this code retry?" It is "when the dependency is
 - Retry layers, attempt multiplication, max attempts, max elapsed time, per-attempt timeout, total deadline, retry predicate, backoff, jitter, `Retry-After`, cancellation behavior, side-effect replay safety, idempotency key reuse, transaction or lock placement, pool pressure, throttling, circuit-breaker ordering, wrapper diagnostics, queue overlap, dependency policy, observability, and retry tests are explicit.
 - Infinite retry, broad catch-and-retry, permanent-error retry, unknown-outcome replay, new idempotency key per attempt, fixed-sleep herd behavior, retry inside long transaction or lock, pool exhaustion, app-plus-broker retry multiplication, stale failure counters, wrapper cause loss, committed-response retry, non-replayable body retry, cancellation-ignoring sleep, and missing retry metrics are fixed or reported.
 - Retry-safety claims are backed by configured tests, dependency or framework evidence matched to current code, schema or idempotency evidence, static review evidence, or labeled as manual-only or missing.
+- Model and tool recovery uses external evidence, changes the failure mechanism, preserves the
+  capability ceiling, and stops repeated signatures instead of relying on self-critique loops.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -180,6 +217,10 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 - If a configured command fails, preserve the failing intent, failing assertion or output tail, and the retry invariant it exercised before editing again.
 - If retry layers cannot be enumerated, report that the path is not reviewable for retry amplification yet.
 - If the retry predicate cannot distinguish transient from permanent failure, report the missing classification instead of accepting a broad retry.
+- If no external signal can distinguish a repaired or resampled output from the original failure,
+  stop automatic self-correction and report the missing verifier.
+- If a proposed recovery widens privilege after a tool or policy failure, reject that recovery and
+  require a separate authority decision.
 - If safe repair requires provider idempotency, durable operation records, queue or broker configuration, circuit-breaker architecture, dependency-specific client policy, fake-clock test infrastructure, load testing, or integration replay outside the current scope, report the missing boundary.
 - If deterministic retry proof is not configured, complete available verification and report the missing manual or integration evidence.
 
@@ -188,6 +229,8 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 
 - Retry policy boundary reviewed
 - Retry surface, layered retry ledger, attempt budget, timeout and deadline, retry predicate, unknown outcome, side-effect and idempotency key, transaction or lock placement, pool and concurrency pressure, backoff and jitter, `Retry-After`, global or per-key throttling, resilience-tool ordering, wrapper diagnostics, committed response or streaming body, queue or broker overlap, dependency policy, observability, and test evidence findings
+- Recovery actions, new external evidence, repeated failure signature, model/tool/source/replan or
+  stop decision, capability ceiling, and self-correction verifier findings
 - Retry-policy fixes made or recommended
 - Evidence level: configured-test evidence, dependency or framework evidence, schema or idempotency evidence, static review risk, manual-only, missing, or not applicable
 - Command intents run

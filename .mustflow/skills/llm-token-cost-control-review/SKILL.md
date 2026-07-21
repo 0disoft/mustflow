@@ -2,7 +2,7 @@
 mustflow_doc: skill.llm-token-cost-control-review
 locale: en
 canonical: true
-revision: 5
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-token-cost-control-review
@@ -47,6 +47,12 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 - The main risk is unsupported factual output, fabricated citations, source coverage, answerability, abstain behavior, retrieval thresholds, or hallucination metrics; use `llm-hallucination-control-review`.
 - The main risk is time to first token, first useful output, streaming, LLM round trips, tool wait, prompt-cache latency, model routing speed, priority tier, realtime continuation, or user-perceived response speed; use `llm-response-latency-review`.
 - The main risk is autonomous agent execution control, tool-call approval, side-effect replay safety, durable resume behavior, handoffs, guardrails, loop budgets, retry classification, or trace outcome evaluation; use `agent-execution-control-review`.
+- The main risk is whether a model router, cascade, escalation, fallback, or stage switch preserves
+  accepted outcomes under quality, safety, latency, context-handoff, and distribution-shift risk;
+  use `llm-model-routing-integrity-review`. Keep this skill for token and request-cost mechanics.
+- The main risk is customer-visible token versus task pricing, bounded outcome units, standard versus
+  premium packaging, managed provider cost, BYOK, platform fees, or failed-work charging; use
+  `llm-product-monetization-review`. Keep this skill for internal resource and cost mechanics.
 - The main risk is cloud account, infrastructure, SaaS, quota, budget, tag, retention, or provider-account spend guardrails outside the model-call payload; use `cloud-cost-guardrail-review`.
 - The main risk is rate-limit fairness, throttling, quota counters, concurrency limits, 429 response behavior, or protected-resource definition; use `rate-limit-integrity-review`.
 - The task only edits user-visible copy and does not affect LLM payload, model choice, retry behavior, or cost telemetry.
@@ -69,6 +75,9 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
   prompt-packing rule, and current input-token measurement.
 - Output ledger: output schema size, repeated key length, patch versus full-output policy, `max_output_tokens`, reasoning budget, retry repair inputs, validator errors, and incomplete-response handling.
 - Routing ledger: deterministic prefilters, small-model router, expensive-model escalation rule, batch or flex eligibility, predicted-output eligibility, image or file preprocessing, and fallback behavior.
+- For route-quality decisions, include the accepted-outcome evaluator, false-accept behavior,
+  distribution support, context-switch loss, and fixed router or verifier cost through
+  `llm-model-routing-integrity-review` instead of treating token price as sufficient evidence.
 - Observability ledger: input tokens, cached tokens when exposed by the provider, output tokens, reasoning tokens when exposed or billable, retry count, validation failure count, cache hit rate, cost per successful task, model, endpoint, prompt version, tool version, schema version, and budget breach events.
 - Boundary ledger: token estimates and caps owned here; accepted-work reservation persistence owned by `command-pattern`; prepaid or money-equivalent reserve, capture, and release owned by `credit-ledger-integrity-review`; allow, block, downgrade, and obligation provenance owned by `policy-decision-integrity-review`.
 
@@ -134,6 +143,9 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 17. Pack by references before raw text. Prefer stable document ids, chunk ids, section anchors, source maps, block refs, and token counts when choosing context. Expand only the needed source spans instead of replaying a whole corpus or full document list.
 18. Keep tool and schema payloads boring. Tool descriptions and JSON schemas should be long enough for correct routing and validation but not narrative prose. If permissions differ by user, keep schema stable and enforce permission at tool execution.
 19. Route before calling the expensive model. Use deterministic code, regexes, database lookups, small models, or cheap classifiers for tasks that do not need a large reasoning model; escalate only ambiguous, high-value, or failed cases.
+    Judge candidate models by total cost per accepted outcome, including verifier, escalation,
+    retry, repair, and handoff cost. Route calibration, OOD fallback, false-accept risk, and hard
+    safety constraints through `llm-model-routing-integrity-review`.
 20. Budget reasoning and output together. Set reasoning effort and output limits according to task value; leave enough room for visible output, and handle incomplete responses instead of silently retrying the full expensive request.
 21. Prefer patches over full regeneration when the product already owns most of the output. Use unified diff, JSON Patch, line-range replacement, IDs, labels, scores, or reason codes when downstream code can merge the result.
 22. Repair failures without full replay. For parse failures, enum mismatches, missing fields, or validator errors, retry with previous output, validator error, and schema summary when safe instead of resending the entire original context.
@@ -155,6 +167,8 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
 - Compression quality is evaluated against answer, citation, numeric, constraint, and refusal behavior rather than judged by shorter text alone.
 - Deterministic work is handled outside the model unless language judgment is required.
 - Metrics can explain cost per successful task, cache-prefix drift, retry cost, validation failures, and model routing decisions without leaking sensitive prompt or user data.
+- Cheaper-model claims are separated from route-integrity evidence and do not rely on per-call price
+  alone.
 - Final reports distinguish proven cost-control evidence from assumed provider behavior, anecdotal token savings, and latency-only optimizations.
 
 <!-- mustflow-section: verification -->

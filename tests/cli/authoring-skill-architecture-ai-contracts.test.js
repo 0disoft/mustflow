@@ -238,6 +238,7 @@ test('prompt contract quality review treats prompts as product contracts', () =>
 	assert.match(localSkill, /llm-hallucination-control-review/u);
 	assert.match(localSkill, /llm-token-cost-control-review/u);
 	assert.match(localSkill, /llm-response-latency-review/u);
+	assert.match(localSkill, /llm-model-routing-integrity-review/u);
 	assert.match(localSkill, /agent-execution-control-review/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/prompt-contract-quality-review\/SKILL\.md/u);
 	assert.match(skillIndex, /prompt-as-function gap/u);
@@ -360,6 +361,7 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(localSkill, /input tokens, cached tokens, output tokens, reasoning tokens/u);
 	assert.match(localSkill, /corpus version, index version, source hash/u);
 	assert.match(localSkill, /answer exactness, citation recall, numeric accuracy/u);
+	assert.match(localSkill, /llm-product-monetization-review/u);
 	assert.match(localSkill, /source-freshness-check/u);
 	assert.match(localSkill, /sensitive prompt or user data/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md/u);
@@ -374,7 +376,44 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 7/u);
+});
+
+test('LLM model routing review prices accepted outcomes and fails safe on unsupported cases', () => {
+	const localSkill = readText('.mustflow/skills/llm-model-routing-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/llm-model-routing-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /capable-model baseline/u);
+	assert.match(localSkill, /accepted-outcome evaluator/u);
+	assert.match(localSkill, /model self-confidence/u);
+	assert.match(localSkill, /Route deterministic work to code first/u);
+	assert.match(localSkill, /Measure route quality with external evidence/u);
+	assert.match(localSkill, /Optimize total cost per accepted outcome/u);
+	assert.match(localSkill, /cheap-first cascades only when the acceptance gate/u);
+	assert.match(localSkill, /Handle distribution shift explicitly/u);
+	assert.match(localSkill, /Account for context handoff loss/u);
+	assert.match(localSkill, /share the workflow's attempt budget/u);
+	assert.match(localSkill, /llm-product-monetization-review/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/llm-model-routing-integrity-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."llm-model-routing-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 72/u);
+	assert.match(manifest, /"\.mustflow\/skills\/llm-model-routing-integrity-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"llm-model-routing-integrity-review"/u);
+	}
+	assert.match(i18n, /\[documents\."skill\.llm-model-routing-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('LLM response latency review keeps first useful output measurable', () => {

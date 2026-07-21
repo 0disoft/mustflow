@@ -95,7 +95,9 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	assert.match(localSkill, /Amount and unit ledger/u);
 	assert.match(localSkill, /Ownership ledger/u);
 	assert.match(localSkill, /Expiry and lot ledger/u);
+	assert.match(localSkill, /Balance-rights ledger/u);
 	assert.match(localSkill, /Reservation ledger/u);
+	assert.match(localSkill, /Quote and fulfillment ledger/u);
 	assert.match(localSkill, /Queue and cache ledger/u);
 	assert.match(localSkill, /Audit and reconciliation ledger/u);
 	assert.match(localSkill, /Treat balance as a derived fact/u);
@@ -114,8 +116,10 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	assert.match(localSkill, /Model refunds as reversals/u);
 	assert.match(localSkill, /Test partial use and partial refund/u);
 	assert.match(localSkill, /Consume expiry lots deliberately/u);
+	assert.match(localSkill, /Keep purchased top-up, subscription-included, promotional/u);
 	assert.match(localSkill, /Race expiry and usage/u);
 	assert.match(localSkill, /Separate reservation from capture/u);
+	assert.match(localSkill, /Bind a reservation to an unexpired user-visible quote/u);
 	assert.match(localSkill, /Draw allowed state transitions/u);
 	assert.match(localSkill, /Preserve queue ordering or tolerate reordering/u);
 	assert.match(localSkill, /Treat message redelivery as normal/u);
@@ -151,7 +155,7 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	assert.match(manifest, /"\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credit-ledger-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('error message integrity review keeps failures actionable and safe', () => {

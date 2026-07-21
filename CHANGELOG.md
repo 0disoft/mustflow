@@ -10,6 +10,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Made npm releases commit-snapshot based: staged, unstaged, untracked, renamed, and deleted
   working-tree changes no longer block agents, while release identity comes only from committed
   `HEAD` and active merge, rebase, cherry-pick, revert, bisect, or sequencer operations still stop.
+- Added installed agent-runtime, planning, memory, rollout, model-routing, product monetization,
+  onboarding, retention, growth, portfolio, localization, desktop distribution, client-platform,
+  and solo-founder capital-allocation review skills with synchronized routes and templates.
+- Strengthened agent evaluation, execution control, prompt-injection defense, retries, idempotency,
+  credit-ledger, token-cost, and multi-agent coordination procedures around explicit authority,
+  durable state, bounded recovery, and independent verification.
 
 ### Changed
 

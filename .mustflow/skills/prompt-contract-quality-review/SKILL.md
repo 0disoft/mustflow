@@ -49,6 +49,7 @@ Review prompts as product contracts, not prose polish. A production prompt shoul
   context assembly, prompt construction, generation, citation validation, or answerability failed;
   use `rag-pipeline-triage` first.
 - The main risk is token spend, provider prompt-cache hit rate, chat-history bloat, RAG context size, model routing cost, reasoning budget, retry replay, or cost observability; use `llm-token-cost-control-review`.
+- The main risk is choosing a cheap-first model cascade, escalation threshold, fallback model, or route calibration while preserving accepted outcomes; use `llm-model-routing-integrity-review`.
 - The main risk is time to first token, first useful output, streaming latency, LLM round trips, tool wait, prompt-cache latency, model routing speed, realtime continuation, priority tier, predicted-output latency, or user-perceived response speed; use `llm-response-latency-review`.
 - The main risk is autonomous agent control flow, planner/executor/verifier separation, tool-call gates, approval or interrupt state, durable resume behavior, loop budgets, retry classification, handoffs, guardrails, or trace outcome evaluation; use `agent-execution-control-review`.
 - The main risk is untrusted text overriding instructions, hidden commands, data exfiltration, or agent permission drift; use `external-prompt-injection-defense` first, then this skill only for the prompt contract that remains.

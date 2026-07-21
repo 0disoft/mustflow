@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 277
+revision = 289
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -182,7 +182,7 @@ translations = {}
 [documents."skill.credit-ledger-integrity-review"]
 source = "locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.dual-write-consistency"]
@@ -560,13 +560,13 @@ translations = {}
 [documents."skill.idempotency-integrity-review"]
 source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.retry-policy-integrity-review"]
 source = "locales/en/.mustflow/skills/retry-policy-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.queue-processing-integrity-review"]
@@ -1153,7 +1153,7 @@ translations = {}
 [documents."skill.external-prompt-injection-defense"]
 source = "locales/en/.mustflow/skills/external-prompt-injection-defense/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.external-skill-intake"]
@@ -1188,7 +1188,7 @@ translations = {}
 [documents."skill.multi-agent-work-coordination"]
 source = "locales/en/.mustflow/skills/multi-agent-work-coordination/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.null-object-pattern"]
@@ -1434,7 +1434,13 @@ translations = {}
 [documents."skill.llm-token-cost-control-review"]
 source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 7
+translations = {}
+
+[documents."skill.llm-model-routing-integrity-review"]
+source = "locales/en/.mustflow/skills/llm-model-routing-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.llm-response-latency-review"]
@@ -1446,7 +1452,133 @@ translations = {}
 [documents."skill.agent-execution-control-review"]
 source = "locales/en/.mustflow/skills/agent-execution-control-review/SKILL.md"
 source_locale = "en"
+revision = 5
+translations = {}
+
+[documents."skill.agent-runtime-multi-worker-review"]
+source = "locales/en/.mustflow/skills/agent-runtime-multi-worker-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.agent-runtime-isolation-review"]
+source = "locales/en/.mustflow/skills/agent-runtime-isolation-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.agent-planning-recovery-review"]
+source = "locales/en/.mustflow/skills/agent-planning-recovery-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.agent-release-bundle-rollout-review"]
+source = "locales/en/.mustflow/skills/agent-release-bundle-rollout-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.automation-investment-case-review"]
+source = "locales/en/.mustflow/skills/automation-investment-case-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.product-onboarding-activation-review"]
+source = "locales/en/.mustflow/skills/product-onboarding-activation-review/SKILL.md"
+source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.subscription-retention-profit-review"]
+source = "locales/en/.mustflow/skills/subscription-retention-profit-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.product-engagement-retention-review"]
+source = "locales/en/.mustflow/skills/product-engagement-retention-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.credit-monetization-integrity-review"]
+source = "locales/en/.mustflow/skills/credit-monetization-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.pricing-model-integrity-review"]
+source = "locales/en/.mustflow/skills/pricing-model-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.game-economy-monetization-review"]
+source = "locales/en/.mustflow/skills/game-economy-monetization-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.freemium-ad-monetization-review"]
+source = "locales/en/.mustflow/skills/freemium-ad-monetization-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.referral-incentive-integrity-review"]
+source = "locales/en/.mustflow/skills/referral-incentive-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.llm-product-monetization-review"]
+source = "locales/en/.mustflow/skills/llm-product-monetization-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.game-liveops-commerce-integrity-review"]
+source = "locales/en/.mustflow/skills/game-liveops-commerce-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.growth-distribution-integrity-review"]
+source = "locales/en/.mustflow/skills/growth-distribution-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.product-portfolio-integrity-review"]
+source = "locales/en/.mustflow/skills/product-portfolio-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.localization-market-expansion-review"]
+source = "locales/en/.mustflow/skills/localization-market-expansion-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.desktop-commercial-distribution-review"]
+source = "locales/en/.mustflow/skills/desktop-commercial-distribution-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.client-platform-strategy-review"]
+source = "locales/en/.mustflow/skills/client-platform-strategy-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.service-portfolio-capital-allocation-review"]
+source = "locales/en/.mustflow/skills/service-portfolio-capital-allocation-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.browser-automation-reliability-review"]
@@ -1457,6 +1589,12 @@ translations = {}
 
 [documents."skill.agent-eval-integrity-review"]
 source = "locales/en/.mustflow/skills/agent-eval-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.agent-memory-context-governance-review"]
+source = "locales/en/.mustflow/skills/agent-memory-context-governance-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

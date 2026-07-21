@@ -2,7 +2,7 @@
 mustflow_doc: skill.idempotency-integrity-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: idempotency-integrity-review
@@ -60,6 +60,9 @@ deduplicates the operation or rejects the stale result?"
 ## Required Inputs
 
 - Operation identity ledger: logical operation, attempt, effect, actor, tenant, target resource, business operation type, canonical payload hash, idempotency key, event ID, message ID, provider object ID, batch key, scheduler run key, and retry source.
+- Workflow identity ledger when plans can change: `workflow_id`, `plan_id` or plan version,
+  `step_id`, stable `effect_id`, per-try `attempt_id`, causation ID, correlation ID, and the rule that
+  decides whether a replan represents the same admitted business intent or a new one.
 - Ordering and authority ledger: aggregate key, ordering scope, observed state, expected state, aggregate version, sequence, generation, fencing token, gap policy, stale-result decision, and authoritative conditional write.
 - Side-effect ledger: every charge, refund, balance change, stock change, coupon issue, shipment, email, notification, entitlement, status transition, file write, queue publish, cache change, provider call, and audit entry.
 - Durable dedupe evidence: unique constraints, idempotency table, inbox table, outbox table, applied event table, ledger source key, conditional update, state guard, provider idempotency key, and response record.
@@ -93,7 +96,11 @@ deduplicates the operation or rejects the stale result?"
 1. Name the logical operation, not only the endpoint.
    - POST, PATCH, DELETE, webhook, queue consumer, scheduler, batch replay, retry wrapper, and callback handlers can all carry the same duplicate-intent risk.
    - Ask what "same intent" means in business terms: same order payment attempt, same refund, same point grant, same coupon redemption, same shipment, same notification, same state transition, same imported row, or same provider event.
-   - Separate the stable operation ID from attempt, message, event, effect, trace, worker, and provider IDs. Generate a new attempt ID for a retry without generating a new business operation.
+   - Separate the stable operation ID from attempt, message, event, effect, trace, worker, and provider IDs. Generate a new `attempt_id` for a retry without generating a new business operation.
+   - In a replanning workflow, keep `workflow_id` stable for the workflow, `step_id` stable for the
+     logical step when appropriate, `effect_id` stable for the same admitted business intent across
+     plan versions, and `attempt_id` new for each execution try. A new plan version is not permission
+     to create a duplicate effect.
 2. Start at the side effect.
    - Find calls and writes named like `charge`, `capture`, `refund`, `withdraw`, `grantPoint`, `deductStock`, `issueCoupon`, `sendEmail`, `createShipment`, `publish`, `ack`, `markPaid`, `fulfill`, and local equivalents.
    - For each side effect, ask what happens if the exact surrounding handler runs twice, runs concurrently, or runs after the first response is lost.
@@ -102,6 +109,12 @@ deduplicates the operation or rejects the stale result?"
    - Duplicate key plus changed amount, resource, user, tenant, product, operation, or payload should become a stable mismatch response, not a new operation or silent old response.
    - Do not accept memory-only stores, process-local maps, or Redis TTL alone for operations that can be retried after restart, failover, delayed callback, or TTL expiry.
    - Keep the operation key stable across request, durable operation record, inbox or outbox, external effect, result lookup, and response replay.
+   - Derive or mint keys at a trusted boundary. Do not place raw personal data, secrets, mutable
+     display names, timestamps, or model-generated prose in a key. Prefer opaque random or keyed
+     deterministic identifiers whose canonical request fingerprint is stored separately.
+   - Retain durable idempotency evidence for at least the longest supported client retry, queue
+     redelivery, delayed callback, workflow recovery, manual replay, and business dispute window.
+     Do not copy one universal TTL; name the owning lifecycle and expiry consequence.
 4. Require durable uniqueness at the operation boundary.
    - App-only `if exists return` followed by `insert` is a race. Use a unique constraint, atomic insert, upsert, conditional write, or durable ledger key.
    - Review migrations or schema definitions, not just service code, for keys such as `order_id`, `payment_id`, `refund_id`, `event_id`, `message_id`, `idempotency_key`, `campaign_id + user_id`, and `settlement_date + merchant_id`.
@@ -161,6 +174,9 @@ deduplicates the operation or rejects the stale result?"
 21. Review `PROCESSING` and lease recovery.
     - A `PROCESSING` row without lease, heartbeat, timeout, owner, or reconciliation can permanently block retries after a crash.
     - A stale processing record should recover by verifying side effects and either completing, failing safely, or allowing one fenced owner to continue.
+    - Preserve an explicit `UNKNOWN` or `RECONCILING` state when the external result cannot yet be
+      proved. Do not expire the idempotency record or mint a new effect while reconciliation or
+      manual review still owns the outcome.
 22. Review locks as helpers, not proof.
     - Distributed locks can expire, split ownership, or pause through stop-the-world events.
     - Keep durable uniqueness, conditional writes, state guards, idempotency records, or fencing tokens as the final defense.
@@ -176,6 +192,8 @@ deduplicates the operation or rejects the stale result?"
 ## Postconditions
 
 - The logical operation and attempt identities, duplicate sources, ordering aggregate, authority token, gap policy, stale-result decision, side effects, durable operation key, payload binding, response replay contract, timeout recovery, processing recovery, queue or webhook dedupe, scheduler or batch dedupe, outbox or inbox boundary, and adversarial tests are explicit.
+- Workflow, plan, step, effect, and attempt identities are separated where replanning exists, and the
+  same admitted business intent keeps one effect identity across plan versions.
 - Duplicate business requests, changed-payload key reuse, concurrent `exists` then `insert`, per-retry operation IDs, duplicate increments, timestamp ordering, sequence gaps, stale state overwrites, cancellation-as-rollback, single-flight-as-proof, provider timeout retries, pre-record external calls, duplicate webhook delivery, queue redelivery, scheduler reruns, double compensation, stuck processing rows, weak locks, and frontend-only guards are fixed or reported.
 - Duplicate safety claims are backed by configured tests, schema evidence, framework evidence, provider documentation matched to current code, or labeled as static review risk.
 

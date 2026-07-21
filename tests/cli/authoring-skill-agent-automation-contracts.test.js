@@ -31,9 +31,26 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(localSkill, /Stage gate ledger/u);
 	assert.match(localSkill, /planner, executor, verifier/u);
 	assert.match(localSkill, /Tool contract ledger/u);
+	assert.match(localSkill, /Policy-graph ledger/u);
+	assert.match(localSkill, /state-dependent policy graph/u);
+	assert.match(localSkill, /Expose only the tool subset admitted for the current state/u);
+	assert.match(localSkill, /Prefer the sufficient lower-privilege tool/u);
+	assert.match(localSkill, /must not automatically reveal or authorize a higher-privilege alternative/u);
 	assert.match(localSkill, /draft versus execute/u);
 	assert.match(localSkill, /idempotency key/u);
 	assert.match(localSkill, /irreversible effects after approval checkpoints/u);
+	assert.match(localSkill, /Apply forced-approval conditions before any weighted score/u);
+	assert.match(localSkill, /exact rollback restores/u);
+	assert.match(localSkill, /compensation creates a new action/u);
+	assert.match(localSkill, /Place approval at the commit boundary/u);
+	assert.match(localSkill, /normalized plan or action hash/u);
+	assert.match(localSkill, /A generic Allow button/u);
+	assert.match(localSkill, /Verify postconditions independently after commitment/u);
+	assert.match(localSkill, /unknown outcome/u);
+	assert.match(localSkill, /approval-experience measures separate/u);
+	assert.match(localSkill, /agent-memory-context-governance-review/u);
+	assert.match(localSkill, /agent-planning-recovery-review/u);
+	assert.match(localSkill, /agent-release-bundle-rollout-review/u);
 	assert.match(localSkill, /state schema version/u);
 	assert.match(localSkill, /profile, thread state, and evidence cache/u);
 	assert.match(localSkill, /handoff/u);
@@ -50,14 +67,168 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(localSkill, /multi-agent-work-coordination/u);
 	assert.match(localSkill, /agent-eval-integrity-review/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-execution-control-review\/SKILL\.md/u);
-	assert.match(skillIndex, /unnecessary autonomous agent/u);
+	assert.match(skillIndex, /high-impact action hidden by an average score/u);
+	assert.match(skillIndex, /compensation sold as rollback/u);
 	assert.match(skillIndex, /remaining agent execution-control risk/u);
 	assert.match(routes, /\[routes\."agent-execution-control-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 70/u);
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-execution-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-execution-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 5/u);
+});
+
+test('agent runtime multi-worker review requires independent work and central admission', () => {
+	const localSkill = readText('.mustflow/skills/agent-runtime-multi-worker-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-runtime-multi-worker-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /default architecture single-agent/u);
+	assert.match(localSkill, /single-agent baseline/u);
+	assert.match(localSkill, /independently completable and verifiable work units/u);
+	assert.match(localSkill, /Prefer a star topology/u);
+	assert.match(localSkill, /correlated samples, not independent experts/u);
+	assert.match(localSkill, /Define one owner per artifact and effect/u);
+	assert.match(localSkill, /Use durable artifacts, not transcript relays/u);
+	assert.match(localSkill, /Verify centrally with deterministic checks first/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-runtime-multi-worker-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."agent-runtime-multi-worker-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 77/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-runtime-multi-worker-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"agent-runtime-multi-worker-review"/u);
+	}
+	assert.match(i18n, /\[documents\."skill\.agent-runtime-multi-worker-review"\][\s\S]*?revision = 1/u);
+});
+
+test('agent runtime isolation keeps durable state outside short-lived authority', () => {
+	const localSkill = readText('.mustflow/skills/agent-runtime-isolation-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-runtime-isolation-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Keep state long-lived while keeping execution processes and authority short-lived/u);
+	assert.match(localSkill, /Keep the control plane trusted/u);
+	assert.match(localSkill, /Route activities by capability/u);
+	assert.match(localSkill, /default them to read-only/u);
+	assert.match(localSkill, /Keep credentials short-lived and task-scoped/u);
+	assert.match(localSkill, /Deny network by default/u);
+	assert.match(localSkill, /trusted broker/u);
+	assert.match(localSkill, /preserve UNKNOWN outcomes/u);
+	assert.match(localSkill, /maximum tolerable loss/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-runtime-isolation-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."agent-runtime-isolation-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 78/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-runtime-isolation-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"agent-runtime-isolation-review"/u);
+	}
+	assert.match(i18n, /\[documents\."skill\.agent-runtime-isolation-review"\][\s\S]*?revision = 1/u);
+});
+
+test('agent planning recovery keeps global intent stable and replay deterministic', () => {
+	const localSkill = readText('.mustflow/skills/agent-planning-recovery-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-planning-recovery-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Freeze the global contract/u);
+	assert.match(localSkill, /rolling horizon/u);
+	assert.match(localSkill, /Replan on declared events/u);
+	assert.match(localSkill, /append-only event stream authoritative/u);
+	assert.match(localSkill, /effect_id` stable across replans/u);
+	assert.match(localSkill, /snapshots as disposable projections/u);
+	assert.match(localSkill, /prompt context as a temporary view/u);
+	assert.match(localSkill, /Resume deterministically before invoking a model/u);
+	assert.match(localSkill, /UNKNOWN/u);
+	assert.match(localSkill, /transactional outbox/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."agent-planning-recovery-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 75/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md"/u);
+	assert.match(i18n, /\[documents\."skill\.agent-planning-recovery-review"\][\s\S]*?revision = 1/u);
+});
+
+test('agent release bundles remain immutable through shadow canary and rollback', () => {
+	const localSkill = readText('.mustflow/skills/agent-release-bundle-rollout-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-release-bundle-rollout-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /one behavior bundle/u);
+	assert.match(localSkill, /fully rendered prompt/u);
+	assert.match(localSkill, /candidate creation separate from stable promotion/u);
+	assert.match(localSkill, /Shadow without external authority/u);
+	assert.match(localSkill, /stable work-unit identity/u);
+	assert.match(localSkill, /complete business work unit/u);
+	assert.match(localSkill, /Gate safety before quality and cost/u);
+	assert.match(localSkill, /absolute limits and a concurrent control/u);
+	assert.match(localSkill, /attenuation-only/u);
+	assert.match(localSkill, /reconcile in-flight UNKNOWN effects/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-release-bundle-rollout-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."agent-release-bundle-rollout-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 76/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-release-bundle-rollout-review\/SKILL\.md"/u);
+	assert.match(i18n, /\[documents\."skill\.agent-release-bundle-rollout-review"\][\s\S]*?revision = 1/u);
+});
+
+test('automation investment cases price accepted outcomes and keep safety independent', () => {
+	const localSkill = readText('.mustflow/skills/automation-investment-case-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/automation-investment-case-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.match(localSkill, /accepted outcome/u);
+	assert.match(localSkill, /expected variable cost per accepted outcome/u);
+	assert.match(localSkill, /human or current-system comparator/u);
+	assert.match(localSkill, /binding constraint exists/u);
+	assert.match(localSkill, /Calculate break-even with ranges/u);
+	assert.match(localSkill, /effective lifetime/u);
+	assert.match(localSkill, /NPV/u);
+	assert.match(localSkill, /safety as a hard independent gate/u);
+	assert.match(localSkill, /universal numeric thresholds/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."automation-investment-case-review"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"\r?\npriority = 47/u);
+	assert.match(manifest, /"\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md"/u);
+	assert.match(i18n, /\[documents\."skill\.automation-investment-case-review"\][\s\S]*?revision = 1/u);
 });
 
 test('browser automation reliability review rejects click scripts without state evidence', () => {
@@ -138,7 +309,9 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /revision: 4/u);
+	assert.match(localSkill, /agent-runtime-multi-worker-review/u);
+	assert.match(localSkill, /agent-runtime-isolation-review/u);
 	assert.match(localSkill, /Define the Delegation Envelope/u);
 	assert.match(localSkill, /worker count, roles, task boundaries, wait condition, merge rule, and output schema/u);
 	assert.match(localSkill, /delegation depth: at most 1/u);
@@ -166,7 +339,7 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.match(routes, /\[routes\."multi-agent-work-coordination"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "adjunct"\r?\npriority = 90/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-agent-work-coordination"/u);
-	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 4/u);
 });
 
 test('agent eval integrity review grades outcomes, trajectories, and oracle layers', () => {
@@ -182,21 +355,33 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /evidence loop, not a judge-model opinion/u);
+	assert.match(localSkill, /asymmetric evidence cascade, not a judge-model opinion/u);
 	assert.match(localSkill, /final environment state/u);
 	assert.match(localSkill, /trace or trajectory/u);
 	assert.match(localSkill, /Outcome ledger/u);
 	assert.match(localSkill, /Trace ledger/u);
 	assert.match(localSkill, /Oracle ledger/u);
 	assert.match(localSkill, /Tool-boundary ledger/u);
-	assert.match(localSkill, /golden regression set, dirty real-world set/u);
+	assert.match(localSkill, /fixed regression set, recent real-traffic replay set/u);
 	assert.match(localSkill, /pass@k/u);
 	assert.match(localSkill, /pass\^k/u);
 	assert.match(localSkill, /shadow environment/u);
 	assert.match(localSkill, /production-monitoring/u);
 	assert.match(localSkill, /deterministic checks/u);
 	assert.match(localSkill, /model judges/u);
-	assert.match(localSkill, /sample humans/u);
+	assert.match(localSkill, /sampled humans/u);
+	assert.match(localSkill, /Define the decision loss/u);
+	assert.match(localSkill, /Build an asymmetric cascade/u);
+	assert.match(localSkill, /Everything else remains `held`/u);
+	assert.match(localSkill, /Make semantic verification independent in inputs/u);
+	assert.match(localSkill, /correlated evidence/u);
+	assert.match(localSkill, /repair worker only after/u);
+	assert.match(localSkill, /fixed regression cases/u);
+	assert.match(localSkill, /recent real-traffic replay cases/u);
+	assert.match(localSkill, /generated or perturbed exploration cases/u);
+	assert.match(localSkill, /Prevent contamination/u);
+	assert.match(localSkill, /Version expected truth/u);
+	assert.match(localSkill, /operational metric families separate/u);
 	assert.match(localSkill, /self-reflection/u);
 	assert.match(localSkill, /prechecks and postchecks/u);
 	assert.match(localSkill, /prepare, verify, and commit/u);
@@ -206,20 +391,68 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.match(localSkill, /payload size/u);
 	assert.match(localSkill, /fail closed/u);
 	assert.match(localSkill, /fail soft/u);
-	assert.match(localSkill, /Avoid brittle path assertions/u);
+	assert.match(localSkill, /Prefer invariant-based expected outcomes/u);
 	assert.match(localSkill, /Promote production failures into eval candidates/u);
 	assert.match(localSkill, /privacy-safe/u);
 	assert.match(localSkill, /agent-execution-control-review/u);
 	assert.match(localSkill, /prompt-contract-quality-review/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-eval-integrity-review\/SKILL\.md/u);
-	assert.match(skillIndex, /LLM judge as sole oracle/u);
+	assert.match(skillIndex, /correlated judges treated as independent/u);
+	assert.match(skillIndex, /stale expected truth/u);
 	assert.match(skillIndex, /remaining agent eval-integrity risk/u);
 	assert.match(routes, /\[routes\."agent-eval-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 71/u);
 	assert.match(routes, /"performance_change"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-eval-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-eval-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 2/u);
+});
+
+test('agent memory and context governance keeps derived memory scoped, fresh, and deletable', () => {
+	const localSkill = readText('.mustflow/skills/agent-memory-context-governance-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-memory-context-governance-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /scoped, versioned, revocable control plane/u);
+	assert.match(localSkill, /Current user instructions and authoritative systems remain the source of truth/u);
+	assert.match(localSkill, /Memory-class ledger/u);
+	assert.match(localSkill, /Authority ledger/u);
+	assert.match(localSkill, /Lifecycle ledger/u);
+	assert.match(localSkill, /Context-assembly ledger/u);
+	assert.match(localSkill, /Apply hard filters before similarity/u);
+	assert.match(localSkill, /Treat summaries as rebuildable caches/u);
+	assert.match(localSkill, /Use long context as a bounded fallback/u);
+	assert.match(localSkill, /Treat retrieved memory as data, never command authority/u);
+	assert.match(localSkill, /non-storable long-term secrets/u);
+	assert.match(localSkill, /Propagate deletion/u);
+	assert.match(localSkill, /tombstone/u);
+	assert.match(localSkill, /memory precision/u);
+	assert.match(localSkill, /current-instruction override/u);
+	assert.match(localSkill, /cross-scope leakage/u);
+	assert.match(localSkill, /memory-lifetime-review/u);
+	assert.match(localSkill, /agent-execution-control-review/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-memory-context-governance-review\/SKILL\.md/u);
+	assert.match(skillIndex, /summary-on-summary drift/u);
+	assert.match(routes, /\[routes\."agent-memory-context-governance-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 74/u);
+	assert.match(routes, /"persistent-memory"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-memory-context-governance-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"agent-memory-context-governance-review"/u);
+	}
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.agent-memory-context-governance-review"\][\s\S]*?revision = 1/u);
 });
 
 test('search ad content authoring keeps monetized content reader-first', () => {
@@ -432,6 +665,7 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.equal(regressionSkill, regressionTemplate);
 	assert.equal(dependencySkill, dependencyTemplate);
 	assert.equal(promptSkill, promptTemplate);
+	assert.match(promptSkill, /^revision: 7$/mu);
 	assert.match(dependencySkill, /workspace package contract/u);
 	assert.match(dependencySkill, /package\.json` as that package's external contract/u);
 	assert.match(dependencySkill, /emitted JavaScript imports a package/u);
@@ -503,6 +737,15 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(promptSkill, /auto-accept/u);
 	assert.match(promptSkill, /context exposure/u);
 	assert.match(promptSkill, /production credentials/u);
+	assert.match(promptSkill, /Separate trusted planning from untrusted collection/u);
+	assert.match(promptSkill, /typed collector output/u);
+	assert.match(promptSkill, /field-level trust/u);
+	assert.match(promptSkill, /trusted-source corroboration or human/u);
+	assert.match(promptSkill, /structured, policy-approved arguments/u);
+	assert.match(promptSkill, /Separate capability domains and processes/u);
+	assert.match(promptSkill, /durable memory writes behind a separate admission path/u);
+	assert.match(promptSkill, /detectors attenuation-only/u);
+	assert.match(promptSkill, /instruction injection and data injection separately/u);
 });
 
 test('architecture deepening review stays review-first and template-synced', () => {

@@ -152,6 +152,26 @@
       ]
     },
     {
+      "id": "persistent-agent-memory-governance",
+      "task": "Review persistent user memory extraction retrieval supersession expiry and deletion before long-term memory enters agent context",
+      "paths": [
+        "src/agents/memory/persistent-memory.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change",
+        "privacy_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-memory-context-governance-review",
+      "required_candidates": [
+        "agent-memory-context-governance-review"
+      ],
+      "forbidden_candidates": [
+        "memory-lifetime-review"
+      ]
+    },
+    {
       "id": "append-only-execution-replay",
       "task": "Replay a durable workflow execution from an append-only ledger without repeating an already committed effect receipt",
       "paths": [
@@ -227,6 +247,402 @@
       "required_adjuncts": [
         "migration-safety-check",
         "contract-sync-check"
+      ]
+    },
+    {
+      "id": "agent-rolling-plan-recovery",
+      "task": "Recover a long-running agent from an append-only event log, reconcile an unknown effect, and replan the rolling plan without changing the effect id",
+      "paths": [
+        "src/agents/planning-recovery.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-planning-recovery-review",
+      "required_candidates": [
+        "agent-planning-recovery-review",
+        "execution-ledger-integrity-review",
+        "idempotency-integrity-review"
+      ]
+    },
+    {
+      "id": "agent-bundle-sticky-canary",
+      "task": "Promote an immutable agent behavior bundle after offline evaluation from write-free shadow traffic to a sticky canary with hard safety gates and complete rollback",
+      "paths": [
+        "src/agents/release-bundles.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-release-bundle-rollout-review",
+      "required_candidates": [
+        "agent-release-bundle-rollout-review",
+        "agent-eval-integrity-review",
+        "deployment-rollout-safety-review"
+      ]
+    },
+    {
+      "id": "automation-investment-break-even",
+      "task": "Decide whether an AI automation is worth building using accepted outcome cost, human comparison, supervision, failure recovery, break even volume, NPV, and a safety gate",
+      "paths": [
+        "docs/decisions/automation-investment.md"
+      ],
+      "reasons": [
+        "product_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "automation-investment-case-review",
+      "required_candidates": [
+        "automation-investment-case-review"
+      ]
+    },
+    {
+      "id": "product-onboarding-owned-activation",
+      "task": "Test one intent question, an editable sample, a sample-to-own transition, and one intent-specific primary action using the full assigned signup cohort and a first-owned-result activation contract",
+      "paths": [
+        "src/product/onboarding-activation.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "product-onboarding-activation-review"
+    },
+    {
+      "id": "product-onboarding-pre-account-transfer",
+      "task": "Compare try-before-signup with account-first from the eligible visitor denominator, place the account checkpoint at durable ownership or sensitive work, transfer the anonymous result once into a stable user identity, compare authentication choices by service and recovery risk, and choose contextual instruction from task complexity",
+      "paths": [
+        "src/product/pre-account-activation.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "product-onboarding-activation-review"
+    },
+    {
+      "id": "subscription-retention-incremental-profit",
+      "task": "Compare downgrade, subscription pause, usage credit, discount, and no-offer control by incremental contribution margin per assigned dormant subscriber while tracking pause resume and later paid survival",
+      "paths": [
+        "src/subscriptions/retention-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "subscription-retention-profit-review"
+    },
+    {
+      "id": "product-engagement-value-streak-reminder",
+      "task": "Design a weekly completed-value report, a cadence-aligned value streak separated from rewards, and a single-send abandoned-work timing experiment with silence holdouts, natural-return cancellation, completed-value outcomes, and unsubscribe block uninstall guardrails",
+      "paths": [
+        "src/product/engagement-retention.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "product-engagement-retention-review"
+    },
+    {
+      "id": "credit-monetization-offer-rights-and-quote",
+      "task": "Compare signup, first-owned-value, and depletion-triggered credit-pack offers from pre-trigger assignment; normalize discount and bonus unit economics; derive pack count from usage; preserve purchased, subscription, and promotional balance rights; and show an exact or bounded quote before reserve, usable-result capture, and release",
+      "paths": [
+        "src/product/credit-monetization.ts",
+        "src/credits/quote-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "credit-monetization-integrity-review",
+      "required_candidates": [
+        "credit-ledger-integrity-review"
+      ]
+    },
+    {
+      "id": "pricing-model-trial-lifetime-region-and-annual",
+      "task": "Compare cardless, card-required, and paid-starter trials from pre-gate assignment; bound lifetime access against heavy-user cost and subscription cannibalization; separate local currency from regional price bands; choose subscription, usage, or hybrid pricing; measure price elasticity from eligible users; and compare annual discounts using cash, survival, renewal, service obligation, and contribution",
+      "paths": [
+        "src/product/pricing-model.ts",
+        "src/billing/trial-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "pricing-model-integrity-review",
+      "required_candidates": [
+        "payment-integrity-review"
+      ]
+    },
+    {
+      "id": "game-revive-energy-ads-and-membership",
+      "task": "Design a game economy that compares credit and rewarded-ad revives, natural energy recovery and paid refills, and bounded VIP benefits while preserving meaningful failure, ranked fairness, IAP contribution, retained play, and finite-content life",
+      "paths": [
+        "src/game/economy/revive-policy.ts",
+        "src/game/economy/energy-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "game-economy-monetization-review"
+    },
+    {
+      "id": "freemium-value-limit-and-ad-placement",
+      "task": "Compare ad-supported free access with an ad-free usage-limited tier, preserve a complete first owned result, place interstitials only after natural transitions, keep rewarded ads optional, continue when ads fail, and decide from retained per-eligible-user contribution",
+      "paths": [
+        "src/product/free-tier.ts",
+        "src/ads/placement-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "privacy_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "freemium-ad-monetization-review"
+    },
+    {
+      "id": "referral-attribution-vesting-and-abuse",
+      "task": "Design a dual-sided referral program with equal-budget experiments, deterministic attribution, downstream valid-referral qualification, pending and vested rewards, rolling tiers, reversal, multi-signal self-referral controls, legitimate-household handling, appeals, and incremental contribution",
+      "paths": [
+        "src/growth/referral-policy.ts",
+        "src/credits/referral-rewards.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "data_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "referral-incentive-integrity-review"
+    },
+    {
+      "id": "llm-task-pricing-model-tiers-and-byok",
+      "task": "Design an LLM product that sells bounded task and accepted-result units while metering tokens and tool cost internally, offers model-independent standard and precision tiers without surprise escalation charges, and compares managed provider cost with secure paid-platform BYOK",
+      "paths": [
+        "src/product/llm-pricing.ts",
+        "src/providers/customer-credentials.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "llm-product-monetization-review"
+    },
+    {
+      "id": "llm-queue-failure-recovery-and-model-transparency",
+      "task": "Design free and paid LLM queue priority without artificial delay or first-value starvation, automatically release or reverse objective failed-work charges while bounding subjective retry rights, and expose auditable execution details without making an unstable model name the default product contract",
+      "paths": [
+        "src/product/llm-service-policy.ts",
+        "src/credits/llm-settlement-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "performance_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "llm-product-monetization-review"
+    },
+    {
+      "id": "game-season-membership-catalog-and-random-rewards",
+      "task": "Compare a sustainable seasonal battle pass with ongoing membership value, classify cosmetics and power against a fair ceiling, prefer transparent deterministic bundles, and review paid or free randomized rewards through odds, pity, duplicates, age, geography, payer concentration, production cost, and retained contribution",
+      "paths": [
+        "src/game/liveops/season-policy.ts",
+        "src/game/store/catalog-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "game-liveops-commerce-integrity-review"
+    },
+    {
+      "id": "watermark-affiliate-and-owned-cross-promotion",
+      "task": "Review whether public free-result branding creates incremental retained customers without degrading shared work, compare bounded influencer and affiliate compensation from qualified incremental net value, and gate owned-product cross-promotion by source value, product fit, fatigue, brand clarity, data boundaries, and portfolio contribution",
+      "paths": [
+        "src/growth/artifact-attribution-policy.ts",
+        "src/growth/partner-and-portfolio-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "privacy_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "growth-distribution-integrity-review"
+    },
+    {
+      "id": "portfolio-account-wallet-bundle-and-brand",
+      "task": "Review a multi-product portfolio that shares login while preserving service-scoped authorization, tests a common credit wallet without cost arbitrage or purchase cannibalization, keeps individual subscriptions beside an optional bundle, and chooses umbrella, endorsed, or independent brands from fit and real failure isolation",
+      "paths": [
+        "src/portfolio/account-and-wallet-policy.ts",
+        "src/portfolio/package-and-brand-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "behavior_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "product-portfolio-integrity-review"
+    },
+    {
+      "id": "staged-locale-market-expansion",
+      "task": "Choose the first paying-customer language, keep the product internationalization-ready without launching every locale, stage exploratory, revenue-ready, and fully supported languages, use AI translation as a versioned draft with consequence-based human review, and judge localized SEO from retained per-locale contribution",
+      "paths": [
+        "src/product/locale-market-policy.ts",
+        "src/seo/localized-demand-policy.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "i18n_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "localization-market-expansion-review"
+    },
+    {
+      "id": "desktop-direct-store-and-hybrid-commerce",
+      "task": "Compare direct website delivery, Microsoft Store, Mac App Store, and hybrid desktop distribution by current app-type policy, capability and sandbox fit, install trust, checkout and license restoration, update ownership, complete channel cost, and retained contribution while keeping one product core with channel adapters",
+      "paths": [
+        "src/desktop/commercial-distribution-policy.ts",
+        "src/licensing/channel-entitlements.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "desktop-commercial-distribution-review"
+    },
+    {
+      "id": "client-web-native-and-data-authority",
+      "task": "Choose responsive web, PWA, cross-platform, or native launch sequencing from required operating-system capabilities and comparable retained contribution, then decide local-first or cloud-first authority per data class with explicit offline conflicts, privacy, backup, and recovery",
+      "paths": [
+        "src/product/client-platform-strategy.ts",
+        "src/data/sync-authority.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "data_change",
+        "privacy_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "client-platform-strategy-review"
+    },
+    {
+      "id": "service-portfolio-invest-close-and-allocate",
+      "task": "Calculate the failure-adjusted break-even interval for a shared backend, decide which low-usage services to continue rescue archive or shut down from future contribution and preserved value, and allocate founder time between launches and existing-product improvements by marginal contribution and context-switch cost",
+      "paths": [
+        "docs/portfolio/capital-allocation.md",
+        "src/platform/failure-cell-economics.ts"
+      ],
+      "reasons": [
+        "product_change",
+        "performance_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "service-portfolio-capital-allocation-review"
+    },
+    {
+      "id": "runtime-indirect-prompt-injection",
+      "task": "Harden an agent that reads untrusted tool results by adding field taint, trusted corroboration, deterministic argument policy, and a capability-separated executor",
+      "paths": [
+        "src/agents/untrusted-collector.ts"
+      ],
+      "reasons": [
+        "security_change",
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "external-prompt-injection-defense"
+      ],
+      "required_adjuncts": [
+        "external-prompt-injection-defense"
+      ]
+    },
+    {
+      "id": "llm-model-route-accepted-outcome",
+      "task": "Replace a capable-model baseline with a cheap-first model cascade only where an external verifier preserves accepted outcomes, while OOD cases fall back safely and model switches preserve context",
+      "paths": [
+        "src/llm/model-router.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "performance_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "llm-model-routing-integrity-review"
+    },
+    {
+      "id": "agent-runtime-orchestrator-workers",
+      "task": "Decide whether independently verifiable research units justify an orchestrator-worker runtime, then bound fan-out, give each artifact one owner, measure correlated errors, and admit results through a central verifier",
+      "paths": [
+        "src/agents/runtime-workers.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "performance_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-runtime-multi-worker-review"
+    },
+    {
+      "id": "agent-runtime-durable-isolation",
+      "task": "Keep durable agent state outside short-lived workers, dispatch through capability-specific queues, run each job in an ephemeral sandbox with scoped credentials, and broker production effects through the control plane",
+      "paths": [
+        "src/agents/runtime-isolation.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-runtime-isolation-review"
+    },
+    {
+      "id": "agent-retry-recovery-action",
+      "task": "Repair a failed agent attempt using compiler or schema feedback, stop when the same error signature repeats, and never widen privileges while choosing a model, tool, prompt, or replan recovery action",
+      "paths": [
+        "src/agents/recovery-policy.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "retry-policy-integrity-review"
+      ],
+      "required_adjuncts": [
+        "retry-policy-integrity-review"
       ]
     },
     {

@@ -32,9 +32,12 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 3$/mu);
+	assert.match(localSkill, /^revision: 4$/mu);
 	assert.match(localSkill, /operation identity plus state-validity integrity/u);
 	assert.match(localSkill, /Operation identity ledger/u);
+	assert.match(localSkill, /Workflow identity ledger/u);
+	assert.match(localSkill, /effect_id` stable/u);
+	assert.match(localSkill, /new `attempt_id`/u);
 	assert.match(localSkill, /Side-effect ledger/u);
 	assert.match(localSkill, /Durable dedupe evidence/u);
 	assert.match(localSkill, /Duplicate response policy/u);
@@ -44,6 +47,8 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.match(localSkill, /actor, tenant, operation type, target resource/u);
 	assert.match(localSkill, /memory-only stores/u);
 	assert.match(localSkill, /Redis TTL alone/u);
+	assert.match(localSkill, /longest supported client retry/u);
+	assert.match(localSkill, /raw personal data/u);
 	assert.match(localSkill, /unique constraint/u);
 	assert.match(localSkill, /exists return` followed by `insert/u);
 	assert.match(localSkill, /response replay/u);
@@ -62,6 +67,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.match(localSkill, /Compensation actions/u);
 	assert.match(localSkill, /PROCESSING/u);
 	assert.match(localSkill, /lease, heartbeat, timeout, owner/u);
+	assert.match(localSkill, /`UNKNOWN` or `RECONCILING`/u);
 	assert.match(localSkill, /Distributed locks/u);
 	assert.match(localSkill, /same request twice/u);
 	assert.match(localSkill, /duplicate key with changed payload/u);
@@ -103,7 +109,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 4/u);
 });
 
 test('queue processing integrity review catches message settlement traps', () => {
@@ -209,6 +215,10 @@ test('retry policy integrity review catches amplification and unsafe replay', ()
 	assert.match(localSkill, /Backoff and jitter policy/u);
 	assert.match(localSkill, /Overload and throttling evidence/u);
 	assert.match(localSkill, /Observability and test evidence/u);
+	assert.match(localSkill, /Recovery-action ledger/u);
+	assert.match(localSkill, /new external evidence/u);
+	assert.match(localSkill, /corrected-input or prompt repair/u);
+	assert.match(localSkill, /alternate model, alternate tool or data source/u);
 	assert.match(localSkill, /`while true`/u);
 	assert.match(localSkill, /`for \(;;\)`/u);
 	assert.match(localSkill, /recursive retry/u);
@@ -241,6 +251,11 @@ test('retry policy integrity review catches amplification and unsafe replay', ()
 	assert.match(localSkill, /attempts_total, retry_exhausted_total/u);
 	assert.match(localSkill, /cancellation during sleep/u);
 	assert.match(localSkill, /fake clocks, injected sleeper, injected retry policy/u);
+	assert.match(localSkill, /Correct a prompt or model output with compiler errors/u);
+	assert.match(localSkill, /external verifier that can choose a valid/u);
+	assert.match(localSkill, /only when it changes the failure mechanism/u);
+	assert.match(localSkill, /Keep safety failures attenuation-only/u);
+	assert.match(localSkill, /stops repeated signatures instead of relying on self-critique loops/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md/u);
 	assert.match(skillIndex, /retry-policy integrity triage/u);
 	assert.match(skillIndex, /can amplify failures, duplicate side effects, hide permanent errors/u);
@@ -264,7 +279,7 @@ test('retry policy integrity review catches amplification and unsafe replay', ()
 	assert.match(manifest, /"\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"retry-policy-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.retry-policy-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.retry-policy-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('transaction boundary integrity review catches atomicity and side-effect traps', () => {

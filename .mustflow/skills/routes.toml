@@ -290,7 +290,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 suggests_adjuncts = ["idempotency-integrity-review", "transaction-boundary-integrity-review"]
 
 [routes."execution-ledger-integrity-review".contexts]
-positive_terms = ["attempt", "checkpoint", "effect", "execution", "ledger", "receipt", "replay", "sequence"]
+positive_terms = ["attempt", "checkpoint", "durable-workflow", "effect", "execution", "failed-activity", "ledger", "receipt", "replay", "saga-compensation", "sequence"]
 negative_terms = ["accounting", "balance", "billing", "credit", "points", "settlement", "wallet"]
 
 [routes."policy-decision-integrity-review"]
@@ -341,6 +341,227 @@ category = "workflow_contracts"
 route_type = "primary"
 priority = 45
 applies_to_reasons = ["unknown_change", "product_change", "cross_cutting_code_change"]
+
+[routes."automation-investment-case-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 47
+applies_to_reasons = ["product_change", "docs_change"]
+
+[routes."automation-investment-case-review".dependencies]
+suggests_adjuncts = ["source-freshness-check"]
+
+[routes."automation-investment-case-review".contexts]
+positive_terms = ["accepted-outcome", "automation-roi", "break-even", "effective-lifetime", "human-comparator", "maintenance-cost", "npv", "payback", "supervision-cost", "throughput-value"]
+negative_terms = ["cloud-cost-only", "model-token-cost-only", "vendor-selection-only"]
+
+[routes."product-onboarding-activation-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 52
+applies_to_reasons = ["product_change"]
+
+[routes."product-onboarding-activation-review".dependencies]
+suggests_adjuncts = ["website-task-friction-review", "date-number-audit"]
+
+[routes."product-onboarding-activation-review".contexts]
+positive_terms = ["account-checkpoint", "activation-contract", "anonymous-state-transfer", "contextual-help", "editable-sample", "email-otp", "first-owned-result", "guest-experience", "intent-question", "intent-to-treat", "onboarding-personalization", "pre-signup-trial", "primary-action", "progressive-disclosure", "sample-to-own", "signup-first", "signup-funnel", "social-login", "time-to-value", "user-owned-result"]
+negative_terms = ["contributor-onboarding", "employee-onboarding", "repository-onboarding", "subscription-winback"]
+
+[routes."subscription-retention-profit-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 53
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
+
+[routes."subscription-retention-profit-review".dependencies]
+suggests_adjuncts = ["payment-integrity-review", "date-number-audit"]
+
+[routes."subscription-retention-profit-review".contexts]
+positive_terms = ["cancellation-flow", "churn-reason", "contribution-margin", "discount-cannibalization", "dormant-subscriber", "incremental-profit", "no-offer-control", "pause-resume", "plan-downgrade", "reactivation", "retention-offer", "subscription-pause", "winback"]
+negative_terms = ["involuntary-payment-failure-only", "new-user-onboarding", "notification-delivery-only", "payment-provider-state-only"]
+
+[routes."product-engagement-retention-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 54
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
+
+[routes."product-engagement-retention-review".dependencies]
+suggests_adjuncts = ["notification-delivery-integrity-review", "date-number-audit"]
+
+[routes."product-engagement-retention-review".contexts]
+positive_terms = ["abandoned-work", "completion-nudge", "engagement-report", "natural-return", "notification-timing", "reward-withdrawal", "saved-work-reminder", "streak", "streak-quality", "value-report", "weekly-report"]
+negative_terms = ["attendance-only-metric", "delivery-transport-only", "new-user-onboarding", "subscription-cancel-offer"]
+
+[routes."credit-monetization-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 55
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
+
+[routes."credit-monetization-integrity-review".dependencies]
+suggests_adjuncts = ["credit-ledger-integrity-review", "payment-integrity-review", "date-number-audit"]
+
+[routes."credit-monetization-integrity-review".contexts]
+positive_terms = ["bonus-credit", "credit-breakage", "credit-expiry", "credit-pack", "credit-quote", "credit-rollover", "depletion-adjusted-repurchase", "pack-count", "price-discount", "purchased-credit", "quote-reserve-settle", "subscription-credit", "usage-credit"]
+negative_terms = ["cancellation-save-offer", "internal-compute-cost-only", "ledger-atomicity-only", "provider-payment-only"]
+
+[routes."pricing-model-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 56
+applies_to_reasons = ["product_change"]
+
+[routes."pricing-model-integrity-review".dependencies]
+suggests_adjuncts = ["payment-integrity-review", "date-number-audit"]
+
+[routes."pricing-model-integrity-review".contexts]
+positive_terms = ["annual-discount", "annual-prepay", "cardless-trial", "card-required-trial", "free-trial-card", "geographic-pricing", "hybrid-pricing", "lifetime-deal", "local-currency", "price-elasticity", "pricing-band", "pricing-model", "regional-pricing", "subscription-vs-usage", "usage-based-pricing"]
+negative_terms = ["cancellation-save-offer", "credit-pack-only", "enterprise-contract-negotiation-only", "internal-cost-only", "provider-payment-only"]
+
+[routes."game-economy-monetization-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 57
+applies_to_reasons = ["product_change"]
+
+[routes."game-economy-monetization-review".dependencies]
+suggests_adjuncts = ["date-number-audit"]
+
+[routes."game-economy-monetization-review".contexts]
+positive_terms = ["ad-revive", "content-burn", "credit-revive", "death-revive", "energy-refill", "game-energy", "game-monetization", "game-revive", "iap-cannibalization", "lives-system", "rewarded-revive", "unlimited-play", "vip-pass"]
+negative_terms = ["ad-sdk-only", "generic-credit-pack", "non-game-pricing", "provider-payment-only", "subscription-cancellation-only"]
+
+[routes."freemium-ad-monetization-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 58
+applies_to_reasons = ["product_change"]
+
+[routes."freemium-ad-monetization-review".dependencies]
+suggests_adjuncts = ["date-number-audit"]
+
+[routes."freemium-ad-monetization-review".contexts]
+positive_terms = ["ad-frequency", "ad-placement", "ad-supported-free", "first-value-ad", "free-tier", "freemium", "hard-paywall", "interstitial-ad", "post-result-ad", "pre-result-ad", "premium-ad-removal", "rewarded-ad", "usage-limit"]
+negative_terms = ["ad-sdk-only", "affiliate-commission", "cross-promotion", "game-energy", "game-revive", "provider-ad-callback-only", "referral-program", "result-watermark"]
+
+[routes."referral-incentive-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 59
+applies_to_reasons = ["product_change"]
+
+[routes."referral-incentive-integrity-review".dependencies]
+suggests_adjuncts = ["credit-ledger-integrity-review", "payment-integrity-review", "date-number-audit"]
+
+[routes."referral-incentive-integrity-review".contexts]
+positive_terms = ["dual-sided-referral", "invite-reward", "referral-attribution", "referral-fraud", "referral-incentive", "referral-program", "referral-tier", "reward-farming", "reward-vesting", "self-referral", "valid-referral"]
+negative_terms = ["affiliate-contract", "credit-ledger-only", "generic-signup", "influencer-commission", "lifetime-commission", "partner-commission", "provider-payment-only"]
+
+[routes."llm-product-monetization-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 60
+applies_to_reasons = ["product_change"]
+
+[routes."llm-product-monetization-review".dependencies]
+suggests_adjuncts = ["credit-ledger-integrity-review", "date-number-audit"]
+
+[routes."llm-product-monetization-review".contexts]
+positive_terms = ["automatic-credit-refund", "byok", "customer-api-key", "failed-work-charging", "first-value-queue", "free-paid-queue", "llm-credits", "llm-pricing", "managed-api-cost", "model-disclosure", "model-pinning", "model-tier-pricing", "outcome-based-ai-pricing", "paid-priority", "precision-tier", "quality-retry-right", "standard-tier", "task-based-ai-pricing", "token-vs-task-pricing"]
+negative_terms = ["generic-pricing", "model-router-only", "prompt-cost-only", "secret-storage-only", "token-budget-only"]
+
+[routes."game-liveops-commerce-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 61
+applies_to_reasons = ["product_change"]
+
+[routes."game-liveops-commerce-integrity-review".dependencies]
+suggests_adjuncts = ["date-number-audit"]
+
+[routes."game-liveops-commerce-integrity-review".contexts]
+positive_terms = ["battle-pass", "cosmetic-item", "deterministic-bundle", "game-membership", "gacha", "liveops-cadence", "loot-box", "paid-power", "pity-system", "random-reward", "reward-odds", "season-pass", "whale-concentration"]
+negative_terms = ["credit-ledger-only", "energy-refill", "game-revive", "generic-subscription-price", "random-number-generator-only"]
+
+[routes."growth-distribution-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 62
+applies_to_reasons = ["product_change"]
+
+[routes."growth-distribution-integrity-review".dependencies]
+suggests_adjuncts = ["date-number-audit"]
+
+[routes."growth-distribution-integrity-review".contexts]
+positive_terms = ["affiliate-commission", "affiliate-program", "cross-promotion", "cross-sell", "embedded-branding", "influencer-compensation", "lifetime-commission", "owned-portfolio-promo", "partner-attribution", "result-watermark", "watermark-growth"]
+negative_terms = ["customer-referral-only", "display-ad-only", "generic-attribution-only", "legal-contract-only", "trademark-only"]
+
+[routes."product-portfolio-integrity-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 63
+applies_to_reasons = ["product_change"]
+
+[routes."product-portfolio-integrity-review".dependencies]
+suggests_adjuncts = ["credit-ledger-integrity-review", "date-number-audit"]
+
+[routes."product-portfolio-integrity-review".contexts]
+positive_terms = ["branded-house", "bundle-subscription", "cross-service-credit", "endorsed-brand", "house-of-brands", "mixed-bundle", "portfolio-entitlement", "portfolio-subscription", "product-brand-architecture", "shared-account", "shared-credit-wallet", "umbrella-brand"]
+negative_terms = ["app-factory-only", "atomic-credit-only", "cross-promotion-only", "generic-pricing-only", "identity-implementation-only"]
+
+[routes."localization-market-expansion-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 64
+applies_to_reasons = ["product_change", "i18n_change"]
+
+[routes."localization-market-expansion-review".dependencies]
+suggests_adjuncts = ["frontend-localization-review", "source-freshness-check", "date-number-audit"]
+
+[routes."localization-market-expansion-review".contexts]
+positive_terms = ["ai-translation", "exploratory-locale", "first-market-language", "human-translation-review", "international-seo", "language-rollout", "locale-expansion", "locale-profitability", "localized-seo", "machine-translation", "multilingual-launch", "revenue-ready-locale"]
+negative_terms = ["catalog-implementation-only", "copy-translation-only", "generic-regional-pricing", "rtl-layout-only", "translation-key-only"]
+
+[routes."desktop-commercial-distribution-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 65
+applies_to_reasons = ["product_change", "package_metadata_change"]
+
+[routes."desktop-commercial-distribution-review".dependencies]
+suggests_adjuncts = ["desktop-auto-update-safety-review", "payment-integrity-review", "source-freshness-check", "date-number-audit"]
+
+[routes."desktop-commercial-distribution-review".contexts]
+positive_terms = ["app-store-vs-direct", "desktop-direct-sale", "desktop-distribution", "direct-download", "direct-vs-store", "hybrid-desktop-distribution", "mac-app-store", "microsoft-store", "store-commerce", "store-fee", "store-license", "website-checkout"]
+negative_terms = ["generic-payment-only", "generic-release-only", "installer-only", "mobile-app-store", "updater-only"]
+
+[routes."client-platform-strategy-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 66
+applies_to_reasons = ["product_change"]
+
+[routes."client-platform-strategy-review".dependencies]
+suggests_adjuncts = ["source-freshness-check", "date-number-audit"]
+
+[routes."client-platform-strategy-review".contexts]
+positive_terms = ["app-first", "client-platform", "cloud-first", "local-first", "mobile-app-first", "mobile-web", "native-break-even", "native-vs-pwa", "native-vs-web", "offline-first", "pwa-strategy", "responsive-web-first", "sync-authority", "web-first"]
+negative_terms = ["desktop-store-only", "framework-selection-only", "installer-only", "mobile-energy-only", "sync-algorithm-only", "updater-only"]
+
+[routes."service-portfolio-capital-allocation-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 67
+applies_to_reasons = ["product_change"]
+
+[routes."service-portfolio-capital-allocation-review".dependencies]
+suggests_adjuncts = ["source-freshness-check", "date-number-audit"]
+
+[routes."service-portfolio-capital-allocation-review".contexts]
+positive_terms = ["backend-break-even", "common-backend-economics", "founder-time-allocation", "launch-vs-optimize", "portfolio-capital-allocation", "portfolio-pruning", "service-retirement", "service-shutdown", "shared-backend-break-even", "shared-core-investment", "shutdown-criteria", "zombie-service"]
+negative_terms = ["account-wallet-bundle-only", "automation-only", "platform-implementation-only", "single-product-experiment-only", "technical-service-split-only"]
 
 [routes."codebase-orientation"]
 category = "general_code"
@@ -395,6 +616,10 @@ category = "general_code"
 route_type = "adjunct"
 priority = 80
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."payment-integrity-review".contexts]
+positive_terms = ["billing", "charge", "payment", "price", "subscription", "trial"]
+negative_terms = ["internal-cost-only", "provider-selection-only"]
 
 [routes."credit-ledger-integrity-review"]
 category = "general_code"
@@ -710,7 +935,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 suggests_adjuncts = ["transaction-boundary-integrity-review", "queue-processing-integrity-review", "race-condition-review"]
 
 [routes."idempotency-integrity-review".contexts]
-positive_terms = ["aggregate-version", "dedupe", "duplicate-request", "effect-id", "fencing-token", "generation-token", "idempotency-key", "operation-id", "out-of-order", "response-replay", "sequence-gap", "stale-completion", "stale-write", "unknown-outcome"]
+positive_terms = ["aggregate-version", "dedupe", "duplicate-request", "effect-id", "fencing-token", "generation-token", "idempotency-key", "operation-id", "out-of-order", "response-replay", "rolling-plan", "sequence-gap", "stale-completion", "stale-write", "unknown-effect", "unknown-outcome"]
 negative_terms = ["database-2pc-only", "lock-order-only", "pure-read", "query-only"]
 
 [routes."retry-policy-integrity-review"]
@@ -718,6 +943,10 @@ category = "general_code"
 route_type = "adjunct"
 priority = 79
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."retry-policy-integrity-review".contexts]
+positive_terms = ["backoff", "error-signature", "external-feedback", "jitter", "model-fallback", "prompt-repair", "recovery-action", "replan", "retry", "retry-after", "self-correction", "tool-fallback", "unknown-outcome"]
+negative_terms = ["duplicate-intent-only", "queue-settlement-only", "transaction-atomicity-only"]
 
 [routes."queue-processing-integrity-review"]
 category = "general_code"
@@ -970,6 +1199,9 @@ route_type = "primary"
 priority = 64
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
 
+[routes."ai-product-readiness-review".contexts]
+negative_terms = ["byok", "customer-api-key", "llm-pricing", "model-tier-pricing", "task-based-ai-pricing", "token-vs-task-pricing"]
+
 [routes."prompt-contract-quality-review"]
 category = "general_code"
 route_type = "primary"
@@ -1000,21 +1232,90 @@ route_type = "primary"
 priority = 69
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
+[routes."llm-model-routing-integrity-review"]
+category = "general_code"
+route_type = "primary"
+priority = 72
+applies_to_reasons = ["product_change", "performance_change"]
+
+[routes."llm-model-routing-integrity-review".dependencies]
+suggests_adjuncts = []
+
+[routes."llm-model-routing-integrity-review".contexts]
+positive_terms = ["accepted-outcome", "cheap-model-cascade", "context-handoff", "distribution-shift", "escalation-threshold", "false-accept", "model-fallback", "model-router", "ood", "route-calibration", "route-version", "strong-model-baseline"]
+negative_terms = ["provider-selection-only", "prompt-cache-only", "streaming-only", "token-budget-only"]
+
 [routes."agent-execution-control-review"]
 category = "general_code"
 route_type = "primary"
 priority = 70
-applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+applies_to_reasons = ["behavior_change"]
 
 [routes."agent-execution-control-review".dependencies]
+suggests_adjuncts = ["retry-policy-integrity-review"]
 unlocks_on = [
   { signal = "capability_scoped_tool", skill = "policy-decision-integrity-review" },
   { signal = "capability_scoped_tool", skill = "security-flow-review" },
 ]
 
 [routes."agent-execution-control-review".contexts]
-positive_terms = ["autonomy", "capability", "executor", "guardrail", "handoff", "interrupt", "planner", "resume", "tool-call"]
-negative_terms = ["benchmark", "eval", "grader", "judge", "score", "trajectory"]
+positive_terms = ["approval", "autonomy", "capability", "compensation", "executor", "guardrail", "handoff", "idempotency", "interrupt", "irreversible", "planner", "resume", "rollback", "side-effect", "tool-call"]
+negative_terms = ["agent-bundle", "benchmark", "canary", "ephemeral-sandbox", "eval", "grader", "judge", "model-router", "multi-worker-runtime", "persistent-memory", "replan", "rolling-plan", "score", "shadow-rollout", "trajectory"]
+
+[routes."agent-planning-recovery-review"]
+category = "general_code"
+route_type = "primary"
+priority = 75
+applies_to_reasons = ["behavior_change"]
+
+[routes."agent-planning-recovery-review".dependencies]
+suggests_adjuncts = ["execution-ledger-integrity-review", "idempotency-integrity-review"]
+
+[routes."agent-planning-recovery-review".contexts]
+positive_terms = ["append-only-event", "dependency-dag", "deterministic-replay", "effect-id", "global-plan", "irreversible-checkpoint", "plan-drift", "plan-version", "replan", "rolling-plan", "snapshot", "unknown-effect", "workflow-id"]
+negative_terms = ["commit-publish", "database-commit", "deterministic-workflow-only", "generic-ledger-only", "outbox", "persistent-user-memory", "rollout-canary", "saga-compensation"]
+
+[routes."agent-release-bundle-rollout-review"]
+category = "general_code"
+route_type = "primary"
+priority = 76
+applies_to_reasons = ["release_risk"]
+
+[routes."agent-release-bundle-rollout-review".dependencies]
+suggests_adjuncts = ["deployment-rollout-safety-review"]
+
+[routes."agent-release-bundle-rollout-review".contexts]
+positive_terms = ["agent-bundle", "behavior-bundle", "bundle-digest", "candidate", "canary", "control-cohort", "emergency-restriction", "immutable-model", "in-flight-version", "shadow-rollout", "stable-pointer", "sticky-cohort"]
+negative_terms = ["generic-container", "generic-migration", "generic-server-deploy", "prompt-only"]
+
+[routes."agent-runtime-multi-worker-review"]
+category = "general_code"
+route_type = "primary"
+priority = 77
+applies_to_reasons = ["performance_change"]
+
+[routes."agent-runtime-multi-worker-review".dependencies]
+suggests_adjuncts = ["structured-concurrency-supervision-review"]
+
+[routes."agent-runtime-multi-worker-review".contexts]
+positive_terms = ["central-verifier", "correlated-error", "independent-worker", "multi-agent-runtime", "multi-worker-runtime", "orchestrator-worker", "role-diversity", "single-agent-baseline", "star-topology", "worker-artifact", "worker-break-even"]
+negative_terms = ["repository-worktree", "same-file-writer", "subagent-coding-task", "worker-join-only"]
+
+[routes."agent-runtime-isolation-review"]
+category = "general_code"
+route_type = "primary"
+priority = 78
+applies_to_reasons = ["security_change"]
+
+[routes."agent-runtime-isolation-review".dependencies]
+suggests_adjuncts = ["external-prompt-injection-defense", "queue-processing-integrity-review"]
+unlocks_on = [
+  { signal = "sandbox_untrusted_input", skill = "external-prompt-injection-defense" },
+]
+
+[routes."agent-runtime-isolation-review".contexts]
+positive_terms = ["capability-queue", "control-plane", "ephemeral-credential", "ephemeral-sandbox", "execution-plane", "policy-broker", "sandbox-manifest", "short-lived-worker", "survival-limit", "task-scoped-mount", "trusted-effect-broker", "worker-rehydration"]
+negative_terms = ["generic-container-deploy", "local-child-process-only", "repository-worktree", "single-queue-handler"]
 
 [routes."browser-automation-reliability-review"]
 category = "general_code"
@@ -1026,7 +1327,24 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 category = "general_code"
 route_type = "primary"
 priority = 71
-applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+applies_to_reasons = ["data_change", "privacy_change", "release_risk"]
+
+[routes."agent-eval-integrity-review".contexts]
+positive_terms = ["adjudicator", "behavior-bundle", "benchmark", "contamination", "eval", "false-negative", "false-positive", "grader", "judge", "offline-evaluation", "oracle", "regression", "replay-set", "safety-gate", "score", "trajectory", "verifier"]
+negative_terms = ["approval-token", "context-compaction", "memory-deletion", "persistent-memory", "tool-execution"]
+
+[routes."agent-memory-context-governance-review"]
+category = "general_code"
+route_type = "primary"
+priority = 74
+applies_to_reasons = ["data_change", "privacy_change"]
+
+[routes."agent-memory-context-governance-review".dependencies]
+suggests_adjuncts = ["deletion-lifecycle-review"]
+
+[routes."agent-memory-context-governance-review".contexts]
+positive_terms = ["context-compaction", "conversation-history", "long-context", "long-term-memory", "memory-admission", "memory-consolidation", "memory-deletion", "memory-retrieval", "persistent-memory", "stale-memory", "supersession", "user-memory"]
+negative_terms = ["allocation", "append-only-event", "effect-id", "heap", "listener-leak", "native-handle", "object-lifetime", "process-memory", "rolling-plan", "workflow-id"]
 
 [routes."diff-risk-review"]
 category = "general_code"
@@ -1331,7 +1649,11 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_
 category = "security_privacy"
 route_type = "adjunct"
 priority = 40
-applies_to_reasons = ["docs_change", "security_change", "mustflow_config_change"]
+applies_to_reasons = ["code_change", "behavior_change", "docs_change", "security_change", "privacy_change", "mustflow_config_change"]
+
+[routes."external-prompt-injection-defense".contexts]
+positive_terms = ["data-injection", "field-taint", "indirect-prompt-injection", "prompt-injection", "provenance", "retrieved-instruction", "tainted-argument", "tool-result", "trusted-corroboration", "untrusted-data"]
+negative_terms = ["trusted-code-only", "trusted-config-only"]
 
 [routes."external-skill-intake"]
 category = "workflow_contracts"
