@@ -7,7 +7,7 @@ source_policy: flow_contract
 privacy_mode: minimal
 flow_count: 6
 degraded: false
-source_fingerprint: "sha256:7737fa8e1e9ef596cb5a52cec55d1266465f83825e464356c9ca12d9c5781b58"
+source_fingerprint: "sha256:2f1337c2f2e0daae0350ba123125517b08c422b3fc7658e3acff828aca6bc2ee"
 ---
 
 # REPO_FLOW.md
