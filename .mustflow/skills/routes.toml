@@ -663,6 +663,23 @@ route_type = "adjunct"
 priority = 73
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"]
 
+[routes."memory-lifetime-review".contexts]
+positive_terms = ["allocator-fragmentation", "arraybuffer", "backing-store", "buffer-retainer", "cache-bytes", "cross-runtime-repro", "detached-context", "external-memory", "fixed-observer", "handle-leak", "heap-snapshot", "memory-leak", "native-memory", "post-gc", "post-quiescent", "private-bytes", "queue-bytes", "resource-dag", "rss-growth", "runtime-bisect", "runtime-comparator", "same-source-repro", "slow-consumer", "stream-backpressure", "stream-leak-repro", "unbounded-buffer", "working-set"]
+negative_terms = ["agent-memory", "bundle-size-only", "cpu-only", "latency-only", "payload-size-only", "persistent-memory", "schema-only"]
+
+[routes."connection-lifecycle-integrity-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."connection-lifecycle-integrity-review".dependencies]
+suggests_adjuncts = ["memory-lifetime-review", "race-condition-review", "performance-measurement-integrity-review"]
+
+[routes."connection-lifecycle-integrity-review".contexts]
+positive_terms = ["abort-signal", "active-resources", "backpressure", "body-abandoned", "body-disposition", "body-lease", "close-wait", "connection-finalize", "connection-pool", "destroy", "drain", "end-finish-close", "fault-injection", "fault-peer", "fin", "half-close", "http-keep-alive", "http2-stream", "net-socket", "netem", "open-handle", "parser-boundary", "pending-write", "reader-cancel", "release-lock", "reset-and-destroy", "resource-soak", "rst", "slow-client", "soak-test", "socket-close", "socket-leak", "stream-cancel", "stream-lock", "time-wait", "transport-lifecycle", "undici", "unref"]
+negative_terms = ["business-state-only", "cache-header-only", "compression-only", "database-connection-string", "domain-lifecycle-only", "http-schema-only"]
+
 [routes."desktop-memory-footprint-review"]
 category = "general_code"
 route_type = "adjunct"

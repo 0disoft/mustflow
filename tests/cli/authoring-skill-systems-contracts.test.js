@@ -10,6 +10,107 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
+test('connection lifecycle integrity skill keeps transport, request, body, and shutdown ownership separate', () => {
+	const skillName = 'connection-lifecycle-integrity-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const localReference = readText(
+		`.mustflow/skills/${skillName}/references/node-stream-transport-lifecycle-checklist.md`,
+	);
+	const templateReference = readText(
+		`templates/default/locales/en/.mustflow/skills/${skillName}/references/node-stream-transport-lifecycle-checklist.md`,
+	);
+	const localFaultReference = readText(
+		`.mustflow/skills/${skillName}/references/connection-fault-injection-resource-lifetime-validation.md`,
+	);
+	const templateFaultReference = readText(
+		`templates/default/locales/en/.mustflow/skills/${skillName}/references/connection-fault-injection-resource-lifetime-validation.md`,
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+	const profileBlock = (profile) => {
+		const match = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(match, `missing ${profile} profile`);
+		return match[1];
+	};
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.equal(localFaultReference, templateFaultReference);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+
+	assert.match(localSkill, /physical connections, transport read and write sides, logical requests/u);
+	assert.match(localSkill, /every owned connection record is finalized exactly once/u);
+	assert.match(localSkill, /abortive destroy or reset action is accepted at most once/u);
+	assert.match(localSkill, /Replace a single closing enum with orthogonal dimensions/u);
+	assert.match(localSkill, /Finalize and remove a physical connection record once, after physical close/u);
+	assert.match(localSkill, /Apply cancellation and reuse at HTTP\/2 stream scope/u);
+	assert.match(localSkill, /Settle cancellation separately from releasing a reader lock/u);
+	assert.match(localSkill, /do not mistake a high-water mark for a global hard limit/u);
+	assert.match(localSkill, /Do not use `unref`, garbage collection, finalization registries, or process exit/u);
+	assert.match(localSkill, /child-process natural-exit test without `process\.exit`/u);
+	assert.match(localSkill, /closed cohorts and uncontaminated resource evidence/u);
+	assert.match(localSkill, /full application, a library-only reproducer/u);
+	assert.match(localSkill, /fix candidate, mitigation, symptom suppression, and permanent resolution/u);
+
+	assert.match(localReference, /TransportState = CONNECTING \| OPEN \| ABORTING \| CLOSED/u);
+	assert.match(localReference, /Graceful FIN, either side first/u);
+	assert.match(localReference, /parserAtMessageBoundary == true/u);
+	assert.match(localReference, /`reader\.cancel\(\)` completion and `reader\.releaseLock\(\)` are separate facts/u);
+	assert.match(localReference, /Every accepted write settles once as success or failure/u);
+	assert.match(localReference, /B_owned = B_node_readable/u);
+	assert.match(localReference, /global dispatcher -> origin pool -> client -> socket/u);
+	assert.match(localReference, /duplicate_finalize_total == 0/u);
+	assert.match(localFaultReference, /Do not count `TIME_WAIT` as an open application socket/u);
+	assert.match(localFaultReference, /started = succeeded \+ expected_faulted \+ unexpected_failed/u);
+	assert.match(localFaultReference, /`CLOSE_WAIT` \| Any additional connection persists for at least 60 seconds/u);
+	assert.match(localFaultReference, /TCP RST from HTTP\/2 `RST_STREAM\(CANCEL\)`/u);
+	assert.match(localFaultReference, /No enqueue after backpressure without drain/u);
+	assert.match(localFaultReference, /full application;\n2\. minimal program using the candidate library/u);
+	assert.match(localFaultReference, /fails 20 of 20 runs before the fix/u);
+	assert.match(localFaultReference, /mixed profile passes 24 hours/u);
+
+	assert.match(skillIndex, /Use `connection-lifecycle-integrity-review` as an adjunct/u);
+	assert.match(skillIndex, /single closing enum, destroy-everywhere cleanup, duplicate finalize/u);
+	assert.match(
+		routes,
+		/\[routes\."connection-lifecycle-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 83/u,
+	);
+	for (const reason of [
+		'unknown_change',
+		'behavior_change',
+		'public_api_change',
+		'performance_change',
+		'security_change',
+		'docs_change',
+		'release_risk',
+	]) {
+		assert.ok(routeReasons(routes, skillName).includes(reason), `missing route reason ${reason}`);
+	}
+	assert.match(routes, /positive_terms = \[[^\]]*"fault-injection"[^\]]*"half-close"[^\]]*"soak-test"/u);
+	assert.match(routes, /negative_terms = \[[^\]]*"domain-lifecycle-only"/u);
+
+	assert.match(manifest, /"\.mustflow\/skills\/connection-lifecycle-integrity-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/connection-lifecycle-integrity-review\/references\/connection-fault-injection-resource-lifetime-validation\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/connection-lifecycle-integrity-review\/references\/node-stream-transport-lifecycle-checklist\.md"/u,
+	);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.match(profileBlock(profile), /"connection-lifecycle-integrity-review"/u);
+	}
+	assertI18nSkillDocument(i18n, skillName, 2);
+	assertSkillsIndexRevision(i18n);
+});
+
 test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {
 	const localSkill = readText('.mustflow/skills/godot-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/godot-code-change/SKILL.md');

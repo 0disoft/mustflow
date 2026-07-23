@@ -2,11 +2,11 @@
 mustflow_doc: skill.memory-lifetime-review
 locale: en
 canonical: true
-revision: 3
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: memory-lifetime-review
-description: Apply this skill when code is created, changed, reviewed, or reported and object lifetime, retained references, cleanup symmetry, event listeners, timers, subscriptions, goroutines, threads, workers, streams, native handles, caches, queues, or memory/resource leak risk may matter.
+description: Apply this skill when code is created, changed, reviewed, diagnosed, validated, or reported and object lifetime, retained references, cleanup symmetry, event listeners, timers, subscriptions, goroutines, threads, workers, streams, native handles, caches, queues, RSS, heap, external memory, ArrayBuffer or Buffer retention, allocator fragmentation, unbounded buffering, cross-runtime reproduction, backpressure, or memory/resource leak risk may matter.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -41,6 +41,11 @@ The question is not only "where was it allocated?" The stronger review question 
 - Code adds lifecycle setup such as `new`, `open`, `connect`, `subscribe`, `observe`, `addEventListener`, `setInterval`, `setTimeout`, `context.WithCancel`, `ThreadLocal.set`, `malloc`, `retain`, `shared_ptr`, `Rc`, task spawning, stream creation, or cache insertion.
 - Code uses closures, callbacks, lambdas, async work, promises, channels, effects, refs, logging queues, metrics queues, debug arrays, maps, or registries that may capture or store large or short-lived objects.
 - A review or final report claims that a path is leak-free, bounded, cleaned up, disposable, safe for repeated mount/unmount, safe for long-running processes, safe under retries, or safe for repeated requests.
+- A Node.js service or streaming pipeline needs to distinguish JavaScript heap retention, external
+  buffers, native allocations, cache growth, handle leakage, allocator residency, and live
+  backpressure backlog instead of naming all RSS growth a memory leak.
+- A Node-compatible memory or stream symptom needs a same-source Node.js, Bun, adapter, runtime
+  version, or operating-system reproduction matrix without mixing application and runtime changes.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -60,7 +65,18 @@ The question is not only "where was it allocated?" The stronger review question 
 - Repetition path: repeated requests, screen open/close, route changes, tab switches, reconnects, retries, scheduled runs, test cases, or long-running sessions that can accumulate retained state.
 - Error and success paths: normal completion, early return, partial read, cancellation, timeout, retry, exception, unmount, shutdown, and dependency failure behavior.
 - Diagnostic evidence for native or low-level memory faults: first sanitizer or memory-checker report, invalid write/read address, watchpoint condition, allocator or quarantine behavior, fuzzing input, core dump, symbols, build id, shared library list, and configured or manual diagnostic boundary.
+- Measurement classification for memory diagnosis: storage location, retention owner, terminal
+  status, post-GC or post-quiescent slope, queue-byte ledgers, process and protocol resource counts,
+  workload phases, and the statistical tolerance used for a leak or fragmentation claim.
 - Relevant command-intent contract entries for tests, builds, docs, release checks, and mustflow validation.
+- For Node.js RSS, heap, external-memory, Buffer, native-handle, cache, streaming, HTTP/2, HTTP/3,
+  or cross-layer backpressure diagnosis, read
+  `references/node-memory-resource-backpressure-diagnostics.md` before classifying cause or claiming
+  that a queue, leak, or allocator problem is resolved.
+- For a Node.js or Bun cross-runtime memory, stream, socket, descriptor, handle, allocator, or
+  runtime-version reproducer, read
+  `references/cross-runtime-memory-stream-reproduction-harness.md` before designing the process
+  harness, comparator matrix, result manifest, or permanent-resolution gate.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -71,6 +87,12 @@ The question is not only "where was it allocated?" The stronger review question 
 - If authorization, secrets, personal data, telemetry, or audit records are retained, also use `security-privacy-review`.
 - If queue, cache, retry, worker, health, or operational behavior changes, also use `backend-reliability-change`.
 - If user-perceived latency, throughput, allocation churn, GC pressure, or memory budget is claimed, also use `performance-budget-check`.
+- If counter, slope, denominator, benchmark, or regression-gate semantics dominate, also use
+  `performance-measurement-integrity-review`.
+- If socket, session, request-body, FIN/RST, pool reuse, or transport shutdown semantics dominate,
+  also use `connection-lifecycle-integrity-review`.
+- If the reported symptom does not yet have a deterministic reproduction, also use
+  `repro-first-debug` and keep exploratory runs separate from causal proof.
 - If UI lifecycle, rendering, or browser behavior changes, also use the matching UI or framework skill.
 
 <!-- mustflow-section: allowed-edits -->
@@ -79,6 +101,9 @@ The question is not only "where was it allocated?" The stronger review question 
 - Add or tighten teardown, cancellation, ownership, weak-reference, eviction, queue-bound, stream-close, worker-shutdown, and lifecycle-symmetry code tied to the task.
 - Refactor setup and cleanup into a shared lifecycle boundary when it prevents duplicate registration or forgotten teardown.
 - Add focused tests, fixtures, probes, or docs that prove cleanup symmetry, bounded retention, repeated lifecycle behavior, or native-resource disposal when repository evidence supports them.
+- Add bounded owner, byte-flow, queue, post-GC, post-quiescent, handle, cache, or backpressure
+  instrumentation when it proves the changed lifetime boundary without retaining payloads or
+  sensitive context.
 - Do not hide leak warnings by raising listener limits, disabling strict lifecycle checks, adding finalizers as primary cleanup, or weakening tests.
 - Do not add object pools as a default leak or GC fix. Pool only heavy buffers, large arrays, native handles, or repeatedly allocated expensive objects after allocation evidence shows churn; ordinary short-lived records are often cheaper to let the generational collector reclaim.
 - Do not use weak references as a design cover-up when the real owner and cleanup point should be explicit.
@@ -136,6 +161,53 @@ The question is not only "where was it allocated?" The stronger review question 
 15. Reject finalizers as the main plan. Finalizers, destructors, drop hooks, or weak callbacks can be last-resort diagnostics or safety nets, but the review should still identify deterministic cleanup for resources and reference removal.
 16. Separate allocation churn from retained memory. High allocation rate, GC pauses, retained heap, external memory, and RSS growth point to different fixes. Prefer allocation timeline, heap snapshot, retaining-path, `--trace-gc`, sanitizer, or runtime memory evidence when configured; report unconfigured tools as manual evidence instead of guessing from RSS alone.
 17. Add a repeated-lifecycle proof when feasible. Prefer a focused test or probe that repeats the risky lifecycle, then asserts listener count, registry size, cache size, goroutine/task completion, handle closure, queue depth, or retained object count. If heap snapshots, leak profilers, sanitizer runs, memory-checker runs, fuzzers, core dump inspection, or platform-specific diagnostics are not configured intents, report them as manual evidence gaps instead of running raw commands.
+18. Classify memory growth on independent axes before choosing a fix.
+    - Name the storage location: managed heap, external or backing-store memory, other native
+      allocation, mapping, allocator residency, cache, application queue, or kernel buffer.
+    - Name the retaining owner: request, attempt, branch, stream, task, cache, pool, connection,
+      native operation, retry, or process service.
+    - Name the terminal state: legitimate in-flight work, bounded backlog, unbounded backlog,
+      terminal retained resource, or released allocation whose pages remain resident.
+    - Do not derive native memory by subtracting overlapping process and runtime totals.
+19. Compare floors and slopes under controlled lifecycle phases.
+    - Fix concurrency, payload and chunk size, compression, protocol, retries, cache, branch count,
+      consumer rate, runtime, and allocator before comparison.
+    - Separate idle baseline, warmup, normal consumer, slow consumer, stopped consumer, admission
+      stop and drain, pool idle expiry, and optional isolated-GC phases.
+    - Prefer post-major-GC and post-quiescent growth per completed lifecycle with a predeclared
+      statistical tolerance over one RSS peak or literal zero-noise assertions.
+20. Model shared and branched work as an ownership DAG.
+    - Separate process, pool, connection or session, logical request, retry or hedge attempt,
+      protocol stream, clone or tee branch, file, transform, and telemetry ownership.
+    - Require every request-owned lease and byte reservation to return once while allowing a healthy
+      shared connection, session, or bounded cache to outlive the request.
+21. Trace backpressure from final commitment toward transport.
+    - Distinguish admitted, accepted, committed, released, cancelled, and discarded bytes at every
+      edge, keeping compressed, decoded, transformed, and durable byte domains separate.
+    - Stop the sink and identify the first edge whose queue continues to grow instead of plateauing
+      within its byte envelope; then resume and require drain and upstream progress to recover.
+    - Treat high-water marks as thresholds, not total caps, and include maximum chunk, in-flight
+      operations, side queues, branches, retries, codec expansion, protocol windows, and transport
+      buffers in the envelope.
+22. Calibrate the diagnosis to available evidence.
+    - Call growth a terminal leak only when the owner should have ended and retained counts or bytes
+      grow with completed lifecycle repetitions.
+    - Call fragmentation only after live heap, external memory, cache, queues, handles, mappings,
+      and native allocation evidence no longer explains resident growth.
+    - Report heap snapshots, native profilers, platform handle inspection, packet capture, qlog, and
+      long-running load as manual-only or missing unless configured by the selected repository.
+23. Design cross-runtime reproduction without changing the application and runtime together.
+    - Keep one shared compatibility-source case, a fixed observer, isolated server and client target
+      processes, explicit baseline/load/admission-stop/drain/quiescence phases, and fresh target
+      processes per measured run.
+    - Compare one factor at a time across producer rate, consumer delay, backpressure obedience,
+      finite versus continuing work, cancellation, reconnect, peer loss, concurrency, adapter,
+      runtime build, and operating-system cell. Treat ramps and multi-factor runs as exploratory.
+    - Record a versioned allowlisted manifest with configuration hash, observer identity, target
+      binary digest and build identity, environment cell, raw samples, completed work, queue and
+      resource conservation, repetitions, dispersion, and unsupported diagnostic phases.
+    - Call a newer green runtime version-localized or a fix candidate until last-bad, first-good,
+      comparable work, narrowed change, and forward or reverse change evidence establish cause.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -147,6 +219,13 @@ The question is not only "where was it allocated?" The stronger review question 
 - Async, stream, worker, goroutine, thread, and native-resource paths have deterministic cancellation, close, shutdown, or release behavior where the platform supports it.
 - Native or low-level memory fault analysis names the first invalid access evidence or reports the missing diagnostic boundary instead of blaming the final crash line.
 - Tests or configured verification cover the highest-risk repeated lifecycle when feasible.
+- Memory-growth conclusions identify storage location, retention owner, terminal status, controlled
+  workload phase, and evidence level; RSS alone does not establish leak or fragmentation.
+- Streaming and queue claims include accepted-versus-committed byte ownership, bounded plateau,
+  resume behavior, and a calculated envelope, or name the missing evidence.
+- Cross-runtime claims preserve shared source, fixed observer, single-factor comparators, target
+  binary and environment identity, completed-work normalization, repeated samples, and causal-fix
+  boundaries, or remain exploratory or version-localized.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -173,6 +252,14 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - If setup and cleanup live in separate owners, make the ownership transfer explicit or report the split as a residual leak risk.
 - If repeated-lifecycle proof requires unconfigured heap, profiler, sanitizer, browser, device, or load-test access, report the missing manual evidence and complete the configured checks that are available.
 - If leak reduction conflicts with product semantics, authorization, durability, observability, or retry behavior, use the relevant stronger skill and report the tradeoff.
+- If queues drain but their maximum is unbounded, report an OOM or admission-control defect rather
+  than clearing the path merely because it is not a terminal leak.
+- If RSS remains high after live owners fall, do not jump directly to fragmentation; report the
+  missing allocator, mapping, native-allocation, or platform evidence.
+- If a runtime comparison changes source behavior, adapter, workload, environment, and runtime
+  together, reject causal attribution and split it into single-factor cells.
+- If an external or attachment-linked harness file was not supplied as repository source, do not
+  claim it was implemented or executed; adapt only the observable procedure contract.
 
 <!-- mustflow-section: output-format -->
 ## Output Format
@@ -183,6 +270,11 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Long-lived owners and short-lived objects checked
 - Timers, listeners, subscriptions, streams, workers, goroutines, threads, native handles, caches, queues, registries, closures, and logs checked where relevant
 - Weak metadata, object pooling, allocation churn, and GC diagnostics checked where relevant
+- Storage location, retention owner, terminal status, post-GC and post-quiescent slope classification
+- Request, attempt, branch, stream, shared-pool, cache, file, and native-operation ownership DAG
+- Backpressure edge ledger, stopped-consumer plateau, resume behavior, and memory envelope
+- Cross-runtime observer and target isolation, lifecycle phases, comparator matrix, result identity,
+  environment cells, completed-work normalization, and causal-fix classification
 - First invalid access, diagnostic build axis, dangling ownership, fuzzing or core-dump evidence where relevant
 - Cleanup symmetry changes made or recommended
 - Repeated-lifecycle proof: configured, manual-only, missing, or not applicable

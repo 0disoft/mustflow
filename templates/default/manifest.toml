@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.117.0"
+version = "2.117.1"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -17,6 +17,9 @@ creates = [
   ".mustflow/skills/http-api-semantics-review/SKILL.md",
   ".mustflow/skills/backend-reliability-change/SKILL.md",
   ".mustflow/skills/http-delivery-streaming/SKILL.md",
+  ".mustflow/skills/connection-lifecycle-integrity-review/SKILL.md",
+  ".mustflow/skills/connection-lifecycle-integrity-review/references/connection-fault-injection-resource-lifetime-validation.md",
+  ".mustflow/skills/connection-lifecycle-integrity-review/references/node-stream-transport-lifecycle-checklist.md",
   ".mustflow/skills/artifact-integrity-check/SKILL.md",
   ".mustflow/skills/architecture-deepening-review/SKILL.md",
   ".mustflow/skills/service-boundary-architecture/SKILL.md",
@@ -57,6 +60,8 @@ creates = [
   ".mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md",
   ".mustflow/skills/error-message-integrity-review/SKILL.md",
   ".mustflow/skills/memory-lifetime-review/SKILL.md",
+  ".mustflow/skills/memory-lifetime-review/references/cross-runtime-memory-stream-reproduction-harness.md",
+  ".mustflow/skills/memory-lifetime-review/references/node-memory-resource-backpressure-diagnostics.md",
   ".mustflow/skills/desktop-memory-footprint-review/SKILL.md",
   ".mustflow/skills/hot-path-performance-review/SKILL.md",
   ".mustflow/skills/api-request-performance-review/SKILL.md",
@@ -346,6 +351,7 @@ minimal = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "auth-permission-change",
   "security-flow-review",
   "behavior-preserving-refactor",
@@ -550,6 +556,7 @@ patterns = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "auth-permission-change",
   "security-flow-review",
   "behavior-preserving-refactor",
@@ -762,6 +769,7 @@ oss = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "artifact-integrity-check",
   "architecture-deepening-review",
   "service-boundary-architecture",
@@ -998,6 +1006,7 @@ team = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "auth-permission-change",
   "security-flow-review",
   "behavior-preserving-refactor",
@@ -1224,6 +1233,7 @@ product = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "service-boundary-architecture",
   "auth-permission-change",
   "security-flow-review",
@@ -1463,6 +1473,7 @@ library = [
   "http-api-semantics-review",
   "backend-reliability-change",
   "http-delivery-streaming",
+  "connection-lifecycle-integrity-review",
   "artifact-integrity-check",
   "architecture-deepening-review",
   "service-boundary-architecture",

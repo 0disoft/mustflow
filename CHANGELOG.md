@@ -6,6 +6,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added connection-lifecycle integrity and cross-runtime memory/stream reproduction procedures with
+  orthogonal transport state, fault-injection resource gates, Node/Bun same-source comparators,
+  bounded backpressure accounting, and synchronized installed templates.
 - Narrowed skill-related test selection to the owning authoring shard and lightweight install-surface checks, added the bounded `test_skill_contracts` intent, and reused initialized fixtures plus in-process CLI execution in skill contract suites.
 - Made npm releases commit-snapshot based: staged, unstaged, untracked, renamed, and deleted
   working-tree changes no longer block agents, while release identity comes only from committed

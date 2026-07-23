@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 300
+anchor_count: 301
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:c92c376b40a6c28ce93adc2032d6d91c74d27baa1087960bf843cadd34c0e084"
+source_fingerprint: "sha256:d3d657bc9726dcb046a2ebb0bf13b64b79d74b350f71b429ba8e09d9d35584fa"
 ---
 
 # REPO_MAP.md
@@ -280,6 +280,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/config-env-change/
 
 - `.mustflow/skills/config-env-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/connection-lifecycle-integrity-review/
+
+- `.mustflow/skills/connection-lifecycle-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/contract-sync-check/
 

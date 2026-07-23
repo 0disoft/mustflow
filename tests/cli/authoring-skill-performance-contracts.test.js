@@ -15,6 +15,18 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	const templateSkill = readText(
 		'templates/default/locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md',
 	);
+	const localReference = readText(
+		'.mustflow/skills/memory-lifetime-review/references/node-memory-resource-backpressure-diagnostics.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/memory-lifetime-review/references/node-memory-resource-backpressure-diagnostics.md',
+	);
+	const localHarnessReference = readText(
+		'.mustflow/skills/memory-lifetime-review/references/cross-runtime-memory-stream-reproduction-harness.md',
+	);
+	const templateHarnessReference = readText(
+		'templates/default/locales/en/.mustflow/skills/memory-lifetime-review/references/cross-runtime-memory-stream-reproduction-harness.md',
+	);
 	const skillIndex = readText('.mustflow/skills/INDEX.md');
 	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
 	const routes = readText('.mustflow/skills/routes.toml');
@@ -23,6 +35,8 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.equal(localHarnessReference, templateHarnessReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /retainer ledger/u);
@@ -52,11 +66,36 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	assert.match(localSkill, /Preserve production crash evidence/u);
 	assert.match(localSkill, /finalizers/u);
 	assert.match(localSkill, /repeated-lifecycle proof/u);
+	assert.match(localSkill, /storage location: managed heap, external or backing-store memory/u);
+	assert.match(localSkill, /post-major-GC and post-quiescent growth per completed lifecycle/u);
+	assert.match(localSkill, /Model shared and branched work as an ownership DAG/u);
+	assert.match(localSkill, /Trace backpressure from final commitment toward transport/u);
+	assert.match(localSkill, /Call fragmentation only after live heap, external memory/u);
+	assert.match(localSkill, /Design cross-runtime reproduction without changing the application and runtime together/u);
+	assert.match(localSkill, /attachment-linked harness file was not supplied as repository source/u);
+	assert.match(localReference, /Classify every observation on all three axes/u);
+	assert.match(localReference, /Do not infer native memory as `rss - heapTotal - external`/u);
+	assert.match(localReference, /Q_edge\(t\)/u);
+	assert.match(localReference, /A strict tree is wrong when pools and multiplexed sessions are shared/u);
+	assert.match(localReference, /sink_accepted/u);
+	assert.match(localReference, /sink_committed/u);
+	assert.match(localReference, /Do not pause an entire HTTP\/2 transport merely to slow one stream/u);
+	assert.match(localReference, /pipeline_memory_bound/u);
+	assert.match(localReference, /RSS growth alone is an observation,\s+not a completed diagnosis/u);
+	assert.match(localHarnessReference, /Use a fixed observer process/u);
+	assert.match(localHarnessReference, /A concurrency ramp is useful for finding a threshold/u);
+	assert.match(localHarnessReference, /Reject a same-case runtime comparison when configuration hashes differ/u);
+	assert.match(localHarnessReference, /Do not call a faster runtime leakier merely because it processed more bytes/u);
+	assert.match(localHarnessReference, /A symptom disappearing in a newer runtime is a candidate signal/u);
+	assert.match(localHarnessReference, /does not authorize launching servers, load generators/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md/u);
 	assert.match(skillIndex, /Object lifetime, retained references, cleanup symmetry/u);
-	assert.match(skillIndex, /timeout without cancellation, unbounded cache or queue/u);
+	assert.match(skillIndex, /timeout without cancellation, RSS-only diagnosis/u);
 	assert.match(routes, /\[routes\."memory-lifetime-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 73/u);
+	assert.match(routes, /positive_terms = \[[^\]]*"allocator-fragmentation"[^\]]*"rss-growth"[^\]]*"stream-backpressure"/u);
+	assert.match(routes, /positive_terms = \[[^\]]*"cross-runtime-repro"[^\]]*"runtime-bisect"[^\]]*"same-source-repro"/u);
+	assert.match(routes, /negative_terms = \[[^\]]*"cpu-only"[^\]]*"schema-only"/u);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -69,9 +108,17 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 		'data_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/memory-lifetime-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/memory-lifetime-review\/references\/node-memory-resource-backpressure-diagnostics\.md"/u,
+	);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/memory-lifetime-review\/references\/cross-runtime-memory-stream-reproduction-harness\.md"/u,
+	);
 	assert.match(manifest, /"memory-lifetime-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 5/u);
 });
 
 test('desktop memory footprint review separates resident numbers from owned memory', () => {

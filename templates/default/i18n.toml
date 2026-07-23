@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 289
+revision = 293
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -111,6 +111,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/http-delivery-streaming/SKILL.md"
 source_locale = "en"
 revision = 1
+translations = {}
+
+[documents."skill.connection-lifecycle-integrity-review"]
+source = "locales/en/.mustflow/skills/connection-lifecycle-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.behavior-preserving-refactor"]
@@ -278,7 +284,7 @@ translations = {}
 [documents."skill.memory-lifetime-review"]
 source = "locales/en/.mustflow/skills/memory-lifetime-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.desktop-memory-footprint-review"]
