@@ -290,6 +290,49 @@ test('2.117.1 release commands stage only the reviewed lifecycle skill release',
 	}
 });
 
+test('2.118.0 release commands stage only scoped workspace and game asset production changes', () => {
+	const stageIntent = /\[intents\.release_stage_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubAuthIntent = /\[intents\.release_github_auth_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubMainRunsIntent = /\[intents\.release_github_main_runs_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubPublishRunsIntent = /\[intents\.release_github_publish_runs_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const githubReleaseIntent = /\[intents\.release_github_release_v2_118_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /status = "configured"/u);
+	assert.match(stageIntent, /argv = \[\s*"git",\s*"add",\s*"--"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/ai-game-asset-production"/u);
+	assert.match(stageIntent, /"src\/cli\/lib\/run-context\.ts"/u);
+	assert.match(stageIntent, /"src\/core\/workspace-command-authority\.ts"/u);
+	assert.match(stageIntent, /"schemas\/workspace-command-catalog\.schema\.json"/u);
+	assert.match(stageIntent, /"templates\/default\/locales\/en\/\.mustflow\/skills\/ai-game-asset-production"/u);
+	assert.match(stageIntent, /"CHANGELOG\.md"/u);
+	assert.match(stageIntent, /"REPO_FLOW\.md"/u);
+	assert.match(stageIntent, /"REPO_MAP\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
+	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
+	assert.doesNotMatch(stageIntent, /"\.mustflow\/review\/docs\.toml"/u);
+	assert.match(stagedDiffIntent, /argv = \["git", "diff", "--cached", "--name-status"\]/u);
+	assert.match(stagedDiffIntent, /writes = \[\]/u);
+	assert.match(commitIntent, /"✨ feat\(workspace\): add scoped authority and game asset production"/u);
+	assert.match(commitIntent, /"Validation: mf run test_related;/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(githubAuthIntent, /argv = \["gh", "auth", "status"\]/u);
+	assert.match(githubMainRunsIntent, /"gh", "run", "list", "--repo", "0disoft\/mustflow", "--branch", "main"/u);
+	assert.match(githubPublishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
+	assert.match(githubReleaseIntent, /"gh", "release", "view", "v2\.118\.0"/u);
+	for (const githubIntent of [githubAuthIntent, githubMainRunsIntent, githubPublishRunsIntent, githubReleaseIntent]) {
+		assert.match(githubIntent, /writes = \[\]/u);
+		assert.match(githubIntent, /network = true/u);
+	}
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

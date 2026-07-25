@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 301
+anchor_count: 302
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:d3d657bc9726dcb046a2ebb0bf13b64b79d74b350f71b429ba8e09d9d35584fa"
+source_fingerprint: "sha256:8783c0ccd6989fd16c1d9d302ef76db7572c755bd8407572b3e708b9864beb30"
 ---
 
 # REPO_MAP.md
@@ -96,6 +96,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/agent-runtime-multi-worker-review/
 
 - `.mustflow/skills/agent-runtime-multi-worker-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/ai-game-asset-production/
+
+- `.mustflow/skills/ai-game-asset-production/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/ai-generated-code-hardening/
 

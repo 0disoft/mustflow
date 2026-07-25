@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -68,6 +68,20 @@ function createTemplateWithAgentsUpdate() {
 	return { templatePath, updatedAgents };
 }
 
+function createTemplateWithoutProductSkill(skillName) {
+	const templatePath = createTempProject('mustflow-upgrade-template-old-skill-');
+	cpSync(path.join(projectRoot, 'templates', 'default'), templatePath, { recursive: true });
+	const manifestPath = path.join(templatePath, 'manifest.toml');
+	const skillPath = `.mustflow/skills/${skillName}/SKILL.md`;
+	const manifest = readFileSync(manifestPath, 'utf8')
+		.split(/\r?\n/u)
+		.filter((line) => line.trim() !== `"${skillPath}",` && line.trim() !== `"${skillName}",`)
+		.join('\n');
+
+	writeFileSync(manifestPath, manifest);
+	return templatePath;
+}
+
 function listen(server) {
 	return new Promise((resolve) => {
 		server.listen(0, '127.0.0.1', () => resolve(server.address()));
@@ -132,6 +146,41 @@ test('upgrade applies safe project template updates when the package is current'
 	} finally {
 		removeTempProject(projectPath);
 		removeTempProject(templatePath);
+	}
+});
+
+test('upgrade installs a newly bundled skill selected by the locked product profile', async () => {
+	const projectPath = createTempProject();
+	const skillName = 'ai-game-asset-production';
+	const skillPath = path.join(projectPath, '.mustflow', 'skills', skillName, 'SKILL.md');
+	const oldTemplatePath = createTemplateWithoutProductSkill(skillName);
+
+	try {
+		const init = runCli(projectPath, ['init', '--profile', 'product', '--yes'], {
+			MUSTFLOW_DEV_TEMPLATE_ROOT: oldTemplatePath,
+			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
+		});
+		assert.equal(init.status, 0, init.stderr || init.stdout);
+		assert.equal(existsSync(skillPath), false);
+
+		const result = await withPackageVersion(packageJson.version, (registryUrl) =>
+			runCliAsync(projectPath, ['upgrade'], {
+				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
+			}),
+		);
+		const expectedSkill = readFileSync(
+			path.join(projectRoot, 'templates', 'default', 'locales', 'en', '.mustflow', 'skills', skillName, 'SKILL.md'),
+			'utf8',
+		);
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /mustflow update complete/u);
+		assert.equal(readFileSync(skillPath, 'utf8'), expectedSkill);
+		assert.match(lock, /\[files\."\.mustflow\/skills\/ai-game-asset-production\/SKILL\.md"\]/u);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(oldTemplatePath);
 	}
 });
 

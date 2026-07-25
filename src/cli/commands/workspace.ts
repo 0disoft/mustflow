@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { createClassifyOutput, type ClassifyOutput } from './classify.js';
@@ -5,6 +6,7 @@ import {
 	createChangeVerificationReport,
 	type ChangeVerificationReport,
 } from '../../core/change-verification.js';
+import type { ChangeClassificationReport } from '../../core/change-classification.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
 import type { VerificationRiskAssessment } from '../../core/risk-priced-evidence.js';
 import type { TomlTable } from '../lib/command-contract.js';
@@ -20,8 +22,16 @@ import {
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import { getRepoMapConfig, discoverNestedRepositories, type NestedRepository, type WorkspaceConfig } from '../lib/repo-map.js';
 import { createRunPlan } from '../lib/run-plan.js';
+import { assertScopedCommandIntentIsolation } from '../lib/run-context.js';
 import type { Reporter } from '../lib/reporter.js';
-import { readCommandContract, readString, readStringArray, type CommandContract } from '../../core/config-loading.js';
+import {
+	readCommandContract,
+	readScopedCommandContract,
+	readString,
+	readStringArray,
+	type CommandContract,
+} from '../../core/config-loading.js';
+import type { WorkspaceCommandContractScope } from '../../core/workspace-command-authority.js';
 
 const DEFAULT_WORKSPACE_SCAN_ROOT = 'projects';
 const WORKSPACE_SCAN_SCHEMA_VERSION = '1';
@@ -50,6 +60,8 @@ const COMMAND_FRAGMENT_INCLUDE_PREFIX = 'commands';
 interface WorkspaceStatusConfig {
 	readonly enabled: boolean;
 	readonly roots: readonly string[];
+	readonly authority_mode: WorkspaceConfig['authorityMode'];
+	readonly delegated_contract_count: number;
 	readonly max_depth: number;
 	readonly max_repositories: number;
 	readonly follow_symlinks: boolean;
@@ -87,11 +99,22 @@ interface WorkspaceStatusCommandSurface {
 	readonly blocked_count: number | null;
 }
 
+type WorkspaceStatusCommandAuthority = 'repository_local' | 'delegated_scoped' | null;
+
+interface WorkspaceStatusCommandSelection {
+	readonly authority: WorkspaceStatusCommandAuthority;
+	readonly surface: WorkspaceStatusCommandSurface;
+	readonly contract: CommandContract | null;
+	readonly scope: WorkspaceCommandContractScope | null;
+	readonly planningRoot: string;
+}
+
 interface WorkspaceStatusRepository {
 	readonly relative_path: string;
-	readonly status: 'mustflow_ready' | 'contract_missing' | 'contract_invalid';
+	readonly status: 'mustflow_ready' | 'delegated_ready' | 'contract_missing' | 'contract_invalid';
 	readonly git_repository: true;
 	readonly mustflow: boolean;
+	readonly command_authority: WorkspaceStatusCommandAuthority;
 	readonly agent_rules: string | null;
 	readonly repo_map: string | null;
 	readonly mustflow_config: string | null;
@@ -151,6 +174,7 @@ interface WorkspaceCommandCatalogIntent {
 interface WorkspaceCommandCatalogRepository {
 	readonly relative_path: string;
 	readonly status: 'available' | 'contract_missing' | 'contract_invalid';
+	readonly command_authority: WorkspaceStatusCommandAuthority;
 	readonly command_contract: WorkspaceStatusCommandSurface;
 	readonly intent_count: number;
 	readonly runnable_count: number;
@@ -222,6 +246,7 @@ interface WorkspaceVerificationPlanRepository {
 		| 'contract_invalid'
 		| 'git_unavailable'
 		| 'plan_unavailable';
+	readonly command_authority: WorkspaceStatusCommandAuthority;
 	readonly command_contract: WorkspaceStatusCommandSurface;
 	readonly changed_file_count: number | null;
 	readonly changed_files: readonly string[];
@@ -321,6 +346,9 @@ function createAdHocWorkspaceConfig(base: WorkspaceConfig, projectsDir: string):
 		...base,
 		enabled: true,
 		roots: [projectsDir],
+		authorityMode: 'repository_local',
+		delegatedContracts: [],
+		delegatedContractCount: 0,
 	};
 }
 
@@ -445,16 +473,24 @@ function getIntentNames(intents: TomlTable): readonly string[] {
 	return Object.keys(intents).sort((left, right) => left.localeCompare(right));
 }
 
-function summarizeCommandSurface(repositoryRoot: string, repository: NestedRepository): WorkspaceStatusCommandSurface {
+interface WorkspaceCommandSummary {
+	readonly surface: WorkspaceStatusCommandSurface;
+	readonly contract: CommandContract | null;
+}
+
+function summarizeLocalCommand(repositoryRoot: string, repository: NestedRepository): WorkspaceCommandSummary {
 	if (!repository.commandContract) {
-		return {
-			path: null,
-			exists: false,
-			parse_error: null,
-			total_intents: null,
-			runnable_count: null,
-			runnable_intents: [],
-			blocked_count: null,
+	return {
+			surface: {
+				path: null,
+				exists: false,
+				parse_error: null,
+				total_intents: null,
+				runnable_count: null,
+				runnable_intents: [],
+				blocked_count: null,
+			},
+			contract: null,
 		};
 	}
 
@@ -464,49 +500,164 @@ function summarizeCommandSurface(repositoryRoot: string, repository: NestedRepos
 		const runnableIntents = intentNames.filter((intentName) => createRunPlan(repositoryRoot, contract, intentName).ok);
 
 		return {
-			path: repository.commandContract,
-			exists: true,
-			parse_error: null,
-			total_intents: intentNames.length,
-			runnable_count: runnableIntents.length,
-			runnable_intents: runnableIntents,
-			blocked_count: Math.max(0, intentNames.length - runnableIntents.length),
+			surface: {
+				path: repository.commandContract,
+				exists: true,
+				parse_error: null,
+				total_intents: intentNames.length,
+				runnable_count: runnableIntents.length,
+				runnable_intents: runnableIntents,
+				blocked_count: Math.max(0, intentNames.length - runnableIntents.length),
+			},
+			contract,
 		};
 	} catch (error) {
 		return {
-			path: repository.commandContract,
-			exists: true,
-			parse_error: error instanceof Error ? error.message : String(error),
-			total_intents: null,
-			runnable_count: null,
-			runnable_intents: [],
-			blocked_count: null,
+			surface: {
+				path: repository.commandContract,
+				exists: true,
+				parse_error: error instanceof Error ? error.message : String(error),
+				total_intents: null,
+				runnable_count: null,
+				runnable_intents: [],
+				blocked_count: null,
+			},
+			contract: null,
 		};
 	}
 }
 
-function repositoryStatus(commandSurface: WorkspaceStatusCommandSurface): WorkspaceStatusRepository['status'] {
+function normalizeRepositoryPath(value: string): string {
+	return value.replace(/\\/gu, '/').replace(/\/+$/gu, '');
+}
+
+function findDelegatedContract(
+	workspace: WorkspaceConfig,
+	repository: NestedRepository,
+): WorkspaceCommandContractScope | undefined {
+	if (workspace.authorityMode !== 'delegated_scoped' || repository.commandContract) {
+		return undefined;
+	}
+
+	const repositoryPath = normalizeRepositoryPath(repository.relativePath);
+	return workspace.delegatedContracts.find((contract) => contract.repository === repositoryPath);
+}
+
+function delegatedIntentIsRunnable(
+	projectRoot: string,
+	contract: CommandContract,
+	scope: WorkspaceCommandContractScope,
+	intentName: string,
+): boolean {
+	try {
+		assertScopedCommandIntentIsolation(projectRoot, scope, contract, intentName);
+		return createRunPlan(projectRoot, contract, intentName).ok;
+	} catch {
+		return false;
+	}
+}
+
+function summarizeDelegatedCommand(
+	projectRoot: string,
+	scope: WorkspaceCommandContractScope,
+): WorkspaceCommandSummary {
+	const contractPath = `.mustflow/config/${scope.file}`;
+	const contractExists = existsSync(path.resolve(projectRoot, '.mustflow', 'config', ...scope.file.split('/')));
+
+	try {
+		const contract = readScopedCommandContract(projectRoot, scope.file, `workspace:${scope.repository}`, scope.repository);
+		const intentNames = getIntentNames(contract.intents);
+		const runnableIntents = intentNames.filter((intentName) =>
+			delegatedIntentIsRunnable(projectRoot, contract, scope, intentName),
+		);
+
+		return {
+			surface: {
+				path: contractPath,
+				exists: true,
+				parse_error: null,
+				total_intents: intentNames.length,
+				runnable_count: runnableIntents.length,
+				runnable_intents: runnableIntents,
+				blocked_count: Math.max(0, intentNames.length - runnableIntents.length),
+			},
+			contract,
+		};
+	} catch (error) {
+		return {
+			surface: {
+				path: contractPath,
+				exists: contractExists,
+				parse_error: error instanceof Error ? error.message : String(error),
+				total_intents: null,
+				runnable_count: null,
+				runnable_intents: [],
+				blocked_count: null,
+			},
+			contract: null,
+		};
+	}
+}
+
+function summarizeCommandSelection(
+	projectRoot: string,
+	repositoryRoot: string,
+	repository: NestedRepository,
+	workspace: WorkspaceConfig,
+): WorkspaceStatusCommandSelection {
+	const delegatedContract = findDelegatedContract(workspace, repository);
+	if (delegatedContract) {
+		const summary = summarizeDelegatedCommand(projectRoot, delegatedContract);
+		return {
+			authority: 'delegated_scoped',
+			...summary,
+			scope: delegatedContract,
+			planningRoot: projectRoot,
+		};
+	}
+
+	const summary = summarizeLocalCommand(repositoryRoot, repository);
+	return {
+		authority: repository.commandContract ? 'repository_local' : null,
+		...summary,
+		scope: null,
+		planningRoot: repositoryRoot,
+	};
+}
+
+function repositoryStatus(
+	commandSurface: WorkspaceStatusCommandSurface,
+	authority: WorkspaceStatusCommandAuthority,
+): WorkspaceStatusRepository['status'] {
+	if (commandSurface.parse_error) {
+		return 'contract_invalid';
+	}
 	if (!commandSurface.exists) {
 		return 'contract_missing';
 	}
-
-	if (commandSurface.parse_error) {
-		return 'contract_invalid';
+	if (authority === 'delegated_scoped') {
+		return 'delegated_ready';
 	}
 
 	return 'mustflow_ready';
 }
 
-function summarizeRepository(projectRoot: string, repository: NestedRepository): WorkspaceStatusRepository {
+function summarizeRepository(
+	projectRoot: string,
+	repository: NestedRepository,
+	workspace: WorkspaceConfig,
+): WorkspaceStatusRepository {
 	const repositoryRoot = path.resolve(projectRoot, repository.relativePath);
-	const commandSurface = summarizeCommandSurface(repositoryRoot, repository);
+	const commandSelection = summarizeCommandSelection(projectRoot, repositoryRoot, repository, workspace);
+	const commandSurface = commandSelection.surface;
 	const issues = commandSurface.parse_error ? [commandSurface.parse_error] : [];
 
 	return {
 		relative_path: repository.relativePath,
-		status: repositoryStatus(commandSurface),
+		status: repositoryStatus(commandSurface, commandSelection.authority),
 		git_repository: true,
 		mustflow: repository.mustflow,
+		command_authority: commandSelection.authority,
 		agent_rules: repository.agentRules ?? null,
 		repo_map: repository.repoMap ?? null,
 		mustflow_config: repository.mustflowConfig ?? null,
@@ -537,7 +688,7 @@ function createWorkspaceStatusOutput(): WorkspaceStatusOutput {
 		{ ...config.map, includeNested: true },
 		config.workspace,
 	);
-	const repositories = nestedRepositories.map((repository) => summarizeRepository(projectRoot, repository));
+	const repositories = nestedRepositories.map((repository) => summarizeRepository(projectRoot, repository, config.workspace));
 	const issues = config.workspace.enabled && config.workspace.roots.length > 0 && repositories.length === 0
 		? ['No nested git repositories were discovered under configured workspace roots.']
 		: [];
@@ -562,7 +713,7 @@ function createWorkspaceScanOutput(projectsDir: string): WorkspaceScanOutput {
 		projectRoot,
 		{ ...config.map, includeNested: true },
 		workspace,
-	).map((repository) => summarizeRepository(projectRoot, repository));
+	).map((repository) => summarizeRepository(projectRoot, repository, workspace));
 	const issues = repositories.length === 0
 		? [t('en', 'workspace.scan.issue.noneDiscovered', { projectsDir })]
 		: [];
@@ -603,6 +754,8 @@ function workspaceConfigOutput(config: WorkspaceConfig): WorkspaceStatusConfig {
 	return {
 		enabled: config.enabled,
 		roots: config.roots,
+		authority_mode: config.authorityMode,
+		delegated_contract_count: config.delegatedContractCount,
 		max_depth: config.maxDepth,
 		max_repositories: config.maxRepositories,
 		follow_symlinks: config.followSymlinks,
@@ -640,11 +793,20 @@ function safeRunCommand(intentName: string): string | null {
 	return /^[A-Za-z0-9_-]+$/u.test(intentName) ? `mf run ${intentName}` : null;
 }
 
-function createCatalogIntent(repositoryRoot: string, repositoryPath: string, contract: CommandContract, intentName: string): WorkspaceCommandCatalogIntent {
+function createCatalogIntent(
+	planningRoot: string,
+	scope: WorkspaceCommandContractScope | null,
+	repositoryPath: string,
+	contract: CommandContract,
+	intentName: string,
+): WorkspaceCommandCatalogIntent {
 	const rawIntent = contract.intents[intentName];
 
 	try {
-		const plan = createRunPlan(repositoryRoot, contract, intentName);
+		if (scope) {
+			assertScopedCommandIntentIsolation(planningRoot, scope, contract, intentName);
+		}
+		const plan = createRunPlan(planningRoot, contract, intentName);
 		return {
 			name: intentName,
 			description: readIntentString(rawIntent, 'description'),
@@ -683,48 +845,46 @@ function createCatalogIntent(repositoryRoot: string, repositoryPath: string, con
 	}
 }
 
-function createCatalogRepository(projectRoot: string, repository: NestedRepository): WorkspaceCommandCatalogRepository {
+function createCatalogRepository(
+	projectRoot: string,
+	repository: NestedRepository,
+	workspace: WorkspaceConfig,
+): WorkspaceCommandCatalogRepository {
 	const repositoryRoot = path.resolve(projectRoot, repository.relativePath);
-	const commandSurface = summarizeCommandSurface(repositoryRoot, repository);
+	const commandSelection = summarizeCommandSelection(projectRoot, repositoryRoot, repository, workspace);
+	const commandSurface = commandSelection.surface;
 
-	if (!repository.commandContract) {
+	if (!commandSelection.contract) {
+		const contractInvalid = commandSurface.parse_error !== null;
 		return {
 			relative_path: repository.relativePath,
-			status: 'contract_missing',
+			status: contractInvalid ? 'contract_invalid' : 'contract_missing',
+			command_authority: commandSelection.authority,
 			command_contract: commandSurface,
 			intent_count: 0,
 			runnable_count: 0,
 			blocked_count: 0,
 			intents: [],
-			issues: ['Command contract is missing.'],
+			issues: [commandSurface.parse_error ?? 'Command contract is missing.'],
 		};
 	}
 
-	let contract: CommandContract;
-	try {
-		contract = readCommandContract(repositoryRoot);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		return {
-			relative_path: repository.relativePath,
-			status: 'contract_invalid',
-			command_contract: commandSurface,
-			intent_count: 0,
-			runnable_count: 0,
-			blocked_count: 0,
-			intents: [],
-			issues: [message],
-		};
-	}
-
+	const contract = commandSelection.contract;
 	const intents = getIntentNames(contract.intents).map((intentName) =>
-		createCatalogIntent(repositoryRoot, repository.relativePath, contract, intentName),
+		createCatalogIntent(
+			commandSelection.planningRoot,
+			commandSelection.scope,
+			repository.relativePath,
+			contract,
+			intentName,
+		),
 	);
 	const runnableCount = intents.filter((intent) => intent.runnable).length;
 
 	return {
 		relative_path: repository.relativePath,
 		status: 'available',
+		command_authority: commandSelection.authority,
 		command_contract: commandSurface,
 		intent_count: intents.length,
 		runnable_count: runnableCount,
@@ -737,7 +897,9 @@ function createCatalogRepository(projectRoot: string, repository: NestedReposito
 function createWorkspaceCommandCatalogOutput(): WorkspaceCommandCatalogOutput {
 	const projectRoot = resolveMustflowRoot();
 	const { config, repositories: nestedRepositories } = readWorkspaceRepositories(projectRoot);
-	const repositories = nestedRepositories.map((repository) => createCatalogRepository(projectRoot, repository));
+	const repositories = nestedRepositories.map((repository) =>
+		createCatalogRepository(projectRoot, repository, config.workspace),
+	);
 
 	return {
 		schema_version: WORKSPACE_COMMAND_CATALOG_SCHEMA_VERSION,
@@ -762,7 +924,15 @@ function createWorkspaceCommandFragmentsOutput(projectsDir?: string): WorkspaceC
 		{ ...config.map, includeNested: true },
 		workspace,
 	);
-	const repositories = nestedRepositories.map((repository) => summarizeRepository(projectRoot, repository));
+	const repositoryLocalWorkspace: WorkspaceConfig = {
+		...workspace,
+		authorityMode: 'repository_local',
+		delegatedContracts: [],
+		delegatedContractCount: 0,
+	};
+	const repositories = nestedRepositories.map((repository) =>
+		summarizeRepository(projectRoot, repository, repositoryLocalWorkspace),
+	);
 	const includePaths = createCommandFragmentPaths(repositories);
 	const suggestions = repositories.map((repository) =>
 		createCommandFragmentSuggestion(repository, includePaths.get(repository.relative_path) ?? `${COMMAND_FRAGMENT_INCLUDE_PREFIX}/repository.toml`),
@@ -793,6 +963,7 @@ function createWorkspaceCommandFragmentsOutput(projectsDir?: string): WorkspaceC
 
 function createUnavailableVerificationRepository(
 	repository: NestedRepository,
+	authority: WorkspaceStatusCommandAuthority,
 	commandSurface: WorkspaceStatusCommandSurface,
 	status: WorkspaceVerificationPlanRepository['status'],
 	classification: ClassifyOutput | null,
@@ -801,6 +972,7 @@ function createUnavailableVerificationRepository(
 	return {
 		relative_path: repository.relativePath,
 		status,
+		command_authority: authority,
 		command_contract: commandSurface,
 		changed_file_count: classification ? classification.summary.fileCount : null,
 		changed_files: classification ? classification.files : [],
@@ -813,6 +985,52 @@ function createUnavailableVerificationRepository(
 		selected_intents: [],
 		gaps: [],
 		issues: [issue],
+	};
+}
+
+function workspaceRelativeChangePath(repositoryPath: string, filePath: string): string {
+	const repository = normalizeRepositoryPath(repositoryPath);
+	const file = filePath.replace(/\\/gu, '/').replace(/^\.\//u, '');
+	return `${repository}/${file}`;
+}
+
+function repositoryRelativeChangePath(repositoryPath: string, filePath: string): string {
+	const prefix = `${normalizeRepositoryPath(repositoryPath)}/`;
+	return filePath.startsWith(prefix) ? filePath.slice(prefix.length) : filePath;
+}
+
+function rebaseClassificationForWorkspaceRoot(
+	classification: ClassifyOutput,
+	repositoryPath: string,
+): ChangeClassificationReport {
+	return {
+		source: classification.source,
+		files: classification.files.map((filePath) => workspaceRelativeChangePath(repositoryPath, filePath)),
+		classifications: classification.classifications.map((entry) => ({
+			...entry,
+			path: workspaceRelativeChangePath(repositoryPath, entry.path),
+		})),
+		summary: classification.summary,
+	};
+}
+
+function scopedPlanningContract(
+	projectRoot: string,
+	contract: CommandContract,
+	scope: WorkspaceCommandContractScope,
+): CommandContract {
+	return {
+		...contract,
+		intents: Object.fromEntries(
+			Object.entries(contract.intents).filter(([intentName]) => {
+				try {
+					assertScopedCommandIntentIsolation(projectRoot, scope, contract, intentName);
+					return true;
+				} catch {
+					return false;
+				}
+			}),
+		),
 	};
 }
 
@@ -831,52 +1049,73 @@ function selectedIntentsForVerificationReport(
 
 /**
  * mf:anchor cli.workspace.verify-plan
- * purpose: Build per-repository verification plans from each child repository's own command contract.
- * search: workspace verify, changed files, plan only, command contract, child repository
- * invariant: Workspace verification output selects intents per repository and does not run raw commands from the parent root.
+ * purpose: Build per-repository verification plans from each repository's effective local or delegated scoped command contract.
+ * search: workspace verify, changed files, plan only, command contract, delegated repository
+ * invariant: Workspace verification output selects only repository-scoped intents and never runs their raw commands.
  * risk: config, state
  */
-function createVerificationRepository(projectRoot: string, repository: NestedRepository): WorkspaceVerificationPlanRepository {
+function createVerificationRepository(
+	projectRoot: string,
+	repository: NestedRepository,
+	workspace: WorkspaceConfig,
+): WorkspaceVerificationPlanRepository {
 	const repositoryRoot = path.resolve(projectRoot, repository.relativePath);
-	const commandSurface = summarizeCommandSurface(repositoryRoot, repository);
+	const commandSelection = summarizeCommandSelection(projectRoot, repositoryRoot, repository, workspace);
+	const commandSurface = commandSelection.surface;
 	let classification: ClassifyOutput | null = null;
 
 	try {
 		classification = createClassifyOutput(repositoryRoot, 'changed', []);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		return createUnavailableVerificationRepository(repository, commandSurface, 'git_unavailable', null, message);
-	}
-
-	if (!repository.commandContract) {
 		return createUnavailableVerificationRepository(
 			repository,
+			commandSelection.authority,
 			commandSurface,
-			'contract_missing',
-			classification,
-			'Command contract is missing.',
+			'git_unavailable',
+			null,
+			message,
 		);
 	}
 
-	let contract: CommandContract;
-	try {
-		contract = readCommandContract(repositoryRoot);
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		return createUnavailableVerificationRepository(repository, commandSurface, 'contract_invalid', classification, message);
+	if (!commandSelection.contract) {
+		const contractInvalid = commandSurface.parse_error !== null;
+		return createUnavailableVerificationRepository(
+			repository,
+			commandSelection.authority,
+			commandSurface,
+			contractInvalid ? 'contract_invalid' : 'contract_missing',
+			classification,
+			commandSurface.parse_error ?? 'Command contract is missing.',
+		);
 	}
+
+	const contract = commandSelection.scope
+		? scopedPlanningContract(projectRoot, commandSelection.contract, commandSelection.scope)
+		: commandSelection.contract;
+	const planningClassification = commandSelection.scope
+		? rebaseClassificationForWorkspaceRoot(classification, repository.relativePath)
+		: classification;
 
 	let report: ChangeVerificationReport;
 	try {
-		report = createChangeVerificationReport(classification, contract, repositoryRoot);
+		report = createChangeVerificationReport(planningClassification, contract, commandSelection.planningRoot);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		return createUnavailableVerificationRepository(repository, commandSurface, 'plan_unavailable', classification, message);
+		return createUnavailableVerificationRepository(
+			repository,
+			commandSelection.authority,
+			commandSurface,
+			'plan_unavailable',
+			classification,
+			message,
+		);
 	}
 
-	return {
+		return {
 		relative_path: repository.relativePath,
 		status: 'available',
+		command_authority: commandSelection.authority,
 		command_contract: commandSurface,
 		changed_file_count: classification.summary.fileCount,
 		changed_files: classification.files,
@@ -889,7 +1128,9 @@ function createVerificationRepository(projectRoot: string, repository: NestedRep
 		selected_intents: selectedIntentsForVerificationReport(repository.relativePath, report),
 		gaps: report.gaps.map((gap) => ({
 			reason: gap.reason,
-			files: gap.files,
+			files: commandSelection.scope
+				? gap.files.map((filePath) => repositoryRelativeChangePath(repository.relativePath, filePath))
+				: gap.files,
 			surfaces: gap.surfaces,
 			detail: gap.detail,
 		})),
@@ -900,7 +1141,9 @@ function createVerificationRepository(projectRoot: string, repository: NestedRep
 function createWorkspaceVerificationPlanOutput(): WorkspaceVerificationPlanOutput {
 	const projectRoot = resolveMustflowRoot();
 	const { config, repositories: nestedRepositories } = readWorkspaceRepositories(projectRoot);
-	const repositories = nestedRepositories.map((repository) => createVerificationRepository(projectRoot, repository));
+	const repositories = nestedRepositories.map((repository) =>
+		createVerificationRepository(projectRoot, repository, config.workspace),
+	);
 
 	return {
 		schema_version: WORKSPACE_VERIFICATION_PLAN_SCHEMA_VERSION,
@@ -935,6 +1178,7 @@ function renderWorkspaceScan(output: WorkspaceScanOutput): string {
 	for (const repository of output.repositories) {
 		lines.push(`- ${repository.relative_path} (${repository.status})`);
 		lines.push(`  mustflow: ${repository.mustflow ? 'yes' : 'no'}`);
+		lines.push(`  command authority: ${repository.command_authority ?? 'none'}`);
 		lines.push(`  command contract: ${repository.command_contract.path ?? 'missing'}`);
 	}
 
@@ -964,6 +1208,7 @@ function renderWorkspaceStatus(output: WorkspaceStatusOutput): string {
 	for (const repository of output.repositories) {
 		lines.push(`- ${repository.relative_path} (${repository.status})`);
 		lines.push(`  mustflow: ${repository.mustflow ? 'yes' : 'no'}`);
+		lines.push(`  command authority: ${repository.command_authority ?? 'none'}`);
 		lines.push(`  command contract: ${repository.command_contract.path ?? 'missing'}`);
 		if (repository.command_contract.runnable_count !== null) {
 			lines.push(`  runnable intents: ${repository.command_contract.runnable_count}`);
@@ -994,6 +1239,8 @@ function renderWorkspaceCommandCatalog(output: WorkspaceCommandCatalogOutput): s
 
 	for (const repository of output.repositories) {
 		lines.push(`- ${repository.relative_path} (${repository.status})`);
+		lines.push(`  command authority: ${repository.command_authority ?? 'none'}`);
+		lines.push(`  command contract: ${repository.command_contract.path ?? 'missing'}`);
 		if (repository.intents.length === 0) {
 			lines.push(`  intents: none`);
 		}
@@ -1065,6 +1312,8 @@ function renderWorkspaceVerificationPlan(output: WorkspaceVerificationPlanOutput
 
 	for (const repository of output.repositories) {
 		lines.push(`- ${repository.relative_path} (${repository.status})`);
+		lines.push(`  command authority: ${repository.command_authority ?? 'none'}`);
+		lines.push(`  command contract: ${repository.command_contract.path ?? 'missing'}`);
 		lines.push(`  changed files: ${repository.changed_file_count ?? 'unknown'}`);
 		lines.push(`  selected intents: ${repository.selected_intent_count}`);
 		for (const selected of repository.selected_intents) {

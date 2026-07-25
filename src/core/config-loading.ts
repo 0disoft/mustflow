@@ -100,15 +100,21 @@ function readCommandIncludePathsFromParsed(root: TomlTable): readonly string[] {
 }
 
 export function readCommandContractIncludePaths(projectRoot: string): readonly string[] {
+	const parsed = readRootCommandContractToml(projectRoot);
+
+	return readCommandIncludePathsFromParsed(parsed).map(
+		(includePath) => `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${includePath}`,
+	);
+}
+
+function readRootCommandContractToml(projectRoot: string): TomlTable {
 	const parsed = readMustflowOwnedTomlFile(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH);
 
 	if (!isRecord(parsed)) {
 		throw new Error(`${COMMANDS_CONFIG_RELATIVE_PATH} must contain a TOML table`);
 	}
 
-	return readCommandIncludePathsFromParsed(parsed).map(
-		(includePath) => `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${includePath}`,
-	);
+	return parsed;
 }
 
 function assertCommandIncludeTable(includePath: string, parsed: unknown): TomlTable {
@@ -125,6 +131,20 @@ function assertCommandIncludeTable(includePath: string, parsed: unknown): TomlTa
 	}
 
 	return parsed;
+}
+
+function readCommandIncludeTable(projectRoot: string, includePath: string): TomlTable {
+	const normalized = normalizeCommandIncludePath(includePath);
+	if (commandIncludePathIsUnsafe(includePath)) {
+		throw new Error(
+			`Command include path "${includePath}" must be a relative ${COMMAND_INCLUDE_DIRECTORY}/*.toml path under ${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}`,
+		);
+	}
+
+	return assertCommandIncludeTable(
+		normalized,
+		readMustflowOwnedTomlFile(projectRoot, `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${normalized}`),
+	);
 }
 
 function mergeCommandSection(
@@ -154,11 +174,7 @@ function mergeCommandSection(
 }
 
 export function readResolvedCommandContractToml(projectRoot: string): TomlTable {
-	const parsed = readMustflowOwnedTomlFile(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH);
-
-	if (!isRecord(parsed)) {
-		throw new Error(`${COMMANDS_CONFIG_RELATIVE_PATH} must contain a TOML table`);
-	}
+	const parsed = readRootCommandContractToml(projectRoot);
 
 	if (hasOwn(parsed, 'intents') && !isRecord(parsed.intents)) {
 		throw new Error(`[intents] table in ${COMMANDS_CONFIG_RELATIVE_PATH} must be a TOML table`);
@@ -204,6 +220,125 @@ export function readResolvedCommandContractToml(projectRoot: string): TomlTable 
 	return merged;
 }
 
+function commandContractFromParsed(parsed: TomlTable): CommandContract {
+	if (!isRecord(parsed.intents)) {
+		throw new Error(`Missing [intents] table in ${COMMANDS_CONFIG_RELATIVE_PATH}`);
+	}
+
+	return {
+		defaults: isRecord(parsed.defaults) ? parsed.defaults : {},
+		intents: parsed.intents,
+		resources: isRecord(parsed.resources) ? parsed.resources : {},
+	};
+}
+
+function namespaceScopedLock(lockNamespace: string, lockName: string): string {
+	return `${lockNamespace}::${lockName}`;
+}
+
+function namespaceScopedIntentLocks(rawIntents: unknown, lockNamespace: string): TomlTable {
+	if (rawIntents === undefined) {
+		return {};
+	}
+	if (!isRecord(rawIntents)) {
+		throw new Error(`Scoped command contract must contain an [intents] table`);
+	}
+
+	const intents: TomlTable = {};
+	for (const [intentName, rawIntent] of Object.entries(rawIntents)) {
+		if (!isRecord(rawIntent) || !Array.isArray(rawIntent.effects)) {
+			intents[intentName] = rawIntent;
+			continue;
+		}
+
+		intents[intentName] = {
+			...rawIntent,
+			effects: rawIntent.effects.map((rawEffect) => {
+				if (!isRecord(rawEffect) || typeof rawEffect.lock !== 'string') {
+					return rawEffect;
+				}
+				return {
+					...rawEffect,
+					lock: namespaceScopedLock(lockNamespace, rawEffect.lock),
+				};
+			}),
+		};
+	}
+
+	return intents;
+}
+
+function rebaseScopedCwd(repository: string, rawCwd: string): string {
+	const normalizedCwd = rawCwd.replaceAll('\\', '/');
+	if (path.posix.isAbsolute(normalizedCwd) || path.win32.isAbsolute(rawCwd)) {
+		return rawCwd;
+	}
+
+	return path.posix.normalize(path.posix.join(repository, normalizedCwd));
+}
+
+function rebaseScopedCommandContract(contract: CommandContract, repository: string): CommandContract {
+	const defaultCwd = readString(contract.defaults, 'default_cwd') ?? '.';
+	const intents = Object.fromEntries(
+		Object.entries(contract.intents).map(([intentName, rawIntent]) => {
+			if (!isRecord(rawIntent)) {
+				return [intentName, rawIntent];
+			}
+
+			const intentCwd = readString(rawIntent, 'cwd');
+			return [
+				intentName,
+				intentCwd === undefined ? rawIntent : { ...rawIntent, cwd: rebaseScopedCwd(repository, intentCwd) },
+			];
+		}),
+	);
+
+	return {
+		defaults: {
+			...contract.defaults,
+			default_cwd: rebaseScopedCwd(repository, defaultCwd),
+		},
+		intents,
+		resources: contract.resources,
+	};
+}
+
+function namespaceScopedResources(rawResources: unknown, lockNamespace: string): TomlTable {
+	if (rawResources === undefined) {
+		return {};
+	}
+	if (!isRecord(rawResources)) {
+		throw new Error(`Scoped command contract [resources] must be a TOML table`);
+	}
+
+	return Object.fromEntries(
+		Object.entries(rawResources).map(([resourceName, resource]) => [
+			namespaceScopedLock(lockNamespace, resourceName),
+			resource,
+		]),
+	);
+}
+
+export function readRootCommandContract(projectRoot: string): CommandContract {
+	return commandContractFromParsed(readRootCommandContractToml(projectRoot));
+}
+
+export function readScopedCommandContract(
+	projectRoot: string,
+	includePath: string,
+	lockNamespace: string,
+	repository: string,
+): CommandContract {
+	const root = readRootCommandContractToml(projectRoot);
+	const fragment = readCommandIncludeTable(projectRoot, includePath);
+
+	return rebaseScopedCommandContract({
+		defaults: isRecord(root.defaults) ? root.defaults : {},
+		intents: namespaceScopedIntentLocks(fragment.intents, lockNamespace),
+		resources: namespaceScopedResources(fragment.resources, lockNamespace),
+	}, repository);
+}
+
 export function readMustflowConfig(projectRoot: string): TomlTable {
 	const parsed = readMustflowOwnedTomlFile(projectRoot, MUSTFLOW_CONFIG_RELATIVE_PATH);
 
@@ -221,17 +356,7 @@ export function readMustflowConfigIfExists(projectRoot: string): TomlTable | und
 }
 
 export function readCommandContract(projectRoot: string): CommandContract {
-	const parsed = readResolvedCommandContractToml(projectRoot);
-
-	if (!isRecord(parsed.intents)) {
-		throw new Error(`Missing [intents] table in ${COMMANDS_CONFIG_RELATIVE_PATH}`);
-	}
-
-	return {
-		defaults: isRecord(parsed.defaults) ? parsed.defaults : {},
-		intents: parsed.intents,
-		resources: isRecord(parsed.resources) ? parsed.resources : {},
-	};
+	return commandContractFromParsed(readResolvedCommandContractToml(projectRoot));
 }
 
 export function readString(table: TomlTable, key: string): string | undefined {

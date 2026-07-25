@@ -1465,6 +1465,7 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.dryRun": "Imprime un plan de commande sans l'exécuter",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
+  "run.help.option.repository": "Sélectionne un contrat workspace délégué par chemin relatif du dépôt",
   "run.help.option.wait": "Attend les verrous actifs en conflit avant d'exécuter",
   "run.help.option.waitTimeout": "Nombre maximal de secondes d'attente des verrous actifs. Par défaut : 300",
   "run.help.option.allowApproval":

@@ -53,6 +53,8 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "roots": { "$ref": "#/$defs/stringArray" },
+        "authority_mode": { "enum": ["repository_local", "delegated_scoped"] },
+        "delegated_contract_count": { "type": "integer", "minimum": 0 },
         "max_depth": { "type": "integer", "minimum": 1 },
         "max_repositories": { "type": "integer", "minimum": 1 },
         "follow_symlinks": { "type": "boolean" },
@@ -119,6 +121,7 @@
       "properties": {
         "relative_path": { "type": "string" },
         "status": { "enum": ["available", "contract_missing", "contract_invalid"] },
+        "command_authority": { "enum": ["repository_local", "delegated_scoped", null] },
         "command_contract": { "$ref": "#/$defs/commandSurface" },
         "intent_count": { "type": "integer", "minimum": 0 },
         "runnable_count": { "type": "integer", "minimum": 0 },

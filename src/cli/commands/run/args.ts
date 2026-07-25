@@ -20,6 +20,7 @@ const RUN_OPTIONS = [
 	{ name: ALLOW_UNTRUSTED_ROOT_OPTION, kind: 'boolean' },
 	{ name: '--wait-timeout', kind: 'string' },
 	{ name: '--allow-approval', kind: 'string' },
+	{ name: '--repo', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
 
 export interface ParsedRunArguments {
@@ -30,6 +31,7 @@ export interface ParsedRunArguments {
 	readonly allowApprovals: readonly string[];
 	readonly wait: boolean;
 	readonly waitTimeoutSeconds: number;
+	readonly repository: string | null;
 	readonly intentName: string | null;
 	readonly extra: readonly string[];
 	readonly invalidApprovalAction: string | null;
@@ -73,6 +75,7 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 			allowApprovals,
 			wait: hasParsedCliOption(parsed, '--wait'),
 			waitTimeoutSeconds,
+			repository: getParsedCliStringOption(parsed, '--repo'),
 			intentName: intentName ?? null,
 			extra,
 			invalidApprovalAction: null,
@@ -103,6 +106,7 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 		allowApprovals,
 		wait: hasParsedCliOption(parsed, '--wait'),
 		waitTimeoutSeconds,
+		repository: getParsedCliStringOption(parsed, '--repo'),
 		intentName: intentName ?? null,
 		extra,
 		invalidApprovalAction,
@@ -122,12 +126,14 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: '--wait', description: t(lang, 'run.help.option.wait') },
 				{ label: '--wait-timeout <seconds>', description: t(lang, 'run.help.option.waitTimeout') },
 				{ label: '--allow-approval <action>', description: t(lang, 'run.help.option.allowApproval') },
+				{ label: '--repo <path>', description: t(lang, 'run.help.option.repository') },
 				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
 			examples: [
 				'mf run test',
 				'mf run lint --json',
+				'mf run test --repo projects/example --json',
 				'mf run release_npm_publish --allow-approval release --allow-approval network_access --json',
 			],
 			exitCodes: [

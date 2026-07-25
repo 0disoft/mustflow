@@ -96,6 +96,8 @@ anchor_files = [
 [workspace]
 enabled = true
 roots = ["projects"]
+authority_mode = "repository_local"
+contracts = []
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false

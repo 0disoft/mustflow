@@ -90,6 +90,51 @@ test('fails when map and workspace configuration fields are invalid', () => {
 	}
 });
 
+test('fails when delegated workspace command scopes are unsafe or ambiguous', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		const config = readText(configPath).replace(
+			/\[workspace\][\s\S]*?(?=\n\[capabilities\])/u,
+			[
+				'[workspace]',
+				'enabled = true',
+				'roots = ["projects"]',
+				'authority_mode = "delegated_scoped"',
+				'contracts = [',
+				'  { repository = "projects/alpha", file = "commands/alpha.toml" },',
+				'  { repository = "projects/alpha", file = "commands/beta.toml" },',
+				']',
+				'max_depth = 4',
+				'max_repositories = 50',
+				'follow_symlinks = false',
+				'stop_at_repository_root = true',
+				'',
+			].join('\n'),
+		);
+		writeFileSync(configPath, config);
+
+		const duplicateResult = runCli(projectPath, ['check']);
+		assert.equal(duplicateResult.status, 1);
+		assert.match(duplicateResult.stderr, /\[workspace\]\.contracts contains duplicate repository "projects\/alpha"/);
+
+		writeFileSync(
+			configPath,
+			config.replace(
+				'  { repository = "projects/alpha", file = "commands/beta.toml" },',
+				'  { repository = "outside/beta", file = "../commands/beta.toml" },',
+			),
+		);
+		const unsafeResult = runCli(projectPath, ['check']);
+		assert.equal(unsafeResult.status, 1);
+		assert.match(unsafeResult.stderr, /contracts\[1\]\.file must be a normalized commands\/\*\.toml path/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('fails when context configuration fields are invalid', () => {
 	const projectPath = createTempProject();
 

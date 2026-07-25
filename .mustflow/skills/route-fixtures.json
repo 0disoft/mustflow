@@ -667,6 +667,24 @@
       "forbidden_candidates": [
         "execution-ledger-integrity-review"
       ]
+    },
+    {
+      "id": "ai-game-transparent-sprite-atlas-production",
+      "task": "Build a repeatable AI-generated transparent PNG character sprite pipeline with real RGBA checks, stable pivots, foot-contact validation, trim metadata, atlas extrude and padding, and engine-rendered acceptance scenes",
+      "paths": [
+        "assets/characters/player/walk-01.png",
+        "tools/assets/compile-sprites.ts"
+      ],
+      "reasons": [
+        "web_asset_change",
+        "code_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "ai-game-asset-production",
+      "required_candidates": [
+        "ai-game-asset-production"
+      ]
     }
   ]
 }

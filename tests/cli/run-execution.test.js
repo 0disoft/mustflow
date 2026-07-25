@@ -61,6 +61,94 @@ destructive = false
 	);
 }
 
+function configureDelegatedWorkspace(projectPath) {
+	const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+	const config = readFileSync(configPath, 'utf8');
+	writeFileSync(
+		configPath,
+		config.replace(
+			/\[workspace\][\s\S]*?(?=\n\[capabilities\])/u,
+			[
+				'[workspace]',
+				'enabled = true',
+				'roots = ["projects"]',
+				'authority_mode = "delegated_scoped"',
+				'contracts = [',
+				'  { repository = "projects/alpha", file = "commands/alpha.toml" },',
+				'  { repository = "projects/beta", file = "commands/beta.toml" },',
+				']',
+				'max_depth = 4',
+				'max_repositories = 50',
+				'follow_symlinks = false',
+				'stop_at_repository_root = true',
+				'',
+			].join('\n'),
+		),
+	);
+	trackManifestLockFile(projectPath, '.mustflow/config/mustflow.toml');
+}
+
+function writeDelegatedWorkspaceContracts(projectPath) {
+	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+	const fragmentDirectory = path.join(projectPath, '.mustflow', 'config', 'commands');
+	mkdirSync(fragmentDirectory, { recursive: true });
+	mkdirSync(path.join(projectPath, 'projects', 'alpha'), { recursive: true });
+	mkdirSync(path.join(projectPath, 'projects', 'beta'), { recursive: true });
+	writeFileSync(
+		commandsPath,
+		`${readFileSync(commandsPath, 'utf8')}\n[include]\nfiles = ["commands/alpha.toml", "commands/beta.toml"]\n`,
+	);
+	for (const [name, message] of [
+		['alpha', 'alpha scoped command'],
+		['beta', 'beta scoped command'],
+	]) {
+		writeFileSync(
+			path.join(fragmentDirectory, `${name}.toml`),
+			[
+				'[resources.build_output]',
+				'type = "path"',
+				'paths = ["dist/**"]',
+				'concurrency = "exclusive_writer"',
+				'',
+				'[intents.test]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				`description = "Run the ${name} scoped test command."`,
+				`argv = [${JSON.stringify(process.execPath)}, "-e", ${JSON.stringify(`console.log(${JSON.stringify(message)})`)}]`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'effects = [{ type = "read", mode = "read", path = ".", lock = "build_output", concurrency = "shared" }]',
+				'network = false',
+				'destructive = false',
+				'',
+				...(name === 'alpha' ? [
+					'[intents.write_artifact]',
+					'status = "configured"',
+					'lifecycle = "oneshot"',
+					'run_policy = "agent_allowed"',
+					'description = "Write one child-relative artifact."',
+					`argv = [${JSON.stringify(process.execPath)}, "-e", ${JSON.stringify("require('node:fs').mkdirSync('generated',{recursive:true});require('node:fs').writeFileSync('generated/out.txt','ok')")}]`,
+					'cwd = "."',
+					'timeout_seconds = 10',
+					'stdin = "closed"',
+					'success_exit_codes = [0]',
+					'writes = ["generated/**"]',
+					'network = false',
+					'destructive = false',
+					'',
+				] : []),
+			].join('\n'),
+		);
+	}
+	trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
+	trackManifestLockFile(projectPath, '.mustflow/config/commands/alpha.toml');
+	trackManifestLockFile(projectPath, '.mustflow/config/commands/beta.toml');
+}
+
 async function importRunExecutor() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'commands', 'run', 'executor.js')).href);
 }
@@ -186,6 +274,174 @@ destructive = false
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.match(result.stdout, /hello from included contract/);
 		assert.match(result.stderr, /Running included_echo \(timeout: 10s\)\.\.\./);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs only the delegated workspace contract selected by the child working directory', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+
+		const result = runCli(path.join(projectPath, 'projects', 'alpha'), ['run', 'test', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.equal(receipt.intent, 'test');
+		assert.equal(receipt.status, 'passed');
+		assert.match(receipt.stdout.tail, /alpha scoped command/);
+		assert.deepEqual(receipt.workspace_scope, {
+			repository: 'projects/alpha',
+			contract: '.mustflow/config/commands/alpha.toml',
+		});
+		assert.equal(existsSync(latestRunReceiptPath(projectPath)), true);
+		assert.equal(existsSync(latestRunReceiptPath(path.join(projectPath, 'projects', 'alpha'))), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('runs an explicit delegated workspace contract from the workspace root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+
+		const result = runCli(projectPath, ['run', 'test', '--repo', 'projects/beta', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.match(receipt.stdout.tail, /beta scoped command/);
+		assert.equal(receipt.workspace_scope.repository, 'projects/beta');
+		assert.equal(receipt.workspace_scope.contract, '.mustflow/config/commands/beta.toml');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('resolves delegated cwd and writes relative to the mapped repository exactly once', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+
+		const result = runCli(path.join(projectPath, 'projects', 'alpha'), ['run', 'write_artifact', '--json'], {
+			env: createEnvWithRecursiveWriteDriftSnapshot(),
+		});
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.equal(receipt.cwd, 'projects/alpha');
+		assert.deepEqual(receipt.write_drift.declared_paths, ['projects/alpha/generated/**']);
+		assert.deepEqual(receipt.write_drift.declared_observed_paths, ['projects/alpha/generated/out.txt']);
+		assert.deepEqual(receipt.write_drift.undeclared_paths, []);
+		assert.equal(existsSync(path.join(projectPath, 'projects', 'alpha', 'generated', 'out.txt')), true);
+		assert.equal(existsSync(path.join(projectPath, 'projects', 'alpha', 'projects', 'alpha', 'generated', 'out.txt')), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('ignores manifest drift in an inactive delegated workspace contract', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands', 'beta.toml'),
+			'[intents.broken\n',
+		);
+
+		const result = runCli(path.join(projectPath, 'projects', 'alpha'), ['run', 'test', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.match(receipt.stdout.tail, /alpha scoped command/);
+		assert.equal(receipt.workspace_scope.repository, 'projects/alpha');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('treats a selected empty delegated contract as valid but without runnable intents', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands', 'beta.toml'),
+			'# This repository intentionally exposes no commands yet.\n',
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands/beta.toml');
+
+		const result = runCli(projectPath, ['run', 'test', '--repo', 'projects/beta']);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unknown command: test/);
+		assert.doesNotMatch(result.stderr, /Scoped command contract must contain an \[intents\] table/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects delegated workspace intents that escape the mapped repository', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		const alphaPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'alpha.toml');
+		writeFileSync(alphaPath, readFileSync(alphaPath, 'utf8').replace('cwd = "."', 'cwd = "../.."'));
+		trackManifestLockFile(projectPath, '.mustflow/config/commands/alpha.toml');
+
+		const result = runCli(path.join(projectPath, 'projects', 'alpha'), ['run', 'test', '--json']);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /intent "test" cwd must stay inside projects\/alpha/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('ignores an out-of-scope sibling intent when the selected delegated intent stays inside its repository', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		const alphaPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'alpha.toml');
+		writeFileSync(
+			alphaPath,
+			`${readFileSync(alphaPath, 'utf8')}
+[intents.workspace_helper]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Represent an existing root-owned helper kept in the same legacy fragment."
+argv = [${JSON.stringify(process.execPath)}, "-e", "console.log('workspace helper')"]
+cwd = "../.."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+`,
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands/alpha.toml');
+
+		const result = runCli(path.join(projectPath, 'projects', 'alpha'), ['run', 'test', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.match(receipt.stdout.tail, /alpha scoped command/);
 	} finally {
 		removeTempProject(projectPath);
 	}

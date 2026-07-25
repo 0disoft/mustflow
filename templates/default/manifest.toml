@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.117.1"
+version = "2.118.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -316,6 +316,10 @@ creates = [
   ".mustflow/skills/visual-review-artifact/SKILL.md",
   ".mustflow/skills/visual-review-artifact/resources.toml",
   ".mustflow/skills/visual-review-artifact/assets/review-template.html",
+  ".mustflow/skills/ai-game-asset-production/SKILL.md",
+  ".mustflow/skills/ai-game-asset-production/references/asset-contract-validation.md",
+  ".mustflow/skills/ai-game-asset-production/references/raster-alpha-atlas-checklist.md",
+  ".mustflow/skills/ai-game-asset-production/references/tile-animation-checklist.md",
   ".mustflow/skills/web-asset-optimization/SKILL.md",
   ".mustflow/docs/agent-workflow.md",
   ".mustflow/config/mustflow.toml",
@@ -1465,6 +1469,7 @@ product = [
   "vertical-slice-tdd",
   "ui-quality-gate",
   "visual-review-artifact",
+  "ai-game-asset-production",
   "web-asset-optimization",
 ]
 library = [

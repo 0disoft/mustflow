@@ -5,6 +5,8 @@ description: Runs a finite command intent declared in commands.toml.
 
 `mf run <intent>` executes only finite command intents declared in `.mustflow/config/commands.toml`.
 
+When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves exactly one mapped `.mustflow/config/commands/*.toml` fragment. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`.
+
 ## Execution Conditions
 
 The intent must satisfy all of these conditions:
@@ -54,7 +56,10 @@ npx mf run test
 npx mf run lint
 npx mf run mustflow_check
 npx mf run test --json
+npx mf run test --repo projects/game --json
 ```
+
+`--repo` is accepted only in delegated scoped workspace mode. An unmapped working directory under a configured workspace root is rejected instead of falling back to another repository's contract.
 
 ## JSON Fields
 
@@ -69,6 +74,7 @@ Machine-readable output uses these fields:
 - `command` (`string`): Always `run`.
 - `correlation_id` (`string`, optional): Stable per-run correlation identifier.
 - `intent` (`string`): Command intent name.
+- `workspace_scope` (`object`, optional): Delegated repository and selected command-fragment path for a scoped workspace run.
 - `status` (`string`): Run result. One of `passed`, `failed`, `timed_out`, `start_failed`, or `output_limit_exceeded`.
 - `timed_out` (`boolean`): Whether the timeout was reached.
 - `started_at` (`string`): Run start time.

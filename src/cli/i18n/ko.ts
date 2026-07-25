@@ -1456,6 +1456,7 @@ export const koMessages = {
   "run.help.option.dryRun": "실행하지 않고 명령 계획을 출력합니다",
   "run.help.option.planOnly": "--dry-run과 같은 동작입니다",
   "run.help.option.json": "실행 결과 또는 명령 계획을 JSON으로 출력합니다",
+  "run.help.option.repository": "저장소 상대 경로로 위임된 workspace 계약을 선택합니다",
   "run.help.option.wait": "충돌하는 활성 실행 잠금이 풀릴 때까지 기다린 뒤 실행합니다",
   "run.help.option.waitTimeout": "활성 실행 잠금을 기다릴 최대 초입니다. 기본값: 300",
   "run.help.option.allowApproval":

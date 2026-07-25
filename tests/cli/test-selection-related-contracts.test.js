@@ -110,6 +110,27 @@ test('related selection maps the derived manifest lock to lock consumers without
 	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
 });
 
+test('related selection keeps delegated workspace execution changes on focused contract tests', () => {
+	const report = selectRelated([
+		'src/cli/lib/run-context.ts',
+		'src/cli/lib/manifest-lock.ts',
+		'src/cli/lib/run-root-trust.ts',
+		'src/cli/lib/validation/index.ts',
+		'src/core/config-loading.ts',
+		'src/core/run-receipt.ts',
+		'src/core/workspace-command-authority.ts',
+	]);
+	const selected = new Set(report.selected);
+
+	for (const testName of runTests) {
+		assert.equal(selected.has(testName), true);
+	}
+	assert.equal(selected.has('check-config-validation.test.js'), true);
+	assert.equal(selected.has('workspace.test.js'), true);
+	assert.equal(selected.has('schema-cli-output-contracts.test.js'), true);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+});
+
 test('related selection maps package metadata helper changes to command consumers', () => {
 	const selected = selectedFor(['src/cli/lib/package-info.ts']);
 

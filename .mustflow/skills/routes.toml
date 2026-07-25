@@ -1714,6 +1714,12 @@ route_type = "adjunct"
 priority = 82
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "security_change", "privacy_change"]
 
+[routes."ai-game-asset-production"]
+category = "ui_assets"
+route_type = "primary"
+priority = 86
+applies_to_reasons = ["ui_change", "web_asset_change", "behavior_change", "code_change", "test_change", "docs_change", "product_change", "release_risk"]
+
 [routes."client-bundle-pruning-review"]
 category = "ui_assets"
 route_type = "adjunct"

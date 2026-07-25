@@ -32,6 +32,8 @@
       "properties": {
         "enabled": { "type": "boolean" },
         "roots": { "$ref": "#/$defs/stringArray" },
+        "authority_mode": { "enum": ["repository_local", "delegated_scoped"] },
+        "delegated_contract_count": { "type": "integer", "minimum": 0 },
         "max_depth": { "type": "integer", "minimum": 1 },
         "max_repositories": { "type": "integer", "minimum": 1 },
         "follow_symlinks": { "type": "boolean" },
@@ -122,9 +124,10 @@
       ],
       "properties": {
         "relative_path": { "type": "string" },
-        "status": { "enum": ["mustflow_ready", "contract_missing", "contract_invalid"] },
+        "status": { "enum": ["mustflow_ready", "delegated_ready", "contract_missing", "contract_invalid"] },
         "git_repository": { "const": true },
         "mustflow": { "type": "boolean" },
+        "command_authority": { "enum": ["repository_local", "delegated_scoped", null] },
         "agent_rules": { "$ref": "#/$defs/nullableString" },
         "repo_map": { "$ref": "#/$defs/nullableString" },
         "mustflow_config": { "$ref": "#/$defs/nullableString" },

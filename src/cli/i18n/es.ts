@@ -1465,6 +1465,7 @@ Lee estos archivos antes de trabajar:
   "run.help.option.dryRun": "Imprime un plan de comando sin ejecutarlo",
   "run.help.option.planOnly": "Alias de --dry-run",
   "run.help.option.json": "Imprime el registro de ejecución o el plan de comando como JSON",
+  "run.help.option.repository": "Selecciona un contrato delegado del workspace mediante una ruta relativa del repositorio",
   "run.help.option.wait": "Espera bloqueos activos en conflicto antes de ejecutar",
   "run.help.option.waitTimeout": "Segundos máximos para esperar bloqueos activos. Predeterminado: 300",
   "run.help.option.allowApproval":

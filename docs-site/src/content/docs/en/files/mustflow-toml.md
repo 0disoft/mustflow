@@ -242,6 +242,8 @@ procedure content.
 [workspace]
 enabled = true
 roots = ["projects"]
+authority_mode = "repository_local"
+contracts = []
 max_depth = 4
 max_repositories = 50
 follow_symlinks = false
@@ -250,13 +252,32 @@ stop_at_repository_root = true
 
 `workspace.enabled = true` lets the current root discover independent repositories under `projects/` by default.
 
-For a workspace root, adjust paths such as `roots = ["projects", "repos"]`. mustflow scans only configured roots and does not grant child repository command authority from the parent workspace.
+For a workspace root, adjust paths such as `roots = ["projects", "repos"]`. mustflow scans only configured roots. The default `authority_mode = "repository_local"` keeps command authority inside each nested repository, preserving the existing behavior.
+
+When nested repositories cannot carry their own mustflow installation, opt into delegated scoped command authority:
+
+```toml
+[workspace]
+enabled = true
+roots = ["projects"]
+authority_mode = "delegated_scoped"
+contracts = [
+  { repository = "projects/web", file = "commands/web.toml" },
+  { repository = "projects/game", file = "commands/game.toml" },
+]
+```
+
+Each `repository` is relative to the mustflow root and must stay under a configured workspace root. Each `file` is relative to `.mustflow/config/`, must stay under `commands/`, and must end in `.toml`. Repository and file mappings must be unique.
+
+In delegated scoped mode, `mf run` automatically selects the deepest mapped repository containing the current working directory. From the workspace root, use `mf run <intent> --repo <repository>`. Only the selected fragment is parsed and checked against the manifest lock, so a duplicate name, malformed TOML file, or lock drift in another repository fragment does not block the selected repository. Run receipts record the selected repository and contract in `workspace_scope`.
+
+The root `commands.toml` still owns shared defaults and the installed trust boundary. A delegated fragment owns its repository's intents and resources; root intents and other fragments are not merged into that scoped execution. Fragment `cwd`, write, effect, and resource paths are relative to the mapped repository and are rebased exactly once by Mustflow. Use `cwd = "."` for the repository root and keep workspace-root-prefixed paths out of delegated fragments. An intentionally empty fragment is a valid zero-intent contract. Mustflow rejects any rebased path outside the mapped repository. Keep genuinely shared workspace commands in the root contract.
 
 `max_depth` and `max_repositories` prevent accidental large scans. `follow_symlinks = false` prevents traversal outside the workspace or into another drive by default.
 
 `stop_at_repository_root = true` means that once an independent nested repository is discovered, the parent map should not continue recursively through its internals. The parent `REPO_MAP.md` should show only entrypoints into nested repositories, not describe those repositories.
 
-`mf check` verifies that `roots` are relative paths inside the current root, that `max_depth` and `max_repositories` are positive integers, and that workspace switches are booleans.
+`mf check` verifies that `roots` and delegated repositories are relative paths inside the current root, delegated repositories stay under configured roots, delegated files stay under `commands/`, mappings are unique, `max_depth` and `max_repositories` are positive integers, and workspace switches are booleans.
 
 ## Agent Control Surface Fields
 

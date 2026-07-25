@@ -8,6 +8,7 @@ import {
 	type RunTerminationReceipt,
 } from '../../../core/run-receipt.js';
 import type { RunnableRunPlan } from '../../lib/run-plan.js';
+import type { RunWorkspaceScope } from '../../lib/run-context.js';
 import type { CommandResult } from './executor.js';
 
 interface AssembleRunReceiptInput {
@@ -27,6 +28,7 @@ interface AssembleRunReceiptInput {
 	readonly phaseTimings: readonly RunReceiptPerformancePhase[];
 	readonly stdoutTailBytes: number;
 	readonly stderrTailBytes: number;
+	readonly workspaceScope: RunWorkspaceScope | null;
 }
 
 export function assembleRunReceipt(input: AssembleRunReceiptInput): RunReceipt {
@@ -67,6 +69,7 @@ export function assembleRunReceipt(input: AssembleRunReceiptInput): RunReceipt {
 			selected_target_count: Math.max(1, input.plan.testTargets.length),
 			fallback_used: false,
 		},
+		workspaceScope: input.workspaceScope,
 		stdoutTailBytes: input.stdoutTailBytes,
 		stderrTailBytes: input.stderrTailBytes,
 		receiptPath: createRunReceiptRelativePath(),

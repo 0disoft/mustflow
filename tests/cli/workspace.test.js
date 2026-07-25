@@ -107,6 +107,56 @@ function enableWorkspace(projectPath) {
 	);
 }
 
+function enableDelegatedWorkspace(projectPath) {
+	const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+	const config = readFileSync(configPath, 'utf8');
+	writeFileSync(
+		configPath,
+		config.replace(
+			/\[workspace\][\s\S]*?(?=\n\[capabilities\])/u,
+			[
+				'[workspace]',
+				'enabled = true',
+				'roots = ["packages"]',
+				'authority_mode = "delegated_scoped"',
+				'contracts = [{ repository = "packages/child", file = "commands/child.toml" }]',
+				'max_depth = 4',
+				'max_repositories = 10',
+				'follow_symlinks = false',
+				'stop_at_repository_root = true',
+				'',
+			].join('\n'),
+		),
+	);
+
+	const commandsDirectory = path.join(projectPath, '.mustflow', 'config', 'commands');
+	mkdirSync(commandsDirectory, { recursive: true });
+	writeFileSync(
+		path.join(projectPath, '.mustflow', 'config', 'commands.toml'),
+		['schema_version = "1"', '', '[defaults]', 'stdin = "closed"', 'default_timeout_seconds = 30', ''].join('\n'),
+	);
+	writeFileSync(
+		path.join(commandsDirectory, 'child.toml'),
+		[
+			'[intents.child_check]',
+			'status = "configured"',
+			'lifecycle = "oneshot"',
+			'run_policy = "agent_allowed"',
+			'description = "Print delegated child check"',
+			`argv = ["${process.execPath.replace(/\\/gu, '\\\\')}", "-e", "console.log(\'child\')"]`,
+			'cwd = "."',
+			'timeout_seconds = 10',
+			'stdin = "closed"',
+			'success_exit_codes = [0]',
+			'writes = []',
+			'network = false',
+			'destructive = false',
+			'required_after = ["code_change"]',
+			'',
+		].join('\n'),
+	);
+}
+
 function createNestedRepository(projectPath) {
 	const childRoot = path.join(projectPath, 'packages', 'child');
 	mkdirSync(path.join(childRoot, '.mustflow', 'config'), { recursive: true });
@@ -153,6 +203,15 @@ function createBareNestedRepository(projectPath, relativePath) {
 	const childRoot = path.join(projectPath, ...relativePath.split('/'));
 	mkdirSync(path.join(childRoot, '.git'), { recursive: true });
 	writeFileSync(path.join(childRoot, 'README.md'), `# ${relativePath}\n`);
+	return childRoot;
+}
+
+function createDelegatedNestedRepository(projectPath) {
+	const childRoot = path.join(projectPath, 'packages', 'child');
+	mkdirSync(childRoot, { recursive: true });
+	writeFileSync(path.join(childRoot, 'README.md'), '# Delegated child\n');
+	const initResult = runGit(childRoot, ['init']);
+	assert.equal(initResult.status, 0, initResult.stderr || initResult.stdout);
 	return childRoot;
 }
 
@@ -234,12 +293,98 @@ test('workspace status discovers nested repositories and local command contracts
 		assert.equal(output.repositories[0].status, 'mustflow_ready');
 		assert.equal(output.repositories[0].git_repository, true);
 		assert.equal(output.repositories[0].mustflow, true);
+		assert.equal(output.repositories[0].command_authority, 'repository_local');
 		assert.equal(output.repositories[0].agent_rules, 'packages/child/AGENTS.md');
 		assert.equal(output.repositories[0].command_contract.path, 'packages/child/.mustflow/config/commands.toml');
 		assert.equal(output.repositories[0].command_contract.total_intents, 2);
 		assert.equal(output.repositories[0].command_contract.runnable_count, 1);
 		assert.deepEqual(output.repositories[0].command_contract.runnable_intents, ['child_check']);
 		assert.deepEqual(output.repositories[0].issues, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace status reports explicit delegated contracts as ready', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		enableDelegatedWorkspace(projectPath);
+		createBareNestedRepository(projectPath, 'packages/child');
+
+		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
+		const output = JSON.parse(result.stdout);
+		const repository = output.repositories[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(repository.relative_path, 'packages/child/');
+		assert.equal(repository.status, 'delegated_ready');
+		assert.equal(repository.mustflow, false);
+		assert.equal(repository.command_authority, 'delegated_scoped');
+		assert.equal(repository.command_contract.path, '.mustflow/config/commands/child.toml');
+		assert.equal(repository.command_contract.exists, true);
+		assert.equal(repository.command_contract.parse_error, null);
+		assert.equal(repository.command_contract.total_intents, 1);
+		assert.equal(repository.command_contract.runnable_count, 1);
+		assert.deepEqual(repository.command_contract.runnable_intents, ['child_check']);
+		assert.equal(repository.command_contract.blocked_count, 0);
+
+		const humanResult = await runCli(projectPath, ['workspace', 'status']);
+		assert.equal(humanResult.status, 0, humanResult.stderr || humanResult.stdout);
+		assert.match(humanResult.stdout, /packages\/child\/ \(delegated_ready\)/u);
+		assert.match(humanResult.stdout, /command authority: delegated_scoped/u);
+		assert.match(humanResult.stdout, /command contract: \.mustflow\/config\/commands\/child\.toml/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace status accepts an intentionally empty delegated contract', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		enableDelegatedWorkspace(projectPath);
+		createBareNestedRepository(projectPath, 'packages/child');
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands', 'child.toml'),
+			'# This delegated repository currently has no runnable command intents.\n',
+		);
+
+		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
+		const repository = JSON.parse(result.stdout).repositories[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(repository.status, 'delegated_ready');
+		assert.equal(repository.command_authority, 'delegated_scoped');
+		assert.equal(repository.command_contract.parse_error, null);
+		assert.equal(repository.command_contract.total_intents, 0);
+		assert.equal(repository.command_contract.runnable_count, 0);
+		assert.deepEqual(repository.command_contract.runnable_intents, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace status prefers a repository-local contract over a delegated mapping', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		enableDelegatedWorkspace(projectPath);
+		createNestedRepository(projectPath);
+
+		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
+		const output = JSON.parse(result.stdout);
+		const repository = output.repositories[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(repository.status, 'mustflow_ready');
+		assert.equal(repository.mustflow, true);
+		assert.equal(repository.command_authority, 'repository_local');
+		assert.equal(repository.command_contract.path, 'packages/child/.mustflow/config/commands.toml');
+		assert.deepEqual(repository.command_contract.runnable_intents, ['child_check']);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -284,6 +429,46 @@ test('workspace command-catalog aggregates child command contracts without raw c
 		assert.equal(childManual.runnable, false);
 		assert.equal(childManual.run_command, null);
 		assert.deepEqual(childManual.required_after, ['manual_review']);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace command-catalog aggregates delegated scoped command contracts', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		enableDelegatedWorkspace(projectPath);
+		createBareNestedRepository(projectPath, 'packages/child');
+
+		const result = await runCli(projectPath, ['workspace', 'command-catalog', '--json']);
+		const output = JSON.parse(result.stdout);
+		const repository = output.repositories[0];
+		const childCheck = repository.intents[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.repository_count, 1);
+		assert.equal(output.total_intent_count, 1);
+		assert.equal(output.runnable_intent_count, 1);
+		assert.equal(repository.relative_path, 'packages/child/');
+		assert.equal(repository.status, 'available');
+		assert.equal(repository.command_authority, 'delegated_scoped');
+		assert.equal(repository.command_contract.path, '.mustflow/config/commands/child.toml');
+		assert.equal(repository.intent_count, 1);
+		assert.equal(repository.runnable_count, 1);
+		assert.equal(repository.blocked_count, 0);
+		assert.equal(childCheck.name, 'child_check');
+		assert.equal(childCheck.runnable, true);
+		assert.equal(childCheck.run_command, 'mf run child_check');
+		assert.equal(childCheck.run_from_repository, 'packages/child/');
+		assert.equal('argv' in childCheck, false);
+		assert.equal('cmd' in childCheck, false);
+
+		const humanResult = await runCli(projectPath, ['workspace', 'command-catalog']);
+		assert.equal(humanResult.status, 0, humanResult.stderr || humanResult.stdout);
+		assert.match(humanResult.stdout, /command authority: delegated_scoped/u);
+		assert.match(humanResult.stdout, /command contract: \.mustflow\/config\/commands\/child\.toml/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -384,6 +569,49 @@ test('workspace verify plans changed-file verification per child repository with
 		assert.equal(repository.selected_intents[0].run_from_repository, 'packages/child/');
 		assert.equal('argv' in repository.selected_intents[0], false);
 		assert.equal('cmd' in repository.selected_intents[0], false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace verify plans delegated scoped verification without running commands', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		enableDelegatedWorkspace(projectPath);
+		const childRoot = createDelegatedNestedRepository(projectPath);
+		assert.equal(commitGitBaseline(childRoot), true);
+		mkdirSync(path.join(childRoot, 'src'), { recursive: true });
+		writeFileSync(path.join(childRoot, 'src', 'index.ts'), 'export const delegated = true;\n');
+
+		const result = await runCli(projectPath, ['workspace', 'verify', '--changed', '--plan-only', '--json']);
+		const output = JSON.parse(result.stdout);
+		const repository = output.repositories[0];
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.repository_count, 1);
+		assert.equal(output.total_changed_file_count, 1);
+		assert.equal(output.total_selected_intent_count, 1);
+		assert.equal(repository.relative_path, 'packages/child/');
+		assert.equal(repository.status, 'available');
+		assert.equal(repository.command_authority, 'delegated_scoped');
+		assert.equal(repository.command_contract.path, '.mustflow/config/commands/child.toml');
+		assert.deepEqual(repository.changed_files, ['src/index.ts']);
+		assert.match(repository.verification_plan_id, /^sha256:[0-9a-f]{64}$/u);
+		assert.equal(repository.selected_intent_count, 1);
+		assert.equal(repository.selected_intents[0].intent, 'child_check');
+		assert.equal(repository.selected_intents[0].run_command, 'mf run child_check');
+		assert.equal(repository.selected_intents[0].run_from_repository, 'packages/child/');
+		assert.equal('argv' in repository.selected_intents[0], false);
+		assert.equal('cmd' in repository.selected_intents[0], false);
+		assert.deepEqual(repository.issues, []);
+
+		const humanResult = await runCli(projectPath, ['workspace', 'verify', '--changed', '--plan-only']);
+		assert.equal(humanResult.status, 0, humanResult.stderr || humanResult.stdout);
+		assert.match(humanResult.stdout, /command authority: delegated_scoped/u);
+		assert.match(humanResult.stdout, /command contract: \.mustflow\/config\/commands\/child\.toml/u);
+		assert.match(humanResult.stdout, /- child_check: mf run child_check/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

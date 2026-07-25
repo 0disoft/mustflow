@@ -1465,6 +1465,7 @@ export const hiMessages = {
   "run.help.option.dryRun": "कमांड चलाए बिना उसका plan प्रिंट करें",
   "run.help.option.planOnly": "--dry-run का alias",
   "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
+  "run.help.option.repository": "repository-relative path से delegated workspace contract चुनें",
   "run.help.option.wait": "चलाने से पहले conflicting active run locks के लिए wait करें",
   "run.help.option.waitTimeout": "active run locks के लिए wait करने की maximum seconds. Default: 300",
   "run.help.option.allowApproval":

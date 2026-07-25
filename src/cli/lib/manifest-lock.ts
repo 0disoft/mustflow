@@ -166,7 +166,10 @@ export function readManifestLock(projectRoot: string): ManifestLockReadResult {
 	}
 }
 
-export function inspectManifestLock(projectRoot: string): ManifestLockInspection {
+function inspectManifestLockEntries(
+	projectRoot: string,
+	requiredPaths?: ReadonlySet<string>,
+): ManifestLockInspection {
 	const readResult = readManifestLock(projectRoot);
 	const changedFiles: string[] = [];
 	const missingFiles: string[] = [];
@@ -186,6 +189,9 @@ export function inspectManifestLock(projectRoot: string): ManifestLockInspection
 	}
 
 	for (const lockedFile of readResult.lock.files) {
+		if (requiredPaths && !requiredPaths.has(lockedFile.relativePath)) {
+			continue;
+		}
 		const filePath = path.join(projectRoot, lockedFile.relativePath);
 
 		try {
@@ -217,4 +223,15 @@ export function inspectManifestLock(projectRoot: string): ManifestLockInspection
 	}
 
 	return { readResult, changedFiles, missingFiles, issues };
+}
+
+export function inspectManifestLock(projectRoot: string): ManifestLockInspection {
+	return inspectManifestLockEntries(projectRoot);
+}
+
+export function inspectManifestLockPaths(
+	projectRoot: string,
+	requiredPaths: readonly string[],
+): ManifestLockInspection {
+	return inspectManifestLockEntries(projectRoot, new Set(requiredPaths));
 }

@@ -6,6 +6,16 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added delegated scoped workspace command authority so one root mustflow installation can select a
+  nested repository contract by working directory or `mf run --repo`, isolate duplicate intent and
+  resource names, ignore inactive-fragment parse and manifest drift, namespace runtime locks, and
+  record the selected scope in JSON plans and run receipts.
+- Fixed delegated scoped path rebasing so fragment `cwd`, `writes`, effects, and resource paths are
+  repository-relative without repeating the mapped repository prefix in execution or write-drift
+  receipts, and accept intentionally empty delegated fragments as valid zero-intent contracts.
+- Added the product-profile `ai-game-asset-production` skill with contract-driven transparent PNG,
+  icon, tile, background, sprite animation, atlas, provenance, engine-import, and numeric acceptance
+  procedures, plus `mf upgrade` coverage for newly bundled profile skills.
 - Added connection-lifecycle integrity and cross-runtime memory/stream reproduction procedures with
   orthogonal transport state, fault-injection resource gates, Node/Bun same-source comparators,
   bounded backpressure accounting, and synchronized installed templates.

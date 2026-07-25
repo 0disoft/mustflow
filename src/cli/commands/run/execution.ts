@@ -3,7 +3,6 @@ import { performance } from 'node:perf_hooks';
 
 import { ACTIVE_RUN_LOCK_ID_ENV, acquireActiveRunLock, type ActiveRunLockConflict } from '../../../core/active-run-locks.js';
 import { createCommandEnv } from '../../../core/command-env.js';
-import { readCommandContract, readMustflowConfigIfExists } from '../../../core/config-loading.js';
 import { createCorrelationId } from '../../../core/correlation-id.js';
 import { recordRunPerformanceHistory } from '../../../core/run-performance-history.js';
 import { RunProfiler } from '../../../core/run-profile.js';
@@ -16,8 +15,8 @@ import { finishRunWriteTracking, startRunWriteTracking } from '../../../core/run
 import { resolveRunReceiptRetentionPolicy } from '../../../core/retention-policy.js';
 import { renderCliError } from '../../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../../lib/i18n.js';
-import { resolveMustflowRoot } from '../../lib/project-root.js';
 import { assessRunRootTrust } from '../../lib/run-root-trust.js';
+import { resolveRunCommandContext } from '../../lib/run-context.js';
 import type { Reporter } from '../../lib/reporter.js';
 import {
 	createRunPlan,
@@ -49,6 +48,7 @@ export interface RunCommandExecutionRequest {
 	readonly allowApprovals: readonly string[];
 	readonly wait: boolean;
 	readonly waitTimeoutSeconds: number;
+	readonly repository?: string | null;
 }
 
 export interface RunCommandExecutionResult {
@@ -265,8 +265,13 @@ export async function executeRunCommand(
 ): Promise<RunCommandExecutionResult> {
 	const executorStartedAtMs = performance.now();
 	const profiler = new RunProfiler();
-	const projectRoot = profiler.measure('root_detection', () => resolveMustflowRoot());
-	const rootTrust = profiler.measure('root_trust', () => assessRunRootTrust(projectRoot));
+	const runContext = profiler.measure('root_detection', () =>
+		resolveRunCommandContext({ repository: request.repository, intentName: request.intentName }),
+	);
+	const projectRoot = runContext.projectRoot;
+	const rootTrust = profiler.measure('root_trust', () =>
+		assessRunRootTrust(projectRoot, { requiredPaths: runContext.trustPaths }),
+	);
 	const jsonLikeOutput = request.outputMode !== 'text';
 
 	if (!request.allowUntrustedRoot && !rootTrust.trusted) {
@@ -278,7 +283,7 @@ export async function executeRunCommand(
 		return { exitCode: 1, receipt: null };
 	}
 
-	const contract = profiler.measure('command_contract', () => readCommandContract(projectRoot));
+	const contract = profiler.measure('command_contract', () => runContext.contract);
 	const plan = profiler.measure('plan_creation', () =>
 		createRunPlan(projectRoot, contract, request.intentName, {
 			testTargets: options.testTargets,
@@ -327,7 +332,7 @@ export async function executeRunCommand(
 
 	try {
 		const runReceiptPolicy = profiler.measure('retention_policy', () =>
-			resolveRunReceiptRetentionPolicy(readMustflowConfigIfExists(projectRoot)),
+			resolveRunReceiptRetentionPolicy(runContext.mustflowConfig),
 		);
 		const env = profiler.measure('environment', () =>
 			createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
@@ -424,6 +429,7 @@ export async function executeRunCommand(
 				phaseTimings: profiler.getReceiptPhases(),
 				stdoutTailBytes: runReceiptPolicy.stdoutTailBytes,
 				stderrTailBytes: runReceiptPolicy.stderrTailBytes,
+				workspaceScope: runContext.workspaceScope,
 			}),
 		);
 

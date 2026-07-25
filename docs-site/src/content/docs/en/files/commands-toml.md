@@ -87,14 +87,35 @@ network = false
 destructive = false
 ```
 
-Intent and resource names must be unique across the root file and every include. `[defaults]` stays
-in `.mustflow/config/commands.toml` so timeouts, environment policy, and no-guessing behavior have a
-single owner. Nested includes are not supported.
+In the default `repository_local` workspace authority mode, intent and resource names must be unique
+across the root file and every include. `[defaults]` stays in `.mustflow/config/commands.toml` so
+timeouts, environment policy, and no-guessing behavior have a single owner. Nested includes are not
+supported.
 
 If `.mustflow/config/manifest.lock.toml` is present, every included command file must also be tracked
 there before `mf run` will execute commands from the root. This keeps included files under the same
 trust boundary as `commands.toml`. `--allow-untrusted-root` can still be used for one explicitly
 reviewed execution, just like other manifest-lock failures.
+
+### Delegated scoped workspace contracts
+
+Large repo farms that cannot install mustflow in every nested repository can map individual command
+fragments from `[workspace].contracts` in `mustflow.toml` and set
+`authority_mode = "delegated_scoped"`. In that mode, `mf run` does not merge the include graph. It
+loads only the fragment mapped to the current nested repository, or the repository selected by
+`--repo`. Duplicate intent, resource, and lock names are therefore allowed across different mapped
+fragments.
+
+The selected fragment still must be present in the manifest lock and match its hash. Unselected
+fragments are outside that execution's parse and trust closure, so their malformed contents or lock
+drift cannot block the active repository. Locks are namespaced by mapped repository, keeping two
+repositories' ordinary names such as `build_output` independent while preserving conflicts between
+concurrent runs for the same repository. Every delegated intent `cwd` and declared effect or write
+path is relative to its mapped repository. For example, use `cwd = "."` and
+`writes = ["dist/**"]`, not the workspace-root-prefixed repository path. Mustflow rebases those
+values exactly once for execution, locks, and write-drift receipts and rejects any result outside
+the mapped repository. A fragment may omit `[intents]` while that repository has no runnable
+commands. Shared workspace commands belong in the root contract instead of a scoped fragment.
 
 ## Default Fields
 

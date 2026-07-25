@@ -31,6 +31,10 @@ import {
 } from '../../../core/skill-route-alignment.js';
 import { validateTemplateVersionSync } from '../../../core/release-version-validation.js';
 import { validateSourceAnchorsInProject } from '../../../core/source-anchor-validation.js';
+import {
+	readWorkspaceCommandAuthorityConfig,
+	WORKSPACE_COMMAND_AUTHORITY_MODES,
+} from '../../../core/workspace-command-authority.js';
 import { readLocalSourceAnchorCheckWarnings } from '../local-index/index.js';
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
@@ -287,6 +291,13 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 	if (workspace) {
 		validateBooleanField(workspace, 'enabled', '[workspace].enabled', issues);
 		const roots = validateWorkspaceRoots(workspace, issues);
+		validateAllowedStringField(
+			workspace,
+			'authority_mode',
+			'[workspace].authority_mode',
+			new Set(WORKSPACE_COMMAND_AUTHORITY_MODES),
+			issues,
+		);
 		validatePositiveIntegerField(workspace, 'max_depth', '[workspace].max_depth', issues);
 		validatePositiveIntegerField(workspace, 'max_repositories', '[workspace].max_repositories', issues);
 		validateBooleanField(workspace, 'follow_symlinks', '[workspace].follow_symlinks', issues);
@@ -294,6 +305,12 @@ function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: Che
 
 		if (workspace.enabled === true && roots?.length === 0) {
 			issues.push({ message: '[workspace].enabled requires at least one [workspace].roots entry' });
+		}
+
+		try {
+			readWorkspaceCommandAuthorityConfig(mustflowToml);
+		} catch (error) {
+			issues.push({ message: error instanceof Error ? error.message : String(error) });
 		}
 	}
 

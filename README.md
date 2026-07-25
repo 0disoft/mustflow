@@ -322,6 +322,7 @@ mf run mustflow_update_apply
 | `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
 | `mf script-pack run core/text-budget check package.json --json-pointer /description --max <count> --json` | Check a JSON string field and print the stable report schema. |
 | `mf run <intent>` | Run an allowed one-shot command. |
+| `mf run <intent> --repo <path>` | Run one delegated scoped workspace contract from the workspace root. |
 | `mf run <intent> --wait` | Wait for conflicting active run locks before executing the command. |
 | `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
 | `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |

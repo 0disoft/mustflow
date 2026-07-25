@@ -102,6 +102,7 @@ export async function runRun(
 				allowApprovals: parsedArgs.allowApprovals,
 				wait: parsedArgs.wait,
 				waitTimeoutSeconds: parsedArgs.waitTimeoutSeconds,
+				repository: parsedArgs.repository,
 			},
 			reporter,
 			lang,
@@ -111,7 +112,7 @@ export async function runRun(
 	}
 
 	return executeRunPreviewCommand(
-		{ intentName, json, previewMode, allowApprovals: parsedArgs.allowApprovals },
+		{ intentName, json, previewMode, allowApprovals: parsedArgs.allowApprovals, repository: parsedArgs.repository },
 		reporter,
 		lang,
 		options,

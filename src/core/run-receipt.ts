@@ -46,6 +46,11 @@ export interface RunReceiptRedaction {
 	readonly fields: readonly string[];
 }
 
+export interface RunReceiptWorkspaceScope {
+	readonly repository: string;
+	readonly contract: string;
+}
+
 export interface RunReceiptPerformance {
 	readonly schema_version: string;
 	readonly measurement: 'wall_clock';
@@ -131,6 +136,7 @@ export interface RunReceipt {
 	readonly write_drift: RunWriteDriftReceipt;
 	readonly performance: RunReceiptPerformance;
 	readonly redaction: RunReceiptRedaction;
+	readonly workspace_scope?: RunReceiptWorkspaceScope;
 	readonly receipt_path: string;
 }
 
@@ -165,6 +171,7 @@ export interface CreateRunReceiptInput {
 	readonly executorOverheadMs?: number;
 	readonly phaseTimings?: readonly RunReceiptPerformancePhase[];
 	readonly selectionSummary?: RunReceiptPerformanceSelection;
+	readonly workspaceScope?: RunReceiptWorkspaceScope | null;
 	readonly stdoutTailBytes?: number;
 	readonly stderrTailBytes?: number;
 	readonly receiptPath?: string;
@@ -521,6 +528,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 			redaction_kinds: [...redactionState.kinds].sort(),
 			fields: [...redactionState.fields].sort(),
 		},
+		...(input.workspaceScope ? { workspace_scope: input.workspaceScope } : {}),
 		receipt_path: getReceiptRelativePath(input.receiptPath),
 	};
 }

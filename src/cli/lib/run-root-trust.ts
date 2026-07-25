@@ -1,4 +1,4 @@
-import { MANIFEST_LOCK_RELATIVE_PATH, inspectManifestLock } from './manifest-lock.js';
+import { MANIFEST_LOCK_RELATIVE_PATH, inspectManifestLock, inspectManifestLockPaths } from './manifest-lock.js';
 import { readCommandContractIncludePaths } from '../../core/config-loading.js';
 
 export const ALLOW_UNTRUSTED_ROOT_OPTION = '--allow-untrusted-root';
@@ -20,8 +20,20 @@ export interface RunRootTrustAssessment {
 	readonly detail: string | null;
 }
 
-export function assessRunRootTrust(projectRoot: string): RunRootTrustAssessment {
-	const inspection = inspectManifestLock(projectRoot);
+export interface RunRootTrustOptions {
+	readonly requiredPaths?: readonly string[];
+}
+
+export function assessRunRootTrust(
+	projectRoot: string,
+	options: RunRootTrustOptions = {},
+): RunRootTrustAssessment {
+	const scopedRequiredPaths = options.requiredPaths
+		? [...new Set([...REQUIRED_RUN_TRUST_LOCK_PATHS, ...options.requiredPaths])]
+		: undefined;
+	const inspection = scopedRequiredPaths
+		? inspectManifestLockPaths(projectRoot, scopedRequiredPaths)
+		: inspectManifestLock(projectRoot);
 	const { readResult } = inspection;
 
 	if (readResult.kind === 'present') {
@@ -35,18 +47,20 @@ export function assessRunRootTrust(projectRoot: string): RunRootTrustAssessment 
 		}
 
 		const trackedPaths = new Set(readResult.lock.files.map((file) => file.relativePath));
-		let requiredPaths: readonly string[] = REQUIRED_RUN_TRUST_LOCK_PATHS;
+		let requiredPaths: readonly string[] = scopedRequiredPaths ?? REQUIRED_RUN_TRUST_LOCK_PATHS;
 
-		try {
-			requiredPaths = [...REQUIRED_RUN_TRUST_LOCK_PATHS, ...readCommandContractIncludePaths(projectRoot)];
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			return {
-				trusted: false,
-				reason: 'manifest_lock_invalid',
-				manifestLockPath: readResult.lockPath,
-				detail: message,
-			};
+		if (!scopedRequiredPaths) {
+			try {
+				requiredPaths = [...REQUIRED_RUN_TRUST_LOCK_PATHS, ...readCommandContractIncludePaths(projectRoot)];
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				return {
+					trusted: false,
+					reason: 'manifest_lock_invalid',
+					manifestLockPath: readResult.lockPath,
+					detail: message,
+				};
+			}
 		}
 
 		const missingRequiredPath = requiredPaths.find((relativePath) => !trackedPaths.has(relativePath));

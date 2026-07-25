@@ -1455,6 +1455,7 @@ export const zhMessages = {
   "run.help.option.dryRun": "输出命令计划但不执行",
   "run.help.option.planOnly": "--dry-run 的别名",
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
+  "run.help.option.repository": "通过仓库相对路径选择委派的工作区契约",
   "run.help.option.wait": "执行前等待冲突的活动运行锁释放",
   "run.help.option.waitTimeout": "等待活动运行锁的最大秒数。默认值：300",
   "run.help.option.allowApproval":

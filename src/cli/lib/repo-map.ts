@@ -9,6 +9,11 @@ import {
 	type RepoMapGitLsFilesStatus,
 } from './repo-map-frontmatter.js';
 import { writeUtf8FileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
+import {
+	readWorkspaceCommandAuthorityConfig,
+	type WorkspaceCommandContractScope,
+	type WorkspaceCommandAuthorityMode,
+} from '../../core/workspace-command-authority.js';
 import { isRecord } from './command-contract.js';
 import { readMustflowTomlFile } from './toml.js';
 
@@ -272,6 +277,9 @@ export interface MapConfig {
 export interface WorkspaceConfig {
 	readonly enabled: boolean;
 	readonly roots: readonly string[];
+	readonly authorityMode: WorkspaceCommandAuthorityMode;
+	readonly delegatedContracts: readonly WorkspaceCommandContractScope[];
+	readonly delegatedContractCount: number;
 	readonly maxDepth: number;
 	readonly maxRepositories: number;
 	readonly followSymlinks: boolean;
@@ -447,6 +455,7 @@ export function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 	const configuredPriorityPaths = [...getStringArray(parsed.read_order), ...getStringArray(parsed.optional_read_order)];
 	const map = isRecord(parsed.map) ? parsed.map : {};
 	const workspace = isRecord(parsed.workspace) ? parsed.workspace : {};
+	const workspaceAuthority = readWorkspaceCommandAuthorityConfig(parsed);
 	const anchorFiles = getStringArray(map.anchor_files);
 
 	return {
@@ -458,6 +467,9 @@ export function getRepoMapConfig(projectRoot: string): RepoMapConfig {
 		workspace: {
 			enabled: getBoolean(workspace.enabled, false),
 			roots: getStringArray(workspace.roots),
+			authorityMode: workspaceAuthority.authorityMode,
+			delegatedContracts: workspaceAuthority.contracts,
+			delegatedContractCount: workspaceAuthority.contracts.length,
 			maxDepth: getPositiveInteger(workspace.max_depth, 4),
 			maxRepositories: getPositiveInteger(workspace.max_repositories, 50),
 			followSymlinks: getBoolean(workspace.follow_symlinks, false),
