@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -47,9 +47,25 @@ function normalizeRepositoryOption(value: string): string {
 	return value.trim().replace(/\\/gu, '/').replace(/^\.\//u, '').replace(/\/+$/gu, '');
 }
 
+function normalizeForContainment(value: string): string {
+	const resolved = path.resolve(value);
+	let canonical = resolved;
+	try {
+		canonical = realpathSync.native(resolved);
+	} catch {
+		// Non-existent effect paths still inherit the canonical project root used to construct them.
+	}
+	return process.platform === 'win32' ? canonical.toLowerCase() : canonical;
+}
+
 function resolvedPathIsInside(candidate: string, parent: string): boolean {
-	const relative = path.relative(parent, candidate);
+	const relative = path.relative(normalizeForContainment(parent), normalizeForContainment(candidate));
 	return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function resolveProjectRelativePath(projectRoot: string, relativePath: string): string {
+	const canonicalRoot = realpathSync.native(path.resolve(projectRoot));
+	return path.resolve(canonicalRoot, ...relativePath.split('/'));
 }
 
 function findScopeByRepository(
@@ -68,18 +84,18 @@ function findScopeByStartPath(
 	const resolvedStart = path.resolve(startPath);
 	return [...contracts]
 		.sort((left, right) => right.repository.length - left.repository.length)
-		.find((contract) => resolvedPathIsInside(resolvedStart, path.resolve(projectRoot, ...contract.repository.split('/'))));
+		.find((contract) => resolvedPathIsInside(resolvedStart, resolveProjectRelativePath(projectRoot, contract.repository)));
 }
 
 function startPathIsInsideWorkspaceRoot(projectRoot: string, startPath: string, workspaceRoots: readonly string[]): boolean {
 	const resolvedStart = path.resolve(startPath);
 	return workspaceRoots.some((workspaceRoot) =>
-		resolvedPathIsInside(resolvedStart, path.resolve(projectRoot, ...workspaceRoot.split('/'))),
+		resolvedPathIsInside(resolvedStart, resolveProjectRelativePath(projectRoot, workspaceRoot)),
 	);
 }
 
 function assertScopeRepositoryExists(projectRoot: string, scope: WorkspaceCommandContractScope): void {
-	const repositoryRoot = path.resolve(projectRoot, ...scope.repository.split('/'));
+	const repositoryRoot = resolveProjectRelativePath(projectRoot, scope.repository);
 	if (!resolvedPathIsInside(repositoryRoot, projectRoot)) {
 		throw new Error(`Delegated workspace repository escapes the mustflow root: ${scope.repository}`);
 	}
@@ -97,7 +113,7 @@ export function assertScopedCommandIntentIsolation(
 	if (!intentName) {
 		return;
 	}
-	const repositoryRoot = path.resolve(projectRoot, ...scope.repository.split('/'));
+	const repositoryRoot = resolveProjectRelativePath(projectRoot, scope.repository);
 	const rawIntent = contract.intents[intentName];
 	if (!isRecord(rawIntent)) {
 		return;
@@ -112,7 +128,7 @@ export function assertScopedCommandIntentIsolation(
 		if (effect.path === null) {
 			continue;
 		}
-		const effectPath = path.resolve(projectRoot, ...effect.path.split('/'));
+		const effectPath = resolveProjectRelativePath(projectRoot, effect.path);
 		if (!resolvedPathIsInside(effectPath, repositoryRoot)) {
 			throw new Error(
 				`Delegated workspace intent "${intentName}" effect path must stay inside ${scope.repository}: ${effect.path}`,

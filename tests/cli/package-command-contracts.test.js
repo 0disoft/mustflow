@@ -355,6 +355,28 @@ test('2.118.0 GitHub auth fix commands keep the follow-up commit bounded', () =>
 	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
 });
 
+test('2.118.0 scoped containment fix commands keep the CI follow-up commit bounded', () => {
+	const stageIntent = /\[intents\.release_ci_fix_stage_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_ci_fix_staged_diff_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_ci_fix_commit_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_ci_fix_push_main_v2_118_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /argv = \[\s*"git",\s*"add",\s*"--"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(stageIntent, /"REPO_FLOW\.md"/u);
+	assert.match(stageIntent, /"src\/cli\/lib\/run-context\.ts"/u);
+	assert.match(stageIntent, /"tests\/cli\/workspace\.test\.js"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
+	assert.doesNotMatch(stageIntent, /"\.mustflow\/review\/docs\.toml"/u);
+	assert.match(stagedDiffIntent, /argv = \["git", "diff", "--cached", "--name-status"\]/u);
+	assert.match(commitIntent, /"🐛 fix\(workspace\): canonicalize scoped containment paths"/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

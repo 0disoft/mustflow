@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
 import { runWorkspace } from '../../dist/cli/commands/workspace.js';
+import { assertScopedCommandIntentIsolation } from '../../dist/cli/lib/run-context.js';
 import { createTempProject, runCliCommand } from './helpers/cli-harness.js';
 
 const TEMP_REMOVE_RETRY_COUNT = 30;
@@ -315,9 +316,10 @@ test('workspace status reports explicit delegated contracts as ready', async () 
 
 		const result = await runCli(projectPath, ['workspace', 'status', '--json']);
 		const output = JSON.parse(result.stdout);
-		const repository = output.repositories[0];
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(output.repository_count, 1, JSON.stringify(output));
+		const repository = output.repositories[0];
 		assert.equal(repository.relative_path, 'packages/child/');
 		assert.equal(repository.status, 'delegated_ready');
 		assert.equal(repository.mustflow, false);
@@ -336,6 +338,42 @@ test('workspace status reports explicit delegated contracts as ready', async () 
 		assert.match(humanResult.stdout, /command authority: delegated_scoped/u);
 		assert.match(humanResult.stdout, /command contract: \.mustflow\/config\/commands\/child\.toml/u);
 	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('workspace delegated containment accepts a filesystem root alias', (context) => {
+	const projectPath = createTempProject();
+	const aliasPath = createTempProject('mustflow-workspace-alias-');
+	rmSync(aliasPath, { recursive: true, force: true });
+
+	try {
+		mkdirSync(path.join(projectPath, 'packages', 'child'), { recursive: true });
+
+		try {
+			symlinkSync(projectPath, aliasPath, process.platform === 'win32' ? 'junction' : 'dir');
+		} catch (error) {
+			if (error && typeof error === 'object' && 'code' in error && ['EPERM', 'ENOTSUP'].includes(error.code)) {
+				context.skip(`filesystem aliases are unavailable: ${error.code}`);
+				return;
+			}
+			throw error;
+		}
+
+		const scope = { repository: 'packages/child', file: 'commands/child.toml' };
+		const contract = {
+			defaults: {},
+			resources: {},
+			intents: {
+				child_check: {
+					cwd: 'packages/child',
+					writes: [],
+				},
+			},
+		};
+		assert.doesNotThrow(() => assertScopedCommandIntentIsolation(aliasPath, scope, contract, 'child_check'));
+	} finally {
+		rmSync(aliasPath, { recursive: true, force: true });
 		removeTempProject(projectPath);
 	}
 });
