@@ -330,7 +330,29 @@ test('2.118.0 release commands stage only scoped workspace and game asset produc
 	for (const githubIntent of [githubAuthIntent, githubMainRunsIntent, githubPublishRunsIntent, githubReleaseIntent]) {
 		assert.match(githubIntent, /writes = \[\]/u);
 		assert.match(githubIntent, /network = true/u);
+		assert.match(githubIntent, /env_policy = "allowlist"/u);
+		assert.match(githubIntent, /env_allowlist = \["APPDATA", "GH_CONFIG_DIR"\]/u);
 	}
+});
+
+test('2.118.0 GitHub auth fix commands keep the follow-up commit bounded', () => {
+	const stageIntent = /\[intents\.release_auth_fix_stage_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_auth_fix_staged_diff_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_auth_fix_commit_v2_118_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_auth_fix_push_main_v2_118_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /argv = \[\s*"git",\s*"add",\s*"--"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(stageIntent, /"REPO_FLOW\.md"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.doesNotMatch(stageIntent, /git", "add", "-A"/u);
+	assert.doesNotMatch(stageIntent, /"\.mustflow\/review\/docs\.toml"/u);
+	assert.match(stagedDiffIntent, /argv = \["git", "diff", "--cached", "--name-status"\]/u);
+	assert.match(commitIntent, /"🐛 fix\(release\): preserve GitHub CLI auth context"/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
 });
 
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
