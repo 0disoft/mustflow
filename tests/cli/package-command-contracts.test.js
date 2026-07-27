@@ -66,6 +66,20 @@ test('source repository exposes cached related tests as a read-only command inte
 	assert.match(cachedCost, /expected_seconds = 90/u);
 });
 
+test('source repository exposes a bounded docs-site security dependency update intent', () => {
+	const updateIntent = /\[intents\.docs_site_security_update\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+
+	assert.notEqual(updateIntent, '');
+	assert.match(updateIntent, /argv = \["bun", "update", "astro", "sharp"\]/u);
+	assert.match(updateIntent, /cwd = "docs-site"/u);
+	assert.match(updateIntent, /writes = \["docs-site\/package\.json", "docs-site\/bun\.lock", "docs-site\/node_modules\/\*\*"\]/u);
+	assert.match(updateIntent, /network = true/u);
+	assert.match(updateIntent, /destructive = false/u);
+	assert.match(updateIntent, /approval_actions = \["dependency_upgrade"\]/u);
+});
+
 test('source repository exposes related-test profiling as a bounded diagnostic intent', () => {
 	const profileIntent = /\[intents\.test_related_profile\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 	const defaults = /\[defaults\][\s\S]*?(?=\n\[)/u.exec(sourceCommandContract)?.[0] ?? '';
@@ -198,6 +212,22 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineScript, /'\.mustflow\/docs\/agent-workflow\.md'/u);
 	assert.match(baselineScript, /'\.mustflow\/config\/commands\.toml'/u);
 	assert.match(baselineScript, /markManifestLockFileCustomized/u);
+});
+
+test('source repository bounds security skill manifest baseline acceptance to reviewed files', () => {
+	const baselineIntent = /\[intents\.manifest_lock_accept_security_skill_baseline\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const baselineScript = readProjectText('scripts/accept-manifest-lock-baseline.mjs');
+
+	assert.notEqual(baselineIntent, '');
+	assert.match(baselineIntent, /"\.mustflow\/skills\/dependency-upgrade-review\/SKILL\.md"/u);
+	assert.match(baselineIntent, /"\.mustflow\/skills\/security-privacy-review\/SKILL\.md"/u);
+	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
+	assert.match(baselineIntent, /network = false/u);
+	assert.match(baselineIntent, /destructive = false/u);
+	assert.match(baselineScript, /'\.mustflow\/skills\/dependency-upgrade-review\/SKILL\.md'/u);
+	assert.match(baselineScript, /'\.mustflow\/skills\/security-privacy-review\/SKILL\.md'/u);
 });
 
 test('Git write contracts require explicit approval and bounded release commands', () => {
@@ -374,6 +404,29 @@ test('2.118.0 scoped containment fix commands keep the CI follow-up commit bound
 	assert.match(commitIntent, /"🐛 fix\(workspace\): canonicalize scoped containment paths"/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+});
+
+test('2.118.1 security remediation publish contracts stay exact and non-force', () => {
+	const stageIntent = /\[intents\.security_remediation_stage_v2_118_1\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.security_remediation_staged_diff_v2_118_1\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.security_remediation_commit_v2_118_1\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.security_remediation_push_main_v2_118_1\][\s\S]*$/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /"\.github\/workflows\/clarissimi\.yml"/u);
+	assert.match(stageIntent, /"docs-site\/package\.json"/u);
+	assert.match(stageIntent, /"docs-site\/bun\.lock"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/dependency-upgrade-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/security-privacy-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"templates\/default\/locales\/en\/\.mustflow\/skills\/dependency-upgrade-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"templates\/default\/locales\/en\/\.mustflow\/skills\/security-privacy-review\/SKILL\.md"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /🐛 fix\(security\): remediate dependency and workflow alerts/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
 	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
 });
 

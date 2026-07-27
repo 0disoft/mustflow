@@ -14,7 +14,7 @@ content_hash = "sha256:c99a21773fd2a4d3c49f5c16b04ed3474adacd55a1041e6e74f5a29e4
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:c756b61141195e3440f286789c3f6c7a88fa335da217532090b4a0f4bec339e1"
+content_hash = "sha256:3286bab35cc26905dde679c7fd040ac71055f5b3ca881eeedae43a9847a78a84"
 
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
@@ -35,3 +35,13 @@ content_hash = "sha256:7a375a484e441d2ba82adabe4e98ca09cc6cfaa19ccb32642cba7474c
 source = "template_locale"
 last_action = "customized"
 content_hash = "sha256:ed304590de2889bf2b45fe1893ffe68a0f36a1bf98114453cfed24ee43259835"
+
+[files.".mustflow/skills/dependency-upgrade-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:783c500e1725aed53b7a27406135b2c363b8e0fa0db6c6c046989ce320f2bcc8"
+
+[files.".mustflow/skills/security-privacy-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:92d7d4d077e446b78dccd7b6c16f45d957f2882a110cd1de6c227d3cceef4b68"

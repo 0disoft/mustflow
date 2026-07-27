@@ -9,7 +9,7 @@ const workflowPath = path.join(projectRoot, '.github', 'workflows', 'docs-site.y
 const clarissimiWorkflowPath = path.join(projectRoot, '.github', 'workflows', 'clarissimi.yml');
 const pinnedActionPattern = '[a-f0-9]{40}';
 const checkoutCommit = '9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0';
-const clarissimiReleaseRef = 'v0';
+const clarissimiCommit = '2def5c4b6630c26ca19245984c3d1eba033e7e5b';
 
 test('docs site deploy workflow builds docs-site and deploys the Pages artifact', () => {
 	assert.equal(existsSync(workflowPath), true);
@@ -55,10 +55,10 @@ test('Clarissimi gates PR decisions, stages merged drafts, and promotes approved
 	assert.match(workflow, /review-decision:\n\s+name: Clarissimi review decision/);
 	assert.match(workflow, /github\.event\.action != 'closed'/);
 	assert.equal(
-		workflow.match(new RegExp(`uses: 0disoft\\/clarissimi@${clarissimiReleaseRef}`, 'g'))?.length,
+		workflow.match(new RegExp(`uses: 0disoft\\/clarissimi@${clarissimiCommit} # v0`, 'g'))?.length,
 		3,
 	);
-	assert.doesNotMatch(workflow, /uses: 0disoft\/clarissimi@[a-f0-9]{40}/);
+	assert.doesNotMatch(workflow, /uses: 0disoft\/clarissimi@v0/);
 	assert.match(workflow, /mode: gate/);
 	assert.match(
 		workflow,

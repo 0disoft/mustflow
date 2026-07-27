@@ -265,6 +265,22 @@ network = true
 destructive = false
 required_after = ["package_metadata_change"]
 
+[intents.docs_site_security_update]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Resolve the reviewed Astro and Sharp security upgrade in the isolated documentation site dependency graph."
+argv = ["bun", "update", "astro", "sharp"]
+cwd = "docs-site"
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["docs-site/package.json", "docs-site/bun.lock", "docs-site/node_modules/**"]
+network = true
+destructive = false
+approval_actions = ["dependency_upgrade"]
+required_after = ["security_advisory_review", "docs_site_package_metadata_change"]
+
 [intents.test_coverage]
 status = "manual_only"
 description = "Inspect Node's coverage report for the fast mustflow CLI baseline."
@@ -727,6 +743,23 @@ effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest
 network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
+
+[intents.manifest_lock_accept_security_skill_baseline]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept the reviewed dependency and security skill baseline changes without widening manifest-lock authority to unrelated files."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", ".mustflow/skills/dependency-upgrade-review/SKILL.md", ".mustflow/skills/security-privacy-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["dependency_security_skill_change"]
 
 [intents.release_stage_v2_116_2]
 status = "configured"
@@ -2268,6 +2301,99 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Push the reviewed 2.118.0 scoped-workspace containment fix from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.security_remediation_stage_v2_118_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed dependency, workflow, bundled security-skill, contract, generated-map, test, and 2.118.1 metadata changes."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".github/workflows/clarissimi.yml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/dependency-upgrade-review/SKILL.md",
+  ".mustflow/skills/security-privacy-review/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "docs-site/bun.lock",
+  "docs-site/package.json",
+  "package.json",
+  "scripts/accept-manifest-lock-baseline.mjs",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/pages-workflow.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.security_remediation_staged_diff_v2_118_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.118.1 security remediation."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.security_remediation_commit_v2_118_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.118.1 dependency, workflow, and bundled security guidance remediation with a fixed evidence-backed message."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "🐛 fix(security): remediate dependency and workflow alerts",
+  "-m",
+  "Upgrade the docs-site dependency graph beyond the reviewed advisory ranges, pin Clarissimi to the verified v0 commit, and harden bundled dependency and security review procedures.",
+  "-m",
+  "Validation: mf run test_skill_contracts; mf run test_related; mf run docs_validate; mf run lint; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.security_remediation_push_main_v2_118_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.118.1 security remediation commit from local main to origin main without force."
 argv = ["git", "push", "origin", "main"]
 cwd = "."
 timeout_seconds = 120

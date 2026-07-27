@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Fixed the documentation-site dependency graph by upgrading Astro, Sharp, PostCSS, SVGO, and
+  js-yaml beyond their reviewed advisory ranges, and pinned all Clarissimi workflow uses to the
+  verified immutable commit behind the reviewed `v0` channel.
+- Strengthened dependency and security review skills with root-cause alert deduplication,
+  same-ref remote closure evidence, immutable third-party Action pinning, and explicit
+  `pull_request_target` trust-boundary checks.
 - Added delegated scoped workspace command authority so one root mustflow installation can select a
   nested repository contract by working directory or `mf run --repo`, isolate duplicate intent and
   resource names, ignore inactive-fragment parse and manifest drift, namespace runtime locks, and

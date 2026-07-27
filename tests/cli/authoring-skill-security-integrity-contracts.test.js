@@ -10,6 +10,30 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
+test('dependency and security reviews deduplicate alerts and harden privileged workflow triggers', () => {
+	const dependencySkill = readText('.mustflow/skills/dependency-upgrade-review/SKILL.md');
+	const templateDependencySkill = readText(
+		'templates/default/locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md',
+	);
+	const securitySkill = readText('.mustflow/skills/security-privacy-review/SKILL.md');
+	const templateSecuritySkill = readText(
+		'templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md',
+	);
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(dependencySkill, templateDependencySkill);
+	assert.equal(securitySkill, templateSecuritySkill);
+	assert.match(dependencySkill, /root-cause ledger keyed by advisory identity/u);
+	assert.match(dependencySkill, /same-ref scanner rerun or current registry alert state/u);
+	assert.match(dependencySkill, /Pin third-party GitHub Actions to the verified full commit SHA/u);
+	assert.match(securitySkill, /Multiple tools finding the same root cause raise confidence and coverage/u);
+	assert.match(securitySkill, /Treat `pull_request_target` as a privileged trust boundary/u);
+	assert.match(securitySkill, /never check out or evaluate the untrusted pull-request head/u);
+	assert.match(securitySkill, /Keep the human-readable release or channel in a comment/u);
+	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 8/u);
+	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 27/u);
+});
+
 test('admin control plane safety review treats backoffice tools as production control planes', () => {
 	const localSkill = readText('.mustflow/skills/admin-control-plane-safety-review/SKILL.md');
 	const templateSkill = readText(
