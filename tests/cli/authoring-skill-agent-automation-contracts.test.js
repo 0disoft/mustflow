@@ -309,13 +309,17 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 4/u);
+	assert.match(localSkill, /revision: 5/u);
 	assert.match(localSkill, /agent-runtime-multi-worker-review/u);
 	assert.match(localSkill, /agent-runtime-isolation-review/u);
 	assert.match(localSkill, /Define the Delegation Envelope/u);
 	assert.match(localSkill, /worker count, roles, task boundaries, wait condition, merge rule, and output schema/u);
 	assert.match(localSkill, /delegation depth: at most 1/u);
 	assert.match(localSkill, /source agent, child session or thread ID/u);
+	assert.match(localSkill, /only for agent IDs\s+created by the current task/u);
+	assert.match(localSkill, /Never treat an existing top-level Codex thread UUID/u);
+	assert.match(localSkill, /codex:\/\/threads\/<uuid>/u);
+	assert.match(localSkill, /cross-agent-session-reference/u);
 	assert.match(localSkill, /Map Real Overlap Before Parallelizing/u);
 	assert.match(localSkill, /directory distance alone/u);
 	assert.match(localSkill, /public API, schema, event, route/u);
@@ -339,7 +343,8 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.match(routes, /\[routes\."multi-agent-work-coordination"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "adjunct"\r?\npriority = 90/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-agent-work-coordination"/u);
-	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 4/u);
+	assert.match(skillIndex, /top-level thread UUID used as a subagent ID/u);
+	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 5/u);
 });
 
 test('agent eval integrity review grades outcomes, trajectories, and oracle layers', () => {

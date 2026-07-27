@@ -430,6 +430,37 @@ test('2.118.1 security remediation publish contracts stay exact and non-force', 
 	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
 });
 
+test('2.118.2 Codex thread coordination release contracts stay bounded and non-force', () => {
+	const stageIntent = /\[intents\.thread_coordination_stage_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.thread_coordination_staged_diff_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.thread_coordination_commit_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.thread_coordination_push_main_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const mainRunsIntent = /\[intents\.thread_coordination_github_main_runs_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const publishRunsIntent = /\[intents\.thread_coordination_github_publish_runs_v2_118_2\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const releaseIntent = /\[intents\.thread_coordination_github_release_v2_118_2\][\s\S]*$/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /argv = \[\s*"git",\s*"add",\s*"--"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/config\/manifest\.lock\.toml"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
+	assert.match(stageIntent, /"REPO_FLOW\.md"/u);
+	assert.match(stageIntent, /"templates\/default\/locales\/en\/\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
+	assert.match(stageIntent, /"tests\/cli\/authoring-skill-release-support-contracts\.test\.js"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /🐛 fix\(skills\): harden Codex thread coordination/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /"--branch", "main"/u);
+	assert.match(publishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"release", "view", "v2\.118\.2"/u);
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

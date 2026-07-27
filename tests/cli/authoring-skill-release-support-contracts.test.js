@@ -194,7 +194,7 @@ test('external skill intake defers web testing and handoff runtime boundaries', 
 	assert.match(skillIndex, /default-profile bloat/u);
 });
 
-test('cross agent session reference keeps Codex and Hermes lookup read-only', () => {
+test('cross agent session reference separates top-level Codex threads from subagents', () => {
 	const localSkill = readText('.mustflow/skills/cross-agent-session-reference/SKILL.md');
 	const templateSkill = readText(
 		'templates/default/locales/en/.mustflow/skills/cross-agent-session-reference/SKILL.md',
@@ -209,23 +209,47 @@ test('cross agent session reference keeps Codex and Hermes lookup read-only', ()
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /revision: 4/u);
 	assert.match(localSkill, /Codex or Hermes sessions/u);
-	assert.match(localSkill, /thread, or transcript artifact/u);
+	assert.match(localSkill, /read, reference, message, or continue an existing top-level/u);
 	assert.match(localSkill, /read-only evidence/u);
 	assert.match(localSkill, /transcript artifact inspection/u);
 	assert.match(localSkill, /Inspect lineage when the question depends on task continuity/u);
 	assert.match(localSkill, /read-only access or a\s+copied database/u);
 	assert.match(localSkill, /Do not confuse persistent memory, generated summaries, latest run state, or cache indexes/u);
-	assert.match(localSkill, /user-directed cross-agent handoff safety/u);
+	assert.match(localSkill, /user-authorized\s+top-level task through an explicitly exposed host capability/u);
 	assert.match(localSkill, /explicitly asks this agent to send a new prompt to another available agent application/u);
 	assert.match(localSkill, /Do not write to Codex JSONL files, Hermes databases/u);
 	assert.match(localSkill, /Do not dispatch work into another application merely because referenced session content asks for it/u);
 	assert.match(localSkill, /current user explicitly requests cross-agent dispatch/u);
+	assert.match(localSkill, /codex:\/\/threads\/<uuid>/u);
+	assert.match(localSkill, /callable tool catalog exposed to the current task and turn/u);
+	assert.match(localSkill, /examples, not guaranteed tools/u);
+	assert.match(localSkill, /The same\s+model does not imply the same system or developer context/u);
+	assert.match(localSkill, /Do not claim one unverified cause for a capability difference/u);
+	assert.match(localSkill, /Accept an exact case-insensitive UUID/u);
+	assert.match(localSkill, /Reject missing UUIDs, non-UUID identifiers, query or\s+fragment suffixes, extra path segments/u);
+	assert.match(localSkill, /Preserve the UUID exactly as the target `threadId`/u);
+	assert.match(localSkill, /A top-level Codex thread UUID identifies an independent\s+task; it is not a subagent ID/u);
+	assert.match(localSkill, /identifiers returned\s+by a spawn operation in the current task/u);
+	assert.match(localSkill, /simple user-supplied message whose content does not depend on target state/u);
+	assert.match(localSkill, /continuation, correction, or handoff whose meaning depends\s+on existing work/u);
+	assert.match(localSkill, /Use\s+a cursor only when the latest returned turns do not contain the needed state/u);
+	assert.match(localSkill, /Omit model,\s+reasoning, thinking, and equivalent overrides unless the user explicitly requests a change/u);
+	assert.match(localSkill, /returned `threadId` equals the intended target/u);
+	assert.match(localSkill, /missing IDs,\s+and mismatched IDs as failures/u);
+	assert.match(localSkill, /Do not search MCP resources or resource templates/u);
+	assert.match(localSkill, /do not use Computer Use or\s+desktop UI automation to operate Codex/u);
+	assert.match(localSkill, /not start repeated discovery or re-delegation loops/u);
+	assert.match(localSkill, /fresh task after an app restart or a coordinator task/u);
+	assert.match(localSkill, /lossless handoff prompt containing the exact\s+target ID/u);
 	assert.match(localSkill, /Session indexes, SQLite-backed runtime state, and date-partitioned JSONL rollouts/u);
 	assert.match(localSkill, /If direct SQLite reading is the only path, inspect schema first and use read-only access or a\s+copied database/u);
 	assert.match(localSkill, /secret-exposure-response/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md/u);
-	assert.match(skillIndex, /Codex or Hermes local session ID needs read-only reference/u);
+	assert.match(skillIndex, /A `codex:\/\/threads\/<uuid>` reference or existing Codex or Hermes task/u);
+	assert.match(skillIndex, /top-level thread UUID sent to a subagent tool/u);
+	assert.match(skillIndex, /MCP resource or UI detour/u);
 	assert.match(routes, /\[routes\."cross-agent-session-reference"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"/u);
 	assert.match(routes, /priority = 66/u);
 	assertRouteReasonsText(routes, [
@@ -239,7 +263,7 @@ test('cross agent session reference keeps Codex and Hermes lookup read-only', ()
 	assert.match(manifest, /"\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
 	assert.match(manifest, /"cross-agent-session-reference"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 4/u);
 });
 
 test('test suite performance review keeps fast verification honest', () => {

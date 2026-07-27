@@ -2,7 +2,7 @@
 mustflow_doc: skill.multi-agent-work-coordination
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: multi-agent-work-coordination
@@ -99,6 +99,10 @@ trusting them.
   instructions, or host safety rules.
 - Do not assume child workers share the parent model, tool set, current directory, sandbox,
   approval policy, authentication state, memory, transcript store, or session ID namespace.
+- Use subagent spawn, message, follow-up, wait, interrupt, and close capabilities only for agent IDs
+  created by the current task. Never treat an existing top-level Codex thread UUID or
+  `codex://threads/<uuid>` reference as a subagent ID. Route independent-task reads or messages
+  through `cross-agent-session-reference` and an exposed host thread capability instead.
 - Do not expose secrets, OAuth tokens, authentication cache files, or refresh tokens to browser
   code, logs, prompts, screenshots, copied artifacts, or worker-readable reports.
 - Do not run several processes against the same authentication cache when they may refresh it

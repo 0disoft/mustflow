@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Hardened built-in Codex thread coordination so agents discover current host capabilities,
+  separate top-level thread IDs from current-task subagent IDs, read state before dependent
+  handoffs, preserve target model settings, verify returned thread IDs, and stop at a lossless
+  fallback instead of probing MCP resources or desktop UI when thread tools are unavailable.
 - Fixed the documentation-site dependency graph by upgrading Astro, Sharp, PostCSS, SVGO, and
   js-yaml beyond their reviewed advisory ranges, and pinned all Clarissimi workflow uses to the
   verified immutable commit behind the reviewed `v0` channel.
