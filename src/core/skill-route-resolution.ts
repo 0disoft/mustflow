@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
@@ -703,6 +703,34 @@ interface InstalledSkillRouteCatalog {
 	readonly metadata: ReadonlyMap<string, SkillRouteMetadata>;
 }
 
+interface SkillRouteCatalogCacheEntry {
+	readonly signature: string;
+	readonly catalog: SkillRouteCatalog | null;
+}
+
+const skillRouteCatalogCache = new Map<string, SkillRouteCatalogCacheEntry>();
+let skillRouteCatalogCacheHits = 0;
+let skillRouteCatalogCacheMisses = 0;
+
+export function resetSkillRouteCatalogCache(): void {
+	skillRouteCatalogCache.clear();
+	skillRouteCatalogCacheHits = 0;
+	skillRouteCatalogCacheMisses = 0;
+}
+
+export function readSkillRouteCatalogCacheStats(): { readonly hits: number; readonly misses: number } {
+	return { hits: skillRouteCatalogCacheHits, misses: skillRouteCatalogCacheMisses };
+}
+
+function skillRouteCatalogFileSignature(absolutePath: string): string | null {
+	try {
+		const stats = statSync(absolutePath, { bigint: true });
+		return `${stats.size}:${stats.mtimeNs}:${stats.ctimeNs}`;
+	} catch {
+		return null;
+	}
+}
+
 function isCatalogStringArray(value: unknown): value is string[] {
 	return Array.isArray(value) && value.every((entry) => typeof entry === 'string' && entry.trim().length > 0);
 }
@@ -722,16 +750,26 @@ function isCatalogDependencies(value: unknown): boolean {
 
 function readSkillRouteCatalog(projectRoot: string): InstalledSkillRouteCatalog | null {
 	const absolutePath = path.join(projectRoot, ...SKILL_ROUTE_CATALOG_PATH.split('/'));
-	if (!existsSync(absolutePath)) {
+	const signature = skillRouteCatalogFileSignature(absolutePath);
+	if (signature === null) {
+		skillRouteCatalogCache.delete(absolutePath);
 		return null;
 	}
+	const cached = skillRouteCatalogCache.get(absolutePath);
 	let catalog: SkillRouteCatalog | null;
-	try {
-		catalog = parseSkillRouteCatalog(
-			readUtf8FileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: MUSTFLOW_TEXT_MAX_BYTES }),
-		);
-	} catch {
-		return null;
+	if (cached?.signature === signature) {
+		skillRouteCatalogCacheHits += 1;
+		catalog = cached.catalog;
+	} else {
+		skillRouteCatalogCacheMisses += 1;
+		try {
+			catalog = parseSkillRouteCatalog(
+				readUtf8FileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: MUSTFLOW_TEXT_MAX_BYTES }),
+			);
+		} catch {
+			catalog = null;
+		}
+		skillRouteCatalogCache.set(absolutePath, { signature, catalog });
 	}
 	if (!catalog) {
 		return null;

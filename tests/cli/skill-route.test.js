@@ -7,7 +7,11 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { resolveSkillRoutes } from '../../dist/core/skill-route-resolution.js';
+import {
+	readSkillRouteCatalogCacheStats,
+	resetSkillRouteCatalogCache,
+	resolveSkillRoutes,
+} from '../../dist/core/skill-route-resolution.js';
 import { evaluateSkillRouteFixtures } from '../../dist/core/skill-route-fixtures.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -212,6 +216,31 @@ test('uses catalog v2 route metadata without parsing routes.toml on the normal p
 		assert.equal(report.selected.axes.task[0]?.skill, 'type-contract-change');
 		assert.deepEqual(report.source_files, ['.mustflow/skills/catalog.v2.json']);
 	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('caches unchanged catalog parsing and invalidates after the catalog file changes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		resetSkillRouteCatalogCache();
+		const input = {
+			taskText: 'Change TypeScript code',
+			paths: ['src/index.ts'],
+			reasons: ['code_change'],
+		};
+		resolveSkillRoutes(projectPath, input);
+		resolveSkillRoutes(projectPath, input);
+		assert.deepEqual(readSkillRouteCatalogCacheStats(), { hits: 1, misses: 1 });
+
+		const catalogPath = path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json');
+		writeFileSync(catalogPath, `${readFileSync(catalogPath, 'utf8')}\n`);
+		resolveSkillRoutes(projectPath, input);
+		assert.deepEqual(readSkillRouteCatalogCacheStats(), { hits: 1, misses: 2 });
+	} finally {
+		resetSkillRouteCatalogCache();
 		removeTempProject(projectPath);
 	}
 });

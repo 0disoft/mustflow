@@ -6,6 +6,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added a process-local catalog parse cache keyed by file size, nanosecond modification time, and
+  change time, with explicit reset and hit/miss metrics plus same-process invalidation coverage.
 - Promoted the generated skill route catalog to schema and file version 2 with explicit per-route
   selection axes, ranking signals, conflicts, and dependencies, removed normal-path `routes.toml`
   parsing, added 46-case accuracy and recall metrics, added local p50/p95 payload benchmarks, and

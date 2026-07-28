@@ -2,7 +2,11 @@ import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveSkillRoutes } from '../src/core/skill-route-resolution.js';
+import {
+	readSkillRouteCatalogCacheStats,
+	resetSkillRouteCatalogCache,
+	resolveSkillRoutes,
+} from '../src/core/skill-route-resolution.js';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalogPath = path.join(projectRoot, '.mustflow', 'skills', 'catalog.v2.json');
@@ -31,6 +35,7 @@ const catalogBytes = statSync(catalogPath).size;
 const routesBytes = statSync(routesPath).size;
 const sourceBytes = skillDocumentBytes + routesBytes;
 const firstStartedAt = performance.now();
+resetSkillRouteCatalogCache();
 const firstReport = resolveSkillRoutes(projectRoot, input);
 const firstDuration = performance.now() - firstStartedAt;
 const durations: number[] = [firstDuration];
@@ -67,6 +72,7 @@ const report = {
 		payload_reduction_rate: Number((1 - catalogRatio).toFixed(6)),
 	},
 	normal_route_sources: firstReport.source_files,
+	catalog_cache: readSkillRouteCatalogCacheStats(),
 	checks: {
 		catalog_at_most_15_percent_of_sources: catalogRatio <= 0.15,
 		normal_route_uses_catalog_only: firstReport.source_files.length === 1 &&
