@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { resolveSkillRoutes } from '../../dist/core/skill-route-resolution.js';
+import { evaluateSkillRouteFixtures } from '../../dist/core/skill-route-fixtures.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -96,12 +97,12 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.equal(report.read_plan.fallback_route_metadata.path, '.mustflow/skills/routes.toml');
 		assert.equal(report.read_plan.expanded_index.path, '.mustflow/skills/INDEX.md');
 		assert.ok(report.read_plan.avoid_by_default.includes('.mustflow/skills/INDEX.md'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/routes.toml'), false);
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v2.json'));
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
-		assert.ok(report.source_files.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.source_files.includes('.mustflow/skills/routes.toml'), false);
+		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v2.json'));
 		assert.equal(report.source_files.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.source_files.includes('.mustflow/skills/INDEX.md'), false);
 		assert.match(report.gap_notes.join('\n'), /does not replace reading the selected SKILL\.md/);
@@ -139,10 +140,22 @@ test('does not select a skill without route evidence', () => {
 	assert.deepEqual(report.candidates, []);
 });
 
+test('reports aggregate skill route quality metrics from the versioned corpus', () => {
+	const report = evaluateSkillRouteFixtures(projectRoot);
+
+	assert.equal(report.case_count, 46);
+	assert.equal(report.passed_case_count, report.case_count);
+	assert.equal(report.main_accuracy.rate, 1);
+	assert.equal(report.candidate_recall.rate, 1);
+	assert.equal(report.adjunct_recall.rate, 1);
+	assert.equal(report.forbidden_violation_rate.rate, 0);
+	assert.deepEqual(report.issues, []);
+});
+
 test('keeps the generated route catalog synchronized with built-in skill frontmatter', () => {
-	const sourceCatalog = readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'catalog.v1.json'), 'utf8');
+	const sourceCatalog = readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'catalog.v2.json'), 'utf8');
 	const templateCatalog = readFileSync(
-		path.join(projectRoot, 'templates', 'default', 'locales', 'en', '.mustflow', 'skills', 'catalog.v1.json'),
+		path.join(projectRoot, 'templates', 'default', 'locales', 'en', '.mustflow', 'skills', 'catalog.v2.json'),
 		'utf8',
 	);
 	const catalog = JSON.parse(sourceCatalog);
@@ -152,10 +165,11 @@ test('keeps the generated route catalog synchronized with built-in skill frontma
 		.length;
 
 	assert.equal(sourceCatalog, templateCatalog);
-	assert.equal(catalog.schema_version, '1');
+	assert.equal(catalog.schema_version, '2');
 	assert.equal(catalog.kind, 'skill_route_catalog');
 	assert.match(catalog.source_fingerprint, /^sha256:[a-f0-9]{64}$/u);
 	assert.equal(catalog.entries.length, skillDirectoryCount);
+	assert.ok(catalog.entries.every((entry) => ['language', 'task', 'risk', 'workflow'].includes(entry.selection_axis)));
 });
 
 test('filters packaged catalog entries to skills installed by the selected profile', () => {
@@ -175,7 +189,28 @@ test('filters packaged catalog entries to skills installed by the selected profi
 		});
 
 		assert.equal(report.candidates.some((candidate) => candidate.skill === 'ai-game-asset-production'), false);
-		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v1.json'));
+		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v2.json'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('uses catalog v2 route metadata without parsing routes.toml on the normal path', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'), 'not valid toml = [\n');
+		const report = resolveSkillRoutes(projectPath, {
+			taskText: 'Change a TypeScript type contract for public consumers',
+			paths: ['src/public-types.ts'],
+			reasons: ['public_api_change'],
+			maxCandidates: 10,
+		});
+
+		assert.equal(report.selected.axes.language[0]?.skill, 'typescript-code-change');
+		assert.equal(report.selected.axes.task[0]?.skill, 'type-contract-change');
+		assert.deepEqual(report.source_files, ['.mustflow/skills/catalog.v2.json']);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -244,7 +279,7 @@ test('falls back to built-in skill frontmatter when the route catalog is invalid
 
 	try {
 		initProject(projectPath);
-		writeFileSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v1.json'), '{}\n');
+		writeFileSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json'), '{}\n');
 		const result = runCli(projectPath, [
 			'skill',
 			'route',
@@ -261,7 +296,7 @@ test('falls back to built-in skill frontmatter when the route catalog is invalid
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.selected.main.skill, 'typescript-code-change');
 		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
-		assert.equal(report.source_files.includes('.mustflow/skills/catalog.v1.json'), false);
+		assert.equal(report.source_files.includes('.mustflow/skills/catalog.v2.json'), false);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -272,7 +307,7 @@ test('rejects a fingerprint-valid route catalog whose skill path escapes the bui
 
 	try {
 		initProject(projectPath);
-		const catalogPath = path.join(projectPath, '.mustflow', 'skills', 'catalog.v1.json');
+		const catalogPath = path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json');
 		const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
 		catalog.entries[0].skill_path = '../outside/SKILL.md';
 		catalog.source_fingerprint = `sha256:${createHash('sha256')
@@ -312,6 +347,7 @@ test('does not select conflicting routes across different selection axes', () =>
 			'[routes."typescript-code-change"]\ncategory = "general_code"\nmutually_exclusive_with = ["type-contract-change"]',
 		);
 		writeFileSync(routesPath, routes);
+		rmSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json'));
 
 		const report = resolveSkillRoutes(projectPath, {
 			taskText: 'Change a TypeScript type contract for public consumers',
@@ -346,7 +382,7 @@ test('strict check rejects route catalog drift from built-in skill frontmatter',
 		const result = runCli(projectPath, ['check', '--strict']);
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
-		assert.match(result.stderr || result.stdout, /catalog\.v1\.json is stale relative to built-in SKILL\.md frontmatter/u);
+		assert.match(result.stderr || result.stdout, /catalog\.v2\.json is stale relative to built-in SKILL\.md frontmatter/u);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -561,6 +597,7 @@ test('prioritizes required and matched unlock dependencies over generic suggesti
 				`[routes."state-machine-pattern".dependencies]\nconflicts_with = ["strategy-pattern"]\nrequires_skills = ["transaction-boundary-integrity-review"]\nsuggests_adjuncts = ["queue-processing-integrity-review"]\nunlocks_on = [\n  { signal = "state_transition", skill = "credit-ledger-integrity-review" },\n]`,
 			),
 		);
+		rmSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json'));
 
 		const result = runCli(projectPath, [
 			'skill',
@@ -629,8 +666,8 @@ test('keeps LLM token cost routes discoverable without reading the full index in
 		assert.ok(skills.includes('llm-token-cost-control-review'), skills.join(', '));
 		assert.ok(report.signals.task_terms.includes('cache'));
 		assert.ok(report.signals.task_terms.includes('token'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/routes.toml'), false);
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v2.json'));
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
 		assert.equal(report.read_plan.selection_limits.candidates, 3);
@@ -672,7 +709,7 @@ test('prints a compact text skill route report', () => {
 	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/completion-evidence-gate\/SKILL\.md/);
 	assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
 	assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
-	assert.match(result.stdout, /\.mustflow\/skills\/catalog\.v1\.json/);
+	assert.match(result.stdout, /\.mustflow\/skills\/catalog\.v2\.json/);
 });
 
 test('prints route conflict hints in text skill route output', () => {

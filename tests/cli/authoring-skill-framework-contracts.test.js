@@ -100,6 +100,7 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 				'category = "general_code"',
 				'route_type = "primary"',
 				'priority = 85',
+				'selection_axis = "language"',
 				`applies_to_reasons = \\[${typeScriptRouteReasons}\\]`,
 			].join(String.raw`\r?\n`),
 			'u',

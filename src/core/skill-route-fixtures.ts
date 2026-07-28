@@ -26,6 +26,29 @@ export interface SkillRouteFixtureValidationIssue {
 	readonly message: string;
 }
 
+export interface SkillRouteEvaluationReport {
+	readonly schema_version: '1';
+	readonly kind: 'skill_route_evaluation';
+	readonly case_count: number;
+	readonly passed_case_count: number;
+	readonly main_accuracy: { readonly matched: number; readonly expected: number; readonly rate: number };
+	readonly candidate_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
+	readonly adjunct_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
+	readonly forbidden_violation_rate: { readonly violations: number; readonly expected: number; readonly rate: number };
+	readonly issues: readonly SkillRouteFixtureValidationIssue[];
+}
+
+interface SkillRouteEvaluationCounts {
+	mainMatched: number;
+	mainExpected: number;
+	candidateMatched: number;
+	candidateExpected: number;
+	adjunctMatched: number;
+	adjunctExpected: number;
+	forbiddenViolations: number;
+	forbiddenExpected: number;
+}
+
 function readStringArray(value: unknown, options: { allowEmpty?: boolean } = {}): string[] | null {
 	if (
 		!Array.isArray(value) ||
@@ -146,7 +169,10 @@ function formatSkill(value: string | null | undefined): string {
 	return value ?? 'none';
 }
 
-function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase): SkillRouteFixtureValidationIssue[] {
+function evaluateFixtureCase(
+	projectRoot: string,
+	fixture: SkillRouteFixtureCase,
+): { readonly issues: SkillRouteFixtureValidationIssue[]; readonly counts: SkillRouteEvaluationCounts } {
 	const report = resolveSkillRoutes(projectRoot, {
 		taskText: fixture.task,
 		paths: fixture.paths,
@@ -154,6 +180,16 @@ function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase
 		maxCandidates: fixture.maxCandidates,
 	});
 	const issues: SkillRouteFixtureValidationIssue[] = [];
+	const counts: SkillRouteEvaluationCounts = {
+		mainMatched: 0,
+		mainExpected: fixture.requiredMain ? 1 : 0,
+		candidateMatched: 0,
+		candidateExpected: fixture.requiredCandidates.length,
+		adjunctMatched: 0,
+		adjunctExpected: fixture.requiredAdjuncts.length,
+		forbiddenViolations: 0,
+		forbiddenExpected: fixture.forbiddenCandidates.length,
+	};
 	const candidateSkills = new Set(report.candidates.map((candidate) => candidate.skill));
 	const adjunctSkills = new Set(report.selected.adjuncts.map((candidate) => candidate.skill));
 
@@ -162,6 +198,8 @@ function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase
 			kind: 'mismatch',
 			message: `Skill route fixture "${fixture.id}" expected selected main "${fixture.requiredMain}" but got "${formatSkill(report.selected.main?.skill)}"`,
 		});
+	} else if (fixture.requiredMain) {
+		counts.mainMatched += 1;
 	}
 
 	for (const skill of fixture.requiredCandidates) {
@@ -170,6 +208,8 @@ function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase
 				kind: 'mismatch',
 				message: `Skill route fixture "${fixture.id}" expected candidate "${skill}" within top ${report.input.max_candidates}`,
 			});
+		} else {
+			counts.candidateMatched += 1;
 		}
 	}
 
@@ -179,11 +219,14 @@ function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase
 				kind: 'mismatch',
 				message: `Skill route fixture "${fixture.id}" expected selected adjunct "${skill}"`,
 			});
+		} else {
+			counts.adjunctMatched += 1;
 		}
 	}
 
 	for (const skill of fixture.forbiddenCandidates) {
 		if (candidateSkills.has(skill) || adjunctSkills.has(skill) || report.selected.main?.skill === skill) {
+			counts.forbiddenViolations += 1;
 			issues.push({
 				kind: 'mismatch',
 				message: `Skill route fixture "${fixture.id}" forbids selected or candidate skill "${skill}"`,
@@ -191,13 +234,13 @@ function validateFixtureCase(projectRoot: string, fixture: SkillRouteFixtureCase
 		}
 	}
 
-	return issues;
+	return { issues, counts };
 }
 
-export function validateSkillRouteFixtures(projectRoot: string): SkillRouteFixtureValidationIssue[] {
+export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvaluationReport {
 	const fixturePath = path.join(projectRoot, ...SKILL_ROUTE_FIXTURES_PATH.split('/'));
 	if (!existsSync(fixturePath)) {
-		return [];
+		return createEvaluationReport(0, 0, [], emptyEvaluationCounts());
 	}
 
 	const issues: SkillRouteFixtureValidationIssue[] = [];
@@ -207,24 +250,103 @@ export function validateSkillRouteFixtures(projectRoot: string): SkillRouteFixtu
 		parsed = JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, fixturePath, { maxBytes: FIXTURE_MAX_BYTES }));
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		return [{ kind: 'invalid', message: `${SKILL_ROUTE_FIXTURES_PATH} is not valid JSON: ${message}` }];
+		const issues = [{ kind: 'invalid', message: `${SKILL_ROUTE_FIXTURES_PATH} is not valid JSON: ${message}` }] as const;
+		return createEvaluationReport(0, 0, issues, emptyEvaluationCounts());
 	}
 
 	if (!isRecord(parsed) || parsed.schema_version !== '1' || !Array.isArray(parsed.cases)) {
-		return [{
+		const invalidIssue = {
 			kind: 'invalid',
 			message: `${SKILL_ROUTE_FIXTURES_PATH} must contain schema_version "1" and a cases array`,
-		}];
+		} as const;
+		return createEvaluationReport(0, 0, [invalidIssue], emptyEvaluationCounts());
 	}
 
+	const counts = emptyEvaluationCounts();
+	let validCaseCount = 0;
+	let passedCaseCount = 0;
 	for (const [index, entry] of parsed.cases.entries()) {
 		const fixture = parseFixtureCase(entry, index, issues);
 		if (!fixture) {
 			continue;
 		}
-
-		issues.push(...validateFixtureCase(projectRoot, fixture));
+		validCaseCount += 1;
+		const evaluation = evaluateFixtureCase(projectRoot, fixture);
+		if (evaluation.issues.length === 0) {
+			passedCaseCount += 1;
+		}
+		issues.push(...evaluation.issues);
+		addEvaluationCounts(counts, evaluation.counts);
 	}
 
-	return issues;
+	return createEvaluationReport(validCaseCount, passedCaseCount, issues, counts);
+}
+
+export function validateSkillRouteFixtures(projectRoot: string): SkillRouteFixtureValidationIssue[] {
+	return [...evaluateSkillRouteFixtures(projectRoot).issues];
+}
+
+function emptyEvaluationCounts(): SkillRouteEvaluationCounts {
+	return {
+		mainMatched: 0,
+		mainExpected: 0,
+		candidateMatched: 0,
+		candidateExpected: 0,
+		adjunctMatched: 0,
+		adjunctExpected: 0,
+		forbiddenViolations: 0,
+		forbiddenExpected: 0,
+	};
+}
+
+function addEvaluationCounts(target: SkillRouteEvaluationCounts, source: SkillRouteEvaluationCounts): void {
+	target.mainMatched += source.mainMatched;
+	target.mainExpected += source.mainExpected;
+	target.candidateMatched += source.candidateMatched;
+	target.candidateExpected += source.candidateExpected;
+	target.adjunctMatched += source.adjunctMatched;
+	target.adjunctExpected += source.adjunctExpected;
+	target.forbiddenViolations += source.forbiddenViolations;
+	target.forbiddenExpected += source.forbiddenExpected;
+}
+
+function rate(numerator: number, denominator: number): number {
+	return denominator === 0 ? 1 : Number((numerator / denominator).toFixed(6));
+}
+
+function createEvaluationReport(
+	caseCount: number,
+	passedCaseCount: number,
+	issues: readonly SkillRouteFixtureValidationIssue[],
+	counts: SkillRouteEvaluationCounts,
+): SkillRouteEvaluationReport {
+	return {
+		schema_version: '1',
+		kind: 'skill_route_evaluation',
+		case_count: caseCount,
+		passed_case_count: passedCaseCount,
+		main_accuracy: {
+			matched: counts.mainMatched,
+			expected: counts.mainExpected,
+			rate: rate(counts.mainMatched, counts.mainExpected),
+		},
+		candidate_recall: {
+			matched: counts.candidateMatched,
+			expected: counts.candidateExpected,
+			rate: rate(counts.candidateMatched, counts.candidateExpected),
+		},
+		adjunct_recall: {
+			matched: counts.adjunctMatched,
+			expected: counts.adjunctExpected,
+			rate: rate(counts.adjunctMatched, counts.adjunctExpected),
+		},
+		forbidden_violation_rate: {
+			violations: counts.forbiddenViolations,
+			expected: counts.forbiddenExpected,
+			rate: counts.forbiddenExpected === 0
+				? 0
+				: Number((counts.forbiddenViolations / counts.forbiddenExpected).toFixed(6)),
+		},
+		issues,
+	};
 }

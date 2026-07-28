@@ -12,6 +12,7 @@ export interface SkillRouteMetadata {
 	readonly skillName: string;
 	readonly category?: keyof typeof SKILL_ROUTE_CATEGORY_LABELS;
 	readonly routeType?: string;
+	readonly selectionAxis?: string;
 	readonly priority?: unknown;
 	readonly mutuallyExclusiveWith: readonly string[];
 	readonly contexts: {

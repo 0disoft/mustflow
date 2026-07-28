@@ -167,16 +167,126 @@ timeout_seconds = 120
 stdin = "closed"
 success_exit_codes = [0]
 writes = [
-  ".mustflow/skills/catalog.v1.json",
-  "templates/default/locales/en/.mustflow/skills/catalog.v1.json",
+  ".mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
 ]
 effects = [
-  { type = "write", mode = "replace", path = ".mustflow/skills/catalog.v1.json", lock = "skill_route_catalog", concurrency = "exclusive" },
-  { type = "write", mode = "replace", path = "templates/default/locales/en/.mustflow/skills/catalog.v1.json", lock = "skill_route_catalog", concurrency = "exclusive" },
+  { type = "write", mode = "replace", path = ".mustflow/skills/catalog.v2.json", lock = "skill_route_catalog", concurrency = "exclusive" },
+  { type = "write", mode = "replace", path = "templates/default/locales/en/.mustflow/skills/catalog.v2.json", lock = "skill_route_catalog", concurrency = "exclusive" },
 ]
 network = false
 destructive = false
 required_after = ["mustflow_docs_change", "package_metadata_change"]
+
+[intents.skill_route_eval]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Evaluate built-in skill routing accuracy, recall, and forbidden-selection violations against the versioned route corpus."
+argv = ["bun", "scripts/evaluate-skill-routes.ts"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = []
+
+[intents.skill_route_benchmark]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Measure compact skill routing payload and local p50/p95 latency without treating host timing as correctness authority."
+argv = ["bun", "scripts/benchmark-skill-routes.ts"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["performance_change"]
+
+[intents.skill_route_v2_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed explicit-axis catalog v2, evaluation, benchmark, focused test selection, templates, and tests."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/catalog.v1.json",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/router.toml",
+  ".mustflow/skills/routes.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "scripts/benchmark-skill-routes.ts",
+  "scripts/evaluate-skill-routes.ts",
+  "scripts/lib/test-selection.mjs",
+  "src/cli/lib/validation/constants.ts",
+  "src/cli/lib/validation/index.ts",
+  "src/cli/lib/validation/types.ts",
+  "src/core/skill-route-fixtures.ts",
+  "src/core/skill-route-resolution.ts",
+  "templates/default/locales/en/.mustflow/skills/catalog.v1.json",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/router.toml",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-framework-contracts.test.js",
+  "tests/cli/check-skill-contracts.test.js",
+  "tests/cli/context.test.js",
+  "tests/cli/schema-script-pack-repo-contracts.test.js",
+  "tests/cli/skill-route.test.js",
+  "tests/cli/test-selection-related-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.skill_route_v2_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 catalog v2 change."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.skill_route_v2_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed explicit-axis catalog v2, evaluation, benchmark, and focused regression selection."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): promote route catalog v2",
+  "-m", "Declare all route selection axes explicitly, carry ranking and dependency metadata in catalog v2, add measurable route evaluation and benchmarking, and focus related regression selection.",
+  "-m", "Validation: mf run build; mf run lint; mf run test_related; mf run test_release; mf run docs_validate_fast; mf run skill_route_eval; mf run skill_route_benchmark; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
 
 [intents.skill_route_catalog_stage_v2_119_0]
 status = "configured"

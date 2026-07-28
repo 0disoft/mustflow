@@ -4,30 +4,35 @@ schema_version = "1"
 category = "ui_assets"
 route_type = "primary"
 priority = 80
+selection_axis = "risk"
 applies_to_reasons = ["package_metadata_change", "release_risk"]
 
 [routes."architecture-deepening-review"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["code_change", "cross_cutting_code_change"]
 
 [routes."service-boundary-architecture"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "public_api_change"]
 
 [routes."small-service-platform-architecture-review"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 84
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
 
 [routes."code-review"]
 category = "general_code"
 route_type = "primary"
 priority = 50
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."code-review".dependencies]
@@ -40,24 +45,28 @@ unlocks_on = [
 category = "bug_failure"
 route_type = "adjunct"
 priority = 80
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "security_change", "privacy_change", "data_change", "performance_change", "release_risk"]
 
 [routes."behavior-preserving-refactor"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 40
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."split-refactor-residual-path-review"]
 category = "architecture_patterns"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "data_change"]
 
 [routes."composition-over-inheritance"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."composition-over-inheritance".contexts]
@@ -71,6 +80,7 @@ negative_terms = ["command", "facade", "state", "strategy"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."strategy-pattern".dependencies]
@@ -87,6 +97,7 @@ negative_terms = ["adapter", "audit", "history", "idempotency", "lifecycle", "ph
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."command-pattern".dependencies]
@@ -106,18 +117,21 @@ negative_terms = ["facade", "pricing", "provider", "state", "strategy", "transit
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 80
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_config_change", "mustflow_docs_change"]
 
 [routes."command-intent-mapping-gate"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 68
+selection_axis = "workflow"
 applies_to_reasons = ["docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "security_change", "release_risk", "unknown_change"]
 
 [routes."cli-option-contract-review"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 66
+selection_axis = "workflow"
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."cli-option-contract-review".dependencies]
@@ -135,12 +149,14 @@ negative_terms = ["help-copy-only", "json-output-only", "runtime-config-only"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 65
+selection_axis = "workflow"
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change"]
 
 [routes."public-json-contract-change"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 82
+selection_axis = "workflow"
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."public-json-contract-change".dependencies]
@@ -154,6 +170,7 @@ unlocks_on = [
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 85
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
 
 [routes."completion-evidence-gate".dependencies]
@@ -166,30 +183,35 @@ unlocks_on = [
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 84
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "copy_change", "i18n_change", "workflow_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "security_change", "privacy_change", "data_change", "migration_change", "performance_change", "ui_change", "release_risk"]
 
 [routes."proactive-risk-surfacing"]
 category = "workflow_contracts"
 route_type = "event"
 priority = 72
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "mustflow_docs_change", "public_api_change", "security_change", "privacy_change", "data_change", "performance_change", "ui_change", "release_risk"]
 
 [routes."restricted-handoff-resume"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 64
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "workflow_change"]
 
 [routes."cross-agent-session-reference"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 66
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "privacy_change", "security_change"]
 
 [routes."facade-pattern"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."facade-pattern".contexts]
@@ -203,6 +225,7 @@ negative_terms = ["algorithm", "state", "strategy", "transition", "variant"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."pure-core-imperative-shell".contexts]
@@ -213,6 +236,7 @@ negative_terms = ["pass-through-crud", "formatting-only", "copy-only"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."state-machine-pattern".dependencies]
@@ -229,6 +253,7 @@ negative_terms = ["algorithm", "pricing", "provider", "strategy", "variant", "wr
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."durable-workflow-orchestration".dependencies]
@@ -247,6 +272,7 @@ negative_terms = ["agentic", "llm", "prompt", "tool-call"]
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."dual-write-consistency".dependencies]
@@ -260,6 +286,7 @@ negative_terms = ["approval", "budget", "child", "credit", "ledger", "llm", "pol
 category = "general_code"
 route_type = "adjunct"
 priority = 84
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."two-phase-transition-integrity-review".dependencies]
@@ -273,6 +300,7 @@ negative_terms = ["database-2pc-only", "llm", "prompt", "tool-call"]
 category = "general_code"
 route_type = "adjunct"
 priority = 86
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."session-handoff-integrity-review".dependencies]
@@ -286,6 +314,7 @@ negative_terms = ["design-handoff", "implementation-plan", "private-agent-files"
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
 [routes."structured-concurrency-supervision-review".dependencies]
@@ -299,6 +328,7 @@ negative_terms = ["distributed", "fencing", "lease", "leased", "outbox", "worker
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."execution-ledger-integrity-review".dependencies]
@@ -312,6 +342,7 @@ negative_terms = ["accounting", "balance", "billing", "credit", "points", "settl
 category = "security_privacy"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."policy-decision-integrity-review".dependencies]
@@ -325,42 +356,49 @@ negative_terms = ["discount", "pricing", "provider-selection", "strategy"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["code_change", "public_api_change"]
 
 [routes."null-object-pattern"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."requirement-regression-guard"]
 category = "tests"
 route_type = "adjunct"
 priority = 35
+selection_axis = "task"
 applies_to_reasons = ["behavior_change", "test_change"]
 
 [routes."multi-agent-work-coordination"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 90
+selection_axis = "workflow"
 applies_to_reasons = ["workflow_change"]
 
 [routes."idea-triage"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 50
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "mustflow_docs_change", "workflow_change", "product_change"]
 
 [routes."complex-decision-analysis"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 45
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "product_change", "cross_cutting_code_change"]
 
 [routes."automation-investment-case-review"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 47
+selection_axis = "workflow"
 applies_to_reasons = ["product_change", "docs_change"]
 
 [routes."automation-investment-case-review".dependencies]
@@ -374,6 +412,7 @@ negative_terms = ["cloud-cost-only", "model-token-cost-only", "vendor-selection-
 category = "workflow_contracts"
 route_type = "primary"
 priority = 52
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."product-onboarding-activation-review".dependencies]
@@ -387,6 +426,7 @@ negative_terms = ["contributor-onboarding", "employee-onboarding", "repository-o
 category = "workflow_contracts"
 route_type = "primary"
 priority = 53
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
 
 [routes."subscription-retention-profit-review".dependencies]
@@ -400,6 +440,7 @@ negative_terms = ["involuntary-payment-failure-only", "new-user-onboarding", "no
 category = "workflow_contracts"
 route_type = "primary"
 priority = 54
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
 
 [routes."product-engagement-retention-review".dependencies]
@@ -413,6 +454,7 @@ negative_terms = ["attendance-only-metric", "delivery-transport-only", "new-user
 category = "workflow_contracts"
 route_type = "primary"
 priority = 55
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "data_change", "ui_change", "product_change", "performance_change", "privacy_change", "release_risk"]
 
 [routes."credit-monetization-integrity-review".dependencies]
@@ -426,6 +468,7 @@ negative_terms = ["cancellation-save-offer", "internal-compute-cost-only", "ledg
 category = "workflow_contracts"
 route_type = "primary"
 priority = 56
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."pricing-model-integrity-review".dependencies]
@@ -439,6 +482,7 @@ negative_terms = ["cancellation-save-offer", "credit-pack-only", "enterprise-con
 category = "workflow_contracts"
 route_type = "primary"
 priority = 57
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."game-economy-monetization-review".dependencies]
@@ -452,6 +496,7 @@ negative_terms = ["ad-sdk-only", "generic-credit-pack", "non-game-pricing", "pro
 category = "workflow_contracts"
 route_type = "primary"
 priority = 58
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."freemium-ad-monetization-review".dependencies]
@@ -465,6 +510,7 @@ negative_terms = ["ad-sdk-only", "affiliate-commission", "cross-promotion", "gam
 category = "workflow_contracts"
 route_type = "primary"
 priority = 59
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."referral-incentive-integrity-review".dependencies]
@@ -478,6 +524,7 @@ negative_terms = ["affiliate-contract", "credit-ledger-only", "generic-signup", 
 category = "workflow_contracts"
 route_type = "primary"
 priority = 60
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."llm-product-monetization-review".dependencies]
@@ -491,6 +538,7 @@ negative_terms = ["generic-pricing", "model-router-only", "prompt-cost-only", "s
 category = "workflow_contracts"
 route_type = "primary"
 priority = 61
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."game-liveops-commerce-integrity-review".dependencies]
@@ -504,6 +552,7 @@ negative_terms = ["credit-ledger-only", "energy-refill", "game-revive", "generic
 category = "workflow_contracts"
 route_type = "primary"
 priority = 62
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."growth-distribution-integrity-review".dependencies]
@@ -517,6 +566,7 @@ negative_terms = ["customer-referral-only", "display-ad-only", "generic-attribut
 category = "workflow_contracts"
 route_type = "primary"
 priority = 63
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."product-portfolio-integrity-review".dependencies]
@@ -530,6 +580,7 @@ negative_terms = ["app-factory-only", "atomic-credit-only", "cross-promotion-onl
 category = "workflow_contracts"
 route_type = "primary"
 priority = 64
+selection_axis = "workflow"
 applies_to_reasons = ["product_change", "i18n_change"]
 
 [routes."localization-market-expansion-review".dependencies]
@@ -543,6 +594,7 @@ negative_terms = ["catalog-implementation-only", "copy-translation-only", "gener
 category = "workflow_contracts"
 route_type = "primary"
 priority = 65
+selection_axis = "workflow"
 applies_to_reasons = ["product_change", "package_metadata_change"]
 
 [routes."desktop-commercial-distribution-review".dependencies]
@@ -556,6 +608,7 @@ negative_terms = ["generic-payment-only", "generic-release-only", "installer-onl
 category = "workflow_contracts"
 route_type = "primary"
 priority = 66
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."client-platform-strategy-review".dependencies]
@@ -569,6 +622,7 @@ negative_terms = ["desktop-store-only", "framework-selection-only", "installer-o
 category = "workflow_contracts"
 route_type = "primary"
 priority = 67
+selection_axis = "workflow"
 applies_to_reasons = ["product_change"]
 
 [routes."service-portfolio-capital-allocation-review".dependencies]
@@ -582,48 +636,56 @@ negative_terms = ["account-wallet-bundle-only", "automation-only", "platform-imp
 category = "general_code"
 route_type = "primary"
 priority = 20
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change"]
 
 [routes."heuristic-candidate-selection"]
 category = "general_code"
 route_type = "primary"
 priority = 55
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "docs_change", "test_change", "behavior_change", "performance_change", "ui_change", "data_change"]
 
 [routes."ai-generated-code-hardening"]
 category = "general_code"
 route_type = "adjunct"
 priority = 74
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
 
 [routes."quality-gaming-guard"]
 category = "general_code"
 route_type = "adjunct"
 priority = 76
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
 
 [routes."abstraction-boundary-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 77
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change"]
 
 [routes."module-boundary-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change"]
 
 [routes."change-blast-radius-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
 
 [routes."feature-surface-completeness-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."feature-surface-completeness-review".contexts]
@@ -635,6 +697,7 @@ negative_terms = ["tiny-mechanical-edit", "disposable-prototype", "filename-only
 category = "general_code"
 route_type = "adjunct"
 priority = 84
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."semantic-repository-discovery".contexts]
@@ -646,12 +709,14 @@ negative_terms = ["known-exact-symbol", "tiny-mechanical-edit", "disposable-prot
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change"]
 
 [routes."payment-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 80
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."payment-integrity-review".contexts]
@@ -662,42 +727,49 @@ negative_terms = ["internal-cost-only", "provider-selection-only"]
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."notification-delivery-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."api-misuse-resistance-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 69
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change"]
 
 [routes."third-party-api-integration-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."http-api-semantics-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."error-message-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 68
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "docs_change", "package_metadata_change"]
 
 [routes."memory-lifetime-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 73
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change"]
 
 [routes."memory-lifetime-review".contexts]
@@ -708,6 +780,7 @@ negative_terms = ["agent-memory", "bundle-size-only", "cpu-only", "latency-only"
 category = "general_code"
 route_type = "adjunct"
 priority = 83
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."connection-lifecycle-integrity-review".dependencies]
@@ -721,90 +794,105 @@ negative_terms = ["business-state-only", "cache-header-only", "compression-only"
 category = "general_code"
 route_type = "adjunct"
 priority = 74
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."hot-path-performance-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 72
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"]
 
 [routes."api-request-performance-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 73
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"]
 
 [routes."api-failure-triage"]
 category = "bug_failure"
 route_type = "primary"
 priority = 72
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "public_api_change", "performance_change", "data_change", "docs_change"]
 
 [routes."auth-flow-triage"]
 category = "bug_failure"
 route_type = "primary"
 priority = 74
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "security_change", "privacy_change", "data_change", "docs_change"]
 
 [routes."docker-runtime-triage"]
 category = "bug_failure"
 route_type = "primary"
 priority = 73
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "performance_change", "data_change", "docs_change"]
 
 [routes."ci-pipeline-triage"]
 category = "bug_failure"
 route_type = "primary"
 priority = 75
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "workflow_change", "mustflow_config_change", "docs_change", "test_change", "package_metadata_change", "release_risk", "performance_change", "security_change"]
 
 [routes."app-startup-performance-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."desktop-background-process-stability-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."desktop-auto-update-safety-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."low-end-device-support-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."mobile-energy-efficiency-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."cache-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 74
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
 [routes."quadratic-scan-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 71
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "ui_change", "data_change"]
 
 [routes."parser-engineering-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "data_change"]
 
 [routes."parser-engineering-review".contexts]
@@ -815,6 +903,7 @@ negative_terms = ["structured-config-parse-only"]
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."name-resolution-integrity-review".dependencies]
@@ -828,6 +917,7 @@ negative_terms = ["dependency-install-only", "dns-record-authoring-only", "domai
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."compiler-engineering-review".dependencies]
@@ -841,6 +931,7 @@ negative_terms = ["application-build-only", "application-test-only", "css-compil
 category = "general_code"
 route_type = "adjunct"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."interpreter-engineering-review".dependencies]
@@ -854,6 +945,7 @@ negative_terms = ["host-runtime-upgrade", "jvm-runtime-only", "python-runtime-on
 category = "general_code"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."formal-verification-review".dependencies]
@@ -867,12 +959,14 @@ negative_terms = ["schema-validation-only", "static-type-check-only", "unit-test
 category = "general_code"
 route_type = "adjunct"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
 
 [routes."race-condition-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 77
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
 [routes."race-condition-review".dependencies]
@@ -886,6 +980,7 @@ negative_terms = ["layout", "pricing", "prompt", "translation"]
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."input-event-synchronization-review".dependencies]
@@ -899,6 +994,7 @@ negative_terms = ["form-validation", "prompt-input", "request-body", "text-field
 category = "general_code"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."modal-loop-reentrancy-review".dependencies]
@@ -912,6 +1008,7 @@ negative_terms = ["accessibility-only", "css-modal", "database-deadlock", "trans
 category = "general_code"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."ui-dispatch-lifecycle-review".dependencies]
@@ -925,12 +1022,14 @@ negative_terms = ["css-modal", "database-dispatch", "pure-render", "server-queue
 category = "general_code"
 route_type = "adjunct"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "data_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."concurrency-invariant-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 76
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
 [routes."concurrency-invariant-review".contexts]
@@ -941,6 +1040,7 @@ negative_terms = ["css", "layout", "prompt", "translation"]
 category = "general_code"
 route_type = "adjunct"
 priority = 78
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
 
 [routes."failure-integrity-review".contexts]
@@ -951,42 +1051,49 @@ negative_terms = ["success-path-only", "copy-only", "formatting-only"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."observability-debuggability-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."incident-triage-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 77
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."deployment-rollout-safety-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 78
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."cloud-cost-guardrail-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 77
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."rate-limit-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."idempotency-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 80
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."idempotency-integrity-review".dependencies]
@@ -1000,6 +1107,7 @@ negative_terms = ["database-2pc-only", "lock-order-only", "pure-read", "query-on
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."retry-policy-integrity-review".contexts]
@@ -1010,114 +1118,133 @@ negative_terms = ["duplicate-intent-only", "queue-settlement-only", "transaction
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."transaction-boundary-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change"]
 
 [routes."testability-boundary-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 74
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
 [routes."clarifying-question-gate"]
 category = "general_code"
 route_type = "adjunct"
 priority = 42
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
 
 [routes."support-surface-advisor"]
 category = "general_code"
 route_type = "primary"
 priority = 67
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "docs_change", "product_change", "package_metadata_change"]
 
 [routes."runtime-target-selection"]
 category = "general_code"
 route_type = "primary"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."technology-stack-selection"]
 category = "architecture_patterns"
 route_type = "primary"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "product_change", "cross_cutting_code_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."structure-first-engineering"]
 category = "general_code"
 route_type = "adjunct"
 priority = 76
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "security_change", "performance_change"]
 
 [routes."cpp-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
 
 [routes."c-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "performance_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."ada-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "performance_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."pascal-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "performance_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."shell-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "workflow_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."structured-config-change"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 84
+selection_axis = "workflow"
 applies_to_reasons = ["code_change", "docs_change", "workflow_change", "mustflow_config_change", "package_metadata_change", "test_change", "security_change", "release_risk"]
 
 [routes."node-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "package_metadata_change"]
 
 [routes."bun-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "migration_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."deno-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."docker-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."api-contract-change"]
 category = "general_code"
 route_type = "primary"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "docs_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change"]
 
 [routes."api-contract-change".dependencies]
@@ -1130,6 +1257,7 @@ unlocks_on = [
 category = "general_code"
 route_type = "primary"
 priority = 84
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."backend-reliability-change".dependencies]
@@ -1141,18 +1269,21 @@ unlocks_on = [
 category = "general_code"
 route_type = "primary"
 priority = 84
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "performance_change", "security_change", "privacy_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."typescript-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "performance_change", "package_metadata_change", "release_risk"]
 
 [routes."type-contract-change"]
 category = "general_code"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."type-contract-change".dependencies]
@@ -1171,108 +1302,126 @@ negative_terms = ["graphql-only", "http-api-only", "implementation-only", "langu
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 
 [routes."java-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."python-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."php-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."powershell-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"]
 
 [routes."go-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "package_metadata_change", "release_risk"]
 
 [routes."rust-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."axum-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."godot-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "ui_change", "package_metadata_change", "release_risk"]
 
 [routes."dart-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 
 [routes."hono-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."nestjs-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "data_change", "package_metadata_change", "release_risk"]
 
 [routes."elysia-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."source-anchor-authoring"]
 category = "general_code"
 route_type = "primary"
 priority = 60
+selection_axis = "task"
 applies_to_reasons = ["code_change", "mustflow_docs_change"]
 
 [routes."repo-improvement-loop"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 45
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change"]
 
 [routes."visual-review-artifact"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["docs_change"]
 
 [routes."llm-service-ux-review"]
 category = "ui_assets"
 route_type = "primary"
 priority = 65
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "product_change"]
 
 [routes."ai-product-readiness-review"]
 category = "general_code"
 route_type = "primary"
 priority = 64
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
 
 [routes."ai-product-readiness-review".contexts]
@@ -1282,24 +1431,28 @@ negative_terms = ["byok", "customer-api-key", "llm-pricing", "model-tier-pricing
 category = "general_code"
 route_type = "primary"
 priority = 66
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."llm-hallucination-control-review"]
 category = "general_code"
 route_type = "primary"
 priority = 67
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."rag-pipeline-triage"]
 category = "general_code"
 route_type = "primary"
 priority = 72
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."llm-token-cost-control-review"]
 category = "general_code"
 route_type = "primary"
 priority = 68
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."llm-token-cost-control-review".contexts]
@@ -1310,12 +1463,14 @@ negative_terms = ["non-llm-cache", "ui-latency-only"]
 category = "general_code"
 route_type = "primary"
 priority = 69
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
 [routes."llm-model-routing-integrity-review"]
 category = "general_code"
 route_type = "primary"
 priority = 72
+selection_axis = "risk"
 applies_to_reasons = ["product_change", "performance_change"]
 
 [routes."llm-model-routing-integrity-review".dependencies]
@@ -1329,6 +1484,7 @@ negative_terms = ["provider-selection-only", "prompt-cache-only", "streaming-onl
 category = "general_code"
 route_type = "primary"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["behavior_change"]
 
 [routes."agent-execution-control-review".dependencies]
@@ -1346,6 +1502,7 @@ negative_terms = ["agent-bundle", "benchmark", "canary", "ephemeral-sandbox", "e
 category = "general_code"
 route_type = "primary"
 priority = 75
+selection_axis = "risk"
 applies_to_reasons = ["behavior_change"]
 
 [routes."agent-planning-recovery-review".dependencies]
@@ -1359,6 +1516,7 @@ negative_terms = ["commit-publish", "database-commit", "deterministic-workflow-o
 category = "general_code"
 route_type = "primary"
 priority = 76
+selection_axis = "task"
 applies_to_reasons = ["release_risk"]
 
 [routes."agent-release-bundle-rollout-review".dependencies]
@@ -1372,6 +1530,7 @@ negative_terms = ["generic-container", "generic-migration", "generic-server-depl
 category = "general_code"
 route_type = "primary"
 priority = 77
+selection_axis = "task"
 applies_to_reasons = ["performance_change"]
 
 [routes."agent-runtime-multi-worker-review".dependencies]
@@ -1385,6 +1544,7 @@ negative_terms = ["repository-worktree", "same-file-writer", "subagent-coding-ta
 category = "general_code"
 route_type = "primary"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["security_change"]
 
 [routes."agent-runtime-isolation-review".dependencies]
@@ -1401,12 +1561,14 @@ negative_terms = ["generic-container-deploy", "local-child-process-only", "repos
 category = "general_code"
 route_type = "primary"
 priority = 73
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "ui_change", "product_change", "package_metadata_change", "release_risk"]
 
 [routes."agent-eval-integrity-review"]
 category = "general_code"
 route_type = "primary"
 priority = 71
+selection_axis = "risk"
 applies_to_reasons = ["data_change", "privacy_change", "release_risk"]
 
 [routes."agent-eval-integrity-review".contexts]
@@ -1417,6 +1579,7 @@ negative_terms = ["approval-token", "context-compaction", "memory-deletion", "pe
 category = "general_code"
 route_type = "primary"
 priority = 74
+selection_axis = "task"
 applies_to_reasons = ["data_change", "privacy_change"]
 
 [routes."agent-memory-context-governance-review".dependencies]
@@ -1430,132 +1593,154 @@ negative_terms = ["allocation", "append-only-event", "effect-id", "heap", "liste
 category = "general_code"
 route_type = "adjunct"
 priority = 30
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change"]
 
 [routes."contract-sync-check"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 25
+selection_axis = "workflow"
 applies_to_reasons = ["public_api_change", "package_metadata_change", "mustflow_config_change"]
 
 [routes."template-install-surface-sync"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 78
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "docs_change", "test_change", "release_risk"]
 
 [routes."date-number-audit"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 25
+selection_axis = "workflow"
 applies_to_reasons = ["docs_change", "package_metadata_change"]
 
 [routes."database-change-safety"]
 category = "data_external"
 route_type = "primary"
 priority = 55
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change"]
 
 [routes."database-migration-change"]
 category = "data_external"
 route_type = "primary"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
 
 [routes."database-query-bottleneck-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 67
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "test_change", "docs_change"]
 
 [routes."database-json-modeling-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 69
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change", "security_change", "privacy_change"]
 
 [routes."deletion-lifecycle-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change", "security_change", "privacy_change"]
 
 [routes."database-lock-contention-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 68
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "performance_change", "migration_change", "test_change", "docs_change"]
 
 [routes."sqlite-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 86
+selection_axis = "language"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "test_change", "docs_change", "security_change", "performance_change"]
 
 [routes."postgresql-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 86
+selection_axis = "language"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
 
 [routes."clickhouse-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 86
+selection_axis = "language"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
 
 [routes."duckdb-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 86
+selection_axis = "language"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "behavior_change", "public_api_change", "test_change", "docs_change", "security_change", "performance_change"]
 
 [routes."search-index-integrity-review"]
 category = "data_external"
 route_type = "primary"
 priority = 74
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."vector-search-integrity-review"]
 category = "data_external"
 route_type = "primary"
 priority = 73
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."dependency-upgrade-review"]
 category = "data_external"
 route_type = "primary"
 priority = 75
+selection_axis = "task"
 applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."dependency-reality-check"]
 category = "data_external"
 route_type = "adjunct"
 priority = 45
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "docs_change", "security_change", "package_metadata_change", "release_risk"]
 
 [routes."version-freshness-check"]
 category = "data_external"
 route_type = "adjunct"
 priority = 68
+selection_axis = "task"
 applies_to_reasons = ["code_change", "docs_change", "package_metadata_change", "mustflow_config_change", "release_risk"]
 
 [routes."file-path-cross-platform-change"]
 category = "data_external"
 route_type = "primary"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["code_change", "public_api_change", "test_change", "docs_change", "security_change", "package_metadata_change"]
 
 [routes."cross-platform-filesystem-safety"]
 category = "data_external"
 route_type = "adjunct"
 priority = 65
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "security_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."crash-consistency-recovery-review"]
 category = "data_external"
 route_type = "adjunct"
 priority = 82
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."crash-consistency-recovery-review".dependencies]
@@ -1574,72 +1759,84 @@ negative_terms = ["css", "layout", "pricing", "prompt", "translation"]
 category = "data_external"
 route_type = "primary"
 priority = 55
+selection_axis = "task"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "cross_cutting_code_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change"]
 
 [routes."tauri-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 90
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "release_risk"]
 
 [routes."wails-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 90
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "release_risk"]
 
 [routes."webview2-code-change"]
 category = "data_external"
 route_type = "primary"
 priority = 90
+selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "ui_change", "security_change", "privacy_change", "data_change", "public_api_change", "package_metadata_change", "performance_change", "release_risk"]
 
 [routes."hetzner-cloud-change"]
 category = "data_external"
 route_type = "primary"
 priority = 90
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "workflow_change", "package_metadata_change", "performance_change", "release_risk"]
 
 [routes."process-execution-safety"]
 category = "data_external"
 route_type = "primary"
 priority = 70
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change", "security_change"]
 
 [routes."dependency-injection"]
 category = "data_external"
 route_type = "primary"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."line-ending-hygiene"]
 category = "workflow_contracts"
 route_type = "event"
 priority = 70
+selection_axis = "workflow"
 applies_to_reasons = ["formatting_change"]
 
 [routes."performance-budget-check"]
 category = "general_code"
 route_type = "adjunct"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["performance_change", "code_change", "data_change", "ui_change", "behavior_change"]
 
 [routes."performance-measurement-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."vertical-slice-tdd"]
 category = "tests"
 route_type = "primary"
 priority = 60
+selection_axis = "task"
 applies_to_reasons = ["test_change", "behavior_change"]
 
 [routes."test-design-guard"]
 category = "tests"
 route_type = "adjunct"
 priority = 40
+selection_axis = "task"
 applies_to_reasons = ["test_change", "behavior_change"]
 
 [routes."test-design-guard".contexts]
@@ -1650,48 +1847,56 @@ negative_terms = ["benchmark-only", "coverage-number-only", "fuzz-campaign-only"
 category = "tests"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["test_change", "behavior_change", "performance_change", "security_change"]
 
 [routes."test-suite-performance-review"]
 category = "tests"
 route_type = "primary"
 priority = 58
+selection_axis = "task"
 applies_to_reasons = ["performance_change", "test_change", "workflow_change", "mustflow_config_change", "package_metadata_change", "unknown_change"]
 
 [routes."test-maintenance"]
 category = "tests"
 route_type = "primary"
 priority = 45
+selection_axis = "task"
 applies_to_reasons = ["test_change"]
 
 [routes."security-privacy-review"]
 category = "security_privacy"
 route_type = "primary"
 priority = 30
+selection_axis = "risk"
 applies_to_reasons = ["security_change", "privacy_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."secret-exposure-response"]
 category = "security_privacy"
 route_type = "event"
 priority = 90
+selection_axis = "workflow"
 applies_to_reasons = ["security_change", "privacy_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."provenance-license-gate"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 58
+selection_axis = "risk"
 applies_to_reasons = ["security_change", "docs_change", "code_change", "package_metadata_change", "release_risk"]
 
 [routes."config-env-change"]
 category = "security_privacy"
 route_type = "primary"
 priority = 35
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "docs_change", "security_change", "privacy_change", "package_metadata_change", "mustflow_config_change"]
 
 [routes."auth-permission-change"]
 category = "security_privacy"
 route_type = "primary"
 priority = 85
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
 
 [routes."auth-permission-change".contexts]
@@ -1708,54 +1913,63 @@ unlocks_on = [
 category = "security_privacy"
 route_type = "adjunct"
 priority = 77
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 79
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."file-upload-security-review"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 78
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."input-boundary-validation-review"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 83
+selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "performance_change"]
 
 [routes."security-flow-review"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 76
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."security-regression-tests"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 50
+selection_axis = "risk"
 applies_to_reasons = ["security_change", "test_change"]
 
 [routes."failure-triage"]
 category = "bug_failure"
 route_type = "event"
 priority = 20
+selection_axis = "workflow"
 applies_to_reasons = ["command_failure"]
 
 [routes."evidence-stall-breaker"]
 category = "bug_failure"
 route_type = "event"
 priority = 70
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "mustflow_docs_change"]
 
 [routes."external-prompt-injection-defense"]
 category = "security_privacy"
 route_type = "adjunct"
 priority = 40
+selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change", "docs_change", "security_change", "privacy_change", "mustflow_config_change"]
 
 [routes."external-prompt-injection-defense".contexts]
@@ -1766,48 +1980,56 @@ negative_terms = ["trusted-code-only", "trusted-config-only"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 70
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change"]
 
 [routes."github-contribution-quality-gate"]
 category = "workflow_contracts"
 route_type = "primary"
 priority = 60
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "public_api_change"]
 
 [routes."instruction-conflict-scope-check"]
 category = "workflow_contracts"
 route_type = "adjunct"
 priority = 35
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change", "mustflow_config_change"]
 
 [routes."migration-safety-check"]
 category = "data_external"
 route_type = "adjunct"
 priority = 60
+selection_axis = "risk"
 applies_to_reasons = ["migration_change"]
 
 [routes."web-render-performance-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 79
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"]
 
 [routes."core-web-vitals-field-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "docs_change", "release_risk"]
 
 [routes."image-delivery-performance-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change", "security_change", "privacy_change"]
 
 [routes."ai-game-asset-production"]
 category = "ui_assets"
 route_type = "primary"
 priority = 86
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "web_asset_change", "behavior_change", "code_change", "test_change", "docs_change", "product_change", "release_risk"]
 
 [routes."ai-game-asset-production".contexts]
@@ -1819,234 +2041,273 @@ negative_terms = ["ordinary-ui-icon", "photography-only"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "package_metadata_change", "web_asset_change"]
 
 [routes."frame-render-performance-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 81
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "web_asset_change"]
 
 [routes."motion-system-contract-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "test_change", "docs_change", "web_asset_change"]
 
 [routes."frontend-state-ownership-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"]
 
 [routes."ui-state-resurrection-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["unknown_change", "ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."frontend-stress-layout-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 80
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "web_asset_change", "test_change", "docs_change"]
 
 [routes."frontend-accessibility-tree-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 82
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "web_asset_change"]
 
 [routes."frontend-component-library-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 84
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "public_api_change", "package_metadata_change", "performance_change", "security_change", "privacy_change", "web_asset_change", "release_risk"]
 
 [routes."frontend-localization-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 84
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "i18n_change", "web_asset_change"]
 
 [routes."website-task-friction-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 83
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "performance_change", "security_change", "privacy_change", "public_api_change", "web_asset_change", "release_risk"]
 
 [routes."frontend-render-stability"]
 category = "ui_assets"
 route_type = "primary"
 priority = 78
+selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change"]
 
 [routes."ui-quality-gate"]
 category = "ui_assets"
 route_type = "primary"
 priority = 50
+selection_axis = "task"
 applies_to_reasons = ["ui_change"]
 
 [routes."html-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "docs_change", "code_change"]
 
 [routes."css-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "docs_change", "code_change"]
 
 [routes."tailwind-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "public_api_change", "migration_change", "package_metadata_change"]
 
 [routes."unocss-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "migration_change", "performance_change", "package_metadata_change"]
 
 [routes."flutter-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "public_api_change"]
 
 [routes."astro-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "docs_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."babylon-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."threejs-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."react-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."vue-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "package_metadata_change", "release_risk"]
 
 [routes."vite-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."svelte-code-change"]
 category = "ui_assets"
 route_type = "primary"
 priority = 85
+selection_axis = "language"
 applies_to_reasons = ["ui_change", "code_change", "behavior_change", "public_api_change", "data_change", "security_change", "privacy_change", "performance_change", "test_change", "docs_change", "migration_change", "package_metadata_change", "release_risk"]
 
 [routes."pattern-scout"]
 category = "architecture_patterns"
 route_type = "adjunct"
 priority = 30
+selection_axis = "task"
 applies_to_reasons = ["code_change"]
 
 [routes."structure-discovery-gate"]
 category = "general_code"
 route_type = "primary"
 priority = 35
+selection_axis = "task"
 applies_to_reasons = ["code_change", "unknown_change", "behavior_change", "public_api_change", "security_change", "data_change", "migration_change", "product_change"]
 
 [routes."repro-first-debug"]
 category = "bug_failure"
 route_type = "primary"
 priority = 25
+selection_axis = "risk"
 applies_to_reasons = ["behavior_change", "unknown_change"]
 
 [routes."source-freshness-check"]
 category = "docs_release"
 route_type = "adjunct"
 priority = 65
+selection_axis = "task"
 applies_to_reasons = ["docs_change"]
 
 [routes."task-instruction-authoring"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 62
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change"]
 
 [routes."design-implementation-handoff"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 64
+selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "docs_change", "workflow_change", "mustflow_docs_change"]
 
 [routes."project-context-authoring"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 65
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change"]
 
 [routes."skill-refresh"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 66
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change", "docs_change", "package_metadata_change"]
 
 [routes."skill-authoring"]
 category = "workflow_contracts"
 route_type = "authoring"
 priority = 55
+selection_axis = "workflow"
 applies_to_reasons = ["mustflow_docs_change"]
 
 [routes."readme-authoring"]
 category = "docs_release"
 route_type = "primary"
 priority = 50
+selection_axis = "task"
 applies_to_reasons = ["docs_change"]
 
 [routes."readme-evidence-gate"]
 category = "docs_release"
 route_type = "adjunct"
 priority = 72
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "public_api_change", "package_metadata_change", "security_change", "performance_change", "release_risk", "unknown_change"]
 
 [routes."release-notes-authoring"]
 category = "docs_release"
 route_type = "primary"
 priority = 55
+selection_axis = "task"
 applies_to_reasons = ["release_risk", "docs_change"]
 
 [routes."release-publish-change"]
 category = "docs_release"
 route_type = "primary"
 priority = 58
+selection_axis = "task"
 applies_to_reasons = ["release_risk", "package_metadata_change", "docs_change", "public_api_change"]
 
 [routes."search-ad-content-authoring"]
 category = "docs_release"
 route_type = "primary"
 priority = 60
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "product_change"]
 
 [routes."reader-centered-technical-content"]
 category = "docs_release"
 route_type = "primary"
 priority = 61
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "product_change"]
 
 [routes."reader-centered-technical-content".contexts]
@@ -2058,22 +2319,26 @@ negative_terms = ["internal-only-note", "machine-generated-reference"]
 category = "docs_release"
 route_type = "primary"
 priority = 62
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "workflow_change", "release_risk", "unknown_change"]
 
 [routes."docs-prose-review"]
 category = "docs_release"
 route_type = "adjunct"
 priority = 70
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change"]
 
 [routes."web-asset-optimization"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 65
+selection_axis = "task"
 applies_to_reasons = ["image_asset_change", "web_asset_change"]
 
 [routes."docs-update"]
 category = "docs_release"
 route_type = "primary"
 priority = 35
+selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "i18n_change"]

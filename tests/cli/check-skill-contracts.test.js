@@ -150,11 +150,13 @@ test('strict check warns for conflicting skill index routes without failing', as
 category = "docs_release"
 route_type = "primary"
 priority = 90
+selection_axis = "task"
 
 [routes."route-catch-all"]
 category = "docs_release"
 route_type = "primary"
 priority = 95
+selection_axis = "task"
 		`;
 		writeFileSync(skillRoutesPath, skillRoutes);
 		writeSkillRouteCatalogs(projectPath);
@@ -248,7 +250,7 @@ test('strict check fails skill route metadata drift', async () => {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath)
 			.replace(
-				/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\napplies_to_reasons = \["code_change", "behavior_change"\]\n\n\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]\n/u,
+				/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\nselection_axis = "task"\napplies_to_reasons = \["code_change", "behavior_change"\]\n\n\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]\n/u,
 				'\n',
 			)
 			.concat(
@@ -258,6 +260,7 @@ test('strict check fails skill route metadata drift', async () => {
 					'category = "general_code"',
 					'route_type = "primary"',
 					'priority = 10',
+					'selection_axis = "task"',
 					'mutually_exclusive_with = ["missing-route"]',
 					'',
 				].join('\n'),
@@ -297,6 +300,37 @@ test('strict check fails skill route metadata drift', async () => {
 		assertHasIssueDetail(check, 'mustflow.skill.route_metadata_unknown_reference');
 	} finally {
 		removeTempProject(projectPath);
+	}
+});
+
+test('strict check rejects missing or unknown skill route selection axes', async () => {
+	const missingAxisProject = createInitializedSkillProject();
+	const unknownAxisProject = createInitializedSkillProject();
+
+	try {
+		const missingRoutesPath = path.join(missingAxisProject, '.mustflow', 'skills', 'routes.toml');
+		writeFileSync(missingRoutesPath, readText(missingRoutesPath).replace('selection_axis = "task"\n', ''));
+		unlinkSync(path.join(missingAxisProject, '.mustflow', 'config', 'manifest.lock.toml'));
+		const missingResult = await runCliInProcess(missingAxisProject, ['check', '--strict', '--json']);
+		const missingCheck = JSON.parse(missingResult.stdout);
+
+		assert.equal(missingResult.status, 1);
+		assert.ok(missingCheck.issues.some((issue) => issue.includes('.selection_axis must be one of')));
+
+		const unknownRoutesPath = path.join(unknownAxisProject, '.mustflow', 'skills', 'routes.toml');
+		writeFileSync(
+			unknownRoutesPath,
+			readText(unknownRoutesPath).replace('selection_axis = "task"', 'selection_axis = "platform"'),
+		);
+		unlinkSync(path.join(unknownAxisProject, '.mustflow', 'config', 'manifest.lock.toml'));
+		const unknownResult = await runCliInProcess(unknownAxisProject, ['check', '--strict', '--json']);
+		const unknownCheck = JSON.parse(unknownResult.stdout);
+
+		assert.equal(unknownResult.status, 1);
+		assert.ok(unknownCheck.issues.some((issue) => issue.includes('.selection_axis must be one of')));
+	} finally {
+		removeTempProject(missingAxisProject);
+		removeTempProject(unknownAxisProject);
 	}
 });
 

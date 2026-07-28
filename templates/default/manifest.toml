@@ -12,7 +12,7 @@ creates = [
   ".mustflow/skills/INDEX.md",
   ".mustflow/skills/router.toml",
   ".mustflow/skills/routes.toml",
-  ".mustflow/skills/catalog.v1.json",
+  ".mustflow/skills/catalog.v2.json",
   ".mustflow/skills/adapter-boundary/SKILL.md",
   ".mustflow/skills/api-contract-change/SKILL.md",
   ".mustflow/skills/http-api-semantics-review/SKILL.md",

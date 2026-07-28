@@ -146,6 +146,46 @@ test('related selection maps package metadata helper changes to command consumer
 	}
 });
 
+test('related selection keeps skill router implementation and generated catalog changes focused', () => {
+	const expected = [
+		'skill-route.test.js',
+		'context.test.js',
+		'check-skill-contracts.test.js',
+		'skill-install-surface-contracts.test.js',
+		'schema-cli-output-contracts.test.js',
+	];
+	const implementationPaths = [
+		'src/core/skill-route-resolution.ts',
+		'src/cli/lib/agent-context.ts',
+		'src/cli/commands/skill.ts',
+		'schemas/skill-route-report.schema.json',
+	];
+
+	for (const changedFile of implementationPaths) {
+		const report = selectRelated([changedFile]);
+		const selected = new Set(report.selected);
+		for (const testName of expected) {
+			assert.equal(selected.has(testName), true, `${changedFile} -> ${testName}`);
+		}
+		assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0, changedFile);
+	}
+
+	for (const changedFile of [
+		'.mustflow/skills/routes.toml',
+		'.mustflow/skills/catalog.v2.json',
+		'templates/default/locales/en/.mustflow/skills/routes.toml',
+		'templates/default/locales/en/.mustflow/skills/catalog.v2.json',
+		'scripts/generate-skill-route-catalog.ts',
+	]) {
+		const report = selectRelated([changedFile]);
+		const selected = new Set(report.selected);
+		for (const testName of [...expected, 'package-template.test.js']) {
+			assert.equal(selected.has(testName), true, `${changedFile} -> ${testName}`);
+		}
+		assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0, changedFile);
+	}
+});
+
 test('related selection covers the selector script itself', () => {
 	const report = selectRelated(['scripts/run-cli-tests.mjs']);
 	const selected = new Set(report.selected);

@@ -201,6 +201,7 @@ test('skill-route-audit separates active-profile gaps from packaged registry gap
 category = "workflow_contracts"
 route_type = "primary"
 priority = 10
+selection_axis = "workflow"
 applies_to_reasons = ["workflow_change"]
 `,
 		);

@@ -192,6 +192,7 @@ export const SUPPORTED_SKILL_SCHEMA_VERSION = '1';
 export const SKILL_PACK_ID_PATTERN = /^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)+$/u;
 export const ALLOWED_SKILL_ROUTE_CATEGORIES = new Set(Object.keys(SKILL_ROUTE_CATEGORY_LABELS));
 export const ALLOWED_SKILL_ROUTE_TYPES = new Set(['primary', 'adjunct', 'event', 'authoring']);
+export const ALLOWED_SKILL_ROUTE_SELECTION_AXES = new Set(['language', 'task', 'risk', 'workflow']);
 export const ALLOWED_SKILL_ROUTE_PROFILES = new Set(['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
 export const CONTEXT_AUTHORITY_DRIFT_PATTERNS = [
 	/^##\s+(?:Command Policy|Command Permissions|Allowed Commands|Denied Commands|File Edit Policy|Protected Paths|Forbidden Files|Execution Rules|Mandatory Rules|Binding Rules|명령 정책|명령 권한|허용 명령|금지 명령|파일 편집 정책|보호 경로|금지 파일|실행 규칙|필수 규칙)\s*$/imu,

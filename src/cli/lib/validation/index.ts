@@ -100,6 +100,7 @@ import {
 	ALLOWED_SKILL_RESOURCE_TYPES,
 	ALLOWED_SKILL_ROUTE_CATEGORIES,
 	ALLOWED_SKILL_ROUTE_PROFILES,
+	ALLOWED_SKILL_ROUTE_SELECTION_AXES,
 	ALLOWED_SKILL_ROUTE_TYPES,
 	ALLOWED_STALE_TEST_ACTIONS,
 	ALLOWED_TEST_AUTHORING_POLICIES,
@@ -1380,6 +1381,7 @@ function validateSkillRouteMetadataTable(
 		? (rawCategory as keyof typeof SKILL_ROUTE_CATEGORY_LABELS)
 		: undefined;
 	const routeType = typeof route.route_type === 'string' ? route.route_type : undefined;
+	const selectionAxis = typeof route.selection_axis === 'string' ? route.selection_axis : undefined;
 	const profiles = readOptionalStringArray(route.profiles, `${label}.profiles`, issues);
 	const appliesToReasons = readOptionalStringArray(route.applies_to_reasons, `${label}.applies_to_reasons`, issues);
 	const mutuallyExclusiveWith = readOptionalStringArray(
@@ -1396,6 +1398,13 @@ function validateSkillRouteMetadataTable(
 
 	if (!routeType || !ALLOWED_SKILL_ROUTE_TYPES.has(routeType)) {
 		pushStrictIssue(issues, `${label}.route_type must be one of ${[...ALLOWED_SKILL_ROUTE_TYPES].join(', ')}`);
+	}
+
+	if (!selectionAxis || !ALLOWED_SKILL_ROUTE_SELECTION_AXES.has(selectionAxis)) {
+		pushStrictIssue(
+			issues,
+			`${label}.selection_axis must be one of ${[...ALLOWED_SKILL_ROUTE_SELECTION_AXES].join(', ')}`,
+		);
 	}
 
 	if (!isPositiveInteger(route.priority)) {
@@ -1418,6 +1427,7 @@ function validateSkillRouteMetadataTable(
 		skillName,
 		category,
 		routeType,
+		selectionAxis,
 		priority: route.priority,
 		mutuallyExclusiveWith,
 		contexts,

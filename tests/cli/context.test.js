@@ -268,7 +268,7 @@ test('prints all prompt-cache layers when requested', () => {
 		assert.deepEqual(context.task_context.route_read_plan.resolver_command, ['mf', 'skill', 'route', '--json']);
 		assert.deepEqual(context.task_context.route_read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
 		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/routes.toml'));
-		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/catalog.v1.json'));
+		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/catalog.v2.json'));
 		assert.ok(context.task_context.route_read_plan.route_sources.includes('.mustflow/skills/*/SKILL.md frontmatter fallback'));
 		assert.equal(
 			context.task_context.route_read_plan.selected_skill_paths_source,

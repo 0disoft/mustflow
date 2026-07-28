@@ -3,7 +3,7 @@ purpose = "Stable skill-routing kernel for prompt-cache-friendly first-pass sele
 full_routes = ".mustflow/skills/routes.toml"
 expanded_index = ".mustflow/skills/INDEX.md"
 skill_root = ".mustflow/skills"
-catalog = ".mustflow/skills/catalog.v1.json"
+catalog = ".mustflow/skills/catalog.v2.json"
 selection_limit = 5
 main_limit = 1
 adjunct_limit = 2
@@ -31,10 +31,10 @@ expanded_index = [
 [algorithm]
 steps = [
   "Classify the task by file paths, user intent, discovered technology, and event signals.",
-  "Read the generated route catalog for the compact built-in skill inventory; fall back to installed SKILL.md frontmatter only when the catalog is missing or invalid.",
+  "Read the generated route catalog v2 for compact built-in triggers, explicit selection axes, ranking signals, and dependencies; fall back to routes.toml plus installed SKILL.md frontmatter only when the catalog is missing or invalid.",
   "Normalize task and route signals with Unicode NFKC, preserve letters and numbers from every script, and match multiword positive and negative signals as complete phrases.",
   "Admit a candidate only from task, path, phrase, reason-plus-corroboration, or dependency evidence; use route type and priority only to rank admitted candidates.",
-  "Pick evidence-backed routes across language, task, risk, and workflow axes within the configured per-axis and total limits, excluding conflicting routes.",
+  "Pick evidence-backed routes across the explicit language, task, risk, and workflow route axes within the configured per-axis and total limits, excluding conflicting routes.",
   "Read full_routes only when this kernel cannot identify a narrow route set.",
   "Read selected SKILL.md files before editing the matching scope.",
   "Reroute when changed files, command failures, security, data, tests, docs, or release risk appears.",

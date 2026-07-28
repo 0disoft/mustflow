@@ -74,6 +74,13 @@ export function createTestSelection(allCliTests, options = {}) {
 		'package-template-skill-contracts.test.js',
 	];
 	const skillInstallSurfaceTest = 'skill-install-surface-contracts.test.js';
+	const skillRouteTests = [
+		'skill-route.test.js',
+		'context.test.js',
+		'check-skill-contracts.test.js',
+		skillInstallSurfaceTest,
+		'schema-cli-output-contracts.test.js',
+	];
 	const skillContractShardPattern = /^authoring-skill(?:-[a-z0-9-]+)?-contracts\.test\.js$/u;
 	const authoringSkillContractTests = allCliTests.filter((name) => skillContractShardPattern.test(name));
 	const skillContractTestsBySkill = new Map();
@@ -248,7 +255,12 @@ export function createTestSelection(allCliTests, options = {}) {
 			terminal: true,
 		},
 		{
-			match: /^(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/(?:INDEX\.md|routes\.toml|router\.toml)$/u,
+			match: /^(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/(?:routes\.toml|catalog\.v2\.json)$/u,
+			tests: [...skillRouteTests, 'authoring-skill-contracts.test.js', 'package-template.test.js'],
+			terminal: true,
+		},
+		{
+			match: /^(?:templates\/default\/locales\/en\/)?\.mustflow\/skills\/(?:INDEX\.md|router\.toml)$/u,
 			tests: [skillInstallSurfaceTest, 'authoring-skill-contracts.test.js'],
 			terminal: true,
 		},
@@ -331,6 +343,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/cli\/lib\/run-plan\.ts$/u, tests: [...runTests, ...schemaSmokeTests] },
 		{ match: /^src\/cli\/lib\/run-receipt\.ts$/u, tests: [...runTests, ...dashboardTests, ...schemaSmokeTests] },
 		{ match: /^src\/cli\/lib\/validation(?:\.ts|\/)/u, tests: [...checkTests, ...schemaSmokeTests] },
+		{ match: /^src\/cli\/lib\/agent-context\.ts$/u, tests: skillRouteTests },
+		{ match: /^src\/cli\/commands\/skill\.ts$/u, tests: skillRouteTests },
 		{ match: /^src\/cli\/commands\/run\//u, tests: [...runTests, ...schemaSmokeTests] },
 		{ match: /^src\/cli\/commands\/verify\//u, tests: [...verifyTests, 'explain-verify.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
@@ -395,6 +409,12 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', ...verifyCompletionVerdictTests, 'dashboard-verification.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 		{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
+		{ match: /^src\/core\/skill-route-resolution\.ts$/u, tests: skillRouteTests },
+		{ match: /^src\/core\/skill-route-fixtures\.ts$/u, tests: skillRouteTests },
+		{ match: /^schemas\/skill-route-report\.schema\.json$/u, tests: skillRouteTests },
+		{ match: /^scripts\/generate-skill-route-catalog\.ts$/u, tests: [...skillRouteTests, 'package-template.test.js'] },
+		{ match: /^scripts\/evaluate-skill-routes\.ts$/u, tests: [...skillRouteTests, ...testSelectionTests] },
+		{ match: /^scripts\/benchmark-skill-routes\.ts$/u, tests: [...skillRouteTests, ...testSelectionTests] },
 		{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js'] },
 		{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js'] },
 		{ match: /^src\/core\/source-anchor-symbols\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js', 'check-source-anchors.test.js'] },

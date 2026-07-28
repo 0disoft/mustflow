@@ -10,8 +10,8 @@ const MUSTFLOW_TEXT_MAX_BYTES = 1024 * 1024;
 const SKILL_INDEX_PATH = '.mustflow/skills/INDEX.md';
 const SKILL_ROUTER_PATH = '.mustflow/skills/router.toml';
 const SKILL_ROUTES_METADATA_PATH = '.mustflow/skills/routes.toml';
-export const SKILL_ROUTE_CATALOG_PATH = '.mustflow/skills/catalog.v1.json';
-const TEMPLATE_SKILL_ROUTE_CATALOG_PATH = 'templates/default/locales/en/.mustflow/skills/catalog.v1.json';
+export const SKILL_ROUTE_CATALOG_PATH = '.mustflow/skills/catalog.v2.json';
+const TEMPLATE_SKILL_ROUTE_CATALOG_PATH = 'templates/default/locales/en/.mustflow/skills/catalog.v2.json';
 const BUILT_IN_SKILL_PATH_PATTERN = /^\.mustflow\/skills\/([a-z0-9]+(?:-[a-z0-9]+)*)\/SKILL\.md$/u;
 const SKILL_FRONTMATTER_SOURCE = '.mustflow/skills/*/SKILL.md';
 const EXTERNAL_SKILL_FRONTMATTER_SOURCE = '.mustflow/external-skills/*/SKILL.md';
@@ -171,6 +171,7 @@ export interface SkillRouteResolveReport {
 interface SkillRouteMetadata {
 	readonly category: SkillRouteCategory | null;
 	readonly routeType: string;
+	readonly selectionAxis: SkillRouteSelectionAxis;
 	readonly priority: number;
 	readonly appliesToReasons: readonly string[];
 	readonly mutuallyExclusiveWith: readonly string[];
@@ -187,12 +188,21 @@ interface SkillFrontmatterSummary {
 interface SkillRouteCatalogEntry {
 	readonly skill: string;
 	readonly skill_path: string;
+	readonly category: SkillRouteCategory | null;
+	readonly route_type: string;
+	readonly selection_axis: SkillRouteSelectionAxis;
+	readonly priority: number;
+	readonly applies_to_reasons: readonly string[];
+	readonly mutually_exclusive_with: readonly string[];
+	readonly positive_signals: readonly string[];
+	readonly negative_signals: readonly string[];
+	readonly dependencies: SkillRouteDependencies;
 	readonly trigger: string;
 	readonly command_intents: readonly string[];
 }
 
 export interface SkillRouteCatalog {
-	readonly schema_version: '1';
+	readonly schema_version: '2';
 	readonly kind: 'skill_route_catalog';
 	readonly source_fingerprint: string;
 	readonly entries: readonly SkillRouteCatalogEntry[];
@@ -218,8 +228,19 @@ const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
 	external: 1,
 };
 
-const LANGUAGE_SKILL_PATTERN = /-code-change$/u;
-const RISK_SKILL_PATTERN = /(?:failure|integrity|permission|privacy|recovery|reliability|safety|security|triage)/u;
+const SKILL_ROUTE_SELECTION_AXES = new Set<SkillRouteSelectionAxis>(['language', 'task', 'risk', 'workflow']);
+const SKILL_ROUTE_CATEGORIES = new Set<SkillRouteCategory>([
+	'bug_failure',
+	'general_code',
+	'tests',
+	'docs_release',
+	'security_privacy',
+	'data_external',
+	'ui_assets',
+	'architecture_patterns',
+	'workflow_contracts',
+]);
+const SKILL_ROUTE_TYPES = new Set(['primary', 'adjunct', 'event', 'authoring']);
 
 function readBoundedInteger(value: unknown, fallback: number, minimum: number, maximum: number): number {
 	return Number.isInteger(value) ? Math.max(minimum, Math.min(Number(value), maximum)) : fallback;
@@ -247,23 +268,6 @@ export function readSkillRouterConfig(projectRoot: string): SkillRouterConfig {
 			workflow: readBoundedInteger(axes.workflow, 1, 0, 2),
 		},
 	};
-}
-
-function inferSelectionAxis(skill: string, metadata: SkillRouteMetadata): SkillRouteSelectionAxis {
-	if (LANGUAGE_SKILL_PATTERN.test(skill)) {
-		return 'language';
-	}
-	if (metadata.routeType === 'authoring' || metadata.routeType === 'event' || metadata.category === 'workflow_contracts') {
-		return 'workflow';
-	}
-	if (
-		metadata.category === 'security_privacy' ||
-		metadata.category === 'bug_failure' ||
-		RISK_SKILL_PATTERN.test(skill)
-	) {
-		return 'risk';
-	}
-	return 'task';
 }
 
 function normalizeSkillPath(value: string): string {
@@ -496,6 +500,10 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 			metadata.set(skillName, {
 				category: typeof route.category === 'string' ? (route.category as SkillRouteCategory) : null,
 				routeType: typeof route.route_type === 'string' ? route.route_type : 'unknown',
+				selectionAxis: typeof route.selection_axis === 'string' &&
+					SKILL_ROUTE_SELECTION_AXES.has(route.selection_axis as SkillRouteSelectionAxis)
+					? (route.selection_axis as SkillRouteSelectionAxis)
+					: 'task',
 				priority: Number.isInteger(route.priority) ? Number(route.priority) : 0,
 				appliesToReasons: readStringArrayFromTable(route, 'applies_to_reasons'),
 				mutuallyExclusiveWith: readStringArrayFromTable(route, 'mutually_exclusive_with'),
@@ -549,19 +557,38 @@ function readSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
 	return routes;
 }
 
-function createSkillRouteCatalog(routes: readonly SkillIndexRoute[]): SkillRouteCatalog {
+function createSkillRouteCatalog(
+	routes: readonly SkillIndexRoute[],
+	metadata: ReadonlyMap<string, SkillRouteMetadata>,
+): SkillRouteCatalog {
 	const entries = routes
-		.map((route) => ({
-			skill: skillNameFromPath(route.skillPath),
-			skill_path: route.skillPath,
-			trigger: route.trigger,
-			command_intents: [...route.commandIntents],
-		}))
+		.map((route) => {
+			const skill = skillNameFromPath(route.skillPath);
+			const routeMetadata = metadata.get(skill);
+			if (!routeMetadata) {
+				throw new Error(`${SKILL_ROUTES_METADATA_PATH} is missing metadata for ${skill}`);
+			}
+			return {
+				skill,
+				skill_path: route.skillPath,
+				category: routeMetadata.category,
+				route_type: routeMetadata.routeType,
+				selection_axis: routeMetadata.selectionAxis,
+				priority: routeMetadata.priority,
+				applies_to_reasons: [...routeMetadata.appliesToReasons],
+				mutually_exclusive_with: [...routeMetadata.mutuallyExclusiveWith],
+				positive_signals: [...routeMetadata.signalProfile.positiveSignals],
+				negative_signals: [...routeMetadata.signalProfile.negativeSignals],
+				dependencies: routeMetadata.dependencies,
+				trigger: route.trigger,
+				command_intents: [...route.commandIntents],
+			};
+		})
 		.sort((left, right) => left.skill.localeCompare(right.skill));
 	const fingerprintInput = JSON.stringify(entries);
 
 	return {
-		schema_version: '1',
+		schema_version: '2',
 		kind: 'skill_route_catalog',
 		source_fingerprint: `sha256:${createHash('sha256').update(fingerprintInput).digest('hex')}`,
 		entries,
@@ -569,7 +596,7 @@ function createSkillRouteCatalog(routes: readonly SkillIndexRoute[]): SkillRoute
 }
 
 export function buildSkillRouteCatalog(projectRoot: string): SkillRouteCatalog {
-	return createSkillRouteCatalog(readSkillFrontmatterRoutes(projectRoot));
+	return createSkillRouteCatalog(readSkillFrontmatterRoutes(projectRoot), readSkillRouteMetadata(projectRoot));
 }
 
 export function serializeSkillRouteCatalog(catalog: SkillRouteCatalog): string {
@@ -596,7 +623,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 	}
 	if (
 		!isRecord(parsed) ||
-		parsed.schema_version !== '1' ||
+		parsed.schema_version !== '2' ||
 		parsed.kind !== 'skill_route_catalog' ||
 		typeof parsed.source_fingerprint !== 'string' ||
 		!Array.isArray(parsed.entries)
@@ -618,6 +645,19 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			typeof entry.skill_path !== 'string' ||
 			!skillPathMatch ||
 			skillPathMatch[1] !== entry.skill ||
+			(entry.category !== null &&
+				(typeof entry.category !== 'string' || !SKILL_ROUTE_CATEGORIES.has(entry.category as SkillRouteCategory))) ||
+			typeof entry.route_type !== 'string' ||
+			!SKILL_ROUTE_TYPES.has(entry.route_type) ||
+			typeof entry.selection_axis !== 'string' ||
+			!SKILL_ROUTE_SELECTION_AXES.has(entry.selection_axis as SkillRouteSelectionAxis) ||
+			!Number.isInteger(entry.priority) ||
+			Number(entry.priority) <= 0 ||
+			!isCatalogStringArray(entry.applies_to_reasons) ||
+			!isCatalogStringArray(entry.mutually_exclusive_with) ||
+			!isCatalogStringArray(entry.positive_signals) ||
+			!isCatalogStringArray(entry.negative_signals) ||
+			!isCatalogDependencies(entry.dependencies) ||
 			typeof entry.trigger !== 'string' ||
 			entry.trigger.trim().length === 0 ||
 			!Array.isArray(entry.command_intents) ||
@@ -635,24 +675,52 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 		entries.push({
 			skill: entry.skill,
 			skill_path: entry.skill_path,
+			category: entry.category as SkillRouteCategory | null,
+			route_type: entry.route_type,
+			selection_axis: entry.selection_axis as SkillRouteSelectionAxis,
+			priority: Number(entry.priority),
+			applies_to_reasons: entry.applies_to_reasons as string[],
+			mutually_exclusive_with: entry.mutually_exclusive_with as string[],
+			positive_signals: entry.positive_signals as string[],
+			negative_signals: entry.negative_signals as string[],
+			dependencies: entry.dependencies as unknown as SkillRouteDependencies,
 			trigger: entry.trigger,
 			command_intents: entry.command_intents,
 		});
 	}
 
-	const catalog = createSkillRouteCatalog(entries.map((entry) => ({
-		trigger: entry.trigger,
-		skillPath: entry.skill_path,
-		requiredInput: '',
-		editScope: '',
-		risk: '',
-		commandIntents: entry.command_intents,
-		expectedOutput: '',
-	})));
+	const catalog: SkillRouteCatalog = {
+		schema_version: '2',
+		kind: 'skill_route_catalog',
+		source_fingerprint: `sha256:${createHash('sha256').update(JSON.stringify(entries)).digest('hex')}`,
+		entries,
+	};
 	return catalog.source_fingerprint === parsed.source_fingerprint ? catalog : null;
 }
 
-function readSkillRouteCatalog(projectRoot: string): SkillIndexRoute[] | null {
+interface InstalledSkillRouteCatalog {
+	readonly routes: readonly SkillIndexRoute[];
+	readonly metadata: ReadonlyMap<string, SkillRouteMetadata>;
+}
+
+function isCatalogStringArray(value: unknown): value is string[] {
+	return Array.isArray(value) && value.every((entry) => typeof entry === 'string' && entry.trim().length > 0);
+}
+
+function isCatalogDependencies(value: unknown): boolean {
+	if (!isRecord(value)) {
+		return false;
+	}
+	return isCatalogStringArray(value.requires_skills) &&
+		isCatalogStringArray(value.suggests_adjuncts) &&
+		isCatalogStringArray(value.conflicts_with) &&
+		Array.isArray(value.unlocks_on) &&
+		value.unlocks_on.every((rule) =>
+			isRecord(rule) && typeof rule.signal === 'string' && rule.signal.length > 0 &&
+			typeof rule.skill === 'string' && rule.skill.length > 0);
+}
+
+function readSkillRouteCatalog(projectRoot: string): InstalledSkillRouteCatalog | null {
 	const absolutePath = path.join(projectRoot, ...SKILL_ROUTE_CATALOG_PATH.split('/'));
 	if (!existsSync(absolutePath)) {
 		return null;
@@ -669,7 +737,9 @@ function readSkillRouteCatalog(projectRoot: string): SkillIndexRoute[] | null {
 		return null;
 	}
 
-	return catalog.entries.map((entry) => ({
+	const installedEntries = catalog.entries.filter((entry) =>
+		existsSync(path.join(projectRoot, ...entry.skill_path.split('/'))));
+	const routes = installedEntries.map((entry) => ({
 		trigger: entry.trigger,
 		skillPath: entry.skill_path,
 		requiredInput: '',
@@ -677,11 +747,32 @@ function readSkillRouteCatalog(projectRoot: string): SkillIndexRoute[] | null {
 		risk: '',
 		commandIntents: entry.command_intents,
 		expectedOutput: '',
-	})).filter((route) => existsSync(path.join(projectRoot, ...route.skillPath.split('/'))));
+	}));
+	const metadata = new Map(installedEntries.map((entry) => [entry.skill, {
+		category: entry.category,
+		routeType: entry.route_type,
+		selectionAxis: entry.selection_axis,
+		priority: entry.priority,
+		appliesToReasons: entry.applies_to_reasons,
+		mutuallyExclusiveWith: entry.mutually_exclusive_with,
+		signalProfile: {
+			positiveSignals: entry.positive_signals,
+			negativeSignals: entry.negative_signals,
+		},
+		dependencies: entry.dependencies,
+	}] satisfies [string, SkillRouteMetadata]));
+
+	return { routes, metadata };
 }
 
 export function validateSkillRouteCatalogs(projectRoot: string): readonly string[] {
-	const expectedCatalog = buildSkillRouteCatalog(projectRoot);
+	let expectedCatalog: SkillRouteCatalog;
+	try {
+		expectedCatalog = buildSkillRouteCatalog(projectRoot);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		return [`${SKILL_ROUTE_CATALOG_PATH} cannot be generated from canonical sources: ${message}`];
+	}
 	const expected = serializeSkillRouteCatalog(expectedCatalog);
 	const issues: string[] = [];
 
@@ -699,20 +790,19 @@ export function validateSkillRouteCatalogs(projectRoot: string): readonly string
 		});
 		const parsed = parseSkillRouteCatalog(actual);
 		const comparableActual = relativePath === SKILL_ROUTE_CATALOG_PATH && parsed
-			? serializeSkillRouteCatalog(createSkillRouteCatalog(parsed.entries
-				.filter((entry) => existsSync(path.join(projectRoot, ...entry.skill_path.split('/'))))
-				.map((entry) => ({
-					trigger: entry.trigger,
-					skillPath: entry.skill_path,
-					requiredInput: '',
-					editScope: '',
-					risk: '',
-					commandIntents: entry.command_intents,
-					expectedOutput: '',
-				}))))
+			? serializeSkillRouteCatalog({
+				schema_version: '2',
+				kind: 'skill_route_catalog',
+				source_fingerprint: `sha256:${createHash('sha256')
+					.update(JSON.stringify(parsed.entries.filter((entry) =>
+						existsSync(path.join(projectRoot, ...entry.skill_path.split('/'))))))
+					.digest('hex')}`,
+				entries: parsed.entries.filter((entry) =>
+					existsSync(path.join(projectRoot, ...entry.skill_path.split('/')))),
+			})
 			: actual;
 		if (comparableActual !== expected) {
-			issues.push(`${relativePath} is stale relative to built-in SKILL.md frontmatter`);
+			issues.push(`${relativePath} is stale relative to built-in SKILL.md frontmatter or routes.toml metadata`);
 		}
 	}
 
@@ -946,7 +1036,7 @@ function createCandidate(
 		trigger: route.trigger,
 		category: metadata.category,
 		route_type: metadata.routeType,
-		selection_axis: inferSelectionAxis(skill, metadata),
+		selection_axis: metadata.selectionAxis,
 		priority: metadata.priority,
 		applies_to_reasons: metadata.appliesToReasons,
 		score,
@@ -1319,11 +1409,11 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const pathTerms = tokenize(paths.join(' '));
 	const pathSkillHints = collectPathSkillHints(paths);
 	const dependencySignals = collectDependencySignals(paths, reasons, taskTerms, pathTerms);
-	const catalogRoutes = readSkillRouteCatalog(projectRoot);
-	const builtInRoutes = catalogRoutes ?? readSkillFrontmatterRoutes(projectRoot);
+	const installedCatalog = readSkillRouteCatalog(projectRoot);
+	const builtInRoutes = installedCatalog?.routes ?? readSkillFrontmatterRoutes(projectRoot);
 	const externalRoutes = readExternalSkillFrontmatterRoutes(projectRoot);
 	const routes = [...builtInRoutes, ...externalRoutes];
-	const metadata = readSkillRouteMetadata(projectRoot);
+	const metadata = installedCatalog?.metadata ?? readSkillRouteMetadata(projectRoot);
 	const routeCandidates = routes
 		.map((route) => {
 			const skill = skillNameFromPath(route.skillPath);
@@ -1332,6 +1422,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 				metadata.get(skill) ?? {
 					category: route.category ?? null,
 					routeType: route.skillPath.startsWith('.mustflow/external-skills/') ? 'external' : 'unknown',
+					selectionAxis: 'task',
 					priority: 0,
 					appliesToReasons: [],
 					mutuallyExclusiveWith: [],
@@ -1347,7 +1438,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 				reasons,
 				input.taskText ?? '',
 				paths.join(' '),
-				catalogRoutes !== null && !route.skillPath.startsWith('.mustflow/external-skills/'),
+				installedCatalog !== null && !route.skillPath.startsWith('.mustflow/external-skills/'),
 			);
 		})
 		.sort(sortCandidates);
@@ -1388,8 +1479,9 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 			path_terms: pathTerms,
 			reasons,
 			read_shards: [
-				SKILL_ROUTES_METADATA_PATH,
-				catalogRoutes === null ? SKILL_FRONTMATTER_SOURCE : SKILL_ROUTE_CATALOG_PATH,
+				...(installedCatalog === null
+					? [SKILL_ROUTES_METADATA_PATH, SKILL_FRONTMATTER_SOURCE]
+					: [SKILL_ROUTE_CATALOG_PATH]),
 				...(externalRoutes.length > 0 ? [EXTERNAL_SKILL_FRONTMATTER_SOURCE] : []),
 			],
 		},
@@ -1397,8 +1489,9 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 		candidates,
 		read_plan: createReadPlan(maxCandidates, selected, candidates, routerConfig),
 		source_files: [
-			SKILL_ROUTES_METADATA_PATH,
-			catalogRoutes === null ? SKILL_FRONTMATTER_SOURCE : SKILL_ROUTE_CATALOG_PATH,
+			...(installedCatalog === null
+				? [SKILL_ROUTES_METADATA_PATH, SKILL_FRONTMATTER_SOURCE]
+				: [SKILL_ROUTE_CATALOG_PATH]),
 			...(externalRoutes.length > 0 ? [EXTERNAL_SKILL_FRONTMATTER_SOURCE] : []),
 		],
 		gap_notes: [

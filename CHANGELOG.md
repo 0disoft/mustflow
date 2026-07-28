@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Promoted the generated skill route catalog to schema and file version 2 with explicit per-route
+  selection axes, ranking signals, conflicts, and dependencies, removed normal-path `routes.toml`
+  parsing, added 46-case accuracy and recall metrics, added local p50/p95 payload benchmarks, and
+  narrowed related-test selection for router-owned files without weakening index-only checks.
 - Added a generated compact skill route catalog with strict source/template drift checks and safe
   frontmatter fallback, made router selection limits the resolver source of truth, and preserved
   evidence-backed language, task, risk, and workflow routes while excluding cross-axis conflicts.
