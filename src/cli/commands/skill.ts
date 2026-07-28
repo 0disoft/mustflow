@@ -150,6 +150,7 @@ function selectedSkillNames(report: SkillRouteReport): readonly string[] {
 	return [...new Set([
 		...(report.selected.main ? [report.selected.main.skill] : []),
 		...report.selected.adjuncts.map((candidate) => candidate.skill),
+		...Object.values(report.selected.axes).flat().map((candidate) => candidate.skill),
 		...report.candidates.map((candidate) => candidate.skill),
 	])];
 }
@@ -184,6 +185,7 @@ function conflictHintCandidates(report: SkillRouteReport): SkillRouteCandidate[]
 	const candidates = [
 		...(report.selected.main ? [report.selected.main] : []),
 		...report.selected.adjuncts,
+		...Object.values(report.selected.axes).flat(),
 		...report.candidates,
 	];
 	const seenSkills = new Set<string>();
@@ -206,6 +208,9 @@ function renderSkillRouteReport(report: SkillRouteReport, lang: CliLang, warning
 		`${t(lang, 'label.mustflowRoot')}: ${resolveMustflowRoot()}`,
 		`selected_main: ${report.selected.main?.skill ?? t(lang, 'value.none')}`,
 		`selected_adjuncts: ${report.selected.adjuncts.map((candidate) => candidate.skill).join(', ') || t(lang, 'value.none')}`,
+		`selected_axes: ${Object.entries(report.selected.axes)
+			.map(([axis, candidates]) => `${axis}=${candidates.map((candidate) => candidate.skill).join('|') || 'none'}`)
+			.join(', ')}`,
 		'',
 		'Candidates',
 	];

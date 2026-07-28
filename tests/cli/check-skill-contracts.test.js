@@ -10,6 +10,7 @@ import {
 	removeTempProject,
 	runCliInProcess,
 } from './helpers/cli-harness.js';
+import { writeSkillRouteCatalogs } from '../../dist/core/skill-route-resolution.js';
 
 let initializedSkillProject;
 
@@ -156,6 +157,7 @@ route_type = "primary"
 priority = 95
 		`;
 		writeFileSync(skillRoutesPath, skillRoutes);
+		writeSkillRouteCatalogs(projectPath);
 		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 		writeFileSync(
 			path.join(projectPath, 'pyproject.toml'),

@@ -62,6 +62,7 @@ import {
 	measurePromptCacheReferenceBlockBytes,
 } from '../../../core/prompt-cache-rendering.js';
 import { validateSkillRouteFixtures } from '../../../core/skill-route-fixtures.js';
+import { validateSkillRouteCatalogs } from '../../../core/skill-route-resolution.js';
 import {
 	ALLOWED_APPROVAL_ACTIONS,
 	ALLOWED_APPROVAL_GATES,
@@ -1225,6 +1226,9 @@ function validateStrictRouterIndexes(projectRoot: string, issues: CheckIssue[]):
 }
 
 function validateStrictSkillRouteFixtures(projectRoot: string, issues: CheckIssue[]): void {
+	for (const issue of validateSkillRouteCatalogs(projectRoot)) {
+		pushStrictIssue(issues, issue);
+	}
 	for (const issue of validateSkillRouteFixtures(projectRoot)) {
 		pushStrictIssue(issues, issue.message);
 	}

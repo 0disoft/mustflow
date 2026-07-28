@@ -32,7 +32,12 @@ import {
 	measurePromptCacheReferenceBlockBytes,
 	renderPromptCacheReferenceBlock,
 } from '../../core/prompt-cache-rendering.js';
-import { resolveSkillRoutes, type SkillRouteResolveReport } from '../../core/skill-route-resolution.js';
+import {
+	readSkillRouterConfig,
+	resolveSkillRoutes,
+	SKILL_ROUTE_CATALOG_PATH,
+	type SkillRouteResolveReport,
+} from '../../core/skill-route-resolution.js';
 
 const CONTEXT_SCHEMA_VERSION = '1';
 const COMMANDS_RELATIVE_PATH = '.mustflow/config/commands.toml';
@@ -873,6 +878,12 @@ function readCompactSkillRouteCandidateContent(routeReport: SkillRouteResolveRep
 		selected: {
 			main: routeReport.selected.main === null ? null : compactSkillRouteCandidate(routeReport.selected.main),
 			adjuncts: routeReport.selected.adjuncts.map(compactSkillRouteCandidate),
+			axes: Object.fromEntries(
+				Object.entries(routeReport.selected.axes).map(([axis, candidates]) => [
+					axis,
+					candidates.map(compactSkillRouteCandidate),
+				]),
+			),
 		},
 		candidates: routeReport.candidates.map(compactSkillRouteCandidate),
 		read_plan: {
@@ -1107,20 +1118,19 @@ function readSkillRouterTable(projectRoot: string): TomlTable | undefined {
 
 function readTaskPromptCacheRouteReadPlan(projectRoot: string): TaskPromptCacheRouteReadPlanContext {
 	const router = readSkillRouterTable(projectRoot);
+	const routerConfig = readSkillRouterConfig(projectRoot);
 	const readWhen = readNestedTable(router, 'read_when');
 	const fullRoutes = readOptionalString(router, 'full_routes') ?? '.mustflow/skills/routes.toml';
 	const expandedIndex = readOptionalString(router, 'expanded_index') ?? '.mustflow/skills/INDEX.md';
 	const skillRoot = readOptionalString(router, 'skill_root') ?? '.mustflow/skills';
-	const candidates = readNumber(router, 'selection_limit') ?? 5;
-	const main = readNumber(router, 'main_limit') ?? 1;
-	const adjuncts = readNumber(router, 'adjunct_limit') ?? 2;
 
 	return {
 		resolver_command: ['mf', 'skill', 'route', '--json'],
 		stable_kernel: [toPosixPath(SKILL_ROUTER_RELATIVE_PATH)],
 		route_sources: [
 			toPosixPath(fullRoutes),
-			`${toPosixPath(skillRoot)}/*/SKILL.md frontmatter`,
+			SKILL_ROUTE_CATALOG_PATH,
+			`${toPosixPath(skillRoot)}/*/SKILL.md frontmatter fallback`,
 		],
 		selected_skill_paths_source: 'mf skill route --json read_plan.selected_skill_paths',
 		route_metadata_fallback: {
@@ -1133,7 +1143,11 @@ function readTaskPromptCacheRouteReadPlan(projectRoot: string): TaskPromptCacheR
 			read_when: readOptionalStringArray(readWhen, 'expanded_index') ?? [],
 			avoid_by_default: true,
 		},
-		selection_limits: { candidates, main, adjuncts },
+		selection_limits: {
+			candidates: routerConfig.selectionLimit,
+			main: routerConfig.mainLimit,
+			adjuncts: routerConfig.adjunctLimit,
+		},
 	};
 }
 

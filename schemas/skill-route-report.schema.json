@@ -79,6 +79,17 @@
         "adjuncts": {
           "type": "array",
           "items": { "$ref": "#/$defs/candidate" }
+        },
+        "axes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["language", "task", "risk", "workflow"],
+          "properties": {
+            "language": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+            "task": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+            "risk": { "type": "array", "items": { "$ref": "#/$defs/candidate" } },
+            "workflow": { "type": "array", "items": { "$ref": "#/$defs/candidate" } }
+          }
         }
       }
     },
@@ -118,7 +129,7 @@
             "adjuncts": {
               "type": "integer",
               "minimum": 0,
-              "maximum": 2
+              "maximum": 4
             }
           }
         },
@@ -365,6 +376,7 @@
           ]
         },
         "route_type": { "type": "string" },
+        "selection_axis": { "type": "string", "enum": ["language", "task", "risk", "workflow"] },
         "priority": { "type": "integer" },
         "applies_to_reasons": {
           "type": "array",
@@ -425,7 +437,7 @@
             "read_strategy"
           ],
           "properties": {
-            "source": { "const": "route_metadata_and_skill_frontmatter" },
+            "source": { "enum": ["route_metadata_and_catalog", "route_metadata_and_skill_frontmatter"] },
             "index_read_policy": { "const": "fallback_only" },
             "compact_fields": {
               "type": "array",

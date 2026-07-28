@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+
+import { resolveSkillRoutes } from '../../dist/core/skill-route-resolution.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -68,7 +71,7 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.ok(report.selected.main.score_breakdown.task_text_match > 0);
 		assert.ok(report.selected.main.matched_dimensions.includes('reason'));
 		assert.ok(report.selected.main.matched_dimensions.includes('path_skill_hint'));
-		assert.equal(report.selected.main.route_card.source, 'route_metadata_and_skill_frontmatter');
+		assert.equal(report.selected.main.route_card.source, 'route_metadata_and_catalog');
 		assert.equal(report.selected.main.route_card.index_read_policy, 'fallback_only');
 		assert.deepEqual(report.selected.main.route_card.matched_dimensions, report.selected.main.matched_dimensions);
 		assert.deepEqual(report.selected.main.route_card.route_dependencies.requires_skills, []);
@@ -87,16 +90,19 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.equal(report.read_plan.selection_limits.adjuncts, 2);
 		assert.deepEqual(report.read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
 		assert.deepEqual(report.read_plan.selected_skill_paths, ['.mustflow/skills/typescript-code-change/SKILL.md']);
+		assert.deepEqual(report.selected.axes.language.map((candidate) => candidate.skill), ['typescript-code-change']);
 		assert.ok(report.read_plan.selected_skill_paths.includes('.mustflow/skills/typescript-code-change/SKILL.md'));
 		assert.ok(report.read_plan.candidate_skill_paths.includes('.mustflow/skills/typescript-code-change/SKILL.md'));
 		assert.equal(report.read_plan.fallback_route_metadata.path, '.mustflow/skills/routes.toml');
 		assert.equal(report.read_plan.expanded_index.path, '.mustflow/skills/INDEX.md');
 		assert.ok(report.read_plan.avoid_by_default.includes('.mustflow/skills/INDEX.md'));
 		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'));
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
 		assert.ok(report.source_files.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
+		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.source_files.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.source_files.includes('.mustflow/skills/INDEX.md'), false);
 		assert.match(report.gap_notes.join('\n'), /does not replace reading the selected SKILL\.md/);
 		assert.equal(report.script_pack_suggestions.status, 'suggested');
@@ -131,6 +137,219 @@ test('does not select a skill without route evidence', () => {
 	assert.equal(report.selected.main, null);
 	assert.deepEqual(report.selected.adjuncts, []);
 	assert.deepEqual(report.candidates, []);
+});
+
+test('keeps the generated route catalog synchronized with built-in skill frontmatter', () => {
+	const sourceCatalog = readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'catalog.v1.json'), 'utf8');
+	const templateCatalog = readFileSync(
+		path.join(projectRoot, 'templates', 'default', 'locales', 'en', '.mustflow', 'skills', 'catalog.v1.json'),
+		'utf8',
+	);
+	const catalog = JSON.parse(sourceCatalog);
+	const skillDirectoryCount = readdirSync(path.join(projectRoot, '.mustflow', 'skills'), { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.filter((entry) => existsSync(path.join(projectRoot, '.mustflow', 'skills', entry.name, 'SKILL.md')))
+		.length;
+
+	assert.equal(sourceCatalog, templateCatalog);
+	assert.equal(catalog.schema_version, '1');
+	assert.equal(catalog.kind, 'skill_route_catalog');
+	assert.match(catalog.source_fingerprint, /^sha256:[a-f0-9]{64}$/u);
+	assert.equal(catalog.entries.length, skillDirectoryCount);
+});
+
+test('filters packaged catalog entries to skills installed by the selected profile', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath, 'minimal');
+		assert.equal(
+			existsSync(path.join(projectPath, '.mustflow', 'skills', 'ai-game-asset-production', 'SKILL.md')),
+			false,
+		);
+		const report = resolveSkillRoutes(projectPath, {
+			taskText: 'Build an AI generated transparent PNG sprite atlas',
+			paths: ['assets/player.png'],
+			reasons: ['web_asset_change'],
+			maxCandidates: 10,
+		});
+
+		assert.equal(report.candidates.some((candidate) => candidate.skill === 'ai-game-asset-production'), false);
+		assert.ok(report.source_files.includes('.mustflow/skills/catalog.v1.json'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps language task and risk axes in the selected read plan', () => {
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Change a TypeScript type contract and authorization permission boundary for public consumers',
+		'--path',
+		'src/core/public-types.ts',
+		'--reason',
+		'public_api_change',
+		'--reason',
+		'security_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.deepEqual(report.selected.axes.language.map((candidate) => candidate.skill), ['typescript-code-change']);
+	assert.deepEqual(report.selected.axes.task.map((candidate) => candidate.skill), ['type-contract-change']);
+	assert.deepEqual(report.selected.axes.risk.map((candidate) => candidate.skill), ['auth-permission-change']);
+	for (const skill of ['typescript-code-change', 'type-contract-change', 'auth-permission-change']) {
+		assert.ok(
+			report.read_plan.selected_skill_paths.includes(`.mustflow/skills/${skill}/SKILL.md`),
+			report.read_plan.selected_skill_paths.join(', '),
+		);
+	}
+});
+
+test('uses router selection limits as the resolver source of truth', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routerPath = path.join(projectPath, '.mustflow', 'skills', 'router.toml');
+		const router = readFileSync(routerPath, 'utf8')
+			.replace('selection_limit = 5', 'selection_limit = 3')
+			.replace('adjunct_limit = 2', 'adjunct_limit = 1')
+			.replace('risk = 1', 'risk = 0');
+		writeFileSync(routerPath, router);
+
+		const report = resolveSkillRoutes(projectPath, {
+			taskText: 'Change a TypeScript type contract and authorization permission boundary',
+			paths: ['src/core/public-types.ts'],
+			reasons: ['public_api_change'],
+		});
+
+		assert.equal(report.input.max_candidates, 3);
+		assert.deepEqual(report.read_plan.selection_limits, { candidates: 3, main: 1, adjuncts: 1 });
+		assert.deepEqual(report.selected.axes.risk, []);
+		assert.ok(report.candidates.length <= 3);
+		assert.ok(report.selected.adjuncts.length <= 1);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('falls back to built-in skill frontmatter when the route catalog is invalid', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v1.json'), '{}\n');
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Change TypeScript code',
+			'--path',
+			'src/index.ts',
+			'--reason',
+			'code_change',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.selected.main.skill, 'typescript-code-change');
+		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
+		assert.equal(report.source_files.includes('.mustflow/skills/catalog.v1.json'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('rejects a fingerprint-valid route catalog whose skill path escapes the built-in skill root', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const catalogPath = path.join(projectPath, '.mustflow', 'skills', 'catalog.v1.json');
+		const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
+		catalog.entries[0].skill_path = '../outside/SKILL.md';
+		catalog.source_fingerprint = `sha256:${createHash('sha256')
+			.update(JSON.stringify(catalog.entries))
+			.digest('hex')}`;
+		writeFileSync(catalogPath, `${JSON.stringify(catalog, null, 2)}\n`);
+
+		const result = runCli(projectPath, [
+			'skill',
+			'route',
+			'--task',
+			'Change TypeScript code',
+			'--path',
+			'src/index.ts',
+			'--reason',
+			'code_change',
+			'--json',
+		]);
+		const report = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(report.selected.main.skill, 'typescript-code-change');
+		assert.ok(report.source_files.includes('.mustflow/skills/*/SKILL.md'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('does not select conflicting routes across different selection axes', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
+		const routes = readFileSync(routesPath, 'utf8').replace(
+			'[routes."typescript-code-change"]\ncategory = "general_code"',
+			'[routes."typescript-code-change"]\ncategory = "general_code"\nmutually_exclusive_with = ["type-contract-change"]',
+		);
+		writeFileSync(routesPath, routes);
+
+		const report = resolveSkillRoutes(projectPath, {
+			taskText: 'Change a TypeScript type contract for public consumers',
+			paths: ['src/core/public-types.ts'],
+			reasons: ['public_api_change'],
+			maxCandidates: 10,
+		});
+		const selectedSkills = Object.values(report.selected.axes)
+			.flat()
+			.map((candidate) => candidate.skill);
+
+		assert.ok(selectedSkills.includes('typescript-code-change'));
+		assert.equal(selectedSkills.includes('type-contract-change'), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check rejects route catalog drift from built-in skill frontmatter', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const skillPath = path.join(projectPath, '.mustflow', 'skills', 'typescript-code-change', 'SKILL.md');
+		writeFileSync(
+			skillPath,
+			readFileSync(skillPath, 'utf8').replace(
+				'description: Apply this skill when',
+				'description: Apply this updated skill when',
+			),
+		);
+		const result = runCli(projectPath, ['check', '--strict']);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.match(result.stderr || result.stdout, /catalog\.v1\.json is stale relative to built-in SKILL\.md frontmatter/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
 });
 
 test('preserves Unicode concepts and selects language plus type-contract procedures together', () => {
@@ -411,7 +630,8 @@ test('keeps LLM token cost routes discoverable without reading the full index in
 		assert.ok(report.signals.task_terms.includes('cache'));
 		assert.ok(report.signals.task_terms.includes('token'));
 		assert.ok(report.signals.read_shards.includes('.mustflow/skills/routes.toml'));
-		assert.ok(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'));
+		assert.ok(report.signals.read_shards.includes('.mustflow/skills/catalog.v1.json'));
+		assert.equal(report.signals.read_shards.includes('.mustflow/skills/*/SKILL.md'), false);
 		assert.equal(report.signals.read_shards.includes('.mustflow/skills/INDEX.md'), false);
 		assert.equal(report.read_plan.selection_limits.candidates, 3);
 		assert.ok(report.read_plan.candidate_skill_paths.length <= 3);
@@ -452,7 +672,7 @@ test('prints a compact text skill route report', () => {
 	assert.match(result.stdout, /read selected skill: \.mustflow\/skills\/completion-evidence-gate\/SKILL\.md/);
 	assert.match(result.stdout, /avoid by default: \.mustflow\/skills\/INDEX\.md/);
 	assert.match(result.stdout, /\.mustflow\/skills\/routes\.toml/);
-	assert.match(result.stdout, /\.mustflow\/skills\/\*\/SKILL\.md/);
+	assert.match(result.stdout, /\.mustflow\/skills\/catalog\.v1\.json/);
 });
 
 test('prints route conflict hints in text skill route output', () => {

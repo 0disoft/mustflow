@@ -6,6 +6,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added a generated compact skill route catalog with strict source/template drift checks and safe
+  frontmatter fallback, made router selection limits the resolver source of truth, and preserved
+  evidence-backed language, task, risk, and workflow routes while excluding cross-axis conflicts.
 - Fixed skill routing so empty or unrelated input cannot become eligible from route type and
   priority alone, preserved Korean and Chinese concepts through NFKC Unicode normalization, matched
   positive and negative signals as phrases, allowed evidence-backed adjuncts across route categories,

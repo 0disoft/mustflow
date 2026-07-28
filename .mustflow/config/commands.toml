@@ -156,6 +156,105 @@ contracts = ["skill source, shard, route, index, template manifest, locale metad
 expected_seconds = 20
 cost_tier = "low"
 
+[intents.skill_route_catalog_write]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Regenerate the compact built-in skill route catalog and its default-template copy."
+argv = ["bun", "scripts/generate-skill-route-catalog.ts"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [
+  ".mustflow/skills/catalog.v1.json",
+  "templates/default/locales/en/.mustflow/skills/catalog.v1.json",
+]
+effects = [
+  { type = "write", mode = "replace", path = ".mustflow/skills/catalog.v1.json", lock = "skill_route_catalog", concurrency = "exclusive" },
+  { type = "write", mode = "replace", path = "templates/default/locales/en/.mustflow/skills/catalog.v1.json", lock = "skill_route_catalog", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+required_after = ["mustflow_docs_change", "package_metadata_change"]
+
+[intents.skill_route_catalog_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed axis-aware skill routing, compact catalog, synchronized templates, tests, and 2.119.0 development metadata."
+argv = [
+  "git",
+  "add",
+  "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/catalog.v1.json",
+  ".mustflow/skills/router.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "schemas/skill-route-report.schema.json",
+  "scripts/generate-skill-route-catalog.ts",
+  "src/cli/commands/skill.ts",
+  "src/cli/lib/agent-context.ts",
+  "src/cli/lib/validation/index.ts",
+  "src/core/skill-route-resolution.ts",
+  "templates/default/locales/en/.mustflow/skills/catalog.v1.json",
+  "templates/default/locales/en/.mustflow/skills/router.toml",
+  "templates/default/manifest.toml",
+  "tests/cli/check-skill-contracts.test.js",
+  "tests/cli/context.test.js",
+  "tests/cli/skill-route.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.skill_route_catalog_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 axis-aware skill routing change."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.skill_route_catalog_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 axis-aware skill routing and compact catalog with fixed evidence-backed metadata."
+argv = [
+  "git",
+  "commit",
+  "-m",
+  "✨ feat(skills): add axis-aware route catalog",
+  "-m",
+  "Route built-in skills through a generated compact catalog, share configured selection limits across consumers, retain language, task, risk, and workflow procedures, and reject catalog drift or conflicting cross-axis selections.",
+  "-m",
+  "Validation: mf run build; mf run lint; mf run test_related; mf run test_skill_contracts; mf run test_release; mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
 [intents.test_related_profile]
 status = "configured"
 lifecycle = "oneshot"

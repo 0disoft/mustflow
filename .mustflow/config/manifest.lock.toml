@@ -14,7 +14,7 @@ content_hash = "sha256:c99a21773fd2a4d3c49f5c16b04ed3474adacd55a1041e6e74f5a29e4
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:7c3f2d19199b519906fd6bc8fb131081f58dd9611ee4b5ecd33a1df5b5aad279"
+content_hash = "sha256:893ae12dc2ea579ee6e80cd9f426fb83211d3bb696bf9f0583cd7b307620c852"
 
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
@@ -34,7 +34,7 @@ content_hash = "sha256:7a375a484e441d2ba82adabe4e98ca09cc6cfaa19ccb32642cba7474c
 [files.".mustflow/skills/router.toml"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:a1f5f85394859a62d5071986cfaadcccc3263bbb09795fa4d798f0837ad6c8c2"
+content_hash = "sha256:800de7f347c1dc8bce1e2032feb2e6ae4112a270d56fcbaa49d11fc08a4a35d0"
 
 [files.".mustflow/skills/dependency-upgrade-review/SKILL.md"]
 source = "template_common"
