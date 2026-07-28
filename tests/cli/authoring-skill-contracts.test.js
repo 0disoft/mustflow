@@ -716,3 +716,169 @@ test('proactive risk surfacing permits bounded evidence-backed intervention', ()
 	assert.match(manifest, /"proactive-risk-surfacing"/u);
 	assert.match(i18n, /\[documents\."skill\.proactive-risk-surfacing"\]/u);
 });
+
+test('pure core imperative shell keeps legacy effects visible and pure capabilities closed', () => {
+	const skillName = 'pure-core-imperative-shell';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const index = readText('.mustflow/skills/INDEX.md');
+	const templateIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(index, templateIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Effect dictionary and graph/u);
+	assert.match(localSkill, /Legacy effect transcript/u);
+	assert.match(localSkill, /irreversible or outcome-ambiguous point/u);
+	assert.match(localSkill, /known defects separately from behavior that must remain compatible/u);
+	assert.match(localSkill, /immutable observed values, not capability bags/u);
+	assert.match(localSkill, /A mocked\s+repository injected into the core is still an effectful core/u);
+	assert.match(localSkill, /closed, immutable, and serializable data/u);
+	assert.match(localSkill, /read versioned snapshot -> decide next state and effect plan/u);
+	assert.match(localSkill, /persist the provider receipt or `outcome_unknown` state/u);
+	assert.match(localSkill, /A pure test should not need mocks/u);
+	assert.match(localSkill, /Deep-freeze or otherwise protect inputs/u);
+	assert.match(localSkill, /compare the complete effect transcript/u);
+	assert.match(localSkill, /Compare effect graphs before and after the change/u);
+	assert.match(localSkill, /runtime file, socket, DNS, database, process/u);
+	assert.match(localSkill, /shadowing plans, not effects/u);
+	assert.match(localSkill, /without running\s+payments, writes, publishes, emails, or other effects twice/u);
+	assert.match(index, /repository-interface purity theater/u);
+	assert.match(
+		routes,
+		/\[routes\."pure-core-imperative-shell"\.contexts\]\r?\npositive_terms = \["effect-plan", "effect-transcript", "imperative-shell", "pure-core", "purity-boundary", "shadow-plan"\]/u,
+	);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 8);
+});
+
+test('CLI option contracts close parser config type and deployment surfaces', () => {
+	const skillName = 'cli-option-contract-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const index = readText('.mustflow/skills/INDEX.md');
+	const templateIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(index, templateIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /one option contract registry/u);
+	assert.match(localSkill, /input -> raw value -> normalization -> validation -> resolved/u);
+	assert.match(localSkill, /parsed-but-unused ghost option/u);
+	assert.match(localSkill, /omitted, empty, whitespace-only, explicit `false`, zero/u);
+	assert.match(localSkill, /value plus provenance/u);
+	assert.match(localSkill, /same loader and validator/u);
+	assert.match(localSkill, /fail when both are present with different values/u);
+	assert.match(localSkill, /consumer-and-provisioner ledger/u);
+	assert.match(localSkill, /Follow symbol identity and reverse dependencies/u);
+	assert.match(localSkill, /structural and implicit consumers/u);
+	assert.match(localSkill, /Separate source, binary, and wire compatibility/u);
+	assert.match(localSkill, /old\/new producer-consumer matrix/u);
+	assert.match(localSkill, /Compare help structurally with the option contract/u);
+	assert.match(localSkill, /impact manifest or equivalent deterministic evidence bundle/u);
+	assert.match(localSkill, /Shadow only pure parsing or resolution/u);
+	assert.match(index, /ghost option, hidden execution setting, falsy-state collapse/u);
+	assert.match(
+		routes,
+		/\[routes\."cli-option-contract-review"\.contexts\]\r?\npositive_terms = \["config-precedence", "environment-matrix", "option-registry", "option-rename", "parser-contract", "raw-options", "resolved-config", "type-impact"\]/u,
+	);
+	assert.match(routes, /suggests_adjuncts = \["contract-sync-check", "change-blast-radius-review"\]/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 2);
+});
+
+test('type contract changes close inference runtime consumer and config surfaces', () => {
+	const skillName = 'type-contract-change';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const index = readText('.mustflow/skills/INDEX.md');
+	const templateIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(index, templateIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /type change as a repository and consumer contract event/u);
+	assert.match(localSkill, /input widening or narrowing, output/u);
+	assert.match(localSkill, /source API, binary or ABI surface/u);
+	assert.match(localSkill, /compiler- or schema-derived public contract diff/u);
+	assert.match(localSkill, /Compute reverse dependency closure from symbol identity/u);
+	assert.match(localSkill, /Inventory generic instantiations and inference sites/u);
+	assert.match(localSkill, /Find implicit implementations/u);
+	assert.match(localSkill, /temporary impossible members, branded values/u);
+	assert.match(localSkill, /Trace changed values rather than only calls/u);
+	assert.match(localSkill, /not only a round trip whose encoder and decoder can share the same bug/u);
+	assert.match(localSkill, /positive and negative type evidence/u);
+	assert.match(localSkill, /Treat executable examples as consumers/u);
+	assert.match(localSkill, /actual packed artifact rather than workspace source aliases/u);
+	assert.match(localSkill, /configuration dependencies introduced transitively/u);
+	assert.match(localSkill, /source, runtime, serialization, behavior, and operations/u);
+	assert.match(localSkill, /machine-readable impact manifest or equivalent deterministic ledger/u);
+	assert.match(localSkill, /Recompute closure independently from the final diff/u);
+	assert.match(index, /default-compiler false green, inference drift, generic constraint blast/u);
+	assert.match(
+		routes,
+		/\[routes\."type-contract-change"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 81/u,
+	);
+	assert.match(routes, /suggests_adjuncts = \["change-blast-radius-review", "contract-sync-check"\]/u);
+	assert.match(
+		routes,
+		/\[routes\."type-contract-change"\.contexts\]\r?\npositive_terms = \["consumer-compile", "declaration-diff", "generic-constraint", "impact-manifest", "inference-drift", "interface-change", "runtime-schema", "structural-implementation", "type-contract", "wire-compatibility"\]/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/type-contract-change\/SKILL\.md"/u);
+	for (const profileName of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.match(manifest, new RegExp(`${profileName} = \\[[\\s\\S]*?"type-contract-change"`, 'u'));
+	}
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
+});
+
+test('test design guard maps changed decisions to regression-sensitive evidence', () => {
+	const skillName = 'test-design-guard';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const index = readText('.mustflow/skills/INDEX.md');
+	const templateIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(index, templateIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Split `must_change` behavior from `must_preserve` behavior/u);
+	assert.match(localSkill, /Build a changed-decision ledger/u);
+	assert.match(localSkill, /early return,\s+exception or result branch, fallback, retry stop, timeout, cancellation/u);
+	assert.match(localSkill, /`reuse`, `strengthen_assertion`, `repair_fixture`/u);
+	assert.match(localSkill, /Use `differential` tests/u);
+	assert.match(localSkill, /Use `schedule` tests/u);
+	assert.match(localSkill, /Use `mutation` evidence/u);
+	assert.match(localSkill, /missing field, `null`, `undefined`, empty string, whitespace/u);
+	assert.match(localSkill, /floating-point ULP/u);
+	assert.match(localSkill, /narrowest effective boundary/u);
+	assert.match(localSkill, /pairwise or covering cases/u);
+	assert.match(localSkill, /MC\/DC-style pairs/u);
+	assert.match(localSkill, /Pair required effects with forbidden effects/u);
+	assert.match(localSkill, /Inject failures at exact cut points/u);
+	assert.match(localSkill, /virtual time for timeout, expiry, retry/u);
+	assert.match(localSkill, /compare it with allowed sequential explanations/u);
+	assert.match(localSkill, /pre-fix behavior, a faithful reproduction, or a\s+focused equivalent mutant/u);
+	assert.match(localSkill, /Keep test oracles independent/u);
+	assert.match(localSkill, /independent read-only verifier/u);
+	assert.match(index, /coverage-percent theater, changed line without distinguishing test/u);
+	assert.match(
+		routes,
+		/\[routes\."test-design-guard"\.contexts\]\r?\npositive_terms = \["boundary-test", "branch-to-test", "decision-ledger", "differential-test", "failure-injection", "forbidden-effect", "mcdc", "mutation-test", "regression-test", "test-design", "virtual-clock"\]/u,
+	);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 3);
+});

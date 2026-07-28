@@ -53,7 +53,7 @@ test('skill authoring requires logically scoped and falsifiable procedure contra
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 11/u);
+	assert.match(localSkill, /revision: 12/u);
 	assert.match(localSkill, /Distinguish a necessary condition from a sufficient condition/u);
 	assert.match(localSkill, /Do not infer the converse/u);
 	assert.match(localSkill, /Name quantifier and scope when they matter/u);
@@ -62,11 +62,15 @@ test('skill authoring requires logically scoped and falsifiable procedure contra
 	assert.match(localSkill, /Attack universal and completion claims with a counterexample/u);
 	assert.match(localSkill, /postconditions to be observable from named evidence/u);
 	assert.match(localSkill, /shared parent skill\s+does not impose parent-root verification on child-only work/u);
+	assert.match(localSkill, /golden route fixture for every new or reclassified skill/u);
+	assert.match(localSkill, /Route type and priority may rank eligible candidates but must not make an empty/u);
+	assert.match(localSkill, /Preserve Unicode task language and use explicit concept aliases/u);
+	assert.match(localSkill, /language, task, risk, or workflow procedures can apply together/u);
 	assert.match(skillIndex, /converse inference, unbounded quantifier, contradictory branch/u);
 	assert.match(skillIndex, /cross-root verification inheritance/u);
 	assert.match(skillIndex, /logical consistency and repository-boundary result, counterexamples checked, and claims narrowed/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'skill-authoring', 11);
+	assertI18nSkillDocument(i18n, 'skill-authoring', 12);
 });
 
 test('instruction conflict review separates authority dimensions from source priority', () => {

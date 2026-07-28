@@ -2,7 +2,7 @@
 mustflow_doc: skill.durable-workflow-orchestration
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: durable-workflow-orchestration
@@ -100,11 +100,18 @@ durable without pretending external effects can be rolled back like one database
    configuration, and policy versions required for safe resume.
 4. Record each step's normalized input snapshot, command identity, dependency, deadline, attempt,
    owner, next permitted events, and durable completion evidence.
+   - Before an external or non-transactional effect, durably record the intended effect and stable
+     request identity. After an ambiguous response, reconcile that identity rather than starting a
+     new effect. This write-ahead intent is workflow evidence, not a second transaction log for
+     database state already committed atomically.
 5. Persist step completion and the next durable work request atomically where possible. Route any
    independent commit split through `dual-write-consistency`.
 6. Classify every effect as reversible, compensatable, forward-recovery-only, or
    manual-intervention. Do not label email, payment, published data, or external user-visible effects
    rollback-safe without provider-specific proof.
+   - For reservable resources such as inventory, credits, seats, or capacity, model reserve,
+     confirm, and release as explicit conditional transitions. Bind expiry and confirmation to the
+     same reservation version so timeout and commit cannot both win silently.
 7. Model compensation as a separate idempotent command tied to the original command, resource,
    amount or scope, workflow instance, and reason. Give compensation its own retry and terminal state.
    Use a distinct operation type and idempotency namespace or key for the compensation; never reuse
@@ -124,6 +131,10 @@ durable without pretending external effects can be rolled back like one database
     - This skill owns workflow-step, terminal-state, and compensation-state recovery. Route
       delivery, consumer-application, and projection convergence across independent commits to
       `dual-write-consistency`.
+14. Reconcile durable workflow claims periodically when independent systems can drift. Compare
+    terminal workflow states with result objects, provider receipts, reservations, compensations,
+    and published effects. Route safe repair through an idempotent command and unsafe ambiguity to
+    an auditable manual-intervention queue.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

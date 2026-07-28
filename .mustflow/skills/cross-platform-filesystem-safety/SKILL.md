@@ -2,7 +2,7 @@
 mustflow_doc: skill.cross-platform-filesystem-safety
 locale: en
 canonical: true
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: procedure
 name: cross-platform-filesystem-safety
@@ -45,6 +45,9 @@ Keep filesystem behavior safe across Windows and POSIX while preventing path tra
 - The task only changes in-memory strings and does not touch or claim filesystem behavior.
 - The change only adjusts Git line-ending policy; use `line-ending-hygiene`.
 - A generated artifact is only being packaged or referenced and not written or path-validated; use `artifact-integrity-check`.
+- The main concern is process-crash, power-loss, multi-file generation publication, startup recovery,
+  resumable transfer, or repeated recovery fault injection rather than path and object safety; use
+  `crash-consistency-recovery-review` first and this skill for platform filesystem semantics.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

@@ -2,7 +2,7 @@
 mustflow_doc: skill.pattern-scout
 locale: en
 canonical: true
-revision: 2
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: pattern-scout
@@ -39,6 +39,12 @@ Find the closest local implementation pattern before creating new structure, nam
 - The task is a tiny mechanical edit with an obvious surrounding pattern.
 - The user explicitly asks for a one-off experiment or prototype outside established structure.
 - The existing pattern is already known from the current task context and no new area is being touched.
+- The task needs several mature sibling features, role-based surface inference, consumer closure,
+  or actual-diff completeness review; use `feature-surface-completeness-review` and use this skill
+  only to supply a closest-pattern input.
+- The likely implementation may be hidden under different names, paths, layers, exports, data
+  shapes, side effects, failure terms, or historical identities and the task needs evidence-backed
+  reuse or new-code justification; use `semantic-repository-discovery`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

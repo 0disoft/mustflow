@@ -24,7 +24,9 @@ expanded_index = [
 [algorithm]
 steps = [
   "Classify the task by file paths, user intent, discovered technology, and event signals.",
-  "Pick at most one primary route category and at most two adjunct categories.",
+  "Normalize task and route signals with Unicode NFKC, preserve letters and numbers from every script, and match multiword positive and negative signals as complete phrases.",
+  "Admit a candidate only from task, path, phrase, reason-plus-corroboration, or dependency evidence; use route type and priority only to rank admitted candidates.",
+  "Pick at most one primary route and at most two evidence-backed adjuncts across language, task, risk, and workflow categories.",
   "Read full_routes only when this kernel cannot identify a narrow route set.",
   "Read selected SKILL.md files before editing the matching scope.",
   "Reroute when changed files, command failures, security, data, tests, docs, or release risk appears.",

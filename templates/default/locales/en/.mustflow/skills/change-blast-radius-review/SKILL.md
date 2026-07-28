@@ -2,7 +2,7 @@
 mustflow_doc: skill.change-blast-radius-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: change-blast-radius-review
@@ -65,6 +65,9 @@ feature is removed, what can I delete?"
 - The main issue is deterministic tests or hidden test inputs; use `testability-boundary-review`.
 - The main issue is a specific failure path, cache invariant, authorization boundary, migration,
   state machine, strategy, result type, or dependency-injection seam; use the narrower skill first.
+- The current question is whether a feature is complete against mature siblings, required roles,
+  registrations, consumers, and verification evidence; use `feature-surface-completeness-review`
+  first and keep this skill for the next-change and deletion-spread judgment.
 - The change is a tiny pure helper with explicit inputs, deterministic output, no policy, no I/O,
   no shared state, and no meaningful future-change branch.
 

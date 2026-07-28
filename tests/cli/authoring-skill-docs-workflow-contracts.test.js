@@ -338,6 +338,17 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(freshnessSkill, /WebTransport, compression dictionary transport, zstd content coding/u);
 	assert.match(authSkill, /credentialed EventSource\/SSE streams/u);
 	assert.match(authSkill, /CDN\/proxy cache keys/u);
+	assert.match(authSkill, /`AUTHENTICATION_REQUIRED`, `SESSION_EXPIRED`, `SESSION_REVOKED`, `PERMISSION_DENIED`/u);
+	assert.match(authSkill, /`RESOURCE_HIDDEN`, `STEP_UP_REQUIRED`, and `POLICY_UNAVAILABLE`/u);
+	assert.match(authSkill, /Do not reduce the result to a bare boolean/u);
+	assert.match(authSkill, /final resource\/action authority at the mutation/u);
+	assert.match(authSkill, /Treat zero affected rows as an unresolved classification/u);
+	assert.match(authSkill, /external enumeration-safe behavior separate from internal evidence/u);
+	assert.match(authSkill, /automatic replay after refresh is safe only/u);
+	assert.match(authSkill, /A 401 does not prove a write never ran/u);
+	assert.match(authSkill, /job-scoped authority/u);
+	assert.match(authSkill, /explicit service takeover/u);
+	assert.match(routes, /positive_terms = \["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority"\]/u);
 
 	assert.match(skillIndex, /\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md/u);
 	assert.match(skillIndex, /wrong content decoding, cache poisoning/u);
@@ -362,7 +373,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
-	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 5/u);
 });
 
 test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {

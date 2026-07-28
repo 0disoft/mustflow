@@ -120,6 +120,17 @@ route_type = "primary"
 priority = 66
 applies_to_reasons = ["public_api_change", "behavior_change", "docs_change", "test_change", "package_metadata_change", "release_risk"]
 
+[routes."cli-option-contract-review".dependencies]
+suggests_adjuncts = ["contract-sync-check", "change-blast-radius-review"]
+unlocks_on = [
+  { signal = "declared_or_generated_contract_changed", skill = "contract-sync-check" },
+  { signal = "type_or_consumer_graph_changed", skill = "change-blast-radius-review" },
+]
+
+[routes."cli-option-contract-review".contexts]
+positive_terms = ["config-precedence", "environment-matrix", "option-registry", "option-rename", "parser-contract", "raw-options", "resolved-config", "type-impact"]
+negative_terms = ["help-copy-only", "json-output-only", "runtime-config-only"]
+
 [routes."cli-output-contract-review"]
 category = "workflow_contracts"
 route_type = "adjunct"
@@ -193,6 +204,10 @@ category = "architecture_patterns"
 route_type = "primary"
 priority = 80
 applies_to_reasons = ["code_change", "behavior_change"]
+
+[routes."pure-core-imperative-shell".contexts]
+positive_terms = ["effect-plan", "effect-transcript", "imperative-shell", "pure-core", "purity-boundary", "shadow-plan"]
+negative_terms = ["pass-through-crud", "formatting-only", "copy-only"]
 
 [routes."state-machine-pattern"]
 category = "architecture_patterns"
@@ -605,6 +620,28 @@ route_type = "adjunct"
 priority = 75
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "package_metadata_change"]
 
+[routes."feature-surface-completeness-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 83
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."feature-surface-completeness-review".contexts]
+positive_terms = ["feature-completeness", "feature-scaffold", "partial-implementation", "change-manifest", "sibling-feature", "consumer-closure"]
+concept_aliases = ["기능 완성도", "반쪽 구현", "功能完整性", "不完整实现"]
+negative_terms = ["tiny-mechanical-edit", "disposable-prototype", "filename-only-pattern"]
+
+[routes."semantic-repository-discovery"]
+category = "general_code"
+route_type = "adjunct"
+priority = 84
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."semantic-repository-discovery".contexts]
+positive_terms = ["semantic-repository-discovery", "existing-asset-discovery", "reuse-candidate", "code-archaeology", "duplicate-prevention", "new-symbol-justification"]
+concept_aliases = ["의미 기반 저장소 탐색", "기존 구현 찾기", "语义仓库发现", "查找现有实现"]
+negative_terms = ["known-exact-symbol", "tiny-mechanical-edit", "disposable-prototype"]
+
 [routes."business-rule-leakage-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -906,6 +943,10 @@ route_type = "adjunct"
 priority = 78
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "security_change", "privacy_change"]
 
+[routes."failure-integrity-review".contexts]
+positive_terms = ["failure-matrix", "swallowed-exception", "false-success", "error-transformation", "failure-path-id", "contradictory-success"]
+negative_terms = ["success-path-only", "copy-only", "formatting-only"]
+
 [routes."backend-log-evidence-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -1108,6 +1149,24 @@ route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "performance_change", "package_metadata_change", "release_risk"]
 
+[routes."type-contract-change"]
+category = "general_code"
+route_type = "adjunct"
+priority = 81
+applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."type-contract-change".dependencies]
+suggests_adjuncts = ["change-blast-radius-review", "contract-sync-check"]
+unlocks_on = [
+  { signal = "transitive_or_structural_consumer_found", skill = "change-blast-radius-review" },
+  { signal = "declared_or_generated_surface_changed", skill = "contract-sync-check" },
+]
+
+[routes."type-contract-change".contexts]
+positive_terms = ["consumer-compile", "declaration-diff", "generic-constraint", "impact-manifest", "inference-drift", "interface-change", "runtime-schema", "structural-implementation", "type-contract", "wire-compatibility"]
+concept_aliases = ["타입 계약", "타입 영향 범위", "类型契约", "类型影响范围"]
+negative_terms = ["graphql-only", "http-api-only", "implementation-only", "language-version-only", "local-type-only", "openapi-only", "protobuf-only"]
+
 [routes."javascript-code-change"]
 category = "general_code"
 route_type = "primary"
@@ -1242,6 +1301,10 @@ category = "general_code"
 route_type = "primary"
 priority = 68
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."llm-token-cost-control-review".contexts]
+positive_terms = ["prompt-cache", "token-budget", "tool-schema", "volatile-context", "provider-cache", "cost-per-success"]
+negative_terms = ["non-llm-cache", "ui-latency-only"]
 
 [routes."llm-response-latency-review"]
 category = "general_code"
@@ -1489,6 +1552,24 @@ route_type = "adjunct"
 priority = 65
 applies_to_reasons = ["code_change", "security_change", "migration_change", "package_metadata_change", "release_risk"]
 
+[routes."crash-consistency-recovery-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 82
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."crash-consistency-recovery-review".dependencies]
+suggests_adjuncts = ["cross-platform-filesystem-safety", "failure-integrity-review", "idempotency-integrity-review", "dual-write-consistency", "file-upload-security-review"]
+unlocks_on = [
+  { signal = "independent_commit_split", skill = "dual-write-consistency" },
+  { signal = "malicious_file_surface", skill = "file-upload-security-review" },
+]
+
+[routes."crash-consistency-recovery-review".contexts]
+positive_terms = ["atomic-replace", "crash-consistency", "durability", "fault-injection", "fsync", "power-loss", "resumable", "short-write"]
+concept_aliases = ["충돌 일관성", "비정상 종료 복구", "崩溃一致性", "异常退出恢复"]
+negative_terms = ["css", "layout", "pricing", "prompt", "translation"]
+
 [routes."adapter-boundary"]
 category = "data_external"
 route_type = "primary"
@@ -1561,6 +1642,10 @@ route_type = "adjunct"
 priority = 40
 applies_to_reasons = ["test_change", "behavior_change"]
 
+[routes."test-design-guard".contexts]
+positive_terms = ["boundary-test", "branch-to-test", "decision-ledger", "differential-test", "failure-injection", "forbidden-effect", "mcdc", "mutation-test", "regression-test", "test-design", "virtual-clock"]
+negative_terms = ["benchmark-only", "coverage-number-only", "fuzz-campaign-only", "test-runtime-only"]
+
 [routes."fuzz-harness-review"]
 category = "tests"
 route_type = "adjunct"
@@ -1608,6 +1693,11 @@ category = "security_privacy"
 route_type = "primary"
 priority = 85
 applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
+
+[routes."auth-permission-change".contexts]
+positive_terms = ["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority"]
+concept_aliases = ["authorization", "permission", "access control", "인증 권한", "접근 권한", "授权", "权限"]
+negative_terms = ["public-copy-only", "unauthenticated-public-route"]
 
 [routes."auth-permission-change".dependencies]
 unlocks_on = [
@@ -1719,6 +1809,11 @@ category = "ui_assets"
 route_type = "primary"
 priority = 86
 applies_to_reasons = ["ui_change", "web_asset_change", "behavior_change", "code_change", "test_change", "docs_change", "product_change", "release_risk"]
+
+[routes."ai-game-asset-production".contexts]
+positive_terms = ["transparent-png", "sprite-atlas", "rgba", "stable-pivot", "foot-contact", "atlas-extrude", "sprite-sheet"]
+concept_aliases = ["투명 PNG", "스프라이트 시트", "透明 PNG", "精灵图集"]
+negative_terms = ["ordinary-ui-icon", "photography-only"]
 
 [routes."client-bundle-pruning-review"]
 category = "ui_assets"
@@ -1947,6 +2042,17 @@ category = "docs_release"
 route_type = "primary"
 priority = 60
 applies_to_reasons = ["docs_change", "copy_change", "product_change"]
+
+[routes."reader-centered-technical-content"]
+category = "docs_release"
+route_type = "primary"
+priority = 61
+applies_to_reasons = ["docs_change", "copy_change", "product_change"]
+
+[routes."reader-centered-technical-content".contexts]
+positive_terms = ["reader-centered", "reader-benefit", "decision-error", "practical-content"]
+concept_aliases = ["독자 중심", "독자 이득", "读者中心", "读者收益"]
+negative_terms = ["internal-only-note", "machine-generated-reference"]
 
 [routes."writing-elegance"]
 category = "docs_release"

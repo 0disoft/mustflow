@@ -2,7 +2,7 @@
 mustflow_doc: skill.search-ad-content-authoring
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: search-ad-content-authoring
@@ -39,6 +39,9 @@ Create useful, readable, search-oriented content that can support advertising la
 ## Do Not Use When
 
 - The task is only product UI copy, release notes, README writing, legal policy text, or technical docs with no search or monetization goal; use the narrower writing or documentation skill.
+- The task is a project introduction, feature explanation, engineering retrospective, technical case
+  study, or launch story with no search-traffic or ad-layout goal; use
+  `reader-centered-technical-content`.
 - The task asks to manipulate rankings, hide ads, mislead readers, copy competitor content, generate doorway pages, or maximize ads at the expense of user value.
 - Current Google, ad-network, legal, or policy claims are required but cannot be checked; use `source-freshness-check` and keep claims conservative.
 - The task only changes ad scripts, consent management, performance code, or analytics implementation without article content; use the relevant frontend, privacy, performance, or dependency skill.

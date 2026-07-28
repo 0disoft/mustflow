@@ -6,6 +6,44 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Fixed skill routing so empty or unrelated input cannot become eligible from route type and
+  priority alone, preserved Korean and Chinese concepts through NFKC Unicode normalization, matched
+  positive and negative signals as phrases, allowed evidence-backed adjuncts across route categories,
+  prioritized required and unlocked dependencies over scored adjuncts and optional suggestions, and
+  added reachability fixtures for the five newly bundled skills.
+- Expanded test design guidance with must-change versus must-preserve contracts, changed-decision
+  ledgers, semantic boundary matrices, exact failure cut points, forbidden-effect and cleanup
+  assertions, deterministic concurrency schedules, focused mutation evidence, pre-fix regression
+  sensitivity, independent oracles, and final branch-to-test closure.
+- Added type contract change review for semantic public-type diffs, generic inference and structural
+  implementation closure, runtime-schema and fixture validation, executable documentation examples,
+  clean packaged-consumer compilation, hidden configuration dependency detection, compatibility
+  matrices, and independently reconciled impact manifests.
+- Expanded CLI option contract review with option registries, explicit raw-to-resolved value flow,
+  provenance-aware precedence, environment matrices, bounded rename compatibility, type and value-flow
+  impact manifests, structural consumer discovery, source/binary/wire compatibility, negative config
+  mutation tests, and clean deterministic generation evidence.
+- Expanded pure-core and imperative-shell guidance with legacy effect transcripts, irreversible
+  cut-point discovery, capability-free core inputs, serializable business effect plans, versioned
+  snapshot commits, effect-graph regression gates, sealed-environment tests, runtime effect counters,
+  failpoint evidence, receipts and reconciliation, and shadow plan comparison without duplicate effects.
+- Expanded failure-integrity and authentication-permission procedures with inverted success
+  conditions, seven-axis failure matrices, error-transformation and side-effect cut-point analysis,
+  four-oracle and mutation evidence, atomic mutation authorization, typed denial outcomes, safe
+  refresh replay, resource-hiding audit separation, and scoped long-running job authority.
+- Added semantic repository discovery for finding reusable behavior hidden behind different names,
+  layers, exports, types, consumers, side effects, and historical identities, with evidence-ranked
+  candidate ledgers, explicit reuse dispositions, new-symbol justification, and final-diff closure.
+- Added a feature-surface completeness review skill that derives repository-specific change
+  ledgers from mature siblings and repair history, traces control, data, and authorization flows,
+  closes registrations and consumers, reconciles the actual diff, and requires behavioral evidence
+  for tests, docs, observability, rollout, rollback, and removal instead of filename checklists.
+- Added crash-consistency and recovery review for durable single-file and generation publication,
+  startup recovery, resumable transfers, stale-owner fencing, repeated recovery interruption, and
+  safety-versus-liveness fault-injection evidence.
+- Added a reader-centered technical content skill that turns project introductions, feature
+  explanations, and engineering retrospectives into evidence-backed reader situations, net
+  benefits, explicit costs, reusable diagnosis, limitations, and concrete next actions.
 - Hardened built-in Codex thread coordination so agents discover current host capabilities,
   separate top-level thread IDs from current-task subagent IDs, read state before dependent
   handoffs, preserve target model settings, verify returned thread IDs, and stop at a lossless

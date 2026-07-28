@@ -2,7 +2,7 @@
 mustflow_doc: skill.readme-authoring
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: readme-authoring
@@ -39,6 +39,8 @@ Create or refactor `README.md` as a factual repository entry point without inven
 - The task only updates a specific docs-site page, API reference, release note, or changelog; use the narrower documentation skill.
 - The repository does not contain enough evidence for the requested README claim.
 - The user asks for marketing copy, a landing page, a pitch deck, or speculative product vision rather than repository documentation.
+- The user asks for a project introduction, launch post, portfolio narrative, feature-benefit copy,
+  or engineering case study outside the repository README; use `reader-centered-technical-content`.
 - A nested repository is being edited and its nearer `AGENTS.md` or command contract has not been checked.
 
 <!-- mustflow-section: required-inputs -->

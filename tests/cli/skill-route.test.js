@@ -123,6 +123,109 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 	}
 });
 
+test('does not select a skill without route evidence', () => {
+	const result = runCli(projectRoot, ['skill', 'route', '--json']);
+	const report = JSON.parse(result.stdout);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.equal(report.selected.main, null);
+	assert.deepEqual(report.selected.adjuncts, []);
+	assert.deepEqual(report.candidates, []);
+});
+
+test('preserves Unicode concepts and selects language plus type-contract procedures together', () => {
+	const koreanResult = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'공유 인터페이스의 타입 계약과 타입 영향 범위를 수정해',
+		'--path',
+		'src/core/public-types.ts',
+		'--reason',
+		'public_api_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const koreanReport = JSON.parse(koreanResult.stdout);
+
+	assert.equal(koreanResult.status, 0, koreanResult.stderr || koreanResult.stdout);
+	assert.equal(koreanReport.selected.main.skill, 'typescript-code-change');
+	assert.ok(koreanReport.signals.task_terms.includes('타입'));
+	assert.ok(koreanReport.signals.task_terms.includes('계약과'));
+	assert.ok(
+		koreanReport.selected.adjuncts.some((candidate) => candidate.skill === 'type-contract-change'),
+		koreanReport.selected.adjuncts.map((candidate) => candidate.skill).join(', '),
+	);
+
+	const chineseResult = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'检查崩溃一致性和异常退出恢复',
+		'--path',
+		'src/storage/recovery.ts',
+		'--reason',
+		'data_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const chineseReport = JSON.parse(chineseResult.stdout);
+
+	assert.equal(chineseResult.status, 0, chineseResult.stderr || chineseResult.stdout);
+	assert.ok(
+		chineseReport.candidates.some((candidate) => candidate.skill === 'crash-consistency-recovery-review'),
+		chineseReport.candidates.map((candidate) => candidate.skill).join(', '),
+	);
+});
+
+test('matches negative route signals as phrases instead of token bags', () => {
+	const positiveResult = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Change a TypeScript type contract and interface change for consumers',
+		'--path',
+		'src/core/types.ts',
+		'--reason',
+		'public_api_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const positiveReport = JSON.parse(positiveResult.stdout);
+	const positiveTypeContract = positiveReport.candidates.find(
+		(candidate) => candidate.skill === 'type-contract-change',
+	);
+
+	assert.equal(positiveResult.status, 0, positiveResult.stderr || positiveResult.stdout);
+	assert.ok(positiveTypeContract);
+	assert.equal(positiveTypeContract.score_breakdown.negative_signal_penalty, 0);
+
+	const negativeResult = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'Change a TypeScript consumer compile declaration diff generic constraint type contract for a local type only edit',
+		'--path',
+		'src/core/types.ts',
+		'--reason',
+		'public_api_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const negativeReport = JSON.parse(negativeResult.stdout);
+	const negativeTypeContract = negativeReport.candidates.find(
+		(candidate) => candidate.skill === 'type-contract-change',
+	);
+
+	assert.equal(negativeResult.status, 0, negativeResult.stderr || negativeResult.stdout);
+	assert.ok(negativeTypeContract);
+	assert.ok(negativeTypeContract.score_breakdown.negative_signal_penalty < 0);
+});
+
 test('uses pattern signal route cards to break same-priority architecture route ties', () => {
 	const result = runCli(projectRoot, [
 		'skill',

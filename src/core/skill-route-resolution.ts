@@ -15,9 +15,9 @@ const EXTERNAL_SKILL_PROVENANCE_FILE = 'mustflow-skill-source.json';
 const DEFAULT_MAX_CANDIDATES = 5;
 const DEFAULT_MAX_MAIN = 1;
 const DEFAULT_MAX_ADJUNCTS = 2;
-const PATH_SKILL_HINT_SCORE = 25;
-const PATTERN_SIGNAL_TERM_SCORE = 12;
-const PATTERN_SIGNAL_MAX_SCORE = 48;
+const PATH_SKILL_HINT_SCORE = 15;
+const PATTERN_SIGNAL_TERM_SCORE = 20;
+const PATTERN_SIGNAL_MAX_SCORE = 60;
 const NEGATIVE_SIGNAL_TERM_PENALTY = -25;
 const NEGATIVE_SIGNAL_MAX_PENALTY = -75;
 const DOCS_TREE_MARKDOWN_PATH_PATTERN =
@@ -170,8 +170,8 @@ interface SkillFrontmatterSummary {
 }
 
 interface RouteSignalProfile {
-	readonly positiveTerms: readonly string[];
-	readonly negativeTerms: readonly string[];
+	readonly positiveSignals: readonly string[];
+	readonly negativeSignals: readonly string[];
 }
 
 const EMPTY_ROUTE_DEPENDENCIES: SkillRouteDependencies = {
@@ -182,11 +182,11 @@ const EMPTY_ROUTE_DEPENDENCIES: SkillRouteDependencies = {
 };
 
 const ROUTE_TYPE_WEIGHTS: Readonly<Record<string, number>> = {
-	primary: 18,
-	authoring: 16,
-	adjunct: 8,
-	event: 4,
-	external: 2,
+	primary: 4,
+	authoring: 4,
+	adjunct: 2,
+	event: 1,
+	external: 1,
 };
 
 function normalizeSkillPath(value: string): string {
@@ -199,18 +199,31 @@ function skillNameFromPath(skillPath: string): string {
 	return match?.[1] ?? externalMatch?.[1] ?? skillPath;
 }
 
+function normalizeRouteText(value: string): string {
+	return value
+		.normalize('NFKC')
+		.toLocaleLowerCase('en-US')
+		.replace(/\.mustflow\/skills\/[^/\s]+\/skill\.md/giu, ' ')
+		.replace(/[^\p{L}\p{N}]+/gu, ' ')
+		.trim()
+		.replace(/\s+/gu, ' ');
+}
+
 function tokenize(value: string): string[] {
 	return [
 		...new Set(
-			value
-				.toLowerCase()
-				.replace(/\.mustflow\/skills\/[^/\s]+\/skill\.md/giu, ' ')
-				.replace(/[^a-z0-9]+/gu, ' ')
+			normalizeRouteText(value)
 				.split(/\s+/u)
 				.map((token) => token.trim())
-				.filter((token) => token.length >= 3),
+				.filter((token) => token.length >= 2),
 		),
 	].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeSignals(values: readonly string[]): string[] {
+	return [...new Set(values.map(normalizeRouteText).filter(Boolean))].sort((left, right) =>
+		left.localeCompare(right),
+	);
 }
 
 function collectPathSkillHints(paths: readonly string[]): Set<string> {
@@ -274,14 +287,17 @@ function readRouteSignalProfile(route: TomlTable): RouteSignalProfile {
 	const contexts = route.contexts;
 	if (!isRecord(contexts)) {
 		return {
-			positiveTerms: [],
-			negativeTerms: [],
+			positiveSignals: [],
+			negativeSignals: [],
 		};
 	}
 
 	return {
-		positiveTerms: tokenize(readStringArrayFromTable(contexts, 'positive_terms').join(' ')),
-		negativeTerms: tokenize(readStringArrayFromTable(contexts, 'negative_terms').join(' ')),
+		positiveSignals: normalizeSignals([
+			...readStringArrayFromTable(contexts, 'positive_terms'),
+			...readStringArrayFromTable(contexts, 'concept_aliases'),
+		]),
+		negativeSignals: normalizeSignals(readStringArrayFromTable(contexts, 'negative_terms')),
 	};
 }
 
@@ -531,14 +547,6 @@ function countMatches(needles: readonly string[], haystack: readonly string[]): 
 	return needles.filter((needle) => haystackSet.has(needle)).length;
 }
 
-function collectMatchedTerms(needles: readonly string[], haystack: readonly string[]): string[] {
-	const haystackSet = new Set(haystack);
-
-	return [...new Set(needles.filter((needle) => haystackSet.has(needle)))].sort((left, right) =>
-		left.localeCompare(right),
-	);
-}
-
 function routeTextTerms(route: SkillIndexRoute, skillName: string): string[] {
 	return tokenize([
 		skillName,
@@ -599,15 +607,15 @@ function createRouteCard(
 
 function createPatternSignalBreakdown(
 	signalProfile: RouteSignalProfile,
-	taskTerms: readonly string[],
-	pathTerms: readonly string[],
+	taskText: string,
+	pathText: string,
 ): {
 	readonly positiveMatches: readonly string[];
 	readonly negativeMatches: readonly string[];
 	readonly patternScore: number;
 	readonly negativePenalty: number;
 } {
-	if (signalProfile.positiveTerms.length === 0 && signalProfile.negativeTerms.length === 0) {
+	if (signalProfile.positiveSignals.length === 0 && signalProfile.negativeSignals.length === 0) {
 		return {
 			positiveMatches: [],
 			negativeMatches: [],
@@ -616,9 +624,14 @@ function createPatternSignalBreakdown(
 		};
 	}
 
-	const inputTerms = [...new Set([...taskTerms, ...pathTerms])];
-	const positiveMatches = collectMatchedTerms(signalProfile.positiveTerms, inputTerms);
-	const negativeMatches = collectMatchedTerms(signalProfile.negativeTerms, inputTerms);
+	const normalizedText = normalizeRouteText(`${taskText} ${pathText}`);
+	const normalizedInput = ` ${normalizedText} `;
+	const matchesSignal = (signal: string): boolean =>
+		/[\p{Script=Han}\p{Script=Hangul}]/u.test(signal)
+			? normalizedText.includes(signal)
+			: normalizedInput.includes(` ${signal} `);
+	const positiveMatches = signalProfile.positiveSignals.filter(matchesSignal);
+	const negativeMatches = signalProfile.negativeSignals.filter(matchesSignal);
 
 	return {
 		positiveMatches,
@@ -635,6 +648,8 @@ function createCandidate(
 	pathTerms: readonly string[],
 	pathSkillHints: ReadonlySet<string>,
 	reasons: readonly string[],
+	taskText: string,
+	pathText: string,
 ): SkillRouteResolvedCandidate {
 	const skill = skillNameFromPath(route.skillPath);
 	const terms = routeTextTerms(route, skill);
@@ -642,15 +657,15 @@ function createCandidate(
 	const taskMatches = countMatches(taskTerms, terms);
 	const pathMatches = countMatches(pathTerms, terms);
 	const pathSkillHintMatched = pathSkillHints.has(skill);
-	const patternSignals = createPatternSignalBreakdown(metadata.signalProfile, taskTerms, pathTerms);
+	const patternSignals = createPatternSignalBreakdown(metadata.signalProfile, taskText, pathText);
 	const breakdown = {
-		reason_match: matchedReasons.length * 35,
-		task_text_match: taskMatches * 6,
-		path_match: pathMatches * 6 + (pathSkillHintMatched ? PATH_SKILL_HINT_SCORE : 0),
+		reason_match: matchedReasons.length * 4,
+		task_text_match: taskMatches * 3,
+		path_match: pathMatches * 3 + (pathSkillHintMatched ? PATH_SKILL_HINT_SCORE : 0),
 		pattern_signal_match: patternSignals.patternScore,
 		negative_signal_penalty: patternSignals.negativePenalty,
 		route_type_weight: ROUTE_TYPE_WEIGHTS[metadata.routeType] ?? 0,
-		priority_weight: Math.max(0, Math.min(metadata.priority, 100)) / 5,
+		priority_weight: Math.max(0, Math.min(metadata.priority, 100)) / 25,
 	} satisfies SkillRouteScoreBreakdown;
 	const score = Object.values(breakdown).reduce((total, value) => total + value, 0);
 	const matchedDimensions = [
@@ -660,8 +675,6 @@ function createCandidate(
 		...(pathSkillHintMatched ? ['path_skill_hint'] : []),
 		...(patternSignals.positiveMatches.length > 0 ? ['pattern_signal'] : []),
 		...(patternSignals.negativeMatches.length > 0 ? ['negative_signal'] : []),
-		...(metadata.routeType !== 'unknown' ? ['route_type'] : []),
-		...(metadata.priority > 0 ? ['priority'] : []),
 	];
 	const selectionReasons = [
 		...matchedReasons.map((reason) => `reason:${reason}`),
@@ -693,6 +706,21 @@ function createCandidate(
 		route_card: createRouteCard(route.skillPath, matchedDimensions, metadata.dependencies),
 		verification_intents: route.commandIntents,
 	};
+}
+
+function hasCandidateEvidence(candidate: SkillRouteResolvedCandidate): boolean {
+	const breakdown = candidate.score_breakdown;
+	const hasExactPathHint = candidate.selection_reasons.some((reason) => reason.startsWith('path_skill_hint:'));
+	const hasStructuredReasonWithCorroboration =
+		breakdown.reason_match > 0 && (breakdown.task_text_match > 0 || breakdown.path_match > 0);
+
+	return (
+		hasExactPathHint ||
+		breakdown.pattern_signal_match > 0 ||
+		breakdown.task_text_match >= 6 ||
+		breakdown.path_match >= 6 ||
+		hasStructuredReasonWithCorroboration
+	);
 }
 
 function sortCandidates(
@@ -898,10 +926,6 @@ function selectAdjuncts(
 		}
 	}
 
-	for (const skill of selectedMain.route_card.route_dependencies.suggests_adjuncts) {
-		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
-	}
-
 	if (selected.length >= DEFAULT_MAX_ADJUNCTS) {
 		return selected.slice(0, DEFAULT_MAX_ADJUNCTS);
 	}
@@ -910,7 +934,6 @@ function selectAdjuncts(
 		.filter((candidate) => {
 			return (
 				candidate.route_type === 'adjunct' &&
-				candidate.category === main.category &&
 				!excluded.has(candidate.skill) &&
 				!selected.some((selectedCandidate) => selectedCandidate.skill === candidate.skill) &&
 				![selectedMain, ...selected].some((selectedCandidate) => routesConflict(selectedCandidate, candidate, metadata))
@@ -918,7 +941,21 @@ function selectAdjuncts(
 		})
 		.sort(sortCandidates);
 
-	return [...selected, ...scoredAdjuncts].slice(0, DEFAULT_MAX_ADJUNCTS);
+	for (const candidate of scoredAdjuncts) {
+		if (selected.length >= DEFAULT_MAX_ADJUNCTS) {
+			break;
+		}
+		selected.push(candidate);
+	}
+
+	for (const skill of selectedMain.route_card.route_dependencies.suggests_adjuncts) {
+		if (selected.length >= DEFAULT_MAX_ADJUNCTS) {
+			break;
+		}
+		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
+	}
+
+	return selected.slice(0, DEFAULT_MAX_ADJUNCTS);
 }
 
 function uniqueCandidatePaths(candidates: readonly SkillRouteResolvedCandidate[]): string[] {
@@ -1006,8 +1043,8 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 					appliesToReasons: [],
 					mutuallyExclusiveWith: [],
 					signalProfile: {
-						positiveTerms: [],
-						negativeTerms: [],
+						positiveSignals: [],
+						negativeSignals: [],
 					},
 					dependencies: EMPTY_ROUTE_DEPENDENCIES,
 				},
@@ -1015,12 +1052,14 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 				pathTerms,
 				pathSkillHints,
 				reasons,
+				input.taskText ?? '',
+				paths.join(' '),
 			);
 		})
 		.sort(sortCandidates);
 	const allCandidatesBySkill = new Map(routeCandidates.map((candidate) => [candidate.skill, candidate]));
 	const allCandidates = routeCandidates
-		.filter((candidate) => candidate.score > 0)
+		.filter((candidate) => hasCandidateEvidence(candidate) && candidate.score > 0)
 		.sort(sortCandidates);
 	const candidates = allCandidates.slice(0, maxCandidates);
 	const main = candidates.find(isSelectableMain) ?? null;

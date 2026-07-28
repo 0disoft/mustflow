@@ -58,15 +58,29 @@ test('failure integrity review catches false-success error handling', () => {
 	assert.match(localSkill, /Cache failure/u);
 	assert.match(localSkill, /Fallback must be a safe degraded value/u);
 	assert.match(localSkill, /failure-path evidence/u);
+	assert.match(localSkill, /Inverted-success ledger/u);
+	assert.match(localSkill, /Seven-axis failure matrix/u);
+	assert.match(localSkill, /Error-transformation graph/u);
+	assert.match(localSkill, /Follow control flow after each `catch`/u);
+	assert.match(localSkill, /reconcile succeeded, failed, cancelled, and unstarted counts/u);
+	assert.match(localSkill, /remote-effect-possible/u);
+	assert.match(localSkill, /Transport 2xx is not business completion/u);
+	assert.match(localSkill, /After a caller timeout/u);
+	assert.match(localSkill, /conceptual crash point/u);
+	assert.match(localSkill, /fallback provenance, freshness, quality, and degraded status/u);
+	assert.match(localSkill, /four oracles: user-visible response, internal durable state/u);
+	assert.match(localSkill, /mutation or fault injection/u);
+	assert.match(localSkill, /contradictory outcomes such as success metrics with rollback spans/u);
 	assert.match(localSkill, /retry exhaustion/u);
 	assert.match(localSkill, /fallback activation/u);
 	assert.match(localSkill, /data inconsistency/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/u);
-	assert.match(skillIndex, /failure-integrity triage for exception or failure handling/u);
-	assert.match(skillIndex, /false success, swallowed exceptions/u);
-	assert.match(skillIndex, /missing failure-path observability/u);
+	assert.match(skillIndex, /failure-integrity triage for missing inverted success conditions/u);
+	assert.match(skillIndex, /seven-axis failure matrix/u);
+	assert.match(skillIndex, /four-oracle evidence/u);
 	assert.match(routes, /\[routes\."failure-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 78/u);
+	assert.match(routes, /positive_terms = \["failure-matrix", "swallowed-exception", "false-success", "error-transformation", "failure-path-id", "contradictory-success"\]/u);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -80,7 +94,7 @@ test('failure integrity review catches false-success error handling', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/failure-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"failure-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.failure-integrity-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'failure-integrity-review', 3);
 });
 
 test('observability debuggability review catches incident evidence gaps', () => {

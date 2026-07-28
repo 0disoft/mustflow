@@ -34,7 +34,7 @@ content_hash = "sha256:7a375a484e441d2ba82adabe4e98ca09cc6cfaa19ccb32642cba7474c
 [files.".mustflow/skills/router.toml"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:ed304590de2889bf2b45fe1893ffe68a0f36a1bf98114453cfed24ee43259835"
+content_hash = "sha256:a1f5f85394859a62d5071986cfaadcccc3263bbb09795fa4d798f0837ad6c8c2"
 
 [files.".mustflow/skills/dependency-upgrade-review/SKILL.md"]
 source = "template_common"

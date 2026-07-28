@@ -685,6 +685,87 @@
       "required_candidates": [
         "ai-game-asset-production"
       ]
+    },
+    {
+      "id": "type-contract-korean-typescript",
+      "task": "공유 인터페이스의 타입 계약과 타입 영향 범위를 수정해",
+      "paths": [
+        "src/core/public-types.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "typescript-code-change",
+      "required_candidates": [
+        "type-contract-change"
+      ],
+      "required_adjuncts": [
+        "type-contract-change"
+      ]
+    },
+    {
+      "id": "feature-surface-completeness",
+      "task": "Review the partial implementation against a sibling feature change manifest and consumer closure",
+      "paths": [
+        "src/features/new-command.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "feature-surface-completeness-review"
+      ],
+      "required_adjuncts": [
+        "feature-surface-completeness-review"
+      ]
+    },
+    {
+      "id": "semantic-repository-discovery-korean",
+      "task": "이름이 다른 기존 구현 찾기를 위해 의미 기반 저장소 탐색을 진행해",
+      "paths": [
+        "src/features/new-command.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "semantic-repository-discovery"
+      ],
+      "required_adjuncts": [
+        "semantic-repository-discovery"
+      ]
+    },
+    {
+      "id": "crash-consistency-chinese",
+      "task": "检查崩溃一致性和异常退出恢复",
+      "paths": [
+        "src/storage/recovery.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "crash-consistency-recovery-review"
+      ]
+    },
+    {
+      "id": "reader-centered-technical-content-korean",
+      "task": "독자 중심으로 독자 이득과 실제 판단 오류가 보이는 기술 글을 고쳐",
+      "paths": [
+        "docs/guide.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "reader-centered-technical-content",
+      "required_candidates": [
+        "reader-centered-technical-content"
+      ]
     }
   ]
 }

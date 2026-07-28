@@ -2,7 +2,7 @@
 mustflow_doc: skill.writing-elegance
 locale: en
 canonical: true
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: procedure
 name: writing-elegance
@@ -61,6 +61,9 @@ entries.
 
 - The task is a documentation review queue entry or AI-slop cleanup for a mustflow document. Use
   `docs-prose-review` first.
+- The task needs substantive reader-situation, net-benefit, evidence, technical-case-study, project
+  introduction, or engineering-retrospective structure. Use `reader-centered-technical-content`
+  first, then apply this skill only for wording polish after the factual structure is settled.
 - The task changes technical facts, commands, API contracts, code snippets, schema text, legal text,
   safety instructions, or release/change history where correctness, evidence, or repository policy
   still needs the owning skill before any style polish.

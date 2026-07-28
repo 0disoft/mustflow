@@ -2,7 +2,7 @@
 mustflow_doc: skill.ai-generated-code-hardening
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: ai-generated-code-hardening
@@ -70,6 +70,9 @@ accidental public surfaces, and oversized functions or files.
 - The task is deciding the first architecture boundary for new behavior; use
   `structure-first-engineering` first, then this skill as a hardening pass if code
   is generated or broad.
+- The primary task is pre-implementation discovery of existing assets under different names,
+  structures, consumers, exports, or historical identities; use
+  `semantic-repository-discovery`, then return here for post-change duplicate and hardening review.
 - The task is adopting an outside tool, plugin, command, or CI rule; use
   `external-skill-intake`, `command-intent-mapping-gate`, or
   `command-contract-authoring` as appropriate before adding commands or rules.

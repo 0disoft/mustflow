@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 294
+revision = 303
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -146,7 +146,7 @@ translations = {}
 [documents."skill.ai-generated-code-hardening"]
 source = "locales/en/.mustflow/skills/ai-generated-code-hardening/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.quality-gaming-guard"]
@@ -170,7 +170,19 @@ translations = {}
 [documents."skill.change-blast-radius-review"]
 source = "locales/en/.mustflow/skills/change-blast-radius-review/SKILL.md"
 source_locale = "en"
+revision = 3
+translations = {}
+
+[documents."skill.feature-surface-completeness-review"]
+source = "locales/en/.mustflow/skills/feature-surface-completeness-review/SKILL.md"
+source_locale = "en"
 revision = 2
+translations = {}
+
+[documents."skill.semantic-repository-discovery"]
+source = "locales/en/.mustflow/skills/semantic-repository-discovery/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.business-rule-leakage-review"]
@@ -212,7 +224,7 @@ translations = {}
 [documents."skill.durable-workflow-orchestration"]
 source = "locales/en/.mustflow/skills/durable-workflow-orchestration/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.execution-ledger-integrity-review"]
@@ -272,7 +284,7 @@ translations = {}
 [documents."skill.file-upload-security-review"]
 source = "locales/en/.mustflow/skills/file-upload-security-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.error-message-integrity-review"]
@@ -524,7 +536,7 @@ translations = {}
 [documents."skill.failure-integrity-review"]
 source = "locales/en/.mustflow/skills/failure-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.backend-log-evidence-review"]
@@ -787,7 +799,7 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.security-flow-review"]
@@ -979,7 +991,7 @@ translations = {}
 [documents."skill.structure-first-engineering"]
 source = "locales/en/.mustflow/skills/structure-first-engineering/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.support-surface-advisor"]
@@ -1030,6 +1042,12 @@ source_locale = "en"
 revision = 8
 translations = {}
 
+[documents."skill.type-contract-change"]
+source = "locales/en/.mustflow/skills/type-contract-change/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.unocss-code-change"]
 source = "locales/en/.mustflow/skills/unocss-code-change/SKILL.md"
 source_locale = "en"
@@ -1045,7 +1063,7 @@ translations = {}
 [documents."skill.cli-option-contract-review"]
 source = "locales/en/.mustflow/skills/cli-option-contract-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.cli-output-contract-review"]
@@ -1111,13 +1129,19 @@ translations = {}
 [documents."skill.cross-platform-filesystem-safety"]
 source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 10
+translations = {}
+
+[documents."skill.crash-consistency-recovery-review"]
+source = "locales/en/.mustflow/skills/crash-consistency-recovery-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.pure-core-imperative-shell"]
 source = "locales/en/.mustflow/skills/pure-core-imperative-shell/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.result-option"]
@@ -1141,7 +1165,7 @@ translations = {}
 [documents."skill.writing-elegance"]
 source = "locales/en/.mustflow/skills/writing-elegance/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 10
 translations = {}
 
 [documents."skill.writing-elegance.phrase-bank"]
@@ -1218,7 +1242,7 @@ translations = {}
 [documents."skill.pattern-scout"]
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 4
 translations = {}
 
 [documents."skill.proactive-risk-surfacing"]
@@ -1296,7 +1320,7 @@ translations = {}
 [documents."skill.readme-authoring"]
 source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.readme-evidence-gate"]
@@ -1332,7 +1356,13 @@ translations = {}
 [documents."skill.search-ad-content-authoring"]
 source = "locales/en/.mustflow/skills/search-ad-content-authoring/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
+translations = {}
+
+[documents."skill.reader-centered-technical-content"]
+source = "locales/en/.mustflow/skills/reader-centered-technical-content/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.skill-refresh"]
@@ -1344,7 +1374,7 @@ translations = {}
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
-revision = 11
+revision = 12
 translations = {}
 
 [documents."skill.task-instruction-authoring"]
@@ -1380,7 +1410,7 @@ translations = {}
 [documents."skill.test-design-guard"]
 source = "locales/en/.mustflow/skills/test-design-guard/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.fuzz-harness-review"]

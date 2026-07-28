@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-authoring
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-authoring
@@ -92,9 +92,23 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 8. Reject broad advice disguised as a skill. A skill should not say only "be careful", "write better tests", "sync docs", or "think about security" unless it names a repeatable trigger, source files to inspect, allowed edits, verification, and reporting evidence.
 9. Keep the procedure concrete and bounded. Include what to read, what to change, what to avoid, and what evidence to report.
 10. Reference command intent names only. Do not include raw shell command blocks or claim that the skill authorizes command execution.
-11. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
-12. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
-13. If a portable Agent Skills artifact is part of the task, create or validate it as a derived export, not as the mustflow-native canonical source. Use portable-only top-level fields and string-to-string metadata. A `gh skill publish --dry-run` check may validate the export artifact when available, but `gh skill publish --fix` must be limited to the export directory because it can remove installed provenance metadata and mustflow-native fields.
+11. Prove that the route reaches the skill from representative user language, not only that the route row exists.
+    - Add or update a golden route fixture for every new or reclassified skill. Include the task text,
+      relevant paths and reasons, required main or adjunct placement, and a nearby forbidden candidate
+      when overlap is plausible.
+    - Keep candidate eligibility tied to task, path, phrase, reason-plus-corroboration, or dependency
+      evidence. Route type and priority may rank eligible candidates but must not make an empty or
+      unrelated request eligible.
+    - Preserve Unicode task language and use explicit concept aliases when locale-specific wording
+      matters. Match multiword positive and negative signals as phrases or all-term groups instead of
+      flattening them into unrelated single-word votes.
+    - When language, task, risk, or workflow procedures can apply together, prove that the selected
+      read plan retains every required axis instead of forcing them through one global winner.
+    - Include bounded negative coverage for empty input, common words, and exact exclusion phrases
+      when the route change can create false positives.
+12. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
+13. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
+14. If a portable Agent Skills artifact is part of the task, create or validate it as a derived export, not as the mustflow-native canonical source. Use portable-only top-level fields and string-to-string metadata. A `gh skill publish --dry-run` check may validate the export artifact when available, but `gh skill publish --fix` must be limited to the export directory because it can remove installed provenance metadata and mustflow-native fields.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -102,6 +116,8 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 - The expected output can be produced with clear evidence, executed command intents, skipped checks, and remaining risks.
 - Any missing command intent, unknown input, or authority conflict is reported instead of hidden.
 - Material rules have bounded scope, explicit exception behavior, reachable failure branches, and observable postconditions.
+- New or reclassified skills have user-language route fixtures proving positive reachability,
+  exclusion behavior, and coexistence with orthogonal procedures when applicable.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -132,6 +148,7 @@ If the skill changes tests or behavior-sensitive template output, also use the r
 
 - Skill files added, updated, renamed, or removed
 - Skill index routes changed
+- Route reachability fixtures and false-positive boundaries checked
 - Quality gate result and overlap decision
 - Logical consistency result, counterexamples checked, and material claims narrowed
 - Command intents referenced

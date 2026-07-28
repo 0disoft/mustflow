@@ -2,7 +2,7 @@
 mustflow_doc: skill.structure-first-engineering
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-first-engineering
@@ -53,6 +53,10 @@ but reject abstractions that do not lower change cost, failure risk, or cognitiv
 - The user explicitly asks for analysis-only code review; use `code-review` or `architecture-deepening-review` unless implementation will follow.
 - The task is a tiny local logic change with obvious inputs, outputs, tests, and no contract or I/O boundary.
 - The proposed structure is only a file split, naming wrapper, `Service`, `Manager`, `Handler`, factory, or interface without a concrete pressure it removes.
+- The primary question is which repository-specific feature roles, registrations, consumers, tests,
+  docs, operations, rollout, or removal surfaces are missing; use
+  `feature-surface-completeness-review` first, then return here only for hard-to-reverse boundary
+  decisions exposed by that review.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

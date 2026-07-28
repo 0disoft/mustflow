@@ -541,6 +541,7 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		},
 		{
 			name: 'durable-workflow-orchestration',
+			revision: 2,
 			category: 'general_code',
 			routeType: 'primary',
 			priority: 85,

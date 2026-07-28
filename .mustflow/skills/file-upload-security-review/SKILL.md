@@ -2,7 +2,7 @@
 mustflow_doc: skill.file-upload-security-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: file-upload-security-review
@@ -67,6 +67,9 @@ file reach after it enters the system?"
   `state-machine-pattern` first, then this skill for security-specific file handling.
 - The task primarily changes file metadata persistence, storage/database consistency, or cleanup
   rules; use `database-change-safety` or `adapter-boundary` first when those are the owning concern.
+- The task primarily changes resumable upload or download sessions, chunk durability, immutable
+  transfer versions, idempotent finalize, crash recovery, or power-loss behavior without an
+  attacker-controlled file security concern; use `crash-consistency-recovery-review`.
 - The task asks for live exploit traffic, malware collection, credentialed cloud testing, or unsafe
   payload corpus generation. Stay within defensive local code review, safe fixtures, and configured
   tests.

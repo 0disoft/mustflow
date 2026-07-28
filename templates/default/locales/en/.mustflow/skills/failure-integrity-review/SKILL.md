@@ -2,11 +2,11 @@
 mustflow_doc: skill.failure-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: failure-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and exception or failure handling can make the system lie about success, state, data, money, permissions, locks, queues, logs, metrics, or user-visible results, including broad catch blocks, swallowed exceptions, log-and-continue paths, return null/false/empty defaults, finally masking, unsafe retry, missing timeout, cancellation swallowing, async task failures, queue ack/nack, lost causes, raw internal errors, partial state changes, transaction rollback, lock/resource cleanup, parsing defaults, fail-open authorization, unsafe cache fallback, fallback defaults, stable error codes, and missing failure-path observability.
+description: Apply this skill when code is created, changed, reviewed, or reported and exception or failure handling can make the system lie about success, state, data, money, permissions, locks, queues, logs, metrics, or user-visible results, including missing precondition inversions, input/state/dependency/resource/race/interruption/output gaps, broad catch blocks, swallowed exceptions, log-and-continue paths, false defaults, finally masking, unsafe retry, missing timeout, cancellation swallowing, live work after timeout, async or batch result loss, queue ack/nack, lost causes, broken error transformation, partial state changes, transaction rollback, lock/resource cleanup, fail-open authorization, unsafe or unlabeled fallback, contradictory success signals, and missing failure-path or mutation evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -55,9 +55,17 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
 ## Required Inputs
 
 - Failure surface: exception type, error value, rejected promise, timeout, cancellation, parse failure, validation failure, provider response, queue delivery failure, transaction failure, lock failure, cleanup failure, or fallback trigger.
+- Inverted-success ledger: every fact required for the promised result, plus the failure produced when
+  that fact is missing, malformed, stale, forbidden, exhausted, interrupted, or raced.
+- Seven-axis failure matrix: input, state, dependency, resource, race, interruption, and output; mark
+  each axis `covered`, `not_applicable`, `unclear`, or `missing` with evidence.
 - Truth surface: what the caller, user, operator, queue, database, cache, ledger, metric, audit log, or downstream service will believe after the failure.
 - State-change ledger: every mutation, external call, enqueue, publish, ack, lock acquire, file write, cache write, status change, response send, and metric/log emission before and after each fallible step.
 - Error classification: expected rejection, validation error, permission denial, transient dependency failure, permanent dependency failure, unknown outcome, programmer bug, corrupted data, or cancellation.
+- Error-transformation graph: origin, caught value, mapping, public code, retry class, caller action,
+  operator action, log severity, preserved cause, and every place the path can become success.
+- Failure oracle: expected user-visible result, internal durable state, external side-effect state, and
+  operator-visible signal for each material path.
 - Boundary rules: transaction rollback, compensation, idempotency, retry budget, timeout, fallback safety, fail-open or fail-closed behavior, public error code, safe message, cause preservation, redaction, and observability.
 - Relevant command-intent contract entries for tests, builds, docs, release checks, and mustflow validation.
 
@@ -84,12 +92,29 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
 ## Procedure
 
 1. Ask the lie question first. If this step fails, what will the user, caller, database, cache, queue, ledger, metric, log, or operator believe happened?
+   - Define the durable evidence required for success: result identifier, object version, digest,
+     affected-row count, provider receipt, committed version, completed item accounting, or another
+     queryable business result. A log line, HTTP 200, exit code 0, or exception-free return is not
+     success evidence by itself.
+   - Invert every success precondition before reviewing implementation. Missing, malformed, stale,
+     unauthorized, exhausted, raced, interrupted, and unencodable conditions form the initial failure
+     inventory; declared exceptions alone do not.
+   - Force the inventory through input, state, dependency, resource, race, interruption, and output
+     axes. Do not stop at database and network errors.
 2. Classify every caught failure.
    - Avoid one broad `catch (Exception)`, `catch (error)`, or equivalent path that erases file-not-found, permission denied, timeout, validation, corrupted data, dependency failure, and programmer bugs into the same behavior.
    - Separate expected rejection, transient dependency failure, permanent dependency failure, unknown outcome, cancellation, and bug because each needs different propagation, retry, and monitoring.
+   - Draw the error-transformation graph independently from the call graph. A lower-layer failure is
+     still lost when an upper layer changes its meaning, retries it unsafely, erases the cause, or
+     maps it to generic success.
 3. Reject log-and-continue fake success.
    - A caught error followed by `return success`, `return null`, `return false`, `return []`, or continuing to the next side effect usually turns failure into a false fact.
    - Distinguish "no data" from "failed to load data", "not sent" from "sent", and "not applied" from "applied".
+   - Follow control flow after each `catch`, `.catch`, `except`, ignored error, and settled-result
+     branch. Check later success returns, terminal-state writes, completion events, acknowledgments,
+     metrics, and `finally` blocks rather than reviewing the catch body alone.
+   - For parallel and batch APIs, reconcile succeeded, failed, cancelled, and unstarted counts with
+     the original input count. Filtering to successful items is not whole-batch success.
 4. Review `finally` and cleanup masking.
    - Cleanup must run, but cleanup failure should not hide the original failure without preserving it as primary cause or suppressed context.
    - Check file close, stream close, transaction end, lock release, temp-file cleanup, and connection release paths.
@@ -103,10 +128,24 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
 7. Check external side-effect ordering.
    - If internal state says "paid", "sent", "saved", "processed", "approved", or "complete", verify the corresponding external or durable side effect is actually known to have happened.
    - Unknown provider outcomes need reconciliation before repeating money, entitlement, inventory, or privacy-impacting actions.
+   - When local state owns both the result and completion status, persist the success evidence and
+     terminal state in one transaction or enforce a storage constraint that forbids `SUCCEEDED`
+     without its required result or receipt.
+   - Keep transport success separate from business success. Validate response shape and account for
+     every expected batch item as succeeded, failed, or missing instead of inferring omitted work
+     succeeded.
+   - Split each side effect into before-call, in-flight, remote-effect-possible, response-received,
+     local-result-recorded, and response-sent cut points. At each cut point, state what restart,
+     retry, cancellation, and reconciliation may safely do.
+   - Validate status, content type, size, schema, required fields, domain invariants, termination
+     marker, checksum, or item accounting as applicable. Transport 2xx is not business completion.
 8. Review retry and timeout behavior.
    - A network timeout often means "unknown outcome", not "safe failure".
    - Retry only when the operation is idempotent or guarded by durable idempotency. Add bounded attempts, timeout, backoff, jitter, and stop conditions.
    - Missing timeout means failure may never become an exception; check thread, connection, worker, and pool exhaustion risk.
+   - After a caller timeout, determine whether downstream work is cancelled, still running, already
+     committed, or unknowable. A timeout response test is incomplete until delayed effects and safe
+     retry behavior are checked.
 9. Preserve cancellation semantics.
    - `InterruptedException`, `CancellationException`, `AbortError`, cancelled promises, context cancellation, and stop signals are control flow from above, not ordinary failures.
    - Restore interrupt status, rethrow, return a cancellation result, or propagate the cancellation according to local style.
@@ -124,10 +163,15 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
     - Do not make clients branch on free-form text. Public failure contracts need stable machine-readable codes.
 14. Separate business rejections from system failures.
     - Insufficient balance, invalid input, duplicate request, and permission denial are not the same as Redis down, DB unavailable, provider timeout, corrupted data, or programmer bugs.
-    - Map input validation to client-correctable errors and system failure to server/dependency errors.
+   - Map input validation to client-correctable errors and system failure to server/dependency errors.
+   - Inventory caller assumptions beyond the dependency contract: response completeness, ordering,
+     uniqueness, field presence, timeout meaning, webhook order, and retry safety. Inject the opposite
+     assumption where the risk is material.
 15. Trace partial state after every fallible line.
     - After setting `PROCESSING`, writing a DB row, reserving inventory, acquiring a lock, opening a file, sending a response, or publishing an event, ask where state lands if the next line fails.
-    - Close states explicitly as failed, rolled back, pending reconciliation, or unknown instead of leaving them stuck in-progress.
+   - Close states explicitly as failed, rolled back, pending reconciliation, or unknown instead of leaving them stuck in-progress.
+   - Put a conceptual crash point before, during, and after every durable or external effect and
+     before its evidence is recorded. If restart state cannot be explained, the path is incomplete.
 16. Check locks and resources from the acquisition line.
     - The release guarantee should start immediately after `lock()`, semaphore acquire, distributed lock acquire, file lock, advisory lock, connection checkout, file open, stream open, temp file create, or cursor open.
     - Normal-only `close()` paths are failure bugs. Use the local equivalent of scoped resource management.
@@ -140,10 +184,27 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
     - Recommendation, analytics, email, and non-critical display features may degrade only when the fallback cannot change protected state or mislead the user.
 19. Review cache and fallback truth.
     - Cache failure is a performance problem only when cache data is disposable. If cache stores sessions, permissions, rate limits, inventory, idempotency, or deduplication, failure is a correctness boundary.
-    - Fallback must be a safe degraded value, not a convenient default that can sell for zero, grant access, hide missing data, or mark work complete.
+   - Fallback must be a safe degraded value, not a convenient default that can sell for zero, grant access, hide missing data, or mark work complete.
+   - Carry fallback provenance, freshness, quality, and degraded status when callers or users would
+     otherwise mistake stale or synthetic data for authoritative current data.
 20. Require failure-path evidence.
     - Tests should cover DB save failure, external timeout, second-step failure, retry exhaustion, cancellation, malformed input, queue consumer failure, rollback, cleanup, and stable public error code where relevant.
     - Metrics should expose retry exhaustion, fallback activation, dead-letter insert, compensation failure, unknown provider outcome, and data inconsistency when those states matter.
+    - Where false success would be costly, use an independently owned verifier or reconciliation
+      pass to compare terminal states with actual results, receipts, counts, digests, balances, or
+      downstream objects. The code that produced a result should not be the only judge of the same
+      result when both can share one defect.
+    - Give material paths stable internal IDs when a repository failure-manifest or trace convention
+      exists, and connect trigger, handler, cleanup, postconditions, test, and observed execution. Do
+      not create a permanent manifest solely for ceremony.
+    - For every material path, assert four oracles: user-visible response, internal durable state,
+      external side-effect state, and operator-visible evidence. Branch or line coverage alone does
+      not prove failure meaning.
+    - When configured mutation or fault injection exists, remove the failure return, rollback, deny,
+      nack, cleanup, or failed-state write and require the owning test to fail.
+    - Detect contradictory outcomes such as success metrics with rollback spans, completion events
+      with missing receipts, 2xx with failed domain state, acknowledged work with dead-letter evidence,
+      or zero output where a non-empty result is required.
 21. Report missing evidence honestly. If the repository lacks configured integration, provider, queue, database, chaos, or load checks, complete available verification and name the remaining manual evidence gap.
 
 <!-- mustflow-section: postconditions -->
@@ -151,7 +212,13 @@ The question is not whether a `try`/`catch` exists. The stronger question is whe
 
 - Failure paths no longer produce false success, false completion, false empty data, false authorization, false delivery, or false durable state.
 - Expected rejection, transient failure, permanent failure, unknown outcome, cancellation, bug, and corrupted data are separated where they affect behavior.
+- Inverted success conditions and the input, state, dependency, resource, race, interruption, and
+  output axes are covered or explicitly classified.
+- Error meaning survives the transformation graph, and post-catch control flow cannot turn failure,
+  partial completion, cancellation, or unknown outcome into success silently.
 - Transactions, external side effects, retries, timeouts, queues, locks, resources, parsing defaults, fallbacks, and public error shapes are checked where relevant.
+- Material paths have user, durable-state, external-state, and operator-signal evidence; batch
+  accounting and contradictory success signals are closed where relevant.
 - Logs, metrics, traces, and audit records provide safe incident evidence without leaking sensitive data.
 - Focused tests or configured verification cover the highest-risk failure branch when feasible.
 
@@ -184,8 +251,9 @@ Prefer the narrowest configured test, build, docs, release, or mustflow intent t
 ## Output Format
 
 - Failure surface and lie checked
-- Error categories and boundaries reviewed
-- False success, swallowed exception, null/false/empty default, finally masking, transaction, side-effect ordering, retry/timeout, cancellation, async ownership, queue ack/nack, cause preservation, public/internal error shape, partial state, lock/resource cleanup, parsing default, fail-open, cache/fallback, and observability checks where relevant
+- Inverted success conditions, seven-axis failure matrix, and error-transformation graph
+- False success, swallowed exception, post-catch control flow, null/false/empty default, finally masking, transaction, side-effect cut points, retry/timeout, live work after timeout, cancellation, async ownership, batch accounting, queue ack/nack, cause preservation, public/internal error shape, partial state, lock/resource cleanup, parsing default, fail-open, labeled fallback, contradictory success signals, and observability checks where relevant
+- Failure-path IDs, four-oracle evidence, mutation or fault-injection evidence, and unavailable proof
 - Failure-integrity fixes made or recommended
 - Tests or verification evidence
 - Command intents run

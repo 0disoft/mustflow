@@ -2,11 +2,11 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
-description: Apply this skill when authentication, authorization, permissions, roles, RBAC or ABAC policy decisions, tenants, organization or team memberships, sessions, cookies, JWTs, refresh tokens, OAuth or OIDC, passkeys, MFA, account recovery, API keys, route guards, admin access, database policies, object-level access control, signed delivery URLs, credentialed event streams, private cache behavior, or account-takeover response paths are created or changed.
+description: Apply this skill when authentication, authorization, permissions, roles, RBAC or ABAC policy decisions, tenants, organization or team memberships, sessions, cookies, JWTs, refresh tokens, OAuth or OIDC, passkeys, MFA, account recovery, API keys, route guards, admin access, database policies, object-level access control, atomic mutation authorization, authentication-expiry and denial taxonomy, resource-hiding responses, decision obligations, refresh retry safety, scoped long-running job authority, signed delivery URLs, credentialed event streams, private cache behavior, or account-takeover response paths are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -54,6 +54,9 @@ Authentication answers who the requester is. Authorization answers what that pri
 ## Required Inputs
 
 - Changed files, user goal, affected actors, protected resources, actions, tenants, organizations, teams, roles, and status-code expectations.
+- Authentication and denial taxonomy: missing identity, expired identity, revoked session, denied
+  permission, hidden resource, step-up required, policy unavailable, stale policy, and unknown policy
+  result, including external status and internal reason mapping.
 - Permission decision tuple for each changed protected action: subject, action, object, tenant or
   organization, relationship path, request environment, policy version, data revision, token issue
   time, and final allow or deny reason.
@@ -73,6 +76,11 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Revocation and cache evidence: token claim freshness, session lifetime, permission-cache key and
   TTL, policy replication delay, search-index or export lag, stale queue payloads, and rollback or
   shadow-evaluation behavior when policy changes.
+- Mutation-boundary evidence: resource and tenant predicates, policy facts, version or concurrency
+  guard, affected-row interpretation, and how missing, denied, hidden, stale, or raced outcomes differ.
+- Retry and long-running authority evidence: request idempotency, refresh single-flight or rotation
+  policy, operation identity, scoped job capability, budget, expiry, revocation, revalidation points,
+  service-takeover state, and irreversible effect boundaries.
 - Account-takeover and recovery evidence: login throttling, credential-stuffing controls, password
   reset, magic-link, MFA reset, email change, trusted-device, session-kill, notification, and
   high-risk-action hold behavior.
@@ -107,6 +115,9 @@ Authentication answers who the requester is. Authorization answers what that pri
      account, passkey, MFA event, API key, service account, reset token, magic link, or anonymous
      state;
    - authorization: decides whether that principal can perform an action on a resource within a tenant and context.
+   - Keep `AUTHENTICATION_REQUIRED`, `SESSION_EXPIRED`, `SESSION_REVOKED`, `PERMISSION_DENIED`,
+     `RESOURCE_HIDDEN`, `STEP_UP_REQUIRED`, and `POLICY_UNAVAILABLE` distinct when callers or
+     operators need different recovery. Do not disguise policy infrastructure failure as user denial.
 2. Read the mandatory surfaces that apply:
    - auth middleware, hooks, gateway, session store, cookies, JWT, refresh tokens, OAuth/OIDC,
      passkeys, MFA, API key verification, logout, revocation, and token rotation;
@@ -120,6 +131,11 @@ Authentication answers who the requester is. Authorization answers what that pri
    - Record subject, action, object, tenant, environment, policy version, data revision, token issue
      time, matched policy, inheritance path, and final allow or deny reason.
    - A role label is not the decision. Use effective permissions and relationship paths.
+   - Do not reduce the result to a bare boolean when enforcement needs reason, policy version,
+     validity window, field masking, row filtering, rate or amount limits, step-up, extra audit, or
+     another obligation. The happy path must apply obligations returned with the allow decision.
+   - Permission-cache identity must include every decision dimension that can change the result,
+     including tenant, action, resource state, relationship, policy version, and relevant context.
 5. Separate identity from permission:
    - `req.user`, a valid session, verified email, valid JWT, OAuth scope, or API key proves identity only;
    - owner, active member, org admin, global admin, support user, service account, API client, and shared-link viewer need separate authorization rules.
@@ -140,9 +156,18 @@ Authentication answers who the requester is. Authorization answers what that pri
     - Attribute fetch failure, policy-store timeout, stale policy bundle, or missing relationship
       data should deny or degrade to a documented low-risk mode, not silently allow.
 11. Validate every request. Do not rely on login-time checks, client guards, disabled buttons, hidden menus, generated types, OpenAPI docs, or mobile local checks.
+    - Enforce final resource/action authority at the mutation or authoritative read boundary. Prefer
+      tenant, resource state, permission-relevant relation, and version predicates in the same
+      conditional update, delete, lock, stored procedure, RLS policy, or transaction that changes data.
+    - Treat zero affected rows as an unresolved classification until repository policy distinguishes
+      missing, hidden, denied, stale-version, invalid-state, or raced outcomes. Never report success
+      merely because the query completed without throwing.
 12. Load resources safely before final authorization:
    - include tenant, membership, owner, sharing, and soft-delete constraints in the resource lookup when possible;
    - when existence must be hidden, keep wrong-tenant and missing-resource behavior consistent with the project's 404 policy.
+   - Keep external enumeration-safe behavior separate from internal evidence. A hidden resource may
+     return the same public 404 and comparable timing as absence while internal audit records retain
+     a safe actor, tenant, action, resource hash, policy version, and hidden-denial reason.
 13. Check multi-tenant and organization/team risks:
    - body, query, header, path, JWT claim, or local storage tenant ids must not become trusted tenant context;
    - tenant-scoped queries must include tenant or membership constraints;
@@ -164,6 +189,10 @@ Authentication answers who the requester is. Authorization answers what that pri
      revocation, server-side invalidation, cookie flags, and CSRF posture;
    - refresh tokens need hash storage, family or device binding, rotation, reuse detection,
      single-flight or short grace handling for multi-tab and retry races, and revocation triggers;
+   - automatic replay after refresh is safe only when the original operation is read-only or has a
+     stable idempotency key and authoritative result lookup. A 401 does not prove a write never ran;
+   - coordinate refresh per session or token family. Independent refresh attempts from concurrent
+     requests or tabs can invalidate a rotating family or misclassify normal races as theft;
    - JWTs need signature verification, algorithm allowlist, issuer, audience, subject, expiry, not-before, key rotation, and stale-claim handling;
    - OAuth/OIDC needs exact redirect binding, state, nonce, PKCE when relevant, provider account binding, and safe account linking;
    - password reset, magic-link, email change, and account recovery tokens need purpose binding,
@@ -183,8 +212,14 @@ Authentication answers who the requester is. Authorization answers what that pri
       reuse, suspected account takeover, and support access expiry should say how long old sessions,
       refresh tokens, JWT claims, caches, search indexes, queued jobs, signed URLs, and replicas can
       keep authorizing the old state.
-    - Sensitive actions need server-side recheck, short-lived tokens, revocation lists, or policy
-      version gates when stale tokens would be harmful.
+   - Sensitive actions need server-side recheck, short-lived tokens, revocation lists, or policy
+     version gates when stale tokens would be harmful.
+   - Long-running work should carry a job-scoped authority containing operation, resources, tenant,
+     budget or limit, policy version, expiry, and owner instead of persisting a general user token.
+     Revalidate before irreversible privacy export, payment, publication, permission grant, or other
+     high-impact effects.
+   - If work must continue after user revocation, represent explicit service takeover with reason,
+     audit, scope, and state. Do not silently extend the user's authority.
 17. Check account-takeover response paths.
     - Login, signup, password reset, magic link, OTP, MFA, invite acceptance, email verification,
       API-key creation, and support impersonation need rate limits, account/IP/device dimensions,
@@ -194,7 +229,7 @@ Authentication answers who the requester is. Authorization answers what that pri
       step-up, hold, read-only quarantine, or session revocation according to product risk.
 18. Check dependent surfaces: API routes, controllers, services, DB schema, DB queries, RLS, UI navigation, UI actions, API clients, audit logs, notifications, jobs, webhooks, search, file storage, docs, migrations, monitoring, and tests.
     - For credentialed delivery surfaces, check whether EventSource can supply the intended credentials, whether CORS and cookies match the policy, whether signed URLs expire and scope correctly, and whether caches vary on auth, tenant, and private response dimensions.
-19. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong team, wrong owner, suspended or removed member, stale token, refresh-token reuse, stale cache, unknown role, unknown action, wildcard policy, explicit deny, shared-link, read-only API key, org admin, team admin, billing admin, global admin, support user, and impersonating admin cases as applicable.
+19. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong team, wrong owner, suspended or removed member, stale token, refresh-token reuse and concurrent refresh, stale cache, unknown role, unknown action, wildcard policy, explicit deny, hidden resource, step-up required, policy unavailable, affected-row zero, permission changed during the request or job, shared-link, read-only API key, org admin, team admin, billing admin, global admin, support user, and impersonating admin cases as applicable.
 20. When changing policies, consider shadow evaluation.
     - Compute old and new decisions side by side for representative requests before flipping broad
       policy changes when the product has the infrastructure to do so.
@@ -248,6 +283,12 @@ Authentication answers who the requester is. Authorization answers what that pri
 - Shipping a permission engine that cannot explain why a request was allowed or denied.
 - Treating an effective-permission bug as solved because the `role` column looks correct.
 - Treating token-embedded roles as fresh after demotion, removal, or policy version changes.
+- Treating a bare boolean permission result as sufficient when obligations, validity, or policy
+  failure affect enforcement.
+- Replaying a state-changing request automatically after authentication refresh without durable
+  idempotency and authoritative result lookup.
+- Persisting a general user token in long-running work or silently extending user authority after
+  revocation.
 - Creating shared links, signed URLs, exports, search results, or CDN responses outside tenant and resource policy.
 - Creating credentialed event streams, WebTransport sessions, WebSocket fallback channels, signed delivery URLs, or private caches outside tenant and resource policy.
 - Logging impersonation without separate actor and subject.
@@ -258,9 +299,15 @@ Authentication answers who the requester is. Authorization answers what that pri
 
 - Authentication and authorization are separated in code and report language.
 - Every changed protected action has a server-side or database-side permission boundary.
+- Protected mutations bind resource, tenant, relevant authority facts, state, and concurrency at the
+  authoritative write boundary, and zero affected rows are not reported as success blindly.
 - Tenant isolation, organization or team membership, resource ownership, sharing, admin scope, and status-code behavior are explicit.
+- Missing identity, expiry, revocation, denial, hidden resource, step-up, and policy unavailability
+  remain distinct internally even when public enumeration policy intentionally collapses responses.
 - Effective permissions, policy-combination rules, decision explanation, policy version, data
-  revision, and revocation window are explicit when relevant.
+  revision, obligations, validity, and revocation window are explicit when relevant.
+- Authentication refresh does not replay unsafe writes, and long-running work has bounded authority,
+  irreversible-step revalidation, or an explicit audited service-takeover state.
 - Client guards are described as UX only.
 - Session, cookie, browser-token, refresh-token, OAuth/OIDC, MFA, passkey, recovery, API key, cache, audit, docs, migration, and tests are synchronized when touched.
 - Signed URL, event-stream, WebTransport, WebSocket fallback, CORS, cookie, CDN/proxy cache, and reconnect behavior remains inside the permission model when touched.
@@ -299,6 +346,10 @@ Prefer the narrowest configured test intent that covers the changed protected ac
 - Principal, tenant, resource, action, and context affected
 - Policy source of truth
 - Effective permission, policy version, data revision, decision explanation, and revocation window
+- Authentication and denial taxonomy, public mapping, hidden-resource policy, and internal audit evidence
+- Decision obligations, validity, and permission-cache dimensions
+- Atomic mutation and affected-row classification notes
+- Refresh replay, single-flight, scoped job authority, revalidation, and service-takeover notes
 - Server/database enforcement notes
 - Client guard UX-only notes
 - Tenant, organization/team, ownership, sharing, admin, token/session/refresh-token/MFA/API-key, account-recovery, cache, and audit notes
