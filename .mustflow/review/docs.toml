@@ -494,9 +494,17 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-28T09:28:38.782Z"
+last_touched_at = "2026-07-28T14:00:11.891Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
+
+[[documents]]
+path = ".mustflow/skills/information-visualization-integrity-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T14:00:11.908Z"
+last_touched_at = "2026-07-28T14:00:11.908Z"
 
 [[documents]]
 path = ".mustflow/skills/input-boundary-validation-review/SKILL.md"
@@ -1010,7 +1018,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-07-28T09:28:38.870Z"
+last_touched_at = "2026-07-28T14:00:11.920Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -1083,6 +1091,22 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.438Z"
+last_touched_at = "2026-07-28T14:00:11.931Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/en/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.453Z"
+last_touched_at = "2026-07-28T14:00:11.942Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/commands/workspace.md"
 status = "pending"
 origin = "llm_modified"
@@ -1097,6 +1121,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-30T14:11:32.327Z"
 last_touched_at = "2026-06-30T14:49:46.605Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/en/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.470Z"
+last_touched_at = "2026-07-28T14:00:11.951Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/files/commands-toml.md"
@@ -1151,6 +1183,30 @@ first_seen_at = "2026-06-28T08:27:56.107Z"
 last_touched_at = "2026-06-28T08:53:04.190Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/es/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.481Z"
+last_touched_at = "2026-07-28T14:00:11.959Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/es/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.492Z"
+last_touched_at = "2026-07-28T14:00:11.968Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/es/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.501Z"
+last_touched_at = "2026-07-28T14:00:11.976Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/es/files/mustflow-toml.md"
 status = "pending"
 origin = "llm_modified"
@@ -1175,6 +1231,30 @@ first_seen_at = "2026-06-28T08:27:56.128Z"
 last_touched_at = "2026-06-28T08:53:04.209Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/fr/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.513Z"
+last_touched_at = "2026-07-28T14:00:11.987Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/fr/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.524Z"
+last_touched_at = "2026-07-28T14:00:11.996Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/fr/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.536Z"
+last_touched_at = "2026-07-28T14:00:12.005Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/fr/files/mustflow-toml.md"
 status = "pending"
 origin = "llm_modified"
@@ -1197,6 +1277,30 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-28T08:27:56.146Z"
 last_touched_at = "2026-06-28T08:53:04.226Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/hi/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.545Z"
+last_touched_at = "2026-07-28T14:00:12.012Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/hi/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.556Z"
+last_touched_at = "2026-07-28T14:00:12.021Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/hi/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.570Z"
+last_touched_at = "2026-07-28T14:00:12.030Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/hi/files/mustflow-toml.md"
@@ -1269,6 +1373,30 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/ko/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.582Z"
+last_touched_at = "2026-07-28T14:00:12.037Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/ko/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.593Z"
+last_touched_at = "2026-07-28T14:00:12.045Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/ko/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.603Z"
+last_touched_at = "2026-07-28T14:00:12.052Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/ko/files/json-schemas.md"
 status = "pending"
 origin = "llm_modified"
@@ -1313,6 +1441,30 @@ first_seen_at = "2026-06-28T08:27:56.188Z"
 last_touched_at = "2026-06-28T08:53:04.264Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/zh/commands/update.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.613Z"
+last_touched_at = "2026-07-28T14:00:12.060Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/zh/commands/upgrade.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.624Z"
+last_touched_at = "2026-07-28T14:00:12.067Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/zh/design/update-policy.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T13:38:22.634Z"
+last_touched_at = "2026-07-28T14:00:12.074Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/zh/files/mustflow-toml.md"
 status = "pending"
 origin = "llm_modified"
@@ -1342,7 +1494,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-07-25T14:21:50.671Z"
+last_touched_at = "2026-07-28T14:00:12.083Z"
 
 [[documents]]
 path = "schemas/README.md"
@@ -1848,7 +2000,15 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-28T09:28:38.948Z"
+last_touched_at = "2026-07-28T14:00:12.091Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/information-visualization-integrity-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-07-28T14:00:12.097Z"
+last_touched_at = "2026-07-28T14:00:12.097Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/input-boundary-validation-review/SKILL.md"

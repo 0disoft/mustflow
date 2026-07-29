@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 303
+revision = 304
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -417,6 +417,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/ui-state-resurrection-review/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.information-visualization-integrity-review"]
+source = "locales/en/.mustflow/skills/information-visualization-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.frontend-stress-layout-review"]

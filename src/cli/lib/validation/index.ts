@@ -1300,6 +1300,18 @@ function readOptionalSlugArray(value: unknown, label: string, issues: CheckIssue
 	return values;
 }
 
+function readOptionalSearchTermArray(value: unknown, label: string, issues: CheckIssue[]): string[] {
+	const values = readOptionalStringArray(value, label, issues);
+
+	for (const value of values) {
+		if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N}_-]*$/u.test(value) || value !== value.toLowerCase()) {
+			pushStrictIssue(issues, `${label} entry "${value}" must use lowercase Unicode search-term text`);
+		}
+	}
+
+	return values;
+}
+
 function readSkillRouteMetadataContexts(
 	value: unknown,
 	label: string,
@@ -1316,8 +1328,8 @@ function readSkillRouteMetadataContexts(
 		frameworks: readOptionalSlugArray(contexts.frameworks, `${label}.contexts.frameworks`, issues),
 		layers: readOptionalSlugArray(contexts.layers, `${label}.contexts.layers`, issues),
 		patternCategories: readOptionalSlugArray(contexts.pattern_categories, `${label}.contexts.pattern_categories`, issues),
-		positiveTerms: readOptionalSlugArray(contexts.positive_terms, `${label}.contexts.positive_terms`, issues),
-		negativeTerms: readOptionalSlugArray(contexts.negative_terms, `${label}.contexts.negative_terms`, issues),
+		positiveTerms: readOptionalSearchTermArray(contexts.positive_terms, `${label}.contexts.positive_terms`, issues),
+		negativeTerms: readOptionalSearchTermArray(contexts.negative_terms, `${label}.contexts.negative_terms`, issues),
 	};
 }
 

@@ -403,6 +403,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('split-refactor-residual-path-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-state-ownership-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('ui-state-resurrection-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('information-visualization-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-stress-layout-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-accessibility-tree-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-localization-review'));
@@ -496,6 +497,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.product.includes('split-refactor-residual-path-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-state-ownership-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('ui-state-resurrection-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('information-visualization-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-stress-layout-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-accessibility-tree-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-localization-review'));

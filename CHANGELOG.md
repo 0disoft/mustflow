@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added an installed information-visualization integrity skill that chooses tables, charts,
+  diagrams, and timelines from reader decisions and semantic relationships, requires
+  source-backed visual specifications and claim ledgers, preserves missingness and uncertainty,
+  exposes failure paths and timeline ambiguity, and hands rendered layout and accessibility risks
+  to their existing specialists.
 - Added update-plan schema v2 and a lock-hash-gated catalog v1 retirement migration: dry-runs now
   report `remove`, apply backs up and deletes only unchanged managed v1 catalogs, preserves
   customized or modified files as blockers, removes stale lock entries, and remains idempotent.

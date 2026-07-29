@@ -147,7 +147,7 @@ test('does not select a skill without route evidence', () => {
 test('reports aggregate skill route quality metrics from the versioned corpus', () => {
 	const report = evaluateSkillRouteFixtures(projectRoot);
 
-	assert.equal(report.case_count, 46);
+	assert.equal(report.case_count, 48);
 	assert.equal(report.passed_case_count, report.case_count);
 	assert.equal(report.main_accuracy.rate, 1);
 	assert.equal(report.candidate_recall.rate, 1);
@@ -508,6 +508,35 @@ test('matches negative route signals as phrases instead of token bags', () => {
 	assert.equal(negativeResult.status, 0, negativeResult.stderr || negativeResult.stdout);
 	assert.ok(negativeTypeContract);
 	assert.ok(negativeTypeContract.score_breakdown.negative_signal_penalty < 0);
+});
+
+test('marks accessibility-only chart work as a negative information visualization boundary', () => {
+	const result = runCli(projectRoot, [
+		'skill',
+		'route',
+		'--task',
+		'The chart form and data meaning are already correct; perform accessibility-tree-only keyboard and naming fixes',
+		'--path',
+		'src/components/RevenueChart.tsx',
+		'--reason',
+		'ui_change',
+		'--max-candidates',
+		'10',
+		'--json',
+	]);
+	const report = JSON.parse(result.stdout);
+	const visualization = report.candidates.find(
+		(candidate) => candidate.skill === 'information-visualization-integrity-review',
+	);
+
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	assert.ok(visualization);
+	assert.ok(visualization.score_breakdown.negative_signal_penalty < 0);
+	assert.ok(visualization.matched_dimensions.includes('negative_signal'));
+	assert.ok(
+		report.candidates.some((candidate) => candidate.skill === 'frontend-accessibility-tree-review'),
+		report.candidates.map((candidate) => candidate.skill).join(', '),
+	);
 });
 
 test('uses pattern signal route cards to break same-priority architecture route ties', () => {

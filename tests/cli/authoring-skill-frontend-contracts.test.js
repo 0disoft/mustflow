@@ -324,6 +324,63 @@ test('ui state resurrection review traces restored UI state after completion or 
 	assert.match(i18n, /\[documents\."skill\.ui-state-resurrection-review"\][\s\S]*?revision = 3/u);
 });
 
+test('information visualization integrity review keeps visual form tied to reader decisions and source claims', () => {
+	const localSkill = readText('.mustflow/skills/information-visualization-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/information-visualization-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /reader question, decision, next action/u);
+	assert.match(localSkill, /semantic relationship/u);
+	assert.match(localSkill, /table for exact lookup/u);
+	assert.match(localSkill, /line only for ordered continuous domains/u);
+	assert.match(localSkill, /diagram family by meaning/u);
+	assert.match(localSkill, /Map nouns to nodes and verbs to labeled edges/u);
+	assert.match(localSkill, /visual specification before rendering/u);
+	assert.match(localSkill, /rejection rules before recommendation rules/u);
+	assert.match(localSkill, /missing intervals as gaps, not zero/u);
+	assert.match(localSkill, /measurement-definition change/u);
+	assert.match(localSkill, /same scale/u);
+	assert.match(localSkill, /Do not draw causal edges from temporal order alone/u);
+	assert.match(localSkill, /partial failure/u);
+	assert.match(localSkill, /one abstraction level per view/u);
+	assert.match(localSkill, /distinct retry loops and attempt identities/u);
+	assert.match(localSkill, /occurrence, detection, decision, communication/u);
+	assert.match(localSkill, /one visual the lead role/u);
+	assert.match(localSkill, /direct labels/u);
+	assert.match(localSkill, /Tooltips must not be the only evidence path/u);
+	assert.match(localSkill, /claim ledger and oracle/u);
+	assert.match(localSkill, /200 percent zoom/u);
+	assert.match(localSkill, /reconstruction test/u);
+	assert.match(localSkill, /frontend-stress-layout-review/u);
+	assert.match(localSkill, /frontend-accessibility-tree-review/u);
+	assert.match(skillIndex, /information-visualization-integrity-review/u);
+	assert.match(skillIndex, /reader-decision-first form selection/u);
+	assert.match(routes, /\[routes\."information-visualization-integrity-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"/u);
+	assert.match(routes, /priority = 86/u);
+	assertRouteReasonsText(routes, [
+		'ui_change',
+		'docs_change',
+		'data_change',
+		'behavior_change',
+		'test_change',
+		'web_asset_change',
+	]);
+	assert.match(routes, /"차트"/u);
+	assert.equal((manifest.match(/information-visualization-integrity-review/gu) ?? []).length, 7);
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.information-visualization-integrity-review"\][\s\S]*?revision = 2/u);
+});
+
 test('frontend stress layout review catches hostile content and container breakage', () => {
 	const localSkill = readText('.mustflow/skills/frontend-stress-layout-review/SKILL.md');
 	const templateSkill = readText(

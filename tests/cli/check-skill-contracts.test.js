@@ -303,6 +303,54 @@ test('strict check fails skill route metadata drift', async () => {
 	}
 });
 
+test('strict check accepts lowercase Unicode route search terms and rejects uppercase terms', async () => {
+	const acceptedProject = createInitializedSkillProject();
+	const rejectedProject = createInitializedSkillProject();
+
+	try {
+		const acceptedRoutesPath = path.join(acceptedProject, '.mustflow', 'skills', 'routes.toml');
+		writeFileSync(
+			acceptedRoutesPath,
+			readText(acceptedRoutesPath).replace(
+				'[routes."code-review".dependencies]',
+				'[routes."code-review".contexts]\npositive_terms = ["코드-검토"]\nnegative_terms = ["문서_전용"]\n\n[routes."code-review".dependencies]',
+			),
+		);
+		unlinkSync(path.join(acceptedProject, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const acceptedResult = await runCliInProcess(acceptedProject, ['check', '--strict', '--json']);
+		const acceptedCheck = JSON.parse(acceptedResult.stdout);
+		assert.ok(
+			!acceptedCheck.issues.some((issue) => issue.includes('코드-검토') || issue.includes('문서_전용')),
+			`lowercase Unicode search terms should be valid: ${acceptedCheck.issues.join('\n')}`,
+		);
+
+		const rejectedRoutesPath = path.join(rejectedProject, '.mustflow', 'skills', 'routes.toml');
+		writeFileSync(
+			rejectedRoutesPath,
+			readText(rejectedRoutesPath).replace(
+				'[routes."code-review".dependencies]',
+				'[routes."code-review".contexts]\npositive_terms = ["Code-Review"]\n\n[routes."code-review".dependencies]',
+			),
+		);
+		unlinkSync(path.join(rejectedProject, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const rejectedResult = await runCliInProcess(rejectedProject, ['check', '--strict', '--json']);
+		const rejectedCheck = JSON.parse(rejectedResult.stdout);
+		assert.equal(rejectedResult.status, 1);
+		assert.ok(
+			rejectedCheck.issues.some(
+				(issue) =>
+					issue ===
+					'Strict: .mustflow/skills/routes.toml routes.code-review.contexts.positive_terms entry "Code-Review" must use lowercase Unicode search-term text',
+			),
+		);
+	} finally {
+		removeTempProject(acceptedProject);
+		removeTempProject(rejectedProject);
+	}
+});
+
 test('strict check rejects missing or unknown skill route selection axes', async () => {
 	const missingAxisProject = createInitializedSkillProject();
 	const unknownAxisProject = createInitializedSkillProject();

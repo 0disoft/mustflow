@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:f2152ac49cccb4a07eb74cd526656be49e7ddaac99f68e63508975e7555a9417",
+  "source_fingerprint": "sha256:f08f9423639f681f3b16ce9fcbeeedb2247db0521f469675f12a1e7d471ed0b0",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -5899,6 +5899,78 @@
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "information-visualization-integrity-review",
+      "skill_path": ".mustflow/skills/information-visualization-integrity-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 86,
+      "applies_to_reasons": [
+        "ui_change",
+        "docs_change",
+        "data_change",
+        "behavior_change",
+        "test_change",
+        "web_asset_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "그래프",
+        "다이어그램",
+        "순서도",
+        "시각화",
+        "정보 시각화",
+        "차트",
+        "타임라인",
+        "표",
+        "accessible chart",
+        "axis",
+        "chart",
+        "claim ledger",
+        "data visualization",
+        "diagram",
+        "flowchart",
+        "graph",
+        "information visualization",
+        "legend",
+        "missing data",
+        "reader decision",
+        "sequence diagram",
+        "source table",
+        "table versus chart",
+        "text to visual",
+        "timeline",
+        "uncertainty band",
+        "visual specification"
+      ],
+      "negative_signals": [
+        "accessibility tree only",
+        "css only",
+        "keyboard only",
+        "renderer performance only",
+        "static html container only",
+        "statistics only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when charts, graphs, tables, diagrams, flowcharts, timelines, dashboards, infographics, data stories, or text-to-visual summaries are selected, specified, created, reviewed, or reported and the visual form must match the reader decision, semantic relationship, exact-value need, uncertainty, failure path, abstraction level, accessibility, or source evidence instead of merely looking plausible.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

@@ -2072,6 +2072,19 @@ priority = 83
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."information-visualization-integrity-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 86
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "docs_change", "data_change", "behavior_change", "test_change", "web_asset_change"]
+
+[routes."information-visualization-integrity-review".contexts]
+layers = ["analytics", "architecture", "dashboard", "documentation", "reporting", "ui"]
+pattern_categories = ["chart_selection", "diagram_semantics", "information_design", "text_to_visual", "timeline_integrity", "visualization_validation"]
+positive_terms = ["accessible-chart", "axis", "chart", "claim-ledger", "data-visualization", "diagram", "flowchart", "graph", "information-visualization", "legend", "missing-data", "reader-decision", "sequence-diagram", "source-table", "table-versus-chart", "text-to-visual", "timeline", "uncertainty-band", "visual-specification", "그래프", "다이어그램", "순서도", "시각화", "정보-시각화", "차트", "타임라인", "표"]
+negative_terms = ["accessibility-tree-only", "css-only", "keyboard-only", "renderer-performance-only", "static-html-container-only", "statistics-only"]
+
 [routes."frontend-stress-layout-review"]
 category = "ui_assets"
 route_type = "adjunct"

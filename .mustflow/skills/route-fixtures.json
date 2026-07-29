@@ -766,6 +766,41 @@
       "required_candidates": [
         "reader-centered-technical-content"
       ]
+    },
+    {
+      "id": "information-visualization-integrity-korean",
+      "task": "보고서의 표와 그래프, 순서도를 독자 판단에 맞게 고르고 누락값과 실패 경로까지 검증해",
+      "paths": [
+        "docs/report.md"
+      ],
+      "reasons": [
+        "docs_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "information-visualization-integrity-review"
+      ],
+      "required_adjuncts": [
+        "information-visualization-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "visual-review-artifact"
+      ]
+    },
+    {
+      "id": "chart-accessibility-tree-only",
+      "task": "The chart form and data meaning are already correct; perform accessibility-tree-only keyboard and naming fixes",
+      "paths": [
+        "src/components/RevenueChart.tsx"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "frontend-accessibility-tree-review"
+      ]
     }
   ]
 }
