@@ -154,7 +154,7 @@ test('native crash forensics separates detection site from exact artifact and ca
 	assert.match(routes, /"crash-consistency-only"/u);
 	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 7);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName, 3);
 });
 
 test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {
