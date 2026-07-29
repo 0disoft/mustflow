@@ -29,7 +29,9 @@ module. Output stays inside the mustflow root, does not overwrite by default, an
 `--overwrite` to replace an existing regular file.
 
 `captured_at` is the evidence collection time, not a claimed crash-occurrence time. Absolute module
-paths found in minidumps are removed from the portable record.
+paths found in minidumps and absolute source paths found in sanitizer summaries or frames are
+removed from the portable record. The sanitizer adapter accepts common ASan, TSan, MSan, LSan,
+and UBSan `runtime error:` report forms while keeping frame collection bounded.
 
 ## Race
 

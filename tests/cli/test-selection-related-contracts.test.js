@@ -82,7 +82,9 @@ test('related selection keeps package surface checks release-sensitive instead o
 test('related selection maps native crash evidence source and schema to focused contract tests', () => {
 	for (const changedFile of [
 		'src/core/native-crash-evidence.ts',
+		'src/core/native-crash-collectors.ts',
 		'schemas/native-crash-evidence.schema.json',
+		'tests/cli/helpers/native-crash-fixtures.js',
 	]) {
 		const report = selectRelated([changedFile]);
 		const selected = new Set(report.selected);

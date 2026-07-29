@@ -3240,3 +3240,72 @@ effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency
 network = false
 destructive = false
 approval_actions = ["git_commit"]
+
+[intents.native_crash_fixture_corpus_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.119.0 deterministic native crash fixture corpus, parser privacy hardening, synchronized docs, and focused regression contracts."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/review/docs.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "docs-site/src/content/docs/en/commands/crash-evidence.md",
+  "docs-site/src/content/docs/es/commands/crash-evidence.md",
+  "docs-site/src/content/docs/fr/commands/crash-evidence.md",
+  "docs-site/src/content/docs/hi/commands/crash-evidence.md",
+  "docs-site/src/content/docs/ko/commands/crash-evidence.md",
+  "docs-site/src/content/docs/zh/commands/crash-evidence.md",
+  "scripts/lib/test-selection.mjs",
+  "src/core/native-crash-collectors.ts",
+  "tests/cli/helpers/native-crash-fixtures.js",
+  "tests/cli/native-crash-collectors.test.js",
+  "tests/cli/test-selection-related-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.native_crash_fixture_corpus_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 native crash fixture corpus."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.native_crash_fixture_corpus_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 native crash fixture corpus and parser privacy hardening."
+argv = [
+  "git", "commit",
+  "-m", "🧪 test(crash): add realistic portable fixture corpus",
+  "-m", "Generate deterministic minidump, ELF64, ELF32, and sanitizer fixtures without raw process memory; cross-check fixed byte identities; recognize common sanitizer dialects; redact absolute source paths; and reject malformed structural boundaries.",
+  "-m", "Validation: mf run build; mf run test_related; mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]

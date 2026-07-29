@@ -400,6 +400,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/native-crash-evidence\.ts$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^src\/core\/(?:native-crash-collectors|deterministic-race-harness)\.ts$/u, tests: nativeCrashEvidenceTests },
+		{ match: /^tests\/cli\/helpers\/native-crash-fixtures\.js$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^src\/core\/authority-resolution\.ts$/u, tests: ['check-doc-authority.test.js', 'explain-authority.test.js'] },
 		{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: schemaSmokeTests },

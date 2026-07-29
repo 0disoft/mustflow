@@ -21,6 +21,8 @@ npx mf crash-evidence collect crash/crash.dmp --adapter windows-minidump --binar
 
 适配器为 `windows-minidump`、`linux-core` 和 `sanitizer`。收集器只做离线处理，不会运行调试器、加载符号或编造缺失的寄存器和栈帧。`--binary` 只把候选文件的精确 SHA-256 记录为 `candidate_only`，并不证明它与捕获模块匹配。替换已有输出必须显式使用 `--overwrite`。
 
+便携记录会移除绝对模块路径和源码路径。适配器支持常见的 ASan、TSan、MSan、LSan 以及 UBSan `runtime error:` 形式，并严格限制收集的栈帧数量。
+
 ## Race 重放
 
 ```sh

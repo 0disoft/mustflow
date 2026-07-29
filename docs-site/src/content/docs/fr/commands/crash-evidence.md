@@ -21,6 +21,8 @@ npx mf crash-evidence collect crash/crash.dmp --adapter windows-minidump --binar
 
 Les adaptateurs sont `windows-minidump`, `linux-core` et `sanitizer`. La collecte n’exécute aucun débogueur, ne charge aucun symbole et n’invente ni registres ni trames absents. `--binary` enregistre le SHA-256 du fichier candidat comme `candidate_only`, sans prouver qu’il correspond au module capturé. `--overwrite` est requis pour remplacer une sortie existante.
 
+Les chemins absolus des modules et des sources sont retirés de l’enregistrement portable. L’adaptateur reconnaît les formes courantes ASan, TSan, MSan, LSan et `runtime error:` d’UBSan avec une limite stricte de trames.
+
 ## Rejouer une course
 
 ```sh

@@ -112,6 +112,7 @@ function baseEvidence(
 function readMinidumpString(bytes: Uint8Array, view: DataView, rva: number): string | null {
 	if (rva === 0 || rva + 4 > bytes.byteLength) return null;
 	const byteLength = view.getUint32(rva, true);
+	if (byteLength % 2 !== 0) throw new Error('Minidump UTF-16 string has an odd byte length');
 	ensureRange(bytes, rva + 4, byteLength, 'minidump string');
 	return Buffer.from(bytes.buffer, bytes.byteOffset + rva + 4, byteLength).toString('utf16le').replace(/\0+$/u, '');
 }
@@ -132,6 +133,7 @@ function collectMinidump(bytes: Uint8Array, options: NativeCrashCollectorOptions
 	ensureRange(bytes, 0, 32, 'minidump header');
 	if (Buffer.from(bytes.buffer, bytes.byteOffset, 4).toString('ascii') !== 'MDMP') throw new Error('Artifact is not a Windows minidump');
 	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+	if ((view.getUint32(4, true) & 0xffff) !== 0xa793) throw new Error('Minidump version signature is unsupported');
 	const streamCount = view.getUint32(8, true);
 	if (streamCount > 1024) throw new Error('Minidump stream count exceeds the bounded collector limit');
 	const directoryRva = view.getUint32(12, true);
@@ -143,6 +145,7 @@ function collectMinidump(bytes: Uint8Array, options: NativeCrashCollectorOptions
 		const size = view.getUint32(offset + 4, true);
 		const rva = view.getUint32(offset + 8, true);
 		ensureRange(bytes, rva, size, `minidump stream ${type}`);
+		if (streams.has(type)) throw new Error(`Minidump contains duplicate stream type ${type}`);
 		streams.set(type, { size, rva });
 	}
 	let architecture = 'other';
@@ -197,11 +200,12 @@ function collectMinidump(bytes: Uint8Array, options: NativeCrashCollectorOptions
 }
 
 function collectElfCore(bytes: Uint8Array, options: NativeCrashCollectorOptions): NativeCrashCollectionResult {
-	ensureRange(bytes, 0, 64, 'ELF header');
+	ensureRange(bytes, 0, 16, 'ELF identification');
 	if (bytes[0] !== 0x7f || bytes[1] !== 0x45 || bytes[2] !== 0x4c || bytes[3] !== 0x46) throw new Error('Artifact is not an ELF core');
 	const elfClass = bytes[4];
 	const little = bytes[5] === 1;
 	if ((elfClass !== 1 && elfClass !== 2) || (!little && bytes[5] !== 2)) throw new Error('Unsupported ELF class or byte order');
+	ensureRange(bytes, 0, elfClass === 2 ? 64 : 52, 'ELF header');
 	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 	const u16 = (offset: number) => view.getUint16(offset, little);
 	const u32 = (offset: number) => view.getUint32(offset, little);
@@ -213,6 +217,7 @@ function collectElfCore(bytes: Uint8Array, options: NativeCrashCollectorOptions)
 	const phentsize = u16(elfClass === 2 ? 54 : 42);
 	const phnum = u16(elfClass === 2 ? 56 : 44);
 	if (phnum > 4096) throw new Error('ELF program-header count exceeds the bounded collector limit');
+	if (phnum > 0 && phentsize < (elfClass === 2 ? 56 : 32)) throw new Error('ELF program-header entry is smaller than the class minimum');
 	ensureRange(bytes, phoff, phentsize * phnum, 'ELF program headers');
 	const executableLoads: Array<{ start: bigint; end: bigint }> = [];
 	for (let index = 0; index < phnum; index += 1) {
@@ -241,22 +246,40 @@ function collectSanitizer(bytes: Uint8Array, options: NativeCrashCollectorOption
 	} catch {
 		throw new Error('Sanitizer artifact must be valid UTF-8');
 	}
-	const detector = /(AddressSanitizer|ThreadSanitizer|MemorySanitizer|UndefinedBehaviorSanitizer|LeakSanitizer)/u.exec(text)?.[1];
+	text = text.replace(/\x1b\[[0-?]*[ -/]*[@-~]/gu, '');
+	const explicitDetector = /(AddressSanitizer|ThreadSanitizer|MemorySanitizer|UndefinedBehaviorSanitizer|LeakSanitizer)/u.exec(text)?.[1];
+	const detector = explicitDetector ?? (/\bruntime error:/iu.test(text) ? 'UndefinedBehaviorSanitizer' : undefined);
 	if (!detector) throw new Error('Artifact does not contain a supported sanitizer signature');
 	const kind = detector === 'AddressSanitizer' ? 'address' : detector === 'ThreadSanitizer' ? 'thread' : detector === 'MemorySanitizer' ? 'memory' : detector === 'UndefinedBehaviorSanitizer' ? 'undefined_behavior' : 'leak';
-	const errorClass = new RegExp(`ERROR: ${detector}: ([^\\s]+)`, 'u').exec(text)?.[1] ?? detector;
-	const summary = new RegExp(`SUMMARY: ${detector}: ([^\\r\\n]+)`, 'u').exec(text)?.[1] ?? errorClass;
+	const errorClass = new RegExp(`(?:ERROR|WARNING): ${detector}: ([^\\s]+)`, 'u').exec(text)?.[1] ?? (detector === 'UndefinedBehaviorSanitizer' && /\bruntime error:/iu.test(text) ? 'runtime-error' : detector);
+	const rawSummary = new RegExp(`SUMMARY: ${detector}: ([^\\r\\n]+)`, 'u').exec(text)?.[1] ?? (/\bruntime error:\s*([^\r\n]+)/iu.exec(text)?.[1] ?? errorClass);
+	const pathPattern = /(?:[A-Za-z]:[\\/]|\/)(?:[^\s:\r\n]+[\\/])*[^\s:\r\n]+(?=:\d+|\s|$)/gu;
+	const summary = rawSummary.replace(pathPattern, '<redacted-path>');
 	const fault = /(?:on address|address) (0x[0-9a-f]+)/iu.exec(text)?.[1]?.toLowerCase() ?? null;
-	const access = /(READ|WRITE) of size (\d+)/u.exec(text);
-	const frameMatches = [...text.matchAll(/^\s*#(\d+)\s+(0x[0-9a-f]+)\s+(?:in\s+)?([^\r\n]+)$/gimu)].slice(0, 2048);
-	const frames = frameMatches.map((match, index) => ({ index, instruction_address: match[2].toLowerCase(), module_id: null, symbol: match[3].trim(), source_file: null, source_line: null, inline: false }));
+	const access = /(READ|WRITE) of size (\d+)/iu.exec(text);
+	const framePattern = /^\s*#\d+\s+(0x[0-9a-f]+)\s+(?:in\s+)?([^\r\n]+)$/gimu;
+	const frames: Record<string, unknown>[] = [];
+	let pathsRedacted = summary !== rawSummary;
+	let framesTruncated = false;
+	for (let match = framePattern.exec(text); match; match = framePattern.exec(text)) {
+		if (frames.length >= 2048) { framesTruncated = true; break; }
+		const rawTail = match[2].trim();
+		const safeTail = rawTail.replace(pathPattern, '<redacted-path>');
+		pathsRedacted ||= safeTail !== rawTail;
+		const symbol = /^(?:in\s+)?([^\s]+)(?:\s|$)/u.exec(safeTail)?.[1] ?? null;
+		frames.push({ index: frames.length, instruction_address: match[1].toLowerCase(), module_id: null, symbol, source_file: null, source_line: null, inline: false });
+	}
 	const binaryName = options.binaryName ?? path.basename(options.binaryPath ?? 'sanitizer-target');
 	const modules: ParsedModule[] = [{ id: 'main', name: binaryName, path: null, base: null, end: null, identity: UNKNOWN_IDENTITY }];
 	const crashedThreadId = 'sanitizer';
 	const evidence = baseEvidence(bytes, options, 'sanitizer_report', 'other', 'other', modules, [{ id: crashedThreadId, crashed: true, name: null, stack_status: frames.length > 0 ? 'partial' : 'unavailable', frames }], crashedThreadId, {
 		kind: 'sanitizer', code: detector, fault_address: fault, instruction_address: frames[0]?.instruction_address ?? fault, description: summary,
-	}, { kind, error_class: errorClass, summary, access_type: access?.[1]?.toLowerCase() ?? null, access_size: access ? Number(access[2]) : null, fault_address: fault });
-	return { evidence, warnings: options.binaryBytes ? [] : ['Binary identity was not supplied; attribution remains incomplete.'] };
+	}, { kind, error_class: errorClass, summary, access_type: access?.[1]?.toLowerCase() ?? null, access_size: access ? Number(access[2]) : null, fault_address: fault }, pathsRedacted ? ['sanitizer.summary', 'threads[*].frames[*].symbol'] : []);
+	return { evidence, warnings: [
+		...(options.binaryBytes ? [] : ['Binary identity was not supplied; attribution remains incomplete.']),
+		...(pathsRedacted ? ['Absolute paths were removed from portable sanitizer evidence.'] : []),
+		...(framesTruncated ? ['Sanitizer frames were truncated at the bounded 2048-frame limit.'] : []),
+	] };
 }
 
 export function collectNativeCrashEvidence(bytes: Uint8Array, options: NativeCrashCollectorOptions): NativeCrashCollectionResult {

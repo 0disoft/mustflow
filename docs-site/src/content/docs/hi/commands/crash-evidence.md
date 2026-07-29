@@ -21,6 +21,8 @@ npx mf crash-evidence collect crash/crash.dmp --adapter windows-minidump --binar
 
 Adapters `windows-minidump`, `linux-core` और `sanitizer` हैं। Collector debugger नहीं चलाता, symbols load नहीं करता और अनुपलब्ध registers या frames नहीं गढ़ता। `--binary` candidate file का exact SHA-256 `candidate_only` के रूप में दर्ज करता है; यह captured module से match सिद्ध नहीं करता। मौजूदा output बदलने के लिए `--overwrite` आवश्यक है।
 
+Portable record से absolute module और source paths हटा दिए जाते हैं। Adapter सामान्य ASan, TSan, MSan, LSan तथा UBSan `runtime error:` forms स्वीकार करता है और frame collection सीमित रखता है।
+
 ## Race replay
 
 ```sh

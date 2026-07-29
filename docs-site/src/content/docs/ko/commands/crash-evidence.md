@@ -26,7 +26,9 @@ npx mf crash-evidence collect crash/crash.dmp --adapter windows-minidump --binar
 디버거 실행, 심볼 로드, 없는 레지스터나 프레임 추측을 하지 않습니다. `--binary`는 정확한 후보 파일의
 SHA-256을 `candidate_only`로 기록하며 dump module과 일치한다고 증명하지 않습니다. 출력은 mustflow
 루트 안에만 쓰며 기존 파일 교체에는 `--overwrite`가 필요합니다. `captured_at`은 사고 시각이 아니라
-증거 수집 시각이며 minidump의 절대 module 경로는 portable 기록에서 제거합니다.
+증거 수집 시각이며 minidump의 절대 module 경로와 sanitizer summary/frame의 절대 source 경로는
+portable 기록에서 제거합니다. Sanitizer adapter는 일반적인 ASan, TSan, MSan, LSan 및 UBSan
+`runtime error:` 형식을 지원하며 frame 수집은 제한 범위 안에서만 수행합니다.
 
 ## Race 재현
 

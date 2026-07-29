@@ -1026,7 +1026,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:00:14.025Z"
-last_touched_at = "2026-07-29T04:08:50.020Z"
+last_touched_at = "2026-07-29T04:36:57.907Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/check.md"
@@ -1054,7 +1054,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.038Z"
-last_touched_at = "2026-07-29T04:08:50.038Z"
+last_touched_at = "2026-07-29T04:36:57.931Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/commands/docs.md"
@@ -1204,7 +1204,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.056Z"
-last_touched_at = "2026-07-29T04:08:50.056Z"
+last_touched_at = "2026-07-29T04:36:57.950Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/es/commands/update.md"
@@ -1260,7 +1260,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.075Z"
-last_touched_at = "2026-07-29T04:08:50.075Z"
+last_touched_at = "2026-07-29T04:36:57.967Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/fr/commands/update.md"
@@ -1316,7 +1316,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.096Z"
-last_touched_at = "2026-07-29T04:08:50.096Z"
+last_touched_at = "2026-07-29T04:36:57.983Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/hi/commands/update.md"
@@ -1392,7 +1392,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.113Z"
-last_touched_at = "2026-07-29T04:08:50.113Z"
+last_touched_at = "2026-07-29T04:36:58.000Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/ko/commands/map.md"
@@ -1494,7 +1494,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-29T04:08:50.130Z"
-last_touched_at = "2026-07-29T04:08:50.130Z"
+last_touched_at = "2026-07-29T04:36:58.014Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/zh/commands/update.md"

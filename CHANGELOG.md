@@ -19,6 +19,9 @@ This file applies to the mustflow repository itself. It is not installed into us
   cores, and sanitizer reports, plus a bounded deterministic `race` scenario runner. Collectors do
   not invoke external debuggers or manufacture unavailable register, unwind, symbol, or module-map
   facts; incomplete evidence stays explicitly incomplete.
+- Hardened offline crash parsing with deterministic format-realistic minidump, ELF64, ELF32, and
+  sanitizer fixture builders; common sanitizer warning and UBSan runtime-error dialects; bounded
+  frame iteration; and portable omission of absolute sanitizer source paths.
 - Added an installed information-visualization integrity skill that chooses tables, charts,
   diagrams, and timelines from reader decisions and semantic relationships, requires
   source-backed visual specifications and claim ledgers, preserves missingness and uncertainty,
