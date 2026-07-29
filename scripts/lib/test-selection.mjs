@@ -239,6 +239,11 @@ export function createTestSelection(allCliTests, options = {}) {
 	]);
 
 	const relatedRules = [
+		{
+			match: /^\.github\/workflows\/native-crash-fixtures\.yml$/u,
+			tests: ['package-command-contracts.test.js'],
+			terminal: true,
+		},
 		{ match: /^schemas\/native-crash-evidence\.schema\.json$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^schemas\/native-crash-evidence-validation-report\.schema\.json$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^schemas\/(?:native-crash-evidence-collection-report|deterministic-race-(?:scenario|report))\.schema\.json$/u, tests: nativeCrashEvidenceTests },

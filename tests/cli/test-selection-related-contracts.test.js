@@ -327,6 +327,13 @@ test('related selection maps native crash external validation surfaces to their 
 	}
 });
 
+test('related selection keeps the native crash matrix workflow on its package contract', () => {
+	assert.deepEqual(
+		[...selectedFor(['.github/workflows/native-crash-fixtures.yml'])],
+		['package-command-contracts.test.js'],
+	);
+});
+
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-dependency-graph.ts'), true);
 	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-module-boundary.ts'), true);

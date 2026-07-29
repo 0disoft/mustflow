@@ -3329,7 +3329,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Resolve and lock the repository-local Rust dependencies for independent minidump and ELF fixture parsing."
-argv = ["cargo", "generate-lockfile", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
+argv = ["cargo", "+1.96.1", "generate-lockfile", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
 cwd = "."
 timeout_seconds = 300
 stdin = "closed"
@@ -3344,7 +3344,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Build the locked repository-local independent minidump and ELF fixture parser."
-argv = ["cargo", "build", "--locked", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
+argv = ["cargo", "+1.96.1", "build", "--locked", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
 cwd = "."
 timeout_seconds = 900
 stdin = "closed"
@@ -3353,6 +3353,165 @@ writes = ["tools/native-crash-fixture-parser/target/**"]
 effects = [{ type = "write", mode = "replace", path = "tools/native-crash-fixture-parser/target/**", lock = "native_crash_fixture_parser_build", concurrency = "exclusive" }]
 network = true
 destructive = false
+
+[intents.native_crash_ci_contract_test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the focused package workflow and related-test routing contracts for the native crash cross-platform CI matrix."
+argv = [
+  "node", "--test",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/test-selection-related-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 180
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.native_crash_ci_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.119.0 native crash cross-platform CI matrix, focused routing, release handoff contracts, and synchronized generated metadata."
+argv = [
+  "git", "add", "--",
+  ".github/workflows/native-crash-fixtures.yml",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "scripts/lib/test-selection.mjs",
+  "tests/cli/helpers/package-contracts.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/test-selection-related-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.native_crash_ci_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 native crash cross-platform CI matrix."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.native_crash_ci_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 native crash cross-platform CI matrix and release handoff contracts."
+argv = [
+  "git", "commit",
+  "-m", "👷 ci(crash): validate fixtures across host platforms",
+  "-m", "Run the locked semantic parser on pinned Ubuntu, Windows, and macOS runner families with immutable action references, read-only permissions, no artifact upload, bounded timeouts, and focused related-test routing.",
+  "-m", "Validation: mf run native_crash_fixture_semantic_parser_build; mf run native_crash_fixture_external_validation; mf run native_crash_ci_contract_test; mf run test_release; mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.119.0 release commits from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.119.0 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_main_runs_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.119.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "40", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_publish_runs_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.119.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.119.0 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.119.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
 
 [intents.native_crash_semantic_parser_stage_v2_119_0]
 status = "configured"

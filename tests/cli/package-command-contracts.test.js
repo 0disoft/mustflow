@@ -1,6 +1,7 @@
 import {
 	assert,
 	ciWorkflow,
+	nativeCrashFixtureWorkflow,
 	cliBuildFreshness,
 	cliPath,
 	cliTestOrdering,
@@ -36,6 +37,19 @@ test('CI workflow exercises release-sensitive package smoke paths', () => {
 	assert.match(ciWorkflow, /name: Windows Node core check/u);
 	assert.ok(ciWorkflow.indexOf('run: npm run check:core:node') > ciWorkflow.indexOf('run: bun run check'));
 	assert.ok(ciWorkflow.indexOf('run: npm run check:install') > ciWorkflow.indexOf('run: npm run check:core:node'));
+});
+
+test('native crash fixture workflow validates locked semantics across pinned runner families', () => {
+	assert.match(nativeCrashFixtureWorkflow, /permissions:\n  contents: read/u);
+	assert.match(nativeCrashFixtureWorkflow, /fail-fast: false/u);
+	for (const runner of ['ubuntu-24.04', 'windows-2025', 'macos-15']) {
+		assert.match(nativeCrashFixtureWorkflow, new RegExp(`- ${runner.replace('.', '\\.')}`, 'u'));
+	}
+	assert.match(nativeCrashFixtureWorkflow, /rustup toolchain install 1\.96\.1 --profile minimal --no-self-update/u);
+	assert.match(nativeCrashFixtureWorkflow, /cargo \+1\.96\.1 build --locked --manifest-path tools\/native-crash-fixture-parser\/Cargo\.toml/u);
+	assert.match(nativeCrashFixtureWorkflow, /bun run scripts\/cross-validate-native-crash-fixtures\.ts/u);
+	assert.match(nativeCrashFixtureWorkflow, /persist-credentials: false/u);
+	assert.doesNotMatch(nativeCrashFixtureWorkflow, /uses: [^\n]+@(?![0-9a-f]{40}(?:\s|$))/u);
 });
 
 test('source repository exposes cached related tests as a read-only command intent', () => {

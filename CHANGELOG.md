@@ -11,6 +11,9 @@ This file applies to the mustflow repository itself. It is not installed into us
   `rust-minidump` and `goblin` to validate minidump streams, exception parameters, ELF program
   headers, and ELF core notes without persisting raw crash bytes. Missing parsers remain `skipped`,
   partial coverage remains `partial`, and parser drift or execution errors fail closed.
+- Added a path-filtered GitHub Actions matrix that builds the locked semantic parser with Rust
+  1.96.1 and cross-validates the deterministic fixtures on Ubuntu 24.04, Windows Server 2025, and
+  macOS 15 without uploading crash artifacts.
 - Added a packaged `native-crash-evidence` JSON Schema and bounded semantic validator that rejects
   symbol or binary identity contradictions, crashed-thread inconsistencies, unsafe raw memory or
   environment payloads, and malformed evidence while distinguishing analysis-ready evidence from

@@ -16,6 +16,7 @@ export const cliTestOrdering = readFileSync(path.join(projectRoot, 'scripts', 'l
 export const cliTestSelection = readFileSync(path.join(projectRoot, 'scripts', 'lib', 'test-selection.mjs'), 'utf8');
 export const sourceCommandContract = readFileSync(path.join(projectRoot, '.mustflow', 'config', 'commands.toml'), 'utf8');
 export const ciWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
+export const nativeCrashFixtureWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'native-crash-fixtures.yml'), 'utf8');
 export const publishNpmWorkflow = readFileSync(path.join(projectRoot, '.github', 'workflows', 'publish-npm.yml'), 'utf8');
 export const releaseVersionCheckScript = readFileSync(path.join(projectRoot, 'scripts', 'check-npm-release-version.mjs'), 'utf8');
 export const releaseInstallSmokeScript = readFileSync(path.join(projectRoot, 'scripts', 'smoke-npm-release-install.mjs'), 'utf8');
