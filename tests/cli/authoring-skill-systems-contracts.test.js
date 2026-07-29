@@ -111,6 +111,49 @@ test('connection lifecycle integrity skill keeps transport, request, body, and s
 	assertSkillsIndexRevision(i18n);
 });
 
+test('native crash forensics separates detection site from exact artifact and causal evidence', () => {
+	const skillName = 'native-crash-forensics-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const signal of [
+		'frame zero as the place where the process finally noticed damage',
+		'Prove binary and symbol identity before trusting source lines',
+		'Recompute the effective address',
+		'Put the address on the memory map',
+		'Grade stack and unwind evidence',
+		'Inspect the object neighborhood and lifetime line',
+		'Build competing causal chains',
+		'Keep undefined-behavior, address and leak, uninitialized-read, data-race',
+		'Start with a 2 by 2 comparison',
+		'Preserve the actual schedule decision trace',
+		'deterministic N-th allocation',
+		'replace its mutual-exclusion, visibility-ordering, and lifetime-protection',
+		'Package incident evidence safely',
+	]) {
+		assert.ok(localSkill.includes(signal), `native crash skill should include ${signal}`);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."native-crash-forensics-review"\]\r?\ncategory = "bug_failure"\r?\nroute_type = "primary"\r?\npriority = 88/u,
+	);
+	assert.match(routes, /"코어-덤프"/u);
+	assert.match(routes, /"crash-consistency-only"/u);
+	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 7);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
+});
+
 test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {
 	const localSkill = readText('.mustflow/skills/godot-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/godot-code-change/SKILL.md');

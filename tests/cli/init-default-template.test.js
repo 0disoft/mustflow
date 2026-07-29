@@ -100,6 +100,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'quadratic-scan-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'type-state-modeling-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'race-condition-review', 'SKILL.md')));
+		assert.ok(
+			existsSync(path.join(projectPath, '.mustflow', 'skills', 'native-crash-forensics-review', 'SKILL.md')),
+		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'concurrency-invariant-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'failure-integrity-review', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'idempotency-integrity-review', 'SKILL.md')));
@@ -261,6 +264,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-memory-footprint-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/api-request-performance-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/);
@@ -309,6 +313,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillRoutes, /\[routes\."frontend-state-ownership-review"\]/);
 		assert.match(skillRoutes, /\[routes\."ui-state-resurrection-review"\]/);
 		assert.match(skillRoutes, /\[routes\."information-visualization-integrity-review"\]/);
+		assert.match(skillRoutes, /\[routes\."native-crash-forensics-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-stress-layout-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
 		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);

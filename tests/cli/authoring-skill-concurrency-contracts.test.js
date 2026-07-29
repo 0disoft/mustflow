@@ -477,6 +477,12 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(localSkill, /bounded per-actor event buffers/u);
 	assert.match(localSkill, /ABA and tag-wrap story/u);
 	assert.match(localSkill, /linearization point/u);
+	assert.match(localSkill, /prove three obligations separately/u);
+	assert.match(localSkill, /atomic pointer\s+load can satisfy visibility without satisfying lifetime/u);
+	assert.match(localSkill, /Split removal from reclamation/u);
+	assert.match(localSkill, /immediate-address-reuse or generation-tagged fixture/u);
+	assert.match(localSkill, /production-equivalent optimized/u);
+	assert.match(localSkill, /pre-change locked implementation as a pure operation-log or state-machine oracle/u);
 	assert.match(localReference, /Defect classification/u);
 	assert.match(localReference, /dynamic run covers only the executed path and schedule/u);
 	assert.match(localReference, /Ownership and backing-storage map/u);
@@ -495,7 +501,7 @@ test('race condition review traces stale shared-state interleavings', () => {
 	assert.match(skillIndex, /duplicate side effect/u);
 	assert.match(routes, /\[routes\."race-condition-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 77/u);
-	assert.match(routes, /positive_terms = \["aba", "atomic", "data-race", "happens-before", "interleaving", "linearizability", "lock-free", "race", "reclamation", "schedule", "semaphore", "thread"\]/u);
+	assert.match(routes, /positive_terms = \[[^\]]*"immediate-address-reuse"[^\]]*"lock-removal"[^\]]*\]/u);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -514,7 +520,7 @@ test('race condition review traces stale shared-state interleavings', () => {
 	);
 	assert.match(manifest, /"race-condition-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 5/u);
 });
 
 test('async timing boundary review replaces arbitrary waits with completion signals', () => {

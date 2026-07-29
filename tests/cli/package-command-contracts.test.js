@@ -649,3 +649,20 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 		assert.match(releaseChecksDesign, /MUSTFLOW_TEST_CONCURRENCY/u, `${locale} release docs should document test concurrency`);
 	}
 });
+
+test('2.119.0 native crash forensics skill commit stays bounded', () => {
+	const stageIntent = /\[intents\.native_crash_skills_stage_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.native_crash_skills_staged_diff_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.native_crash_skills_commit_v2_119_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(stageIntent, /"\.mustflow\/skills\/native-crash-forensics-review"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/fuzz-harness-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"\.mustflow\/skills\/race-condition-review\/SKILL\.md"/u);
+	assert.match(stageIntent, /"templates\/default\/locales\/en\/\.mustflow\/skills\/native-crash-forensics-review"/u);
+	assert.match(stageIntent, /"tests\/cli\/authoring-skill-systems-contracts\.test\.js"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): add native crash forensics review/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+});

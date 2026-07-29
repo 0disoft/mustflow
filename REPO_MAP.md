@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 308
+anchor_count: 309
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:dc23af3e176f2ca5f62dc7cefcabc801fa64b183f3c26d9d50b839f91c1adb5d"
+source_fingerprint: "sha256:d223f8f5dd64f9699964d830c0126d7d2009d97d84c03089f977969e609ce69c"
 ---
 
 # REPO_MAP.md
@@ -684,6 +684,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/name-resolution-integrity-review/
 
 - `.mustflow/skills/name-resolution-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/native-crash-forensics-review/
+
+- `.mustflow/skills/native-crash-forensics-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/nestjs-code-change/
 

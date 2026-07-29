@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 304
+revision = 305
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -506,7 +506,13 @@ translations = {}
 [documents."skill.race-condition-review"]
 source = "locales/en/.mustflow/skills/race-condition-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
+translations = {}
+
+[documents."skill.native-crash-forensics-review"]
+source = "locales/en/.mustflow/skills/native-crash-forensics-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.input-event-synchronization-review"]
@@ -1422,7 +1428,7 @@ translations = {}
 [documents."skill.fuzz-harness-review"]
 source = "locales/en/.mustflow/skills/fuzz-harness-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.input-boundary-validation-review"]

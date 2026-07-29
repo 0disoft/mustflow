@@ -973,7 +973,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 suggests_adjuncts = ["concurrency-invariant-review", "memory-lifetime-review", "async-timing-boundary-review"]
 
 [routes."race-condition-review".contexts]
-positive_terms = ["aba", "atomic", "data-race", "happens-before", "interleaving", "linearizability", "lock-free", "race", "reclamation", "schedule", "semaphore", "thread"]
+positive_terms = ["aba", "atomic", "data-race", "happens-before", "immediate-address-reuse", "interleaving", "linearizability", "lock-free", "lock-removal", "race", "reclamation", "schedule", "semaphore", "thread"]
 negative_terms = ["layout", "pricing", "prompt", "translation"]
 
 [routes."input-event-synchronization-review"]
@@ -1850,6 +1850,13 @@ priority = 82
 selection_axis = "task"
 applies_to_reasons = ["test_change", "behavior_change", "performance_change", "security_change"]
 
+[routes."fuzz-harness-review".dependencies]
+suggests_adjuncts = ["race-condition-review", "memory-lifetime-review"]
+
+[routes."fuzz-harness-review".contexts]
+positive_terms = ["corpus", "coverage-guided", "custom-mutator", "fuzz", "fuzz-harness", "fuzzer", "nth-failure", "operation-sequence", "sanitizer-lane", "schedule-fuzzing", "state-transition-coverage"]
+negative_terms = ["live-target", "single-regression-only"]
+
 [routes."test-suite-performance-review"]
 category = "tests"
 route_type = "primary"
@@ -2238,6 +2245,22 @@ route_type = "primary"
 priority = 25
 selection_axis = "risk"
 applies_to_reasons = ["behavior_change", "unknown_change"]
+
+[routes."native-crash-forensics-review"]
+category = "bug_failure"
+route_type = "primary"
+priority = 88
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change"]
+
+[routes."native-crash-forensics-review".dependencies]
+suggests_adjuncts = ["race-condition-review", "memory-lifetime-review", "fuzz-harness-review"]
+
+[routes."native-crash-forensics-review".contexts]
+layers = ["native", "runtime", "systems"]
+pattern_categories = ["core_dump", "crash_forensics", "memory_corruption", "native_reproduction"]
+positive_terms = ["access-violation", "build-id", "bus-error", "core-dump", "crash-forensics", "fault-address", "heap-corruption", "illegal-instruction", "memory-map", "minidump", "native-crash", "segfault", "segmentation-fault", "stack-corruption", "symbolization", "세그멘테이션-폴트", "세그폴트", "접근-위반", "코어-덤프", "힙-손상"]
+negative_terms = ["crash-consistency-only", "javascript-error-only", "managed-exception-only", "web-stack-trace-only"]
 
 [routes."source-freshness-check"]
 category = "docs_release"

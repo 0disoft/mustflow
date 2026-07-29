@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added an installed native crash forensics skill that verifies exact dump, binary, module, symbol,
+  and environment identity before tracing fault instructions, effective addresses, memory maps,
+  object lifetimes, schedule-sensitive corruption, and structural repairs; strengthened fuzz and
+  race procedures for lifetime operation sequences, deterministic N-th failures, schedule traces,
+  lock-removal obligations, immediate address reuse, and optimized-build evidence.
 - Added an installed information-visualization integrity skill that chooses tables, charts,
   diagrams, and timelines from reader decisions and semantic relationships, requires
   source-backed visual specifications and claim ledgers, preserves missingness and uncertainty,
@@ -18,7 +23,7 @@ This file applies to the mustflow repository itself. It is not installed into us
   change time, with explicit reset and hit/miss metrics plus same-process invalidation coverage.
 - Promoted the generated skill route catalog to schema and file version 2 with explicit per-route
   selection axes, ranking signals, conflicts, and dependencies, removed normal-path `routes.toml`
-  parsing, added 48-case accuracy and recall metrics, added local p50/p95 payload benchmarks, and
+  parsing, added 49-case accuracy and recall metrics, added local p50/p95 payload benchmarks, and
   narrowed related-test selection for router-owned files without weakening index-only checks.
 - Added a generated compact skill route catalog with strict source/template drift checks and safe
   frontmatter fallback, made router selection limits the resolver source of truth, and preserved

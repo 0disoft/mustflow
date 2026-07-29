@@ -2,11 +2,11 @@
 mustflow_doc: skill.fuzz-harness-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: fuzz-harness-review
-description: Apply this skill when a coverage-guided fuzz target, harness, corpus, dictionary, custom mutator, sanitizer matrix, instrumentation or feedback setup, stateful protocol campaign, fuzz artifact triage path, or fuzzing effectiveness claim is created, changed, reviewed, debugged, or reported. Do not use it for one small deterministic generated-input regression with no campaign or harness lifecycle; use test-maintenance or security-regression-tests instead.
+description: Apply this skill when a coverage-guided fuzz target, harness, corpus, dictionary, custom mutator, sanitizer matrix, instrumentation or feedback setup, stateful protocol or object-lifetime operation campaign, schedule fuzzing, deterministic N-th failure injection, state-transition coverage, fuzz artifact triage path, or fuzzing effectiveness claim is created, changed, reviewed, debugged, or reported. Do not use it for one small deterministic generated-input regression with no campaign or harness lifecycle; use test-maintenance or security-regression-tests instead.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -83,6 +83,9 @@ malformed boundaries.
   repair and mismatch modes, sequence representation, and maximum generated size or depth.
 - Feedback ledger: instrumented modules, edge or block features, compare or value features,
   state features, allowlists or blocklists, and known coverage blind spots.
+- Schedule and failure ledger: actors, meaningful preemption points, scheduler seed and actual
+  decision trace, deterministic N-th allocation or I/O failure, address-reuse mode, state-transition
+  identifiers, and termination or cleanup assertions.
 - Corpus and artifact policy: seed provenance, secret and personal-data handling, minimization,
   merge, regression retention, reproduction command owner, and triage state.
 - Reproduction and triage ledger: build and environment capsule, repeated-replay distribution,
@@ -209,6 +212,12 @@ Maintain deliberate lanes instead of one mutator policy:
 - outer-envelope and decoded-payload targets for compressed, encrypted, or signed formats; and
 - sequence mutation for stateful APIs and protocols.
 
+For memory-lifetime targets, encode operations such as allocate, initialize, publish, borrow,
+clone, mutate, retire, cancel, release, reclaim, and reuse with stable object IDs and generations.
+Track transition coverage such as allocated, published, retired, freed, and reused separately from
+plain edge coverage. Do not let an operation refer to an object that the decoder never created
+unless invalid-handle behavior is the explicit lane being tested.
+
 Keep input decoding total, deterministic, progress-making, and bounded. A structured decoder is
 part of the harness attack surface.
 
@@ -255,6 +264,17 @@ separately with insert, delete, duplicate, reorder, replay, reconnect, and fault
 Seed legitimate paths that reach authenticated or transaction states without embedding real
 credentials.
 
+Treat input order and execution order as separate fuzz dimensions. Put bounded schedule points at
+publication, pointer load, reference acquisition, compare-and-swap, retirement, cancellation,
+callback enqueue, final release, reclaim, and free when those windows own the hypothesis. Derive the
+schedule from the artifact or preserve the actual decision trace; a seed alone is insufficient when
+actor or random-call counts can drift.
+
+Prefer deterministic N-th failure sweeps over random failure percentages for allocation, I/O,
+partial initialization, registration, and cleanup. After each injected failure, assert rollback,
+one-time destruction, no residual reference or worker, no externally visible false success, and a
+clean next iteration.
+
 Prefer explicit stable state identifiers. If state feedback is inferred from memory or responses,
 normalize addresses, timestamps, padding, transient buffers, and other high-cardinality noise.
 
@@ -263,6 +283,11 @@ normalize addresses, timestamps, padding, transient buffers, and other high-card
 Keep a fast coverage lane separate from address and leak, undefined and integer, uninitialized-read,
 race, and assertion-heavy lanes when tool compatibility or cost differs. Use fail-fast behavior after
 undefined behavior so later symptoms from corrupted state are not treated as independent defects.
+
+Keep production-equivalent optimized, readable debug, address-plus-undefined, race, uninitialized,
+and non-instrumented memory-checker lanes distinct when the repository supports them. A clean
+sanitizer lane is evidence only for its executed paths under its changed memory layout and schedule;
+it does not replace the optimized artifact or another detector class.
 
 Do not claim that a generic undefined-behavior bundle covers implicit truncation, sign changes, or
 every intentional-looking unsigned overflow. Scope integer checks explicitly and suppress only
@@ -310,6 +335,11 @@ Record target identity, binary and symbol hashes, compiler and linker, flags, sa
 options, seed, limits, libraries, platform and architecture, input bytes, structured decoding
 version, environment and fault schedule, expected failure class, and minimization state. Reproduce
 from a clean process before claiming a product defect.
+
+For schedule-sensitive crashes, preserve object ID and generation, actor count, schedule seed,
+actual decision trace, affinity, allocator and address-reuse mode, N-th failure index, build ID, and
+optimization identity. Minimize the input or operation sequence and the schedule separately while
+retaining the original artifact unchanged.
 
 Replay repeatedly before minimization and classify the event as deterministic, probabilistic, or
 multimodal. Symbolize before deduplication. Build a stable crash key from failure class, sanitizer

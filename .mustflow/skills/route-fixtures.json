@@ -750,6 +750,25 @@
       "max_candidates": 10,
       "required_candidates": [
         "crash-consistency-recovery-review"
+      ],
+      "forbidden_candidates": [
+        "native-crash-forensics-review"
+      ]
+    },
+    {
+      "id": "native-crash-forensics-korean",
+      "task": "ARM64 최적화 C++ 바이너리의 코어 덤프와 세그폴트에서 정확한 Build ID, 레지스터, 메모리 맵, 객체 수명선을 따라 원인을 찾아줘",
+      "paths": [
+        "src/native/plugin.cpp"
+      ],
+      "reasons": [
+        "behavior_change",
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "native-crash-forensics-review",
+      "required_candidates": [
+        "native-crash-forensics-review"
       ]
     },
     {

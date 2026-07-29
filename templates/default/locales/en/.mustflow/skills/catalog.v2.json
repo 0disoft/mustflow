@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:f08f9423639f681f3b16ce9fcbeeedb2247db0521f469675f12a1e7d471ed0b0",
+  "source_fingerprint": "sha256:40f8b7716d25a6c0f2d05dc64d9ec05df0804069fb390d29eb168a7096fe3dff",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -5159,15 +5159,33 @@
         "security_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "corpus",
+        "coverage guided",
+        "custom mutator",
+        "fuzz",
+        "fuzz harness",
+        "fuzzer",
+        "nth failure",
+        "operation sequence",
+        "sanitizer lane",
+        "schedule fuzzing",
+        "state transition coverage"
+      ],
+      "negative_signals": [
+        "live target",
+        "single regression only"
+      ],
       "dependencies": {
         "requires_skills": [],
-        "suggests_adjuncts": [],
+        "suggests_adjuncts": [
+          "race-condition-review",
+          "memory-lifetime-review"
+        ],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when a coverage-guided fuzz target, harness, corpus, dictionary, custom mutator, sanitizer matrix, instrumentation or feedback setup, stateful protocol campaign, fuzz artifact triage path, or fuzzing effectiveness claim is created, changed, reviewed, debugged, or reported. Do not use it for one small deterministic generated-input regression with no campaign or harness lifecycle; use test-maintenance or security-regression-tests instead.",
+      "trigger": "Apply this skill when a coverage-guided fuzz target, harness, corpus, dictionary, custom mutator, sanitizer matrix, instrumentation or feedback setup, stateful protocol or object-lifetime operation campaign, schedule fuzzing, deterministic N-th failure injection, state-transition coverage, fuzz artifact triage path, or fuzzing effectiveness claim is created, changed, reviewed, debugged, or reported. Do not use it for one small deterministic generated-input regression with no campaign or harness lifecycle; use test-maintenance or security-regression-tests instead.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -7122,6 +7140,75 @@
       ]
     },
     {
+      "skill": "native-crash-forensics-review",
+      "skill_path": ".mustflow/skills/native-crash-forensics-review/SKILL.md",
+      "category": "bug_failure",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 88,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "performance_change",
+        "security_change",
+        "privacy_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "세그멘테이션 폴트",
+        "세그폴트",
+        "접근 위반",
+        "코어 덤프",
+        "힙 손상",
+        "access violation",
+        "build id",
+        "bus error",
+        "core dump",
+        "crash forensics",
+        "fault address",
+        "heap corruption",
+        "illegal instruction",
+        "memory map",
+        "minidump",
+        "native crash",
+        "segfault",
+        "segmentation fault",
+        "stack corruption",
+        "symbolization"
+      ],
+      "negative_signals": [
+        "crash consistency only",
+        "javascript error only",
+        "managed exception only",
+        "web stack trace only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "race-condition-review",
+          "memory-lifetime-review",
+          "fuzz-harness-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when a native process crash, core dump, minidump, segmentation fault, access violation, bus error, heap corruption, stack corruption, illegal instruction, sanitizer crash, native plugin crash, optimized-build-only crash, or CPU/compiler/allocator-specific memory failure must be diagnosed from exact binary identity, symbols, fault instruction, registers, memory maps, object lifetime, corruption evidence, and a reproducible environment rather than blaming the top stack frame.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
       "skill": "nestjs-code-change",
       "skill_path": ".mustflow/skills/nestjs-code-change/SKILL.md",
       "category": "general_code",
@@ -8483,9 +8570,11 @@
         "atomic",
         "data race",
         "happens before",
+        "immediate address reuse",
         "interleaving",
         "linearizability",
         "lock free",
+        "lock removal",
         "race",
         "reclamation",
         "schedule",
@@ -8508,7 +8597,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, reproduced, or reported and shared state can be observed across interleaving execution flows, including logical race versus data-race classification, forbidden-outcome assertions, deterministic schedule gates, record and replay, happens-before evidence, check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, mutex, semaphore, condition, channel, atomic and memory ordering choices, CAS and ABA, concurrent memory reclamation, linearizability, database transaction races, distributed locks, queues, shutdown, cancellation, object reuse, and schedule-sensitive tests.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, reproduced, or reported and shared state can be observed across interleaving execution flows, including logical race versus data-race classification, forbidden-outcome assertions, deterministic schedule gates, record and replay, happens-before evidence, check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, lock removal, mutex, semaphore, condition, channel, atomic and memory ordering choices, CAS and ABA, concurrent memory reclamation, immediate address reuse, linearizability, database transaction races, distributed locks, queues, shutdown, cancellation, object reuse, optimized native builds, and schedule-sensitive tests.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

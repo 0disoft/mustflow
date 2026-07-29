@@ -2,11 +2,11 @@
 mustflow_doc: skill.race-condition-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: race-condition-review
-description: Apply this skill when code is created, changed, reviewed, reproduced, or reported and shared state can be observed across interleaving execution flows, including logical race versus data-race classification, forbidden-outcome assertions, deterministic schedule gates, record and replay, happens-before evidence, check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, mutex, semaphore, condition, channel, atomic and memory ordering choices, CAS and ABA, concurrent memory reclamation, linearizability, database transaction races, distributed locks, queues, shutdown, cancellation, object reuse, and schedule-sensitive tests.
+description: Apply this skill when code is created, changed, reviewed, reproduced, or reported and shared state can be observed across interleaving execution flows, including logical race versus data-race classification, forbidden-outcome assertions, deterministic schedule gates, record and replay, happens-before evidence, check-then-act, read-modify-write, stale reads after await or I/O, lock scope and order, lock removal, mutex, semaphore, condition, channel, atomic and memory ordering choices, CAS and ABA, concurrent memory reclamation, immediate address reuse, linearizability, database transaction races, distributed locks, queues, shutdown, cancellation, object reuse, optimized native builds, and schedule-sensitive tests.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -73,6 +73,9 @@ check-then-act, ordering, ownership, or linearizability invariants are safe.
 - Native-memory evidence when applicable: compiler and flags, architecture, optimization level,
   atomic orderings, linearization point, allocator behavior, address reuse, reclamation protocol,
   and sanitizer class.
+- Lock-guarantee ledger when a lock is removed or narrowed: mutual exclusion, publication and
+  visibility ordering, object lifetime protection, protected invariant, callback boundary, and the
+  distinct replacement mechanism for each guarantee.
 
 Read [references/race-reproduction-memory-model-checklist.md](references/race-reproduction-memory-model-checklist.md)
 when an incident is intermittent, native threads or lock-free structures are involved, primitive
@@ -149,6 +152,12 @@ selection is disputed, or a race-free or linearizable claim needs schedule evide
    - Name each operation's linearization point and validate completed histories against a sequential
      model when final-state assertions cannot expose an invalid intermediate history.
    - Check acquire/release or stronger memory ordering where the language exposes it, and report missing expertise or evidence instead of guessing.
+   - When replacing a lock, prove three obligations separately: who excludes competing mutation,
+     which release/acquire or stronger edge publishes ordinary state, and which lease, reference,
+     hazard, epoch, RCU grace period, or other protocol keeps the object alive. An atomic pointer
+     load can satisfy visibility without satisfying lifetime.
+   - Split removal from reclamation. A node can become unreachable before it is safe to free; name
+     the reader quiescence or protection event that authorizes reclaim.
 11. Review database races.
     - A database transaction does not erase a race by itself. Check isolation level, row locks, predicate locks, uniqueness, conditional updates, and whether `SELECT` then `UPDATE` can be invalidated before commit.
     - Prefer `UPDATE ... WHERE status = ...`, insert-or-ignore/upsert with unique constraints, version columns, row locks, or serializable isolation when the invariant requires it.
@@ -192,6 +201,15 @@ selection is disputed, or a race-free or linearizable claim needs schedule evide
      callback registration/execution, and thread start/join. A timestamp order alone is not a
      visibility proof.
    - Treat race detectors, thread sanitizers, deterministic record/replay, profilers, kernel tracing, or stress tools as configured or manual diagnostics only; never infer raw commands from the tool names.
+   - For native lifetime races, include an immediate-address-reuse or generation-tagged fixture
+     where configured. Delayed allocator reuse can hide UAF and ABA while a pointer comparison still
+     succeeds.
+   - Keep production-equivalent optimized, debug, address-plus-undefined, and race-detector builds
+     as separate evidence lanes when available. A clean detector build does not prove the optimized
+     artifact because instrumentation changes timing and memory layout.
+   - Preserve the pre-change locked implementation as a pure operation-log or state-machine oracle
+     when a lock-free rewrite changes semantics. Compare permitted histories or normalized state,
+     not only one final value, and never duplicate external effects in shadow execution.
 18. Escalate broad status fields into state-machine review.
     - If values such as `pending`, `processing`, `done`, `failed`, `cancelled`, `closed`, or `deleted` drive behavior, draw allowed transitions and reject stale concurrent transitions.
     - Use `state-machine-pattern` when the race fix needs a transition table, event union, transition log, retry reconciliation, or effect ordering.

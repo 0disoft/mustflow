@@ -1041,6 +1041,10 @@ test('fuzz harness review keeps reachability, oracles, corpus, feedback, and rep
 		'Diagnose a coverage plateau',
 		'Make artifacts independently reproducible',
 		'Split sanitizer and assertion lanes by purpose',
+		'Treat input order and execution order as separate fuzz dimensions',
+		'Prefer deterministic N-th failure sweeps',
+		'state-transition coverage',
+		'Minimize the input or operation sequence and the schedule separately',
 		'artifact bytes its only entropy',
 		'stable semantic result envelope',
 		'exact normalized failure predicate',
@@ -1097,7 +1101,7 @@ test('fuzz harness review keeps reachability, oracles, corpus, feedback, and rep
 	);
 	assert.match(manifest, /"fuzz-harness-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'fuzz-harness-review', 2);
+	assertI18nSkillDocument(i18n, 'fuzz-harness-review', 3);
 });
 
 test('input boundary validation keeps representation, identity, parser, sink, and budget contracts explicit', () => {
