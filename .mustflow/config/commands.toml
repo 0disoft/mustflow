@@ -3513,6 +3513,150 @@ destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
 
+[intents.release_github_native_crash_run_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact failed 2.119.0 native crash matrix run and its job-step conclusions."
+argv = ["gh", "run", "view", "30428277356", "--repo", "0disoft/mustflow", "--json", "conclusion,createdAt,event,headBranch,headSha,jobs,name,status,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_ci_run_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact failed 2.119.0 CI run and its job-step conclusions."
+argv = ["gh", "run", "view", "30428277225", "--repo", "0disoft/mustflow", "--json", "conclusion,createdAt,event,headBranch,headSha,jobs,name,status,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_native_crash_failed_log_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only the failed step logs from the exact failed 2.119.0 native crash matrix run."
+argv = ["gh", "run", "view", "30428277356", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_ci_failed_log_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only the failed step logs from the exact failed 2.119.0 CI run."
+argv = ["gh", "run", "view", "30428277225", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_ci_fix_contract_test_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run the focused native crash classifier, generated skill catalog, and source-index strict-mode regressions for the 2.119.0 CI forward fix."
+argv = [
+  "node", "--test",
+  "tests/cli/native-crash-fixture-external-validation.test.js",
+  "tests/cli/skill-route.test.js",
+  "tests/cli/index-source-anchors.test.js",
+]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_ci_fix_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.119.0 CI forward fix, bounded diagnostics, synchronized route catalogs, generated flow, and regression coverage."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/catalog.v2.json",
+  "REPO_FLOW.md",
+  "scripts/cross-validate-native-crash-fixtures.ts",
+  "src/core/native-crash-fixture-external-validation.ts",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "tests/cli/native-crash-fixture-external-validation.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_ci_fix_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 CI forward fix."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_ci_fix_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 CI forward fix after focused and release verification."
+argv = [
+  "git", "commit",
+  "-m", "🐛 fix(ci): accept portable ELF classifier aliases",
+  "-m", "Keep native crash recognition fail-closed while accepting the exact i386 and 80386 labels emitted by supported file implementations; refresh generated skill routing evidence; and preserve bounded remote-failure diagnostics.",
+  "-m", "Validation: mf run release_ci_fix_contract_test_v2_119_0; mf run native_crash_fixture_semantic_parser_build; mf run native_crash_fixture_external_validation; mf run native_crash_ci_contract_test; mf run test_release; mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
 [intents.native_crash_semantic_parser_stage_v2_119_0]
 status = "configured"
 lifecycle = "oneshot"

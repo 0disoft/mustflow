@@ -29,7 +29,10 @@ const FILE_EXPECTATIONS = [
 	{
 		fixture: 'elf32-core' as const,
 		bytes: buildRealisticElf32CoreFixture(),
-		expected: 'ELF 32-bit LSB core file, Intel i386, version 1 (SYSV)',
+		expected: [
+			'ELF 32-bit LSB core file, Intel i386, version 1 (SYSV)',
+			'ELF 32-bit LSB core file, Intel 80386, version 1 (SYSV)',
+		],
 	},
 ];
 

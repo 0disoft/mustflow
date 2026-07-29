@@ -42,6 +42,32 @@ test('external parser output drift is a failure rather than a partial pass', () 
 	assert.equal(nativeCrashExternalValidationExitCode(report), 1);
 });
 
+test('format recognition accepts only declared platform-specific classifier aliases', () => {
+	const expected = [
+		'ELF 32-bit LSB core file, Intel i386, version 1 (SYSV)',
+		'ELF 32-bit LSB core file, Intel 80386, version 1 (SYSV)',
+	];
+	for (const observed of expected) {
+		const lane = classifyFormatRecognitionProbe({
+			...validProbe,
+			fixture: 'elf32-core',
+			expected,
+			observed,
+		});
+		assert.equal(lane.status, 'partial');
+		assert.equal(lane.expected, JSON.stringify(expected));
+	}
+
+	const drift = classifyFormatRecognitionProbe({
+		...validProbe,
+		fixture: 'elf32-core',
+		expected,
+		observed: 'ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV)',
+	});
+	assert.equal(drift.status, 'failed');
+	assert.equal(drift.reason, 'format_output_mismatch');
+});
+
 test('missing semantic parsers produce a successful but incomplete partial report', () => {
 	const report = buildNativeCrashExternalValidationReport([
 		classifyFormatRecognitionProbe(validProbe),

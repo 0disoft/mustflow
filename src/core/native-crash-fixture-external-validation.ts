@@ -27,7 +27,7 @@ export interface FormatRecognitionProbe {
 	fixture: NativeCrashExternalValidationLane['fixture'];
 	tool: string;
 	toolPath: string;
-	expected: string;
+	expected: string | readonly string[];
 	observed: string;
 	exitCode: number;
 }
@@ -56,6 +56,10 @@ export function classifyFormatRecognitionProbe(
 	probe: FormatRecognitionProbe,
 ): NativeCrashExternalValidationLane {
 	const observed = probe.observed.trim();
+	const acceptedOutputs = typeof probe.expected === 'string' ? [probe.expected] : probe.expected;
+	const expected = acceptedOutputs.length === 1
+		? acceptedOutputs[0] ?? null
+		: JSON.stringify(acceptedOutputs);
 	if (probe.exitCode !== 0) {
 		return {
 			fixture: probe.fixture,
@@ -64,11 +68,11 @@ export function classifyFormatRecognitionProbe(
 			tool_path: probe.toolPath,
 			status: 'failed',
 			reason: `tool_exit_${probe.exitCode}`,
-			expected: probe.expected,
+			expected,
 			observed,
 		};
 	}
-	if (observed !== probe.expected) {
+	if (!acceptedOutputs.includes(observed)) {
 		return {
 			fixture: probe.fixture,
 			capability: 'format-recognition',
@@ -76,7 +80,7 @@ export function classifyFormatRecognitionProbe(
 			tool_path: probe.toolPath,
 			status: 'failed',
 			reason: 'format_output_mismatch',
-			expected: probe.expected,
+			expected,
 			observed,
 		};
 	}
@@ -87,7 +91,7 @@ export function classifyFormatRecognitionProbe(
 		tool_path: probe.toolPath,
 		status: 'partial',
 		reason: 'format_recognition_only',
-		expected: probe.expected,
+		expected,
 		observed,
 	};
 }
