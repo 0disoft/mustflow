@@ -1864,6 +1864,26 @@ priority = 58
 selection_axis = "task"
 applies_to_reasons = ["performance_change", "test_change", "workflow_change", "mustflow_config_change", "package_metadata_change", "unknown_change"]
 
+[routes."test-suite-performance-review".contexts]
+positive_terms = ["cache-miss", "ci-feedback-latency", "p95-duration", "resource-token", "shard-balance", "test-cache", "test-selection", "worker-limit", "work-stealing"]
+negative_terms = ["test-deletion-only", "test-pruning-only"]
+concept_aliases = ["테스트 캐시", "테스트 샤딩", "병렬 테스트", "테스트 실행 시간", "测试缓存", "测试分片", "并行测试"]
+
+[routes."test-suite-value-pruning-review"]
+category = "tests"
+route_type = "primary"
+priority = 63
+selection_axis = "task"
+applies_to_reasons = ["test_change", "behavior_change", "workflow_change", "release_risk"]
+
+[routes."test-suite-value-pruning-review".dependencies]
+suggests_adjuncts = ["test-design-guard", "testability-boundary-review"]
+
+[routes."test-suite-value-pruning-review".contexts]
+positive_terms = ["defect-detection-matrix", "e2e-replacement", "historical-bug-replay", "incident-regression", "mutation-kill-matrix", "shadow-retirement", "test-consolidation", "test-deletion", "test-layer-migration", "test-portfolio", "test-pruning", "unique-defect-witness", "vertical-wiring-spine"]
+negative_terms = ["cache-only", "flaky-fix-only", "new-test-only", "shard-only", "worker-only"]
+concept_aliases = ["중복 테스트 삭제", "테스트 통합", "테스트 퇴역", "고유 결함 탐지", "뮤턴트 처형 기록", "E2E 대체", "删除重复测试", "测试退役", "唯一缺陷检测"]
+
 [routes."test-maintenance"]
 category = "tests"
 route_type = "primary"

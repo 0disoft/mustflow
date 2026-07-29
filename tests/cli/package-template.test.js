@@ -191,6 +191,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('test-suite-performance-review'));
+	assert.ok(template.manifest.skillProfiles.minimal.includes('test-suite-value-pruning-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('async-timing-boundary-review'));
 	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
 	for (const skillName of technologySkillNames) {
@@ -303,6 +304,10 @@ test('default template declares profile-specific skill surfaces', async () => {
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('test-suite-performance-review'),
 			`${profileName} should include test-suite-performance-review`,
+		);
+		assert.ok(
+			template.manifest.skillProfiles[profileName].includes('test-suite-value-pruning-review'),
+			`${profileName} should include test-suite-value-pruning-review`,
 		);
 		assert.ok(
 			template.manifest.skillProfiles[profileName].includes('technology-stack-selection'),

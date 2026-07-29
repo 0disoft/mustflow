@@ -300,6 +300,8 @@ test('test suite performance review keeps fast verification honest', () => {
 	assert.match(skillIndex, /\.mustflow\/skills\/test-suite-performance-review\/SKILL\.md/u);
 	assert.match(skillIndex, /selector without full fallback/u);
 	assert.match(routes, /\[routes\."test-suite-performance-review"\]\r?\ncategory = "tests"\r?\nroute_type = "primary"/u);
+	assert.match(routes, /positive_terms = \[[^\]]*"shard-balance"[^\]]*"worker-limit"/u);
+	assert.match(routes, /concept_aliases = \[[^\]]*"테스트 캐시"[^\]]*"테스트 샤딩"/u);
 	assertRouteReasonsText(routes, [
 		'performance_change',
 		'test_change',
@@ -312,6 +314,63 @@ test('test suite performance review keeps fast verification honest', () => {
 	assert.match(manifest, /"test-suite-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.test-suite-performance-review"\][\s\S]*?revision = 1/u);
+});
+
+test('test suite value pruning preserves unique defect evidence before retirement', () => {
+	const localSkill = readText('.mustflow/skills/test-suite-value-pruning-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/test-suite-value-pruning-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+	const routeFixtures = JSON.parse(readText('.mustflow/skills/route-fixtures.json'));
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /defect-detection portfolio/u);
+	assert.match(localSkill, /Coverage, test count, source\s+similarity, and runtime are candidate signals, not deletion proof/u);
+	assert.match(localSkill, /`unique_guard`/u);
+	assert.match(localSkill, /historical bug reproductions first/u);
+	assert.match(localSkill, /AST-normalized similarity as discovery aids/u);
+	assert.match(localSkill, /Do not let many low-impact mutants numerically outrank one payment/u);
+	assert.match(localSkill, /Move evidence to the lowest truthful layer/u);
+	assert.match(localSkill, /Keep a thin vertical spine/u);
+	assert.match(localSkill, /schema-only contract does not replace semantic rules/u);
+	assert.match(localSkill, /Do not rewrite TypeScript internal logic tests in Go/u);
+	assert.match(localSkill, /Use bounded shadow retirement/u);
+	assert.match(localSkill, /do not turn shadow retirement into permanent silent quarantine/u);
+	assert.match(localSkill, /test-suite-performance-review/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/test-suite-value-pruning-review\/SKILL\.md/u);
+	assert.match(skillIndex, /unique mutant loss/u);
+	assert.match(
+		routes,
+		/\[routes\."test-suite-value-pruning-review"\]\r?\ncategory = "tests"\r?\nroute_type = "primary"/u,
+	);
+	assert.equal(routes.includes('priority = 63'), true);
+	assert.deepEqual(routeReasons(routes, 'test-suite-value-pruning-review'), [
+		'test_change',
+		'behavior_change',
+		'workflow_change',
+		'release_risk',
+	]);
+	assert.match(routes, /suggests_adjuncts = \["test-design-guard", "testability-boundary-review"\]/u);
+	assert.match(routes, /"중복 테스트 삭제"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/test-suite-value-pruning-review\/SKILL\.md"/u);
+	assert.match(manifest, /"test-suite-value-pruning-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'test-suite-value-pruning-review', 1);
+	const positive = routeFixtures.cases.find((fixture) => fixture.id === 'test-suite-value-pruning-korean');
+	const performanceOnly = routeFixtures.cases.find(
+		(fixture) => fixture.id === 'test-suite-performance-shard-only',
+	);
+	assert.equal(positive?.required_main, 'test-suite-value-pruning-review');
+	assert.equal(performanceOnly?.required_main, 'test-suite-performance-review');
+	assert.ok(performanceOnly?.forbidden_candidates.includes('test-suite-value-pruning-review'));
 });
 
 test('complex decision analysis is narrow, falsifiable, and handoff-only before implementation', () => {

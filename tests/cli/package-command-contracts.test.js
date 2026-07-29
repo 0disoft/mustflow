@@ -517,6 +517,43 @@ test('2.119.0 catalog retirement and information visualization commits stay inde
 	assert.match(visualCommit, /approval_actions = \["git_commit"\]/u);
 });
 
+test('2.120.0 test-suite value pruning release stays bounded and remotely verifiable', () => {
+	const stageIntent = /\[intents\.release_stage_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const mainRunsIntent = /\[intents\.release_github_main_runs_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const publishRunsIntent = /\[intents\.release_github_publish_runs_v2_120_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const releaseIntent = /\[intents\.release_github_release_v2_120_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	for (const requiredPath of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'.mustflow/skills/test-suite-value-pruning-review/SKILL.md',
+		'CHANGELOG.md',
+		'REPO_FLOW.md',
+		'REPO_MAP.md',
+		'package.json',
+		'templates/default/locales/en/.mustflow/skills/test-suite-value-pruning-review/SKILL.md',
+		'templates/default/manifest.toml',
+		'tests/cli/package-command-contracts.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${requiredPath.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}"`, 'u'));
+	}
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): add test suite value pruning review/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /"--branch", "main"/u);
+	assert.match(publishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"release", "view", "v2\.120\.0"/u);
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

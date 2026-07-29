@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:f15fba179715bdba911fae78ade1fdf0cd3050fec1919971052387812a25f4ff",
+  "source_fingerprint": "sha256:68e361f6e9efd298077335250a92ed67a72ca072b49e43f4a82bb9579d3aa173",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -10662,8 +10662,28 @@
         "unknown_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "cache miss",
+        "ci feedback latency",
+        "p95 duration",
+        "resource token",
+        "shard balance",
+        "test cache",
+        "test selection",
+        "work stealing",
+        "worker limit",
+        "并行测试",
+        "测试分片",
+        "测试缓存",
+        "병렬 테스트",
+        "테스트 샤딩",
+        "테스트 실행 시간",
+        "테스트 캐시"
+      ],
+      "negative_signals": [
+        "test deletion only",
+        "test pruning only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -10678,6 +10698,74 @@
         "test_related",
         "test",
         "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "test-suite-value-pruning-review",
+      "skill_path": ".mustflow/skills/test-suite-value-pruning-review/SKILL.md",
+      "category": "tests",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 63,
+      "applies_to_reasons": [
+        "test_change",
+        "behavior_change",
+        "workflow_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "defect detection matrix",
+        "e2e replacement",
+        "e2e 대체",
+        "historical bug replay",
+        "incident regression",
+        "mutation kill matrix",
+        "shadow retirement",
+        "test consolidation",
+        "test deletion",
+        "test layer migration",
+        "test portfolio",
+        "test pruning",
+        "unique defect witness",
+        "vertical wiring spine",
+        "删除重复测试",
+        "唯一缺陷检测",
+        "测试退役",
+        "고유 결함 탐지",
+        "뮤턴트 처형 기록",
+        "중복 테스트 삭제",
+        "테스트 통합",
+        "테스트 퇴역"
+      ],
+      "negative_signals": [
+        "cache only",
+        "flaky fix only",
+        "new test only",
+        "shard only",
+        "worker only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "test-design-guard",
+          "testability-boundary-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when existing tests are proposed for deletion, consolidation, replacement, layer migration, shadow retirement, or portfolio reprioritization and the change must preserve unique defect-detection evidence, incident regressions, semantic contracts, and a thin end-to-end wiring spine.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "test_audit",
+        "test",
+        "lint",
+        "build",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

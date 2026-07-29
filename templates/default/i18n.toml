@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 305
+revision = 306
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -1445,6 +1445,12 @@ translations = {}
 
 [documents."skill.test-suite-performance-review"]
 source = "locales/en/.mustflow/skills/test-suite-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.test-suite-value-pruning-review"]
+source = "locales/en/.mustflow/skills/test-suite-value-pruning-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

@@ -820,6 +820,39 @@
       "required_candidates": [
         "frontend-accessibility-tree-review"
       ]
+    },
+    {
+      "id": "test-suite-value-pruning-korean",
+      "task": "중복 테스트를 삭제하기 전에 뮤턴트 처형 기록과 고유 결함 탐지 증거로 대체 테스트를 검증하고 E2E 배선은 남긴 채 그림자 퇴역해",
+      "paths": [
+        "tests/e2e/payment-flow.test.ts"
+      ],
+      "reasons": [
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "test-suite-value-pruning-review",
+      "required_candidates": [
+        "test-suite-value-pruning-review"
+      ]
+    },
+    {
+      "id": "test-suite-performance-shard-only",
+      "task": "Rebalance CI shards by p95 duration, tune worker limits, and inspect cache misses without deleting or replacing tests",
+      "paths": [
+        ".github/workflows/test.yml"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "test-suite-performance-review",
+      "required_candidates": [
+        "test-suite-performance-review"
+      ],
+      "forbidden_candidates": [
+        "test-suite-value-pruning-review"
+      ]
     }
   ]
 }

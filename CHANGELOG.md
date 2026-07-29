@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added an installed test-suite value pruning skill that requires unique defect witnesses,
+  historical incident and mutation evidence, replacement sensitivity, bounded shadow retirement,
+  and a retained end-to-end wiring spine before tests are deleted, consolidated, or moved to a
+  cheaper layer; expanded performance routing for cache, shard, worker, and CI-latency work.
 - Added an offline external-parser cross-check for deterministic native crash fixtures. GNU `file`
   provides a format-only lane, while a lockfile-backed repository-local Rust helper uses
   `rust-minidump` and `goblin` to validate minidump streams, exception parameters, ELF program

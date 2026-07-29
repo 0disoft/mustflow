@@ -3903,3 +3903,158 @@ effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency
 network = false
 destructive = false
 approval_actions = ["git_commit"]
+
+[intents.release_stage_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.120.0 test-suite value pruning skill, synchronized install surfaces, routing contracts, generated map, tests, release notes, and release metadata."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/test-suite-value-pruning-review/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "package.json",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/locales/en/.mustflow/skills/test-suite-value-pruning-review/SKILL.md",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-release-support-contracts.test.js",
+  "tests/cli/init-default-template.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/package-template.test.js",
+  "tests/cli/skill-route.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.120.0 test-suite value pruning release."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_commit_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.120.0 test-suite value pruning skill release after focused and release verification."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): add test suite value pruning review",
+  "-m", "Require unique defect witnesses, historical incident and mutation evidence, replacement sensitivity, bounded shadow retirement, and a retained end-to-end wiring spine before deleting or migrating existing tests.",
+  "-m", "Validation: mf run test_skill_contracts; mf run skill_route_eval; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.120.0 release commit from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.120.0 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_main_runs_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.120.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "40", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_publish_runs_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.120.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_120_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.120.0 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.120.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]

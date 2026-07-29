@@ -54,6 +54,9 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'source-anchor-authoring', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-design-guard', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
+		assert.ok(
+			existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-suite-value-pruning-review', 'SKILL.md')),
+		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'vertical-slice-tdd', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'version-freshness-check', 'SKILL.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'security-flow-review', 'SKILL.md')));
@@ -277,6 +280,7 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/testability-boundary-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
+		assert.match(skillsIndex, /\.mustflow\/skills\/test-suite-value-pruning-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/web-render-performance-review\/SKILL\.md/);
 		assert.match(skillsIndex, /\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md/);
