@@ -45,6 +45,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf doctor --json',
 				'mf docs review list',
 				'mf handoff validate .mustflow/work-items/MF-0001.json',
+				'mf crash-evidence validate crash-evidence.json --json',
 				'mf check --json',
 				'mf classify --changed',
 				'mf contract-lint --json',

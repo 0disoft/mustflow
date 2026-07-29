@@ -37,6 +37,7 @@ const TOP_LEVEL_KEYS = new Set([
 	'source',
 	'target',
 	'binary',
+	'candidate_binary',
 	'symbols',
 	'exception',
 	'registers',
@@ -51,6 +52,7 @@ const TOOL_KEYS = new Set(['name', 'version', 'command_fingerprint']);
 const TARGET_KEYS = new Set(['platform', 'architecture', 'process_id', 'crashed_thread_id']);
 const IDENTITY_KEYS = new Set(['scheme', 'value', 'verified']);
 const BINARY_KEYS = new Set(['module_id', 'name', 'path', 'identity']);
+const CANDIDATE_BINARY_KEYS = new Set(['name', 'sha256', 'binding_status']);
 const SYMBOL_KEYS = new Set(['status', 'expected_identity', 'observed_identity', 'symbol_file_sha256', 'detail']);
 const EXCEPTION_KEYS = new Set(['kind', 'code', 'fault_address', 'instruction_address', 'description']);
 const REGISTERS_KEYS = new Set(['status', 'values', 'unavailable_reason']);
@@ -75,6 +77,14 @@ export interface NativeCrashEvidenceValidationResult {
 	readonly ok: boolean;
 	readonly readiness: NativeCrashEvidenceReadiness;
 	readonly issues: readonly NativeCrashEvidenceIssue[];
+}
+
+export interface NativeCrashEvidenceSummary {
+	readonly module_count: number;
+	readonly thread_count: number;
+	readonly frame_count: number;
+	readonly error_count: number;
+	readonly warning_count: number;
 }
 
 interface ModuleAddressRange {
@@ -369,6 +379,19 @@ function validateBinary(issues: NativeCrashEvidenceIssue[], value: unknown): Rec
 	return record;
 }
 
+function validateCandidateBinary(issues: NativeCrashEvidenceIssue[], value: unknown): void {
+	if (value === undefined || value === null) return;
+	const record = validateRecord(issues, value, '$.candidate_binary', 'candidate binary');
+	if (!record) return;
+	validateAllowedKeys(issues, record, CANDIDATE_BINARY_KEYS, '$.candidate_binary');
+	validateString(issues, record.name, '$.candidate_binary.name', 'candidate binary name');
+	validateString(issues, record.sha256, '$.candidate_binary.sha256', 'candidate binary SHA-256', { pattern: SHA256_PATTERN });
+	if (record.binding_status !== 'candidate_only') {
+		pushIssue(issues, 'error', 'invalid_candidate_binding_status', '$.candidate_binary.binding_status', 'Offline candidate binaries must use candidate_only binding status.');
+	}
+	pushIssue(issues, 'warning', 'candidate_binary_not_matched', '$.candidate_binary', 'The supplied binary file is hashed but has not been proven to match the captured module.');
+}
+
 function validateException(issues: NativeCrashEvidenceIssue[], value: unknown): void {
 	const record = validateRecord(issues, value, '$.exception', 'exception');
 	if (!record) {
@@ -414,7 +437,7 @@ function validateModules(
 	issues: NativeCrashEvidenceIssue[],
 	value: unknown,
 	binary: Record<string, unknown> | null,
-): ReadonlyMap<string, ModuleAddressRange> {
+): ReadonlyMap<string, ModuleAddressRange | null> {
 	if (!Array.isArray(value)) {
 		pushIssue(issues, value === undefined ? 'error' : 'error', value === undefined ? 'missing_required_field' : 'invalid_array', '$.modules', 'modules must be an array.');
 		return new Map();
@@ -425,7 +448,7 @@ function validateModules(
 	if (value.length > MAX_ARRAY_ITEMS) {
 		pushIssue(issues, 'error', 'array_too_large', '$.modules', 'modules exceeds the bounded evidence item limit.');
 	}
-	const ranges = new Map<string, ModuleAddressRange>();
+	const ranges = new Map<string, ModuleAddressRange | null>();
 	let binaryModuleFound = false;
 	value.forEach((entry, index) => {
 		const path = `$.modules[${index}]`;
@@ -437,22 +460,28 @@ function validateModules(
 		const id = validateString(issues, record.id, `${path}.id`, 'module id');
 		const name = validateString(issues, record.name, `${path}.name`, 'module name');
 		const modulePath = validateString(issues, record.path, `${path}.path`, 'module path', { nullable: true });
-		const baseAddress = validateString(issues, record.base_address, `${path}.base_address`, 'module base address', { pattern: HEX_ADDRESS_PATTERN });
-		const endAddress = validateString(issues, record.end_address, `${path}.end_address`, 'module end address', { pattern: HEX_ADDRESS_PATTERN });
+		const baseAddress = validateString(issues, record.base_address, `${path}.base_address`, 'module base address', { nullable: true, pattern: HEX_ADDRESS_PATTERN });
+		const endAddress = validateString(issues, record.end_address, `${path}.end_address`, 'module end address', { nullable: true, pattern: HEX_ADDRESS_PATTERN });
 		const identity = validateIdentity(issues, record.identity, `${path}.identity`);
 		const moduleSymbols = validateSymbols(issues, record.symbols, `${path}.symbols`);
 		if (id !== null) {
 			if (ranges.has(id)) {
 				pushIssue(issues, 'error', 'duplicate_module_id', `${path}.id`, 'Module ids must be unique in one evidence record.');
 			}
+			ranges.set(id, null);
 			const start = parseHexAddress(baseAddress);
 			const end = parseHexAddress(endAddress);
+			if ((start === null) !== (end === null)) {
+				pushIssue(issues, 'error', 'partial_module_address_range', path, 'Module base_address and end_address must both be known or both be null.');
+			}
 			if (start !== null && end !== null) {
 				if (start >= end) {
 					pushIssue(issues, 'error', 'invalid_module_address_range', path, 'Module base_address must be lower than end_address.');
 				} else {
 					ranges.set(id, { start, end });
 				}
+			} else if (baseAddress === null && endAddress === null) {
+				pushIssue(issues, 'warning', 'module_address_range_unavailable', path, 'Unknown module address range limits frame attribution.');
 			}
 		}
 		if (binary && id === binary.module_id) {
@@ -495,7 +524,7 @@ function validateThreads(
 	issues: NativeCrashEvidenceIssue[],
 	value: unknown,
 	crashedThreadId: string | null,
-	moduleRanges: ReadonlyMap<string, ModuleAddressRange>,
+	moduleRanges: ReadonlyMap<string, ModuleAddressRange | null>,
 ): void {
 	if (!Array.isArray(value)) {
 		pushIssue(issues, value === undefined ? 'error' : 'error', value === undefined ? 'missing_required_field' : 'invalid_array', '$.threads', 'threads must be an array.');
@@ -637,6 +666,7 @@ export function validateNativeCrashEvidence(value: unknown): NativeCrashEvidence
 	const sourceKind = validateSource(issues, value.source);
 	const crashedThreadId = validateTarget(issues, value.target);
 	const binary = validateBinary(issues, value.binary);
+	validateCandidateBinary(issues, value.candidate_binary);
 	const binarySymbols = validateSymbols(issues, value.symbols, '$.symbols');
 	const binaryIdentity = identityKey(binary?.identity);
 	if (binaryIdentity !== null) {
@@ -696,4 +726,22 @@ export function validateNativeCrashEvidenceJson(content: string): NativeCrashEvi
 			}],
 		};
 	}
+}
+
+export function summarizeNativeCrashEvidence(
+	value: unknown,
+	issues: readonly NativeCrashEvidenceIssue[],
+): NativeCrashEvidenceSummary {
+	const modules = isRecord(value) && Array.isArray(value.modules) ? value.modules : [];
+	const threads = isRecord(value) && Array.isArray(value.threads) ? value.threads : [];
+	const frameCount = threads.reduce((count, thread) => (
+		count + (isRecord(thread) && Array.isArray(thread.frames) ? thread.frames.length : 0)
+	), 0);
+	return {
+		module_count: modules.length,
+		thread_count: threads.length,
+		frame_count: frameCount,
+		error_count: issues.filter((issue) => issue.severity === 'error').length,
+		warning_count: issues.filter((issue) => issue.severity === 'warning').length,
+	};
 }

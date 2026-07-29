@@ -26,6 +26,12 @@
     "source": { "$ref": "#/$defs/source" },
     "target": { "$ref": "#/$defs/target" },
     "binary": { "$ref": "#/$defs/binary" },
+    "candidate_binary": {
+      "anyOf": [
+        { "$ref": "#/$defs/candidateBinary" },
+        { "type": "null" }
+      ]
+    },
     "symbols": { "$ref": "#/$defs/symbols" },
     "exception": { "$ref": "#/$defs/exception" },
     "registers": { "$ref": "#/$defs/registers" },
@@ -128,6 +134,16 @@
         "identity": { "$ref": "#/$defs/identity" }
       }
     },
+    "candidateBinary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "sha256", "binding_status"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "binding_status": { "const": "candidate_only" }
+      }
+    },
     "symbols": {
       "type": "object",
       "additionalProperties": false,
@@ -189,8 +205,18 @@
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
         "path": { "$ref": "#/$defs/nullableString" },
-        "base_address": { "$ref": "#/$defs/hexAddress" },
-        "end_address": { "$ref": "#/$defs/hexAddress" },
+        "base_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/hexAddress" },
+            { "type": "null" }
+          ]
+        },
+        "end_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/hexAddress" },
+            { "type": "null" }
+          ]
+        },
         "identity": { "$ref": "#/$defs/identity" },
         "symbols": { "$ref": "#/$defs/symbols" }
       }

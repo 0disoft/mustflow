@@ -230,6 +230,20 @@ test('source repository bounds security skill manifest baseline acceptance to re
 	assert.match(baselineScript, /'\.mustflow\/skills\/security-privacy-review\/SKILL\.md'/u);
 });
 
+test('source repository bounds native crash skill manifest baseline acceptance to one reviewed file', () => {
+	const baselineIntent = /\[intents\.manifest_lock_accept_native_crash_skill_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const baselineScript = readProjectText('scripts/accept-manifest-lock-baseline.mjs');
+
+	assert.notEqual(baselineIntent, '');
+	assert.match(baselineIntent, /argv = \["node", "scripts\/accept-manifest-lock-baseline\.mjs", "\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md"\]/u);
+	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
+	assert.match(baselineIntent, /network = false/u);
+	assert.match(baselineIntent, /destructive = false/u);
+	assert.match(baselineScript, /'\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md'/u);
+});
+
 test('Git write contracts require explicit approval and bounded release commands', () => {
 	const templateCommitIntent = /\[intents\.git_commit\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';
 	const templatePushIntent = /\[intents\.git_push\][\s\S]*?(?=\n\[intents\.|$)/u.exec(templateCommandContract)?.[0] ?? '';

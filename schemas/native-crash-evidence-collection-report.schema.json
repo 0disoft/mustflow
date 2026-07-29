@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/native-crash-evidence-collection-report.schema.json",
+  "title": "mustflow native crash evidence collection report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "adapter", "input_path", "binary_path", "output_path", "wrote", "readiness", "summary", "warnings", "issues"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "crash_evidence_collect" },
+    "ok": { "type": "boolean" },
+    "adapter": { "enum": ["windows-minidump", "linux-core", "sanitizer"] },
+    "input_path": { "type": "string" },
+    "binary_path": { "type": ["string", "null"] },
+    "output_path": { "type": "string" },
+    "wrote": { "type": "boolean" },
+    "readiness": { "enum": ["ready", "incomplete", "rejected"] },
+    "summary": { "$ref": "native-crash-evidence-validation-report.schema.json#/$defs/summary" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "issues": { "type": "array", "items": { "$ref": "native-crash-evidence-validation-report.schema.json#/$defs/issue" } }
+  }
+}

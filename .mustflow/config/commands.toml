@@ -1030,6 +1030,23 @@ network = false
 destructive = false
 required_after = ["dependency_security_skill_change"]
 
+[intents.manifest_lock_accept_native_crash_skill_v2_119_0]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept the reviewed native crash forensics skill revision 3 baseline without widening manifest-lock authority to unrelated workflow files."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", ".mustflow/skills/native-crash-forensics-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["native_crash_skill_change"]
+
 [intents.release_stage_v2_116_2]
 status = "configured"
 lifecycle = "oneshot"
@@ -3119,6 +3136,100 @@ argv = [
   "-m", "✨ feat(crash): add native crash evidence contract",
   "-m", "Package a bounded native crash evidence schema and semantic validator that grades readiness, binds binaries, modules, symbols, frames, and crashed threads, and rejects unsafe raw memory or environment payloads.",
   "-m", "Validation: mf run build; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.native_crash_tooling_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.119.0 crash evidence CLI, offline collectors, deterministic race harness, schemas, installed skill, docs, and regression contracts."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/review/docs.toml",
+  ".mustflow/skills/native-crash-forensics-review/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "docs-site/src/content/docs/en/commands/crash-evidence.md",
+  "docs-site/src/content/docs/es/commands/crash-evidence.md",
+  "docs-site/src/content/docs/fr/commands/crash-evidence.md",
+  "docs-site/src/content/docs/hi/commands/crash-evidence.md",
+  "docs-site/src/content/docs/ko/commands/crash-evidence.md",
+  "docs-site/src/content/docs/zh/commands/crash-evidence.md",
+  "schemas/README.md",
+  "schemas/deterministic-race-report.schema.json",
+  "schemas/deterministic-race-scenario.schema.json",
+  "schemas/native-crash-evidence-collection-report.schema.json",
+  "schemas/native-crash-evidence-validation-report.schema.json",
+  "schemas/native-crash-evidence.schema.json",
+  "scripts/accept-manifest-lock-baseline.mjs",
+  "scripts/lib/test-selection.mjs",
+  "src/cli/commands/crash-evidence.ts",
+  "src/cli/i18n/en.ts",
+  "src/cli/i18n/es.ts",
+  "src/cli/i18n/fr.ts",
+  "src/cli/i18n/hi.ts",
+  "src/cli/i18n/ko.ts",
+  "src/cli/i18n/zh.ts",
+  "src/cli/index.ts",
+  "src/cli/lib/command-registry.ts",
+  "src/core/deterministic-race-harness.ts",
+  "src/core/native-crash-collectors.ts",
+  "src/core/native-crash-evidence.ts",
+  "src/core/public-json-contracts.ts",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/native-crash-forensics-review/SKILL.md",
+  "tests/cli/crash-evidence.test.js",
+  "tests/cli/deterministic-race-harness.test.js",
+  "tests/cli/native-crash-collectors.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-release-workflow-contracts.test.js",
+  "tests/fixtures/schema-backcompat/2.84.8/public-json-fixtures.json",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.native_crash_tooling_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 crash evidence tooling change."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.native_crash_tooling_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 crash evidence CLI, offline collectors, deterministic race harness, and synchronized contracts."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(crash): add offline collection and race replay",
+  "-m", "Add bounded validate and collect CLI paths for minidumps, ELF cores, and sanitizer reports; preserve candidate-only binary identity and redaction limits; and add deterministic schedule, failure, and address-reuse replay.",
+  "-m", "Validation: mf run build; mf run test_related; mf run docs_validate; mf run test_release; mf run mustflow_check",
 ]
 cwd = "."
 timeout_seconds = 120

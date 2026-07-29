@@ -5802,6 +5802,74 @@
           "raw_memory_included": false
         }
       }
+    },
+    {
+      "id": "native-crash-evidence-validation-report",
+      "schema_file": "native-crash-evidence-validation-report.schema.json",
+      "producer": "mf crash-evidence validate <path> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "crash_evidence_validate",
+        "ok": true,
+        "readiness": "ready",
+        "mustflow_root": "C:/repo",
+        "path": "crash-evidence/ready.json",
+        "summary": {
+          "module_count": 1,
+          "thread_count": 1,
+          "frame_count": 1,
+          "error_count": 0,
+          "warning_count": 0
+        },
+        "issues": []
+      }
+    },
+    {
+      "id": "native-crash-evidence-collection-report",
+      "schema_file": "native-crash-evidence-collection-report.schema.json",
+      "producer": "mf crash-evidence collect <path> --adapter <name> --output <path> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "crash_evidence_collect",
+        "ok": true,
+        "adapter": "sanitizer",
+        "input_path": "crash/asan.log",
+        "binary_path": null,
+        "output_path": "crash/evidence.json",
+        "wrote": true,
+        "readiness": "incomplete",
+        "summary": { "module_count": 1, "thread_count": 1, "frame_count": 1, "error_count": 0, "warning_count": 7 },
+        "warnings": ["Binary identity was not supplied; attribution remains incomplete."],
+        "issues": []
+      }
+    },
+    {
+      "id": "deterministic-race-scenario",
+      "schema_file": "deterministic-race-scenario.schema.json",
+      "producer": "input to mf crash-evidence race <path> --json",
+      "fixture": {
+        "schema_version": "1",
+        "kind": "deterministic_race_scenario",
+        "reuse_addresses": true,
+        "fail_at": null,
+        "actors": [{ "id": "main", "operations": [{ "id": "alloc", "action": "allocate", "resource": "slot" }] }],
+        "schedule": [{ "actor": "main", "operation": "alloc" }]
+      }
+    },
+    {
+      "id": "deterministic-race-report",
+      "schema_file": "deterministic-race-report.schema.json",
+      "producer": "mf crash-evidence race <path> --json",
+      "fixture": {
+        "schema_version": "1",
+        "command": "crash_evidence_race",
+        "ok": true,
+        "status": "passed",
+        "deterministic": true,
+        "executed_operations": 1,
+        "findings": [],
+        "trace": [{ "ordinal": 0, "actor": "main", "operation": "alloc", "action": "allocate", "resource": "slot", "generation": 1, "outcome": "executed" }]
+      }
     }
   ]
 }

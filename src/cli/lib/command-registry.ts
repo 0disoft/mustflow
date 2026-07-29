@@ -257,6 +257,17 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/handoff.js')).runHandoff,
 	},
 	{
+		id: 'crash-evidence',
+		usage: 'mf crash-evidence',
+		summaryKey: 'command.crashEvidence.summary',
+		contract: commandContract(TEXT_JSON_OUTPUT, [
+			'native-crash-evidence-validation-report',
+			'native-crash-evidence-collection-report',
+			'deterministic-race-report',
+		]),
+		loadRunner: async () => (await import('../commands/crash-evidence.js')).runCrashEvidence,
+	},
+	{
 		id: 'index',
 		usage: 'mf index',
 		summaryKey: 'command.index.summary',

@@ -210,7 +210,18 @@ Current schemas:
 - `native-crash-evidence.schema.json`: portable native-crash evidence accepted by
   `validateNativeCrashEvidence` and `validateNativeCrashEvidenceJson`, including exact artifact,
   binary, module and symbol identities; exception and register state; crashed-thread stacks;
-  optional sanitizer findings; and explicit raw-memory and environment redaction boundaries
+  optional sanitizer findings; explicit raw-memory and environment redaction boundaries; and an
+  optional `candidate_binary` SHA-256 that remains `candidate_only` until independently matched
+- `native-crash-evidence-validation-report.schema.json`: output of
+  `mf crash-evidence validate <path> --json`, containing validity, analysis readiness, bounded
+  evidence counts, and stable semantic issue codes
+- `native-crash-evidence-collection-report.schema.json`: bounded result of offline minidump,
+  ELF core, or sanitizer collection; the generated evidence remains incomplete when registers,
+  symbols, or architecture-specific notes cannot be proved from the artifact alone
+- `deterministic-race-scenario.schema.json`: declarative actors, operations, exact schedule,
+  failure ordinal, and address-reuse policy consumed by `mf crash-evidence race`
+- `deterministic-race-report.schema.json`: deterministic trace and stable findings for use-after-free,
+  stale-generation, unbalanced acquire/release, duplicate schedule, and unscheduled-operation cases
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
 - `docs-review-list.schema.json`: output of `mf docs review list --json`
 - `explain-report.schema.json`: output of `mf explain authority --json`, `mf explain command --json`,  

@@ -7,6 +7,7 @@ const allowedPaths = new Set([
 	'.mustflow/docs/agent-workflow.md',
 	'.mustflow/config/commands.toml',
 	'.mustflow/skills/dependency-upgrade-review/SKILL.md',
+	'.mustflow/skills/native-crash-forensics-review/SKILL.md',
 	'.mustflow/skills/router.toml',
 	'.mustflow/skills/security-privacy-review/SKILL.md',
 ]);

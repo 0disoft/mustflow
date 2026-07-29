@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/deterministic-race-report.schema.json",
+  "title": "mustflow deterministic race report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "status", "deterministic", "executed_operations", "findings", "trace"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "crash_evidence_race" },
+    "ok": { "type": "boolean" },
+    "status": { "enum": ["passed", "failed", "rejected"] },
+    "deterministic": { "const": true },
+    "executed_operations": { "type": "integer", "minimum": 0 },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "severity", "actor", "operation", "resource", "message"],
+        "properties": {
+          "code": { "type": "string" }, "severity": { "enum": ["error", "warning"] },
+          "actor": { "type": ["string", "null"] }, "operation": { "type": ["string", "null"] },
+          "resource": { "type": ["string", "null"] }, "message": { "type": "string" }
+        }
+      }
+    },
+    "trace": {
+      "type": "array", "maxItems": 16384,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["ordinal", "actor", "operation", "action", "resource", "generation", "outcome"],
+        "properties": {
+          "ordinal": { "type": "integer", "minimum": 0 }, "actor": { "type": "string" },
+          "operation": { "type": "string" },
+          "action": { "enum": ["allocate", "publish", "acquire", "release", "read", "write", "retire", "free", "checkpoint"] },
+          "resource": { "type": "string" }, "generation": { "type": ["integer", "null"], "minimum": 1 },
+          "outcome": { "enum": ["executed", "injected_failure", "rejected"] }
+        }
+      }
+    }
+  }
+}

@@ -15,6 +15,10 @@ This file applies to the mustflow repository itself. It is not installed into us
   object lifetimes, schedule-sensitive corruption, and structural repairs; strengthened fuzz and
   race procedures for lifetime operation sequences, deterministic N-th failures, schedule traces,
   lock-removal obligations, immediate address reuse, and optimized-build evidence.
+- Added `mf crash-evidence validate`, offline `collect` adapters for Windows minidumps, Linux ELF
+  cores, and sanitizer reports, plus a bounded deterministic `race` scenario runner. Collectors do
+  not invoke external debuggers or manufacture unavailable register, unwind, symbol, or module-map
+  facts; incomplete evidence stays explicitly incomplete.
 - Added an installed information-visualization integrity skill that chooses tables, charts,
   diagrams, and timelines from reader decisions and semantic relationships, requires
   source-backed visual specifications and claim ledgers, preserves missingness and uncertainty,

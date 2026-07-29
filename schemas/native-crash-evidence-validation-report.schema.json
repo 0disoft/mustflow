@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/native-crash-evidence-validation-report.schema.json",
+  "title": "mustflow native crash evidence validation report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "readiness", "mustflow_root", "path", "summary", "issues"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "crash_evidence_validate" },
+    "ok": { "type": "boolean" },
+    "readiness": { "enum": ["ready", "incomplete", "rejected"] },
+    "mustflow_root": { "type": "string" },
+    "path": { "type": "string" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "issues": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/issue" }
+    }
+  },
+  "$defs": {
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module_count", "thread_count", "frame_count", "error_count", "warning_count"],
+      "properties": {
+        "module_count": { "type": "integer", "minimum": 0 },
+        "thread_count": { "type": "integer", "minimum": 0 },
+        "frame_count": { "type": "integer", "minimum": 0 },
+        "error_count": { "type": "integer", "minimum": 0 },
+        "warning_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "issue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "code", "path", "message"],
+        "properties": {
+          "severity": { "enum": ["error", "warning"] },
+          "code": { "type": "string" },
+          "path": { "type": "string" },
+          "message": { "type": "string" }
+        }
+    }
+  }
+}

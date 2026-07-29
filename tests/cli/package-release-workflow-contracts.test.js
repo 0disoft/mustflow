@@ -466,6 +466,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/cli/commands/quality.js'));
 	assert.ok(files.has('dist/cli/commands/explain.js'));
 	assert.ok(files.has('dist/cli/commands/handoff.js'));
+	assert.ok(files.has('dist/cli/commands/crash-evidence.js'));
 	assert.ok(files.has('dist/core/line-endings.js'));
 	assert.ok(files.has('dist/core/quality-gaming.js'));
 	assert.ok(files.has('dist/core/source-anchor-explanation.js'));
@@ -506,6 +507,8 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
 	assert.ok(files.has('dist/core/public-json-contracts.js'));
 	assert.ok(files.has('dist/core/native-crash-evidence.js'));
+	assert.ok(files.has('dist/core/native-crash-collectors.js'));
+	assert.ok(files.has('dist/core/deterministic-race-harness.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
 	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-export-diff.js'));

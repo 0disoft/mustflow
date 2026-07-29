@@ -2,7 +2,7 @@
 mustflow_doc: skill.native-crash-forensics-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: native-crash-forensics-review
@@ -127,6 +127,14 @@ and the eventual design repair separate.
    - Validate structured evidence against `native-crash-evidence` schema version `1` and its
      semantic validator before using claimed symbol matches, module identity, crashed-thread
      selection, or redaction state. Schema shape alone does not prove cross-field consistency.
+   - When the installed CLI exposes it, use `mf crash-evidence validate <path> --json` for a
+     root-contained, bounded, read-only verdict. Exit zero covers both `ready` and valid
+     `incomplete`; inspect `readiness` instead of treating exit zero as analysis readiness.
+   - Use `mf crash-evidence collect <artifact> --adapter <windows-minidump|linux-core|sanitizer>
+     --output <path> --json` only for offline normalization. It never runs a debugger or silently
+     loads symbols. Existing output requires explicit `--overwrite`; an optional `--binary` hashes
+     that exact candidate file but remains `candidate_only` until an independent identity check
+     proves it matches the captured module. It does not prove symbols or unwind.
 2. Prove binary and symbol identity before trusting source lines.
    - Match the dump to the exact executable and every relevant shared library or plugin by build ID,
      module identifier, hash, image digest, and load address.
@@ -190,6 +198,10 @@ and the eventual design repair separate.
     - Sweep deterministic N-th allocation, I/O, initialization, and cleanup failures and assert
       rollback, one-time destruction, no leaked reference, and no false success.
     - Make freed-address reuse and generation changes explicit when ABA or delayed UAF is plausible.
+    - For repository-independent operation-order simulations, `mf crash-evidence race
+      <scenario.json> --json` can replay a bounded declarative schedule, exact failure ordinal, and
+      address-generation reuse. Its trace proves only the modeled operations and must not be
+      promoted to proof about unmodeled native code, memory ordering, or production timing.
 11. Choose a structural repair.
     - Keep pointer, length, capacity, unit, alignment, ownership, allocator provenance, and
       generation in one checked contract where possible.

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/deterministic-race-scenario.schema.json",
+  "title": "mustflow deterministic race scenario",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "reuse_addresses", "fail_at", "actors", "schedule"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "deterministic_race_scenario" },
+    "reuse_addresses": { "type": "boolean" },
+    "fail_at": { "type": ["integer", "null"], "minimum": 0 },
+    "actors": {
+      "type": "array", "minItems": 1, "maxItems": 128,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "operations"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "operations": {
+            "type": "array", "maxItems": 16384,
+            "items": {
+              "type": "object", "additionalProperties": false, "required": ["id", "action", "resource"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "action": { "enum": ["allocate", "publish", "acquire", "release", "read", "write", "retire", "free", "checkpoint"] },
+                "resource": { "type": "string", "minLength": 1 },
+                "generation": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "schedule": {
+      "type": "array", "maxItems": 16384,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["actor", "operation"],
+        "properties": { "actor": { "type": "string", "minLength": 1 }, "operation": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}
