@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+tools/native-crash-fixture-parser/target/
 
 # Local environment and secrets
 .env

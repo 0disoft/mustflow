@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 309
+anchor_count: 310
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:d223f8f5dd64f9699964d830c0126d7d2009d97d84c03089f977969e609ce69c"
+source_fingerprint: "sha256:00bf7ae2882746c465f51506d6b4cbcbd782f667994d99209e35906b6a37fe05"
 ---
 
 # REPO_MAP.md
@@ -1202,6 +1202,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### tools/manifest-lock-accept/
 
 - `tools/manifest-lock-accept/go.mod`: Go module definition and dependency boundary.
+
+### tools/native-crash-fixture-parser/
+
+- `tools/native-crash-fixture-parser/Cargo.toml`: Rust package manifest and workspace configuration.
 
 ## Generated Files
 

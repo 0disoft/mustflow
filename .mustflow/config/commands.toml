@@ -3314,7 +3314,7 @@ approval_actions = ["git_commit"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Cross-check deterministic native crash fixtures with installed independent command-line parsers and report partial coverage without promoting format recognition to semantic validation."
+description = "Cross-check deterministic native crash fixtures with installed independent format and semantic parsers without promoting unavailable evidence."
 argv = ["bun", "run", "scripts/cross-validate-native-crash-fixtures.ts"]
 cwd = "."
 timeout_seconds = 60
@@ -3323,6 +3323,103 @@ success_exit_codes = [0, 2]
 writes = []
 network = false
 destructive = false
+
+[intents.native_crash_fixture_semantic_parser_lock]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Resolve and lock the repository-local Rust dependencies for independent minidump and ELF fixture parsing."
+argv = ["cargo", "generate-lockfile", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["tools/native-crash-fixture-parser/Cargo.lock"]
+effects = [{ type = "write", mode = "replace", path = "tools/native-crash-fixture-parser/Cargo.lock", lock = "native_crash_fixture_parser_lock", concurrency = "exclusive" }]
+network = true
+destructive = false
+
+[intents.native_crash_fixture_semantic_parser_build]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build the locked repository-local independent minidump and ELF fixture parser."
+argv = ["cargo", "build", "--locked", "--manifest-path", "tools/native-crash-fixture-parser/Cargo.toml"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["tools/native-crash-fixture-parser/target/**"]
+effects = [{ type = "write", mode = "replace", path = "tools/native-crash-fixture-parser/target/**", lock = "native_crash_fixture_parser_build", concurrency = "exclusive" }]
+network = true
+destructive = false
+
+[intents.native_crash_semantic_parser_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.119.0 independent native crash semantic parser, locked dependencies, generated maps, and regression contracts."
+argv = [
+  "git", "add", "--",
+  ".gitignore",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "scripts/cross-validate-native-crash-fixtures.ts",
+  "scripts/lib/test-selection.mjs",
+  "src/core/native-crash-fixture-external-validation.ts",
+  "tests/cli/native-crash-fixture-external-validation.test.js",
+  "tests/cli/test-selection-related-contracts.test.js",
+  "tools/native-crash-fixture-parser/Cargo.toml",
+  "tools/native-crash-fixture-parser/Cargo.lock",
+  "tools/native-crash-fixture-parser/src/main.rs",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.native_crash_semantic_parser_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 independent native crash semantic parser."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.native_crash_semantic_parser_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 independent native crash semantic parser and locked tooling dependencies."
+argv = [
+  "git", "commit",
+  "-m", "🧪 test(crash): validate fixture semantics independently",
+  "-m", "Add a bounded stdin-only Rust helper backed by locked rust-minidump and goblin versions; verify minidump streams and exception parameters plus ELF32/64 program headers and core notes; and keep missing or contradictory evidence fail-closed.",
+  "-m", "Validation: mf run native_crash_fixture_semantic_parser_build; mf run build; mf run native_crash_fixture_external_validation; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
 
 [intents.native_crash_external_validation_stage_v2_119_0]
 status = "configured"

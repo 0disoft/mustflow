@@ -32,6 +32,26 @@ export interface FormatRecognitionProbe {
 	exitCode: number;
 }
 
+export interface SemanticStructureProbe {
+	fixture: NativeCrashExternalValidationLane['fixture'];
+	tool: string;
+	toolPath: string;
+	expected: unknown;
+	observed: string;
+	exitCode: number;
+}
+
+function normalizedJson(value: unknown): string {
+	if (Array.isArray(value)) return `[${value.map(normalizedJson).join(',')}]`;
+	if (value !== null && typeof value === 'object') {
+		return `{${Object.entries(value as Record<string, unknown>)
+			.sort(([left], [right]) => left.localeCompare(right))
+			.map(([key, child]) => `${JSON.stringify(key)}:${normalizedJson(child)}`)
+			.join(',')}}`;
+	}
+	return JSON.stringify(value);
+}
+
 export function classifyFormatRecognitionProbe(
 	probe: FormatRecognitionProbe,
 ): NativeCrashExternalValidationLane {
@@ -72,6 +92,61 @@ export function classifyFormatRecognitionProbe(
 	};
 }
 
+export function classifySemanticStructureProbe(
+	probe: SemanticStructureProbe,
+): NativeCrashExternalValidationLane {
+	const observedText = probe.observed.trim();
+	if (probe.exitCode !== 0) {
+		return {
+			fixture: probe.fixture,
+			capability: 'semantic-structure',
+			tool: probe.tool,
+			tool_path: probe.toolPath,
+			status: 'failed',
+			reason: `tool_exit_${probe.exitCode}`,
+			expected: JSON.stringify(probe.expected),
+			observed: observedText,
+		};
+	}
+	let observed: unknown;
+	try {
+		observed = JSON.parse(observedText);
+	} catch {
+		return {
+			fixture: probe.fixture,
+			capability: 'semantic-structure',
+			tool: probe.tool,
+			tool_path: probe.toolPath,
+			status: 'failed',
+			reason: 'semantic_output_not_json',
+			expected: JSON.stringify(probe.expected),
+			observed: observedText,
+		};
+	}
+	if (normalizedJson(observed) !== normalizedJson(probe.expected)) {
+		return {
+			fixture: probe.fixture,
+			capability: 'semantic-structure',
+			tool: probe.tool,
+			tool_path: probe.toolPath,
+			status: 'failed',
+			reason: 'semantic_output_mismatch',
+			expected: JSON.stringify(probe.expected),
+			observed: JSON.stringify(observed),
+		};
+	}
+	return {
+		fixture: probe.fixture,
+		capability: 'semantic-structure',
+		tool: probe.tool,
+		tool_path: probe.toolPath,
+		status: 'passed',
+		reason: 'independent_semantic_parser_match',
+		expected: JSON.stringify(probe.expected),
+		observed: JSON.stringify(observed),
+	};
+}
+
 export function skippedExternalValidationLane(
 	fixture: NativeCrashExternalValidationLane['fixture'],
 	capability: NativeCrashExternalValidationLane['capability'],
@@ -93,9 +168,10 @@ export function buildNativeCrashExternalValidationReport(
 	lanes: NativeCrashExternalValidationLane[],
 ): NativeCrashExternalValidationReport {
 	let overallStatus: NativeCrashExternalValidationStatus;
+	const semanticLanes = lanes.filter((lane) => lane.capability === 'semantic-structure');
 	if (lanes.some((lane) => lane.status === 'failed')) {
 		overallStatus = 'failed';
-	} else if (lanes.length > 0 && lanes.every((lane) => lane.status === 'passed')) {
+	} else if (semanticLanes.length > 0 && semanticLanes.every((lane) => lane.status === 'passed')) {
 		overallStatus = 'passed';
 	} else if (lanes.some((lane) => lane.status === 'partial')) {
 		overallStatus = 'partial';

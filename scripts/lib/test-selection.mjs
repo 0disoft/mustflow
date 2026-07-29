@@ -403,6 +403,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^tests\/cli\/helpers\/native-crash-fixtures\.js$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^src\/core\/native-crash-fixture-external-validation\.ts$/u, tests: ['native-crash-fixture-external-validation.test.js'] },
 		{ match: /^scripts\/cross-validate-native-crash-fixtures\.ts$/u, tests: ['native-crash-fixture-external-validation.test.js'] },
+		{ match: /^tools\/native-crash-fixture-parser\/(?:Cargo\.(?:toml|lock)|src\/.*\.rs)$/u, tests: ['native-crash-fixture-external-validation.test.js'] },
 		{ match: /^src\/core\/authority-resolution\.ts$/u, tests: ['check-doc-authority.test.js', 'explain-authority.test.js'] },
 		{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: schemaSmokeTests },

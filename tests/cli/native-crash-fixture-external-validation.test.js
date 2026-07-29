@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
 	buildNativeCrashExternalValidationReport,
 	classifyFormatRecognitionProbe,
+	classifySemanticStructureProbe,
 	nativeCrashExternalValidationExitCode,
 	skippedExternalValidationLane,
 } from '../../dist/core/native-crash-fixture-external-validation.js';
@@ -60,4 +61,55 @@ test('no installed external parser reports skipped with exit code two', () => {
 	assert.equal(report.complete, false);
 	assert.equal(report.overall_status, 'skipped');
 	assert.equal(nativeCrashExternalValidationExitCode(report), 2);
+});
+
+test('independent semantic parser facts can complete a fixture lane', () => {
+	const expected = {
+		format: 'elf-core',
+		class_bits: 64,
+		note_types: [1, 1397311305, 1179208773],
+	};
+	const lane = classifySemanticStructureProbe({
+		fixture: 'elf64-core',
+		tool: 'rust-minidump+goblin',
+		toolPath: '/tools/native-crash-fixture-parser',
+		expected,
+		observed: JSON.stringify({ note_types: expected.note_types, class_bits: 64, format: 'elf-core' }),
+		exitCode: 0,
+	});
+	assert.equal(lane.status, 'passed');
+	assert.equal(lane.reason, 'independent_semantic_parser_match');
+});
+
+test('complete semantic coverage promotes supporting format-only lanes to an overall pass', () => {
+	const semanticLane = classifySemanticStructureProbe({
+		fixture: 'elf64-core',
+		tool: 'rust-minidump+goblin',
+		toolPath: 'tools/native-crash-fixture-parser',
+		expected: { format: 'elf-core', class_bits: 64 },
+		observed: '{"class_bits":64,"format":"elf-core"}',
+		exitCode: 0,
+	});
+	const report = buildNativeCrashExternalValidationReport([
+		classifyFormatRecognitionProbe(validProbe),
+		semanticLane,
+	]);
+	assert.equal(report.ok, true);
+	assert.equal(report.complete, true);
+	assert.equal(report.overall_status, 'passed');
+	assert.equal(nativeCrashExternalValidationExitCode(report), 0);
+});
+
+test('malformed or contradictory semantic parser output fails closed', () => {
+	for (const observed of ['not json', '{"format":"elf-core","class_bits":32}']) {
+		const lane = classifySemanticStructureProbe({
+			fixture: 'elf64-core',
+			tool: 'rust-minidump+goblin',
+			toolPath: '/tools/native-crash-fixture-parser',
+			expected: { format: 'elf-core', class_bits: 64 },
+			observed,
+			exitCode: 0,
+		});
+		assert.equal(lane.status, 'failed');
+	}
 });

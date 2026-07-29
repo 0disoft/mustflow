@@ -319,6 +319,9 @@ test('related selection maps native crash external validation surfaces to their 
 	for (const changedFile of [
 		'src/core/native-crash-fixture-external-validation.ts',
 		'scripts/cross-validate-native-crash-fixtures.ts',
+		'tools/native-crash-fixture-parser/Cargo.toml',
+		'tools/native-crash-fixture-parser/Cargo.lock',
+		'tools/native-crash-fixture-parser/src/main.rs',
 	]) {
 		assert.deepEqual([...selectedFor([changedFile])], ['native-crash-fixture-external-validation.test.js']);
 	}

@@ -6,9 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
-- Added an offline external-parser cross-check for deterministic native crash fixtures. It reports
-  format-only recognition as `partial`, missing semantic parsers as `skipped`, and parser drift or
-  execution errors as `failed` instead of overstating fixture validity.
+- Added an offline external-parser cross-check for deterministic native crash fixtures. GNU `file`
+  provides a format-only lane, while a lockfile-backed repository-local Rust helper uses
+  `rust-minidump` and `goblin` to validate minidump streams, exception parameters, ELF program
+  headers, and ELF core notes without persisting raw crash bytes. Missing parsers remain `skipped`,
+  partial coverage remains `partial`, and parser drift or execution errors fail closed.
 - Added a packaged `native-crash-evidence` JSON Schema and bounded semantic validator that rejects
   symbol or binary identity contradictions, crashed-thread inconsistencies, unsafe raw memory or
   environment payloads, and malformed evidence while distinguishing analysis-ready evidence from
