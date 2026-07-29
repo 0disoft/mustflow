@@ -315,6 +315,15 @@ test('related selection keeps ordinary unknown changes on the fast fallback', ()
 	assert.deepEqual(fastFallbackReasons[0].tests, fastReport.selected);
 });
 
+test('related selection maps native crash external validation surfaces to their focused contract', () => {
+	for (const changedFile of [
+		'src/core/native-crash-fixture-external-validation.ts',
+		'scripts/cross-validate-native-crash-fixtures.ts',
+	]) {
+		assert.deepEqual([...selectedFor([changedFile])], ['native-crash-fixture-external-validation.test.js']);
+	}
+});
+
 test('related selection maps script-pack implementation changes to script-pack contract tests', () => {
 	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-dependency-graph.ts'), true);
 	assert.equal(scriptPackWrapperPaths.includes('src/cli/script-packs/code-module-boundary.ts'), true);
