@@ -21,12 +21,12 @@ update baseline `.mustflow/config/manifest.lock.toml` में मौजूद 
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## स्थितियां
@@ -36,6 +36,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`: current file lock baseline और bundled template दोनों से मेल खाती है, या file customized mark है और अभी भी customized baseline से match करती है।
 - `update`: current file lock baseline से मेल खाती है लेकिन bundled template से अलग है।
 - `create`: file template में मौजूद है लेकिन user repository में नहीं है।
+- `remove`: स्पष्ट रूप से retired template file lock में tracked है और recorded baseline से मेल खाती है।
 - `blocked-local-change`: current file lock baseline से अलग है।
 - `manual-review`: file को automatic update के बजाय human review चाहिए।
 
@@ -48,6 +49,7 @@ writes_only_template_manifest_paths: true
 - customized files को template content से replace न करें जब तक वे customized lock baseline से match करती हैं।
 - `update` files को backup बनने के बाद template content से बदला जाता है।
 - `create` files आवश्यक parent directories बनने के बाद लिखी जाती हैं।
+- `remove` files को केवल lock baseline से मेल खाने पर backup करके हटाया जाता है; customized या hash-mismatched file पूरे apply को रोकती है।
 - यदि कोई new template file lock में मौजूद न होने वाली existing file से conflict करती है, तो उसे local change माना जाता है और overwrite नहीं किया जाता।
 - successful update के बाद प्रभावित `manifest.lock.toml` entries refresh करें।
 - `mf update` केवल template manifest और lock file में घोषित mustflow files लिखता है।

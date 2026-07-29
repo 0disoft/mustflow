@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 export {
@@ -12,6 +12,7 @@ export {
 } from '../../core/safe-filesystem.js';
 
 import {
+	ensureFileTargetInsideWithoutSymlinks,
 	readFileInsideWithoutSymlinks,
 	writeFileInsideWithoutSymlinks,
 } from '../../core/safe-filesystem.js';
@@ -39,6 +40,11 @@ export function copyFileInsideWithoutSymlinks(
 ): void {
 	const content = readFileInsideWithoutSymlinks(sourceParentPath, sourcePath);
 	writeFileInsideWithoutSymlinks(targetParentPath, targetPath, content);
+}
+
+export function removeFileInsideWithoutSymlinks(parentPath: string, filePath: string): void {
+	ensureFileTargetInsideWithoutSymlinks(parentPath, filePath);
+	unlinkSync(filePath);
 }
 
 function pathExistsWithoutFollowingLeaf(filePath: string): boolean {

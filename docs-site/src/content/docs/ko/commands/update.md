@@ -120,11 +120,12 @@ npx mf update --apply --json
 - `policy.dry_run_writes_files` (`boolean`): `--dry-run`이 파일을 쓰는지 나타냅니다. 항상 `false`입니다.
 - `policy.backup_path_pattern` (`string`): 기존 파일을 갱신하기 전 백업하는 위치 형식입니다.
 - `policy.never_overwrite_local_changes` (`boolean`): 로컬 변경 파일은 자동으로 덮어쓰지 않는다는 정책입니다.
-- `policy.writes_only_template_manifest_paths` (`boolean`): 템플릿 매니페스트에 들어 있는 mustflow 파일만 쓴다는 선언입니다.
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`): 현재 템플릿 경로 또는 잠금 파일이 소유한 명시적 폐기 경로만 쓴다는 선언입니다.
 - `summary.blockedLocalChanges` (`number`): 로컬 변경 때문에 차단된 파일 수입니다.
 - `summary.manualReview` (`number`): 수동 검토가 필요한 파일 수입니다.
 - `summary.wouldUpdate` (`number`): 업데이트 시 바뀔 수 있는 파일 수입니다.
 - `summary.wouldCreate` (`number`): 업데이트 시 새로 만들 수 있는 파일 수입니다.
+- `summary.wouldRemove` (`number`): 잠금 기준선과 일치해 안전하게 제거할 수 있는 폐기 파일 수입니다.
 - `summary.unchanged` (`number`): 현재 템플릿과 이미 같은 파일 수입니다.
 - `items[].relativePath` (`string`): 갱신 계획 대상 경로입니다.
 - `items[].sourceKind` (`string`): 항목이 템플릿 원본에서 온 방식입니다.

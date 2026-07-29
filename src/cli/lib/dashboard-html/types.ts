@@ -75,6 +75,7 @@ export interface DashboardStatusSnapshot {
 			readonly manualReview: number;
 			readonly wouldUpdate: number;
 			readonly wouldCreate: number;
+			readonly wouldRemove: number;
 			readonly unchanged: number;
 		};
 		readonly blockers: readonly {

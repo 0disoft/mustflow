@@ -23,12 +23,12 @@ Current policy values:
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## States
@@ -38,6 +38,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`: The current file matches both the lock baseline and the bundled template, or it is marked as customized and still matches that customized baseline.
 - `update`: The current file matches the lock baseline but differs from the bundled template.
 - `create`: The file exists in the template but is missing from the user repository.
+- `remove`: A specifically retired template file is still tracked by the lock and is unchanged from its recorded baseline.
 - `blocked-local-change`: The current file differs from the lock baseline.
 - `manual-review`: The file requires human review instead of an automatic update.
 
@@ -50,6 +51,7 @@ writes_only_template_manifest_paths: true
 - Do not replace customized files with template content while they still match their customized lock baseline.
 - `update` files are replaced with template content after a backup is created.
 - `create` files are written after creating the necessary parent directories.
+- `remove` files are backed up and deleted only when the lock still proves they are unchanged; customized or hash-mismatched files block the whole apply.
 - If a new template file conflicts with an existing file not present in the lock, it is treated as a local change and will not be overwritten.
 - Refresh affected `manifest.lock.toml` entries after a successful update.
 - `mf update` writes only mustflow files declared by the template manifest and the lock file.

@@ -120,11 +120,12 @@ Les champs imbriqués utilisent ces formes:
 - `policy.dry_run_writes_files` (`boolean`): indique si `--dry-run` écrit des fichiers. Vaut toujours `false`.
 - `policy.backup_path_pattern` (`string`): modèle de chemin de sauvegarde avant remplacement des fichiers existants.
 - `policy.never_overwrite_local_changes` (`boolean`): déclare que les changements locaux ne sont jamais écrasés automatiquement.
-- `policy.writes_only_template_manifest_paths` (`boolean`): déclare que la mise à jour écrit uniquement les fichiers mustflow listés par le manifeste du modèle.
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`): déclare que la mise à jour écrit uniquement les chemins du modèle actuel ou les chemins retirés encore détenus par le verrou.
 - `summary.blockedLocalChanges` (`number`): nombre de fichiers bloqués par des changements locaux.
 - `summary.manualReview` (`number`): nombre de fichiers nécessitant un examen manuel.
 - `summary.wouldUpdate` (`number`): nombre de fichiers qu’une future mise à jour mutante pourrait modifier.
 - `summary.wouldCreate` (`number`): nombre de fichiers qu’une future mise à jour mutante pourrait créer.
+- `summary.wouldRemove` (`number`): nombre de fichiers retirés suivis par le verrou qui peuvent être supprimés en sécurité.
 - `summary.unchanged` (`number`): nombre de fichiers correspondant déjà au modèle actuel.
 - `items[].relativePath` (`string`): chemin cible de l’entrée du plan.
 - `items[].sourceKind` (`string`): origine de l’élément dans la source du modèle.

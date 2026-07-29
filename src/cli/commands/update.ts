@@ -6,6 +6,7 @@ import {
 	copyFileInsideWithoutSymlinks,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
+	removeFileInsideWithoutSymlinks,
 	writeUtf8FileInsideWithoutSymlinks,
 } from '../lib/filesystem.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
@@ -29,8 +30,9 @@ import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type Te
 import { readMustflowTomlFile, stringifyToml } from '../lib/toml.js';
 import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPreview } from '../lib/update-diff-preview.js';
 
-const UPDATE_SCHEMA_VERSION = '1';
+const UPDATE_SCHEMA_VERSION = '2';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
+const OBSOLETE_MANAGED_TEMPLATE_PATHS = new Set(['.mustflow/skills/catalog.v1.json']);
 
 const UPDATE_OPTIONS = [
 	{ name: '--dry-run', kind: 'boolean' },
@@ -39,32 +41,33 @@ const UPDATE_OPTIONS = [
 	{ name: '--diff', kind: 'boolean' },
 ] as const satisfies readonly CliOptionSpec[];
 
-export type UpdateAction = 'unchanged' | 'create' | 'update' | 'blocked-local-change' | 'manual-review';
+export type UpdateAction = 'unchanged' | 'create' | 'update' | 'remove' | 'blocked-local-change' | 'manual-review';
+type UpdateSourceKind = TemplateFileSource['sourceKind'] | 'manifest_lock';
 type UpdateMode = 'dry-run' | 'apply' | 'unspecified';
 
 interface UpdatePolicy {
 	readonly baseline: 'manifest_lock_content_hash';
-	readonly allowed_apply_actions: readonly ['update', 'create'];
+	readonly allowed_apply_actions: readonly ['update', 'create', 'remove'];
 	readonly blocking_actions: readonly ['blocked-local-change', 'manual-review'];
 	readonly dry_run_writes_files: false;
 	readonly backup_path_pattern: '.mustflow/backups/<timestamp>/';
 	readonly never_overwrite_local_changes: true;
-	readonly writes_only_template_manifest_paths: true;
+	readonly writes_only_template_manifest_or_lock_paths: true;
 }
 
 const UPDATE_POLICY: UpdatePolicy = {
 	baseline: 'manifest_lock_content_hash',
-	allowed_apply_actions: ['update', 'create'],
+	allowed_apply_actions: ['update', 'create', 'remove'],
 	blocking_actions: ['blocked-local-change', 'manual-review'],
 	dry_run_writes_files: false,
 	backup_path_pattern: '.mustflow/backups/<timestamp>/',
 	never_overwrite_local_changes: true,
-	writes_only_template_manifest_paths: true,
+	writes_only_template_manifest_or_lock_paths: true,
 };
 
 export interface UpdatePlanItem {
 	readonly relativePath: string;
-	readonly sourceKind: TemplateFileSource['sourceKind'];
+	readonly sourceKind: UpdateSourceKind;
 	readonly action: UpdateAction;
 	readonly reason: string;
 	readonly diff_preview?: UpdateDiffPreview;
@@ -75,6 +78,7 @@ export interface UpdatePlanSummary {
 	readonly manualReview: number;
 	readonly wouldUpdate: number;
 	readonly wouldCreate: number;
+	readonly wouldRemove: number;
 	readonly unchanged: number;
 }
 
@@ -93,11 +97,12 @@ interface UpdatePlanOutput {
 interface ApplyResult {
 	readonly created: number;
 	readonly updated: number;
+	readonly removed: number;
 	readonly wroteFiles: boolean;
 }
 
 interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
-	readonly source: TemplateFileSource;
+	readonly source?: TemplateFileSource;
 }
 
 type MutableTomlTable = Record<string, unknown>;
@@ -197,6 +202,15 @@ function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason
 	};
 }
 
+function createObsoletePlanItem(lockedFile: LockedFile, action: UpdateAction, reason: string): InternalUpdatePlanItem {
+	return {
+		relativePath: lockedFile.relativePath,
+		sourceKind: 'manifest_lock',
+		action,
+		reason,
+	};
+}
+
 function publicPlanItem(item: InternalUpdatePlanItem): UpdatePlanItem {
 	return {
 		relativePath: item.relativePath,
@@ -287,6 +301,44 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		items.push(createPlanItem(source, 'unchanged', 'current file matches the bundled template'));
 	}
 
+	const currentTemplatePaths = new Set(templateFiles.map((source) => source.relativePath));
+	for (const lockedFile of lockResult.lock.files) {
+		if (!OBSOLETE_MANAGED_TEMPLATE_PATHS.has(lockedFile.relativePath) || currentTemplatePaths.has(lockedFile.relativePath)) {
+			continue;
+		}
+
+		const targetPath = path.join(projectRoot, lockedFile.relativePath);
+		ensureInside(projectRoot, targetPath);
+
+		if (!isTemplateManagedSource(lockedFile.source)) {
+			items.push(createObsoletePlanItem(lockedFile, 'blocked-local-change', 'obsolete file is not recorded as template-managed'));
+			continue;
+		}
+
+		const unsafeTargetReason = templateTargetSafetyIssue(projectRoot, targetPath, true);
+		if (unsafeTargetReason) {
+			items.push(createObsoletePlanItem(lockedFile, 'blocked-local-change', unsafeTargetReason));
+			continue;
+		}
+
+		if (!existsSync(targetPath)) {
+			items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file is already absent; remove its stale manifest lock entry'));
+			continue;
+		}
+
+		if (lockedFile.lastAction === CUSTOMIZED_LOCK_ACTION) {
+			items.push(createObsoletePlanItem(lockedFile, 'blocked-local-change', 'obsolete managed file is marked as customized'));
+			continue;
+		}
+
+		if (sha256File(targetPath) !== lockedFile.contentHash) {
+			items.push(createObsoletePlanItem(lockedFile, 'blocked-local-change', 'obsolete managed file differs from the manifest lock baseline'));
+			continue;
+		}
+
+		items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file still matches the manifest lock baseline'));
+	}
+
 	return { items };
 }
 
@@ -311,13 +363,16 @@ function withDiffPreviews(projectRoot: string, items: readonly InternalUpdatePla
 	return items.map((item) => {
 		const publicItem = publicPlanItem(item);
 
-		if (!shouldPreviewUpdateDiff(item.action)) {
+		if (!item.source || !shouldPreviewUpdateDiff(item.action)) {
 			return publicItem;
 		}
 
 		return {
 			...publicItem,
-			diff_preview: createUpdateDiffPreview(projectRoot, item),
+			diff_preview: createUpdateDiffPreview(projectRoot, {
+				relativePath: item.relativePath,
+				source: item.source,
+			}),
 		};
 	});
 }
@@ -328,6 +383,7 @@ export function summarizePlan(items: readonly UpdatePlanItem[]): UpdatePlanSumma
 		manualReview: items.filter((item) => item.action === 'manual-review').length,
 		wouldUpdate: items.filter((item) => item.action === 'update').length,
 		wouldCreate: items.filter((item) => item.action === 'create').length,
+		wouldRemove: items.filter((item) => item.action === 'remove').length,
 		unchanged: items.filter((item) => item.action === 'unchanged').length,
 	};
 }
@@ -359,7 +415,13 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
-	const updateItems = items.filter((item) => item.action === 'update');
+	const updateItems = items.filter((item) => {
+		if (item.action === 'update') {
+			return true;
+		}
+
+		return item.action === 'remove' && existsSync(path.join(projectRoot, item.relativePath));
+	});
 
 	if (updateItems.length === 0) {
 		return;
@@ -409,6 +471,11 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	const filesTable = isMutableTable(parsed.files) ? parsed.files : {};
 
 	for (const item of appliedItems) {
+		if (item.action === 'remove') {
+			delete filesTable[item.relativePath];
+			continue;
+		}
+
 		const targetPath = path.join(projectRoot, item.relativePath);
 		ensureInside(projectRoot, targetPath);
 		ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath);
@@ -434,6 +501,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): ApplyResult {
 	let created = 0;
 	let updated = 0;
+	let removed = 0;
 	const appliedItems: UpdatePlanItem[] = [];
 
 	backupUpdateFiles(projectRoot, items, reporter, lang);
@@ -455,6 +523,21 @@ function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], repo
 		}
 	}
 
+	for (const item of items) {
+		if (item.action !== 'remove') {
+			continue;
+		}
+
+		const targetPath = path.join(projectRoot, item.relativePath);
+		ensureInside(projectRoot, targetPath);
+		if (existsSync(targetPath)) {
+			removeFileInsideWithoutSymlinks(projectRoot, targetPath);
+		}
+		appliedItems.push(item);
+		removed += 1;
+		reporter.stdout(t(lang, 'update.action.removed', { path: item.relativePath }));
+	}
+
 	updateManifestLockAfterApply(projectRoot, appliedItems);
 
 	if (appliedItems.length > 0) {
@@ -464,6 +547,7 @@ function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], repo
 	return {
 		created,
 		updated,
+		removed,
 		wroteFiles: appliedItems.length > 0,
 	};
 }
@@ -516,6 +600,7 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	const manualReview = output.items.filter((item) => item.action === 'manual-review');
 	const updates = output.items.filter((item) => item.action === 'update');
 	const creates = output.items.filter((item) => item.action === 'create');
+	const removals = output.items.filter((item) => item.action === 'remove');
 
 	reporter.stdout(t(lang, 'update.plan.title'));
 	printPolicy(reporter, lang);
@@ -523,8 +608,9 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	printItems(t(lang, 'update.plan.manualReview'), manualReview, reporter);
 	printItems(t(lang, 'update.plan.wouldUpdate'), updates, reporter);
 	printItems(t(lang, 'update.plan.wouldCreate'), creates, reporter);
+	printItems(t(lang, 'update.plan.wouldRemove'), removals, reporter);
 
-	if (blocked.length === 0 && manualReview.length === 0 && updates.length === 0 && creates.length === 0) {
+	if (blocked.length === 0 && manualReview.length === 0 && updates.length === 0 && creates.length === 0 && removals.length === 0) {
 		reporter.stdout(t(lang, 'update.plan.noUpdates'));
 	}
 }
@@ -661,7 +747,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		if (wantsJson) {
-			const applicableItems = plan.items.filter((item) => item.action === 'create' || item.action === 'update');
+			const applicableItems = plan.items.filter((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove');
 			const applyResult = applyUpdate(projectRoot, applicableItems, {
 				stdout: () => undefined,
 				stderr: (message) => reporter.stderr(message),
@@ -679,7 +765,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		reporter.stdout(
-			t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created }),
+			t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created, removed: applyResult.removed }),
 		);
 		return 0;
 	} finally {

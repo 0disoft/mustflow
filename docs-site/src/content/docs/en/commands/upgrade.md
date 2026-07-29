@@ -28,8 +28,12 @@ Deno `npm:` execution is listed for visibility but remains experimental until se
 
 - `Blocked local changes` must be `0`.
 - `Manual review` must be `0`.
-- Only `update` and `create` items from the template manifest can be written.
-- Existing files are backed up under `.mustflow/backups/<timestamp>/` before replacement.
+- Only `update` and `create` items from the current template manifest, plus explicitly retired `remove` items still owned by the manifest lock, can be written.
+- Existing files are backed up under `.mustflow/backups/<timestamp>/` before replacement or removal.
+
+The catalog v1-to-v2 migration removes `.mustflow/skills/catalog.v1.json` only when its current hash
+still matches the manifest-lock baseline. A customized or modified v1 catalog blocks the entire
+apply and is preserved. Re-running upgrade after a successful migration produces no removal action.
 
 If a newer mustflow package exists on npm, `mf upgrade` stops before touching project files and prints package-manager update commands. Run the package update first, then run `mf upgrade` again.
 

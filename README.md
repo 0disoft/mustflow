@@ -328,8 +328,8 @@ mf run mustflow_update_apply
 | `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
 | `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
 | `mf status` | Inspect installed state and changed or missing files. |
-| `mf update --dry-run` | Calculate a template update plan without writing files. |
-| `mf update --apply` | Apply template updates when nothing is blocked. |
+| `mf update --dry-run` | Calculate create, update, and safe retired-file removal actions without writing files. |
+| `mf update --apply` | Apply template changes and lock-proven retired-file removals when nothing is blocked. |
 | `mf upgrade` | Check package freshness, then apply safe bundled template updates when the package is current. |
 | `mf upgrade --dry-run` | Check package freshness and print the safe project update plan without writing files. |
 | `mf help <topic>` | Show installed mustflow help. |

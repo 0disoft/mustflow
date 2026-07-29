@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -57,6 +58,19 @@ function runCliAsync(cwd, args, env = {}) {
 function copyInitializedProject(projectPath) {
 	assert.ok(initializedProjectFixture, 'initialized project fixture should be ready');
 	cpSync(initializedProjectFixture, projectPath, { recursive: true });
+}
+
+function addLegacyRouteCatalog(projectPath, content) {
+	const relativePath = '.mustflow/skills/catalog.v1.json';
+	const catalogPath = path.join(projectPath, ...relativePath.split('/'));
+	const lockPath = path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml');
+	const contentHash = `sha256:${createHash('sha256').update(content).digest('hex')}`;
+
+	writeFileSync(catalogPath, content);
+	writeFileSync(
+		lockPath,
+		`${readFileSync(lockPath, 'utf8')}\n[files."${relativePath}"]\nsource = "template_locale"\nlast_action = "created"\ncontent_hash = "${contentHash}"\n`,
+	);
 }
 
 function createTemplateWithAgentsUpdate() {
@@ -181,6 +195,32 @@ test('upgrade installs a newly bundled skill selected by the locked product prof
 	} finally {
 		removeTempProject(projectPath);
 		removeTempProject(oldTemplatePath);
+	}
+});
+
+test('upgrade migrates a clean lock-tracked route catalog from v1 to v2', async () => {
+	const projectPath = createTempProject();
+	const legacyRelativePath = '.mustflow/skills/catalog.v1.json';
+
+	try {
+		copyInitializedProject(projectPath);
+		addLegacyRouteCatalog(projectPath, '{"schema_version":"1","routes":[]}\n');
+
+		const result = await withPackageVersion(packageJson.version, (registryUrl) =>
+			runCliAsync(projectPath, ['upgrade'], {
+				MUSTFLOW_NPM_REGISTRY_URL: registryUrl,
+			}),
+		);
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /Removed \.mustflow\/skills\/catalog\.v1\.json/u);
+		assert.match(result.stdout, /removed/u);
+		assert.equal(existsSync(path.join(projectPath, ...legacyRelativePath.split('/'))), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json')), true);
+		assert.doesNotMatch(lock, /catalog\.v1\.json/u);
+	} finally {
+		removeTempProject(projectPath);
 	}
 });
 

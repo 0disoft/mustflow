@@ -119,11 +119,12 @@ Los campos anidados usan estas estructuras:
 - `policy.dry_run_writes_files` (`boolean`): si `--dry-run` escribe archivos. Siempre es `false`.
 - `policy.backup_path_pattern` (`string`): patrón de ruta para las copias de seguridad creadas antes de reemplazar archivos.
 - `policy.never_overwrite_local_changes` (`boolean`): declara que los cambios locales nunca se sobrescriben automáticamente.
-- `policy.writes_only_template_manifest_paths` (`boolean`): declara que update solo escribe archivos definidos en el manifiesto de plantilla.
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`): declara que update solo escribe rutas de la plantilla actual o rutas retiradas que aún pertenecen al lock.
 - `summary.blockedLocalChanges` (`number`): número de archivos bloqueados por cambios locales.
 - `summary.manualReview` (`number`): número de archivos que requieren revisión manual.
 - `summary.wouldUpdate` (`number`): número de archivos aptos para actualizarse.
 - `summary.wouldCreate` (`number`): número de archivos aptos para crearse.
+- `summary.wouldRemove` (`number`): número de archivos retirados y seguidos por el lock aptos para eliminación segura.
 - `summary.unchanged` (`number`): número de archivos que ya coinciden con la plantilla actual.
 - `items[].relativePath` (`string`): ruta de destino de la entrada del plan.
 - `items[].sourceKind` (`string`): origen del elemento dentro de la fuente de plantilla.

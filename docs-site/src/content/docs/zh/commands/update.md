@@ -120,11 +120,12 @@ npx mf update --apply --json
 - `policy.dry_run_writes_files` (`boolean`)：`--dry-run` 是否写入文件。始终为 `false`。
 - `policy.backup_path_pattern` (`string`)：替换已有文件前的备份路径模式。
 - `policy.never_overwrite_local_changes` (`boolean`)：声明本地变更绝不会被自动覆盖。
-- `policy.writes_only_template_manifest_paths` (`boolean`)：声明 update 只写入模板 manifest 列出的 mustflow 文件。
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`)：声明 update 只写入当前模板路径或仍由锁文件拥有的已退役路径。
 - `summary.blockedLocalChanges` (`number`)：被本地变更阻止的文件数。
 - `summary.manualReview` (`number`)：需要人工复核的文件数。
 - `summary.wouldUpdate` (`number`)：未来修改型 update 可变更的文件数。
 - `summary.wouldCreate` (`number`)：未来修改型 update 可创建的文件数。
+- `summary.wouldRemove` (`number`)：可安全删除的锁文件跟踪退役文件数。
 - `summary.unchanged` (`number`)：已匹配当前模板的文件数。
 - `items[].relativePath` (`string`)：计划条目的目标路径。
 - `items[].sourceKind` (`string`)：该项来自模板源的方式。

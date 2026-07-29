@@ -405,6 +405,7 @@ export const zhMessages = {
   "dashboard.update.applyReady": "可应用",
   "dashboard.update.wouldUpdate": "将更新",
   "dashboard.update.wouldCreate": "将创建",
+  "dashboard.update.wouldRemove": "将删除",
   "dashboard.update.blockedLocalChanges": "本地更改阻塞",
   "dashboard.update.manualReview": "人工复查",
   "dashboard.update.unchanged": "未更改",
@@ -1714,6 +1715,7 @@ export const zhMessages = {
   "update.backup.files": "已将 {count} 个{fileWord}备份到 {path}",
   "update.action.created": "已创建 {path}",
   "update.action.updated": "已更新 {path}",
+  "update.action.removed": "已删除 {path}",
   "update.action.wrote": "已写入 {path}",
   "update.policy.title": "策略：",
   "update.policy.baseline": "基线",
@@ -1725,10 +1727,11 @@ export const zhMessages = {
   "update.plan.manualReview": "人工审查",
   "update.plan.wouldUpdate": "将更新",
   "update.plan.wouldCreate": "将创建",
+  "update.plan.wouldRemove": "将删除",
   "update.plan.noUpdates": "不需要模板更新。",
   "update.diff.title": "Diff 预览：",
   "update.diff.unavailable": "diff 预览不可用：{reason}",
   "update.plan.noFilesWritten": "未写入文件。",
   "update.complete":
-    "mustflow update 完成：已更新 {updated}，已创建 {created}。",
+    "mustflow update 完成：已更新 {updated}，已创建 {created}，已删除 {removed}。",
 } satisfies Record<MessageKey, string>;

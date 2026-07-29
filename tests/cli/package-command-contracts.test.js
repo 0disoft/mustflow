@@ -461,6 +461,34 @@ test('2.118.2 Codex thread coordination release contracts stay bounded and non-f
 	assert.match(releaseIntent, /"release", "view", "v2\.118\.2"/u);
 });
 
+test('2.119.0 catalog retirement and information visualization commits stay independently bounded', () => {
+	const catalogStage = /\[intents\.catalog_v1_retirement_stage_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const catalogDiff = /\[intents\.catalog_v1_retirement_staged_diff_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const catalogCommit = /\[intents\.catalog_v1_retirement_commit_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const visualStage = /\[intents\.information_visualization_stage_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const visualDiff = /\[intents\.information_visualization_staged_diff_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const visualCommit = /\[intents\.information_visualization_commit_v2_119_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.match(catalogStage, /"src\/cli\/commands\/update\.ts"/u);
+	assert.match(catalogStage, /"REPO_FLOW\.md"/u);
+	assert.match(catalogStage, /"tests\/cli\/update\.test\.js"/u);
+	assert.match(catalogStage, /"tests\/cli\/upgrade\.test\.js"/u);
+	assert.doesNotMatch(catalogStage, /information-visualization-integrity-review/u);
+	assert.doesNotMatch(catalogStage, /"git",\s*"add",\s*"-A"/u);
+	assert.match(catalogDiff, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(catalogCommit, /✨ feat\(update\): retire legacy skill route catalogs/u);
+	assert.match(catalogCommit, /approval_actions = \["git_commit"\]/u);
+
+	assert.match(visualStage, /"\.mustflow\/skills\/information-visualization-integrity-review"/u);
+	assert.match(visualStage, /"src\/cli\/lib\/validation\/index\.ts"/u);
+	assert.match(visualStage, /"templates\/default\/locales\/en\/\.mustflow\/skills\/information-visualization-integrity-review"/u);
+	assert.doesNotMatch(visualStage, /"src\/cli\/commands\/update\.ts"/u);
+	assert.doesNotMatch(visualStage, /"git",\s*"add",\s*"-A"/u);
+	assert.match(visualDiff, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(visualCommit, /✨ feat\(skills\): add information visualization integrity review/u);
+	assert.match(visualCommit, /approval_actions = \["git_commit"\]/u);
+});
+
 test('default template exposes script-pack catalog discovery as a read-only command intent', () => {
 	assert.match(templateCommandContract, /\[intents\.script_pack_list\][\s\S]*"mf", "script-pack", "list", "--json"/u);
 	assert.match(sourceCommandContract, /\[intents\.script_pack_list\][\s\S]*"node", "dist\/cli\/index\.js", "script-pack", "list", "--json"/u);

@@ -747,6 +747,7 @@ function renderUpdateResponse(projectRoot: string): DashboardStatusSnapshot['upd
 				manualReview: 0,
 				wouldUpdate: 0,
 				wouldCreate: 0,
+				wouldRemove: 0,
 				unchanged: 0,
 			},
 			blockers: [],
@@ -756,7 +757,7 @@ function renderUpdateResponse(projectRoot: string): DashboardStatusSnapshot['upd
 
 	const summary = summarizePlan(plan.items);
 	const blockers = plan.items.filter((item) => item.action === 'blocked-local-change' || item.action === 'manual-review');
-	const changes = plan.items.filter((item) => item.action === 'create' || item.action === 'update');
+	const changes = plan.items.filter((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove');
 
 	return {
 		command: 'update',

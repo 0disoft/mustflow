@@ -23,12 +23,12 @@ description: 说明 mf update 如何区分计划与安全应用。
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## 状态
@@ -38,6 +38,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`：当前文件同时匹配锁基线和打包模板，或文件标记为自定义且仍匹配该自定义基线。
 - `update`：当前文件匹配锁基线，但不同于打包模板。
 - `create`：文件存在于模板中，但用户仓库中缺失。
+- `remove`：明确退役的模板文件仍由锁文件跟踪，且内容与记录基线一致。
 - `blocked-local-change`：当前文件不同于锁基线。
 - `manual-review`：文件需要人工复核，而不是自动更新。
 
@@ -50,6 +51,7 @@ writes_only_template_manifest_paths: true
 - 当自定义文件仍匹配其锁定的自定义基线时，不用模板内容替换它。
 - 创建备份后，用模板内容替换 `update` 文件。
 - 创建必要父目录后，写入 `create` 文件。
+- 仅当 `remove` 文件仍匹配锁基线时才先备份后删除；自定义或哈希不匹配会阻止整个应用。
 - 如果新的模板文件与未出现在锁文件中的已有文件冲突，该文件会被视为本地变更且不会被覆盖。
 - 成功更新后，刷新受影响的 `manifest.lock.toml` 条目。
 - `mf update` 只写入模板 manifest 和锁文件声明的 mustflow 文件。

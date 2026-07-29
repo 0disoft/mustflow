@@ -12,6 +12,6 @@ mf upgrade
 mf check --strict
 ```
 
-Il n'installe pas de paquets. Il n'écrit les éléments `update` et `create` du manifest que lorsque `Blocked local changes` et `Manual review` valent `0`, avec sauvegarde avant remplacement.
+Il n'installe pas de paquets. Il n'écrit les éléments `update` et `create` du manifest actuel et les éléments retirés `remove` encore détenus par le verrou que lorsque `Blocked local changes` et `Manual review` valent `0`, avec sauvegarde avant remplacement ou suppression.
 
 Un `AGENTS.md`, contrat, index de skills ou table de routes personnalisé peut bloquer le plan. C'est un arrêt, pas une invitation à supprimer ou écraser le fichier. Fusionnez le changement utile, enregistrez la base via le flux manifest-lock déclaré, puis lancez `mf check --strict`.

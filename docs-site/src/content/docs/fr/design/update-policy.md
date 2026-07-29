@@ -23,12 +23,12 @@ Valeurs actuelles de la politique:
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## États
@@ -38,6 +38,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`: le fichier actuel correspond à la fois à la ligne de base du verrou et au modèle groupé, ou il est marqué comme personnalisé et correspond encore à cette ligne de base personnalisée.
 - `update`: le fichier actuel correspond à la ligne de base du verrou mais diffère du modèle groupé.
 - `create`: le fichier existe dans le modèle mais manque dans le dépôt utilisateur.
+- `remove`: un fichier de modèle explicitement retiré reste suivi par le verrou et correspond à sa base enregistrée.
 - `blocked-local-change`: le fichier actuel diffère de la ligne de base du verrou.
 - `manual-review`: le fichier nécessite un examen humain au lieu d’une mise à jour automatique.
 
@@ -50,6 +51,7 @@ writes_only_template_manifest_paths: true
 - Ne pas remplacer les fichiers personnalisés par le contenu du modèle tant qu’ils correspondent encore à leur ligne de base personnalisée.
 - Les fichiers `update` sont remplacés par le contenu du modèle après création d’une sauvegarde.
 - Les fichiers `create` sont écrits après création des répertoires parents nécessaires.
+- Les fichiers `remove` sont sauvegardés puis supprimés seulement s’ils correspondent encore au verrou ; une personnalisation ou un hash différent bloque toute l’application.
 - Si un nouveau fichier de modèle entre en conflit avec un fichier existant absent du verrou, il est traité comme un changement local et n’est pas écrasé.
 - Actualiser les entrées concernées de `manifest.lock.toml` après une mise à jour réussie.
 - `mf update` écrit uniquement les fichiers mustflow déclarés par le manifeste du modèle et le fichier de verrouillage.

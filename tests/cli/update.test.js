@@ -329,12 +329,12 @@ test('prints an update dry-run plan as json', () => {
 		const plan = JSON.parse(result.stdout);
 
 		assert.equal(result.status, 1);
-		assert.equal(plan.schema_version, '1');
+		assert.equal(plan.schema_version, '2');
 		assert.equal(plan.command, 'update');
 		assert.equal(plan.ok, false);
 		assert.equal(plan.mode, 'dry-run');
 		assert.equal(plan.policy.baseline, 'manifest_lock_content_hash');
-		assert.deepEqual(plan.policy.allowed_apply_actions, ['update', 'create']);
+		assert.deepEqual(plan.policy.allowed_apply_actions, ['update', 'create', 'remove']);
 		assert.deepEqual(plan.policy.blocking_actions, ['blocked-local-change', 'manual-review']);
 		assert.equal(plan.policy.dry_run_writes_files, false);
 		assert.equal(plan.policy.backup_path_pattern, '.mustflow/backups/<timestamp>/');
@@ -565,7 +565,7 @@ test('keeps merged AGENTS.md under manual review until a block baseline exists',
 
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.equal(plan.ok, false);
-		assert.deepEqual(plan.policy.allowed_apply_actions, ['update', 'create']);
+		assert.deepEqual(plan.policy.allowed_apply_actions, ['update', 'create', 'remove']);
 		assert.equal(plan.summary.manualReview, 1);
 		assert.equal(agentsItem.action, 'manual-review');
 		assert.equal(agentsItem.reason, 'managed block requires a block-level manifest baseline');
@@ -638,7 +638,7 @@ test('applies newly added template files when local files are clean', () => {
 		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
-		assert.equal(output.schema_version, '1');
+		assert.equal(output.schema_version, '2');
 		assert.equal(output.command, 'update');
 		assert.equal(output.mode, 'apply');
 		assert.equal(output.policy.never_overwrite_local_changes, true);
@@ -652,6 +652,82 @@ test('applies newly added template files when local files are clean', () => {
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(templatePath, { recursive: true, force: true });
+	}
+});
+
+test('migrates the lock-tracked route catalog from v1 to v2 and removes the obsolete file', () => {
+	const projectPath = createTempProject();
+	const legacyRelativePath = '.mustflow/skills/catalog.v1.json';
+	const legacyContent = '{"schema_version":"1","routes":[]}\n';
+
+	try {
+		copyInitializedProject(projectPath);
+		addLockedTemplateFile(projectPath, legacyRelativePath, legacyContent);
+
+		const dryRun = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const dryRunPlan = JSON.parse(dryRun.stdout);
+		const legacyItem = dryRunPlan.items.find((item) => item.relativePath === legacyRelativePath);
+
+		assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
+		assert.equal(dryRunPlan.schema_version, '2');
+		assert.deepEqual(dryRunPlan.policy.allowed_apply_actions, ['update', 'create', 'remove']);
+		assert.equal(dryRunPlan.summary.wouldRemove, 1);
+		assert.equal(legacyItem.sourceKind, 'manifest_lock');
+		assert.equal(legacyItem.action, 'remove');
+		assert.equal(existsSync(path.join(projectPath, ...legacyRelativePath.split('/'))), true);
+
+		const apply = runCli(projectPath, ['update', '--apply', '--json']);
+		const applyOutput = JSON.parse(apply.stdout);
+		const lock = readFileSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+
+		assert.equal(apply.status, 0, apply.stderr || apply.stdout);
+		assert.equal(applyOutput.wroteFiles, true);
+		assert.equal(applyOutput.summary.wouldRemove, 1);
+		assert.equal(existsSync(path.join(projectPath, ...legacyRelativePath.split('/'))), false);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'catalog.v2.json')), true);
+		assert.doesNotMatch(lock, /catalog\.v1\.json/u);
+
+		const backupDirs = readdirSync(path.join(projectPath, '.mustflow', 'backups'));
+		assert.equal(backupDirs.length, 1);
+		assert.equal(
+			readFileSync(path.join(projectPath, '.mustflow', 'backups', backupDirs[0], ...legacyRelativePath.split('/')), 'utf8'),
+			legacyContent,
+		);
+
+		const followUp = runCli(projectPath, ['update', '--dry-run', '--json']);
+		const followUpPlan = JSON.parse(followUp.stdout);
+		assert.equal(followUp.status, 0, followUp.stderr || followUp.stdout);
+		assert.equal(followUpPlan.summary.wouldRemove, 0);
+		assert.equal(followUpPlan.items.some((item) => item.relativePath === legacyRelativePath), false);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('preserves a locally modified obsolete route catalog and blocks the migration', () => {
+	const projectPath = createTempProject();
+	const legacyRelativePath = '.mustflow/skills/catalog.v1.json';
+	const legacyPath = path.join(projectPath, ...legacyRelativePath.split('/'));
+
+	try {
+		copyInitializedProject(projectPath);
+		addLockedTemplateFile(projectPath, legacyRelativePath, '{"schema_version":"1","routes":[]}\n');
+		writeFileSync(legacyPath, '{"schema_version":"1","routes":[{"local":true}]}\n');
+
+		const apply = runCli(projectPath, ['update', '--apply', '--json']);
+		const output = JSON.parse(apply.stdout);
+		const legacyItem = output.items.find((item) => item.relativePath === legacyRelativePath);
+
+		assert.equal(apply.status, 1, apply.stderr || apply.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, false);
+		assert.equal(output.summary.blockedLocalChanges, 1);
+		assert.equal(output.summary.wouldRemove, 0);
+		assert.equal(legacyItem.action, 'blocked-local-change');
+		assert.match(legacyItem.reason, /differs from the manifest lock baseline/u);
+		assert.equal(readFileSync(legacyPath, 'utf8'), '{"schema_version":"1","routes":[{"local":true}]}\n');
+	} finally {
+		removeTempProject(projectPath);
 	}
 });
 

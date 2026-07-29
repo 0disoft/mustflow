@@ -119,11 +119,12 @@ Nested fields ये shapes उपयोग करते हैं:
 - `policy.dry_run_writes_files` (`boolean`): क्या `--dry-run` files लिखता है। हमेशा `false`।
 - `policy.backup_path_pattern` (`string`): existing files replace करने से पहले backup path pattern।
 - `policy.never_overwrite_local_changes` (`boolean`): घोषित करता है कि local changes कभी automatically overwrite नहीं होते।
-- `policy.writes_only_template_manifest_paths` (`boolean`): घोषित करता है कि update केवल template manifest में listed mustflow files लिखता है।
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`): घोषित करता है कि update केवल current template paths या manifest lock के owned retired paths लिखता है।
 - `summary.blockedLocalChanges` (`number`): local changes से blocked files की संख्या।
 - `summary.manualReview` (`number`): manual review मांगने वाली files की संख्या।
 - `summary.wouldUpdate` (`number`): files की संख्या जिन्हें future mutating update बदल सकता है।
 - `summary.wouldCreate` (`number`): files की संख्या जिन्हें future mutating update बना सकता है।
+- `summary.wouldRemove` (`number`): lock-tracked retired files की संख्या जिन्हें सुरक्षित रूप से हटाया जा सकता है।
 - `summary.unchanged` (`number`): files की संख्या जो पहले से current template से match करती हैं।
 - `items[].relativePath` (`string`): plan entry का target path।
 - `items[].sourceKind` (`string`): item template source से कैसे आया।

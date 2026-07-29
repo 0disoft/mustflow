@@ -405,6 +405,7 @@ export const frMessages = {
   "dashboard.update.applyReady": "Prêt à appliquer",
   "dashboard.update.wouldUpdate": "À mettre à jour",
   "dashboard.update.wouldCreate": "À créer",
+  "dashboard.update.wouldRemove": "À supprimer",
   "dashboard.update.blockedLocalChanges": "Changements locaux bloquants",
   "dashboard.update.manualReview": "Revue manuelle",
   "dashboard.update.unchanged": "Inchangé",
@@ -1724,6 +1725,7 @@ Lisez ces fichiers avant de travailler :
   "update.backup.files": "{count} {fileWord} sauvegardés dans {path}",
   "update.action.created": "Créé {path}",
   "update.action.updated": "Mis à jour {path}",
+  "update.action.removed": "Supprimé {path}",
   "update.action.wrote": "Écrit {path}",
   "update.policy.title": "Politique :",
   "update.policy.baseline": "Base de référence",
@@ -1735,10 +1737,11 @@ Lisez ces fichiers avant de travailler :
   "update.plan.manualReview": "Revue manuelle",
   "update.plan.wouldUpdate": "Mettrait à jour",
   "update.plan.wouldCreate": "Créerait",
+  "update.plan.wouldRemove": "Supprimerait",
   "update.plan.noUpdates": "Aucune mise à jour de modèle nécessaire.",
   "update.diff.title": "Aperçu diff :",
   "update.diff.unavailable": "aperçu diff indisponible : {reason}",
   "update.plan.noFilesWritten": "Aucun fichier n'a été écrit.",
   "update.complete":
-    "mustflow update terminé : {updated} mis à jour, {created} créés.",
+    "mustflow update terminé : {updated} mis à jour, {created} créés, {removed} supprimés.",
 } satisfies Record<MessageKey, string>;

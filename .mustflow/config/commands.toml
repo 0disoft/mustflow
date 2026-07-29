@@ -2812,3 +2812,167 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.catalog_v1_retirement_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed update-plan v2 and lock-hash-gated catalog v1 retirement migration, its localized docs, bounded Git contract, and regression tests."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "README.md",
+  "REPO_FLOW.md",
+  "docs-site/src/content/docs/en/commands/update.md",
+  "docs-site/src/content/docs/en/commands/upgrade.md",
+  "docs-site/src/content/docs/en/design/update-policy.md",
+  "docs-site/src/content/docs/es/commands/update.md",
+  "docs-site/src/content/docs/es/commands/upgrade.md",
+  "docs-site/src/content/docs/es/design/update-policy.md",
+  "docs-site/src/content/docs/fr/commands/update.md",
+  "docs-site/src/content/docs/fr/commands/upgrade.md",
+  "docs-site/src/content/docs/fr/design/update-policy.md",
+  "docs-site/src/content/docs/hi/commands/update.md",
+  "docs-site/src/content/docs/hi/commands/upgrade.md",
+  "docs-site/src/content/docs/hi/design/update-policy.md",
+  "docs-site/src/content/docs/ko/commands/update.md",
+  "docs-site/src/content/docs/ko/commands/upgrade.md",
+  "docs-site/src/content/docs/ko/design/update-policy.md",
+  "docs-site/src/content/docs/zh/commands/update.md",
+  "docs-site/src/content/docs/zh/commands/upgrade.md",
+  "docs-site/src/content/docs/zh/design/update-policy.md",
+  "src/cli/commands/dashboard.ts",
+  "src/cli/commands/update.ts",
+  "src/cli/i18n/en.ts",
+  "src/cli/i18n/es.ts",
+  "src/cli/i18n/fr.ts",
+  "src/cli/i18n/hi.ts",
+  "src/cli/i18n/ko.ts",
+  "src/cli/i18n/zh.ts",
+  "src/cli/lib/dashboard-html/client-script.ts",
+  "src/cli/lib/dashboard-html/types.ts",
+  "src/cli/lib/dashboard-locale.ts",
+  "src/cli/lib/filesystem.ts",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/update.test.js",
+  "tests/cli/upgrade.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.catalog_v1_retirement_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 catalog v1 retirement migration."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.catalog_v1_retirement_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 update-plan v2 and catalog v1 retirement migration."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(update): retire legacy skill route catalogs",
+  "-m", "Report removals in update-plan schema v2, delete only unchanged lock-owned catalog v1 files during apply, preserve customized files as blockers, and keep repeated upgrades idempotent.",
+  "-m", "Validation: mf run test_related; mf run lint; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.information_visualization_stage_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed information-visualization integrity skill, Unicode routing support, synchronized templates, generated catalogs, docs review record, and regressions."
+argv = [
+  "git", "add", "--",
+  ".mustflow/review/docs.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/information-visualization-integrity-review",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  "CHANGELOG.md",
+  "REPO_MAP.md",
+  "src/cli/lib/validation/index.ts",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/information-visualization-integrity-review",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-frontend-contracts.test.js",
+  "tests/cli/check-skill-contracts.test.js",
+  "tests/cli/init-default-template.test.js",
+  "tests/cli/package-template.test.js",
+  "tests/cli/skill-route.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]
+
+[intents.information_visualization_staged_diff_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for the reviewed 2.119.0 information-visualization integrity skill."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.information_visualization_commit_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.119.0 information-visualization integrity skill and routing contracts."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): add information visualization integrity review",
+  "-m", "Choose tables, charts, diagrams, and timelines from reader decisions and semantic relationships, preserve uncertainty and failure paths, and validate claims against independent source evidence.",
+  "-m", "Validation: mf run test_skill_contracts; mf run test_related; mf run skill_route_eval; mf run lint; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+approval_actions = ["git_commit"]

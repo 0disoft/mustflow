@@ -22,12 +22,12 @@ Valores actuales de la política:
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## Estados
@@ -37,6 +37,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`: el archivo actual coincide tanto con la línea base del lock como con la plantilla incluida, o está marcado como personalizado y todavía coincide con esa línea base personalizada.
 - `update`: el archivo actual coincide con la línea base del lock, pero difiere de la plantilla incluida.
 - `create`: el archivo existe en la plantilla, pero falta en el repositorio del usuario.
+- `remove`: un archivo de plantilla retirado explícitamente sigue en el lock y coincide con su línea base registrada.
 - `blocked-local-change`: el archivo actual difiere de la línea base del lock.
 - `manual-review`: el archivo requiere revisión humana en lugar de una actualización automática.
 
@@ -49,6 +50,7 @@ writes_only_template_manifest_paths: true
 - No reemplazar archivos personalizados con contenido de plantilla mientras sigan coincidiendo con su línea base personalizada.
 - Los archivos `update` se reemplazan con contenido de plantilla después de crear una copia de seguridad.
 - Los archivos `create` se escriben después de crear los directorios padre necesarios.
+- Los archivos `remove` se respaldan y eliminan solo si siguen coincidiendo con el lock; una personalización o hash distinto bloquea toda la aplicación.
 - Si un archivo de plantilla nuevo entra en conflicto con un archivo existente que no está en el lock, se trata como cambio local y no se sobrescribe.
 - Refrescar las entradas afectadas de `manifest.lock.toml` después de una actualización correcta.
 - `mf update` escribe solo archivos mustflow declarados por el manifiesto de plantilla y el archivo de bloqueo.

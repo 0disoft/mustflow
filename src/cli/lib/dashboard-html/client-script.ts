@@ -1472,6 +1472,7 @@ function renderUpdatePanel() {
 	appendStatusItem(grid, "dashboard.update.applyReady", update.apply_ready ? message("dashboard.status.yes") : message("dashboard.status.no"), update.apply_ready ? "ok" : "warn");
 	appendStatusItem(grid, "dashboard.update.wouldUpdate", String(update.summary.wouldUpdate));
 	appendStatusItem(grid, "dashboard.update.wouldCreate", String(update.summary.wouldCreate));
+	appendStatusItem(grid, "dashboard.update.wouldRemove", String(update.summary.wouldRemove));
 	appendStatusItem(grid, "dashboard.update.blockedLocalChanges", String(update.summary.blockedLocalChanges), update.summary.blockedLocalChanges === 0 ? "ok" : "warn");
 	appendStatusItem(grid, "dashboard.update.manualReview", String(update.summary.manualReview), update.summary.manualReview === 0 ? "ok" : "warn");
 	appendStatusItem(grid, "dashboard.update.unchanged", String(update.summary.unchanged));

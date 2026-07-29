@@ -405,6 +405,7 @@ export const esMessages = {
   "dashboard.update.applyReady": "Listo para aplicar",
   "dashboard.update.wouldUpdate": "Se actualizaría",
   "dashboard.update.wouldCreate": "Se crearía",
+  "dashboard.update.wouldRemove": "Se eliminaría",
   "dashboard.update.blockedLocalChanges": "Cambios locales bloqueantes",
   "dashboard.update.manualReview": "Revisión manual",
   "dashboard.update.unchanged": "Sin cambios",
@@ -1724,6 +1725,7 @@ Lee estos archivos antes de trabajar:
   "update.backup.files": "Se respaldaron {count} {fileWord} en {path}",
   "update.action.created": "Creado {path}",
   "update.action.updated": "Actualizado {path}",
+  "update.action.removed": "Eliminado {path}",
   "update.action.wrote": "Escrito {path}",
   "update.policy.title": "Política:",
   "update.policy.baseline": "Línea base",
@@ -1735,10 +1737,11 @@ Lee estos archivos antes de trabajar:
   "update.plan.manualReview": "Revisión manual",
   "update.plan.wouldUpdate": "Se actualizaría",
   "update.plan.wouldCreate": "Se crearía",
+  "update.plan.wouldRemove": "Se eliminaría",
   "update.plan.noUpdates": "No se necesitan actualizaciones de plantilla.",
   "update.diff.title": "Vista previa del diff:",
   "update.diff.unavailable": "vista previa del diff no disponible: {reason}",
   "update.plan.noFilesWritten": "No se escribieron archivos.",
   "update.complete":
-    "mustflow update completo: {updated} actualizados, {created} creados.",
+    "mustflow update completo: {updated} actualizados, {created} creados, {removed} eliminados.",
 } satisfies Record<MessageKey, string>;

@@ -101,7 +101,7 @@ npx mf update --apply --json
 
 The machine-readable output includes the following fields:
 
-- `schema_version` (`number`): Output format version.
+- `schema_version` (`string`): Output format version. Catalog-removal plans use version `2`.
 - `command` (`string`): Always `update`.
 - `mode` (`string`): Execution mode (`dry-run`, `apply`, or `unspecified`).
 - `policy` (`object`): Update safety policy.
@@ -119,11 +119,12 @@ Nested fields use the following structures:
 - `policy.dry_run_writes_files` (`boolean`): Whether `--dry-run` writes files. Always `false`.
 - `policy.backup_path_pattern` (`string`): The path pattern for backups created before replacing files.
 - `policy.never_overwrite_local_changes` (`boolean`): Indicates that local changes are never overwritten automatically.
-- `policy.writes_only_template_manifest_paths` (`boolean`): Indicates that the update only writes files defined in the template manifest.
+- `policy.writes_only_template_manifest_or_lock_paths` (`boolean`): Indicates that update writes only current template paths or explicitly retired paths still owned by the manifest lock.
 - `summary.blockedLocalChanges` (`number`): Number of files blocked by local changes.
 - `summary.manualReview` (`number`): Number of files requiring manual review.
 - `summary.wouldUpdate` (`number`): Number of files eligible for an update.
 - `summary.wouldCreate` (`number`): Number of files eligible for creation.
+- `summary.wouldRemove` (`number`): Number of lock-tracked retired files eligible for safe removal.
 - `summary.unchanged` (`number`): Number of files already matching the current template.
 - `items[].relativePath` (`string`): Target path for the plan entry.
 - `items[].sourceKind` (`string`): The origin of the item from the template source.
@@ -131,7 +132,7 @@ Nested fields use the following structures:
 - `items[].reason` (`string`): The justification for the planned action.
 - `items[].diff_preview` (`object`): Present only when `--diff` is used and the item is affected. It contains a bounded unified diff preview, availability flag, truncation status, line limits, and omission reason when a preview is not safe to print.
 
-When the bundled template changed but the user did not edit the installed file, the file appears under `Would update` or `summary.wouldUpdate`.
+When the bundled template changed but the user did not edit the installed file, the file appears under `Would update` or `summary.wouldUpdate`. A retired file appears under `Would remove` only when its current hash still matches the manifest-lock baseline; otherwise it is a blocking local change.
 
 ## Help and Exit Codes
 

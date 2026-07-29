@@ -151,6 +151,7 @@ export const DASHBOARD_UI_MESSAGE_KEYS = [
 	'dashboard.update.applyReady',
 	'dashboard.update.wouldUpdate',
 	'dashboard.update.wouldCreate',
+	'dashboard.update.wouldRemove',
 	'dashboard.update.blockedLocalChanges',
 	'dashboard.update.manualReview',
 	'dashboard.update.unchanged',

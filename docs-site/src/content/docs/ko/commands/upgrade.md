@@ -24,8 +24,10 @@ mustflow를 설치할 때 쓴 패키지 관리자로 먼저 mustflow 패키지�
 
 - `Blocked local changes`가 `0`이어야 합니다.
 - `Manual review`가 `0`이어야 합니다.
-- 템플릿 매니페스트에 있는 `update`, `create` 항목만 쓸 수 있습니다.
-- 기존 파일을 교체하기 전 `.mustflow/backups/<timestamp>/` 아래에 백업을 만듭니다.
+- 현재 템플릿 매니페스트의 `update`, `create`와 잠금 파일이 소유한 명시적 폐기 `remove` 항목만 쓸 수 있습니다.
+- 기존 파일을 교체하거나 제거하기 전 `.mustflow/backups/<timestamp>/` 아래에 백업을 만듭니다.
+
+catalog v1→v2 마이그레이션은 `.mustflow/skills/catalog.v1.json`이 잠금 기준선과 같을 때만 제거합니다. 사용자 지정 또는 수정된 v1은 전체 적용을 차단하고 보존합니다.
 
 npm에 더 새 mustflow 패키지가 있으면 `mf upgrade`는 프로젝트 파일을 건드리기 전에 멈추고 패키지 관리자별 업데이트 명령을 출력합니다. 패키지를 먼저 갱신한 뒤 다시 `mf upgrade`를 실행하세요.
 

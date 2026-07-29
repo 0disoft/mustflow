@@ -23,12 +23,12 @@ description: mf update가 계획 계산과 안전한 적용을 어떻게 구분�
 
 ```text
 baseline: manifest_lock_content_hash
-allowed_apply_actions: update, create
+allowed_apply_actions: update, create, remove
 blocking_actions: blocked-local-change, manual-review
 dry_run_writes_files: false
 backup_path_pattern: .mustflow/backups/<timestamp>/
 never_overwrite_local_changes: true
-writes_only_template_manifest_paths: true
+writes_only_template_manifest_or_lock_paths: true
 ```
 
 ## 상태 구분
@@ -38,6 +38,7 @@ writes_only_template_manifest_paths: true
 - `unchanged`: 현재 파일이 잠금 파일 기준선과 같고 현재 템플릿과도 같거나, `customized`로 기록된 파일이 맞춤 기준선과 여전히 같습니다.
 - `update`: 현재 파일은 잠금 파일 기준선과 같지만, 현재 템플릿과 다릅니다.
 - `create`: 템플릿에는 있지만 사용자 저장소에 없습니다.
+- `remove`: 명시적으로 폐기된 템플릿 파일이 잠금 파일에 남아 있고 기록된 기준선과 동일합니다.
 - `blocked-local-change`: 현재 파일이 잠금 파일 기준선과 다릅니다.
 - `manual-review`: 자동 갱신보다 사람이 확인해야 하는 파일입니다.
 
@@ -50,6 +51,7 @@ writes_only_template_manifest_paths: true
 - `customized`로 기록된 파일이 맞춤 기준선과 여전히 같으면 템플릿 내용으로 바꾸지 않습니다.
 - `update`는 갱신 전 백업을 만든 뒤 템플릿 내용으로 교체합니다.
 - `create`는 부모 폴더를 만들고 새 파일을 씁니다.
+- `remove`는 잠금 기준선과 동일할 때만 백업 후 제거합니다. 사용자 지정 또는 해시 불일치 파일이 있으면 전체 적용을 차단합니다.
 - 잠금 파일에 없는 기존 파일과 새 템플릿 파일이 충돌하면 로컬 변경으로 보고 덮어쓰지 않습니다.
 - 갱신 후에는 `manifest.lock.toml`의 적용 파일 항목을 새 해시와 처리 결과로 갱신합니다.
 - `mf update`는 템플릿 매니페스트에 선언된 mustflow 파일과 잠금 파일만 씁니다.

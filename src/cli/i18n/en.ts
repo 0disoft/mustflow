@@ -403,6 +403,7 @@ export const enMessages = {
   "dashboard.update.applyReady": "Apply ready",
   "dashboard.update.wouldUpdate": "Would update",
   "dashboard.update.wouldCreate": "Would create",
+  "dashboard.update.wouldRemove": "Would remove",
   "dashboard.update.blockedLocalChanges": "Blocked local changes",
   "dashboard.update.manualReview": "Manual review",
   "dashboard.update.unchanged": "Unchanged",
@@ -1719,6 +1720,7 @@ Read these files before working:
   "update.backup.files": "Backed up {count} {fileWord} to {path}",
   "update.action.created": "Created {path}",
   "update.action.updated": "Updated {path}",
+  "update.action.removed": "Removed {path}",
   "update.action.wrote": "Wrote {path}",
   "update.policy.title": "Policy:",
   "update.policy.baseline": "Baseline",
@@ -1730,12 +1732,13 @@ Read these files before working:
   "update.plan.manualReview": "Manual review",
   "update.plan.wouldUpdate": "Would update",
   "update.plan.wouldCreate": "Would create",
+  "update.plan.wouldRemove": "Would remove",
   "update.plan.noUpdates": "No template updates needed.",
   "update.diff.title": "Diff preview:",
   "update.diff.unavailable": "diff preview unavailable: {reason}",
   "update.plan.noFilesWritten": "No files were written.",
   "update.complete":
-    "mustflow update complete: {updated} updated, {created} created.",
+    "mustflow update complete: {updated} updated, {created} created, {removed} removed.",
 } as const;
 
 export type MessageKey = keyof typeof enMessages;

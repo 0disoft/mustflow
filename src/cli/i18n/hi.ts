@@ -405,6 +405,7 @@ export const hiMessages = {
   "dashboard.update.applyReady": "लागू करने योग्य",
   "dashboard.update.wouldUpdate": "अपडेट होंगे",
   "dashboard.update.wouldCreate": "बनेंगे",
+  "dashboard.update.wouldRemove": "हटाए जाएंगे",
   "dashboard.update.blockedLocalChanges": "स्थानीय बदलाव रोक रहे हैं",
   "dashboard.update.manualReview": "मानवीय समीक्षा",
   "dashboard.update.unchanged": "अपरिवर्तित",
@@ -1724,6 +1725,7 @@ export const hiMessages = {
   "update.backup.files": "{count} {fileWord} का बैकअप {path} में लिया गया",
   "update.action.created": "{path} बनाया गया",
   "update.action.updated": "{path} अपडेट किया गया",
+  "update.action.removed": "{path} हटाया गया",
   "update.action.wrote": "{path} लिखा गया",
   "update.policy.title": "नीति:",
   "update.policy.baseline": "Baseline",
@@ -1735,10 +1737,11 @@ export const hiMessages = {
   "update.plan.manualReview": "Manual review",
   "update.plan.wouldUpdate": "अपडेट किया जाएगा",
   "update.plan.wouldCreate": "बनाया जाएगा",
+  "update.plan.wouldRemove": "हटाया जाएगा",
   "update.plan.noUpdates": "Template updates आवश्यक नहीं हैं।",
   "update.diff.title": "Diff preview:",
   "update.diff.unavailable": "diff preview उपलब्ध नहीं: {reason}",
   "update.plan.noFilesWritten": "कोई फ़ाइल नहीं लिखी गई।",
   "update.complete":
-    "mustflow update पूरा: {updated} अपडेट किए गए, {created} बनाए गए।",
+    "mustflow update पूरा: {updated} अपडेट किए गए, {created} बनाए गए, {removed} हटाए गए।",
 } satisfies Record<MessageKey, string>;
