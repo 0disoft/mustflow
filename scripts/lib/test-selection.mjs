@@ -67,6 +67,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		'schema-script-pack-code-contracts.test.js',
 		'schema-script-pack-repo-contracts.test.js',
 	];
+	const nativeCrashEvidenceTests = ['native-crash-evidence.test.js', ...schemaSmokeTests];
 	const packageContractTests = [
 		'package-command-contracts.test.js',
 		'package-metadata-contracts.test.js',
@@ -238,6 +239,7 @@ export function createTestSelection(allCliTests, options = {}) {
 	]);
 
 	const relatedRules = [
+		{ match: /^schemas\/native-crash-evidence\.schema\.json$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^schemas\//u, tests: schemaSmokeTests },
 		{
 			match: /^\.mustflow\/config\/manifest\.lock\.toml$/u,
@@ -277,6 +279,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^templates\//u, tests: ['init.test.js', 'init-default-template.test.js', 'update.test.js', 'package-template.test.js'] },
 		{ match: /^package\.json$/u, tests: [...packageContractTests, 'package-template.test.js', ...versioningTests] },
 		{ match: /^tests\/fixtures\/authoring\//u, tests: ['authoring-fixtures.test.js'] },
+		{ match: /^tests\/fixtures\/schema-backcompat\/[^/]+\/public-json-fixtures\.json$/u, tests: schemaSmokeTests },
 		{ match: /^\.mustflow\/skills\//u, tests: ['authoring-skill-contracts.test.js'] },
 		{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
 		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: testSelectionTests },
@@ -393,6 +396,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check-command-contracts.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/(release-version-validation|version-impact|version-sources|version-sync-policy)\.ts$/u, tests: versioningTests },
 		{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', ...schemaSmokeTests] },
+		{ match: /^src\/core\/native-crash-evidence\.ts$/u, tests: nativeCrashEvidenceTests },
 		{ match: /^src\/core\/authority-resolution\.ts$/u, tests: ['check-doc-authority.test.js', 'explain-authority.test.js'] },
 		{ match: /^src\/core\/check-issues\.ts$/u, tests: ['check.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/public-json-contracts\.ts$/u, tests: schemaSmokeTests },

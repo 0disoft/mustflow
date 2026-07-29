@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added a packaged `native-crash-evidence` JSON Schema and bounded semantic validator that rejects
+  symbol or binary identity contradictions, crashed-thread inconsistencies, unsafe raw memory or
+  environment payloads, and malformed evidence while distinguishing analysis-ready evidence from
+  valid but incomplete captures.
 - Added an installed native crash forensics skill that verifies exact dump, binary, module, symbol,
   and environment identity before tracing fault instructions, effective addresses, memory maps,
   object lifetimes, schedule-sensitive corruption, and structural repairs; strengthened fuzz and

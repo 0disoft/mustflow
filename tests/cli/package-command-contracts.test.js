@@ -666,3 +666,23 @@ test('2.119.0 native crash forensics skill commit stays bounded', () => {
 	assert.match(commitIntent, /✨ feat\(skills\): add native crash forensics review/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 });
+
+test('2.119.0 native crash evidence contract commit stays bounded', () => {
+	const stageIntent = /\[intents\.crash_evidence_contract_stage_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.crash_evidence_contract_staged_diff_v2_119_0\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.crash_evidence_contract_commit_v2_119_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	for (const path of [
+		'schemas/native-crash-evidence.schema.json',
+		'src/core/native-crash-evidence.ts',
+		'tests/cli/native-crash-evidence.test.js',
+		'tests/fixtures/schema-backcompat/2.84.8/public-json-fixtures.json',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(crash\): add native crash evidence contract/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+});

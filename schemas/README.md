@@ -207,6 +207,10 @@ Current schemas:
   complexity budget, failure replay capsule, conflict ledger, and coverage matrix
 - `handoff-validation-report.schema.json`: output of  
   `mf handoff validate <path> --json`
+- `native-crash-evidence.schema.json`: portable native-crash evidence accepted by
+  `validateNativeCrashEvidence` and `validateNativeCrashEvidenceJson`, including exact artifact,
+  binary, module and symbol identities; exception and register state; crashed-thread stacks;
+  optional sanitizer findings; and explicit raw-memory and environment redaction boundaries
 - `version-sources-report.schema.json`: output of `mf version-sources --json`
 - `docs-review-list.schema.json`: output of `mf docs review list --json`
 - `explain-report.schema.json`: output of `mf explain authority --json`, `mf explain command --json`,  

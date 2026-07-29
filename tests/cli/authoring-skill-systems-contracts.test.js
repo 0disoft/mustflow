@@ -138,6 +138,9 @@ test('native crash forensics separates detection site from exact artifact and ca
 		'Preserve the actual schedule decision trace',
 		'deterministic N-th allocation',
 		'replace its mutual-exclusion, visibility-ordering, and lifetime-protection',
+		'schemas/native-crash-evidence.schema.json',
+		'Schema shape alone does not prove cross-field consistency',
+		'`ready`, `incomplete`, or `rejected`',
 		'Package incident evidence safely',
 	]) {
 		assert.ok(localSkill.includes(signal), `native crash skill should include ${signal}`);
@@ -151,7 +154,7 @@ test('native crash forensics separates detection site from exact artifact and ca
 	assert.match(routes, /"crash-consistency-only"/u);
 	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 7);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName, 2);
 });
 
 test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {

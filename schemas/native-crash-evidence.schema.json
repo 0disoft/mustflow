@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/native-crash-evidence.schema.json",
+  "title": "mustflow native crash evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "captured_at",
+    "source",
+    "target",
+    "binary",
+    "symbols",
+    "exception",
+    "registers",
+    "modules",
+    "threads",
+    "sanitizer",
+    "redaction"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "native_crash_evidence" },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "target": { "$ref": "#/$defs/target" },
+    "binary": { "$ref": "#/$defs/binary" },
+    "symbols": { "$ref": "#/$defs/symbols" },
+    "exception": { "$ref": "#/$defs/exception" },
+    "registers": { "$ref": "#/$defs/registers" },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": { "$ref": "#/$defs/module" }
+    },
+    "threads": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": { "$ref": "#/$defs/thread" }
+    },
+    "sanitizer": {
+      "anyOf": [
+        { "$ref": "#/$defs/sanitizer" },
+        { "type": "null" }
+      ]
+    },
+    "redaction": { "$ref": "#/$defs/redaction" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "hexAddress": {
+      "type": "string",
+      "pattern": "^0x[0-9A-Fa-f]+$"
+    },
+    "nullableString": {
+      "type": ["string", "null"]
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "value", "verified"],
+      "properties": {
+        "scheme": { "enum": ["pe_guid_age", "elf_build_id", "macho_uuid", "sha256", "unknown"] },
+        "value": { "type": ["string", "null"] },
+        "verified": { "type": "boolean" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "size_bytes"],
+      "properties": {
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "size_bytes": { "type": "integer", "minimum": 0 },
+        "original_name": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/nullableString" },
+        "command_fingerprint": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "artifact", "tool"],
+      "properties": {
+        "kind": { "enum": ["windows_minidump", "linux_core", "macos_crash_report", "sanitizer_report", "live_debugger"] },
+        "artifact": { "$ref": "#/$defs/artifact" },
+        "tool": { "$ref": "#/$defs/tool" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "architecture", "process_id", "crashed_thread_id"],
+      "properties": {
+        "platform": { "enum": ["windows", "linux", "macos", "other"] },
+        "architecture": { "enum": ["x86", "x86_64", "arm", "arm64", "other"] },
+        "process_id": { "type": ["integer", "null"], "minimum": 0 },
+        "crashed_thread_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "binary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module_id", "name", "path", "identity"],
+      "properties": {
+        "module_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "$ref": "#/$defs/nullableString" },
+        "identity": { "$ref": "#/$defs/identity" }
+      }
+    },
+    "symbols": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "expected_identity", "observed_identity"],
+      "properties": {
+        "status": { "enum": ["matched", "partial", "missing", "mismatched", "not_requested"] },
+        "expected_identity": { "$ref": "#/$defs/identity" },
+        "observed_identity": { "$ref": "#/$defs/identity" },
+        "symbol_file_sha256": {
+          "anyOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "detail": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "exception": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "code", "fault_address", "instruction_address"],
+      "properties": {
+        "kind": { "enum": ["exception", "signal", "sanitizer", "abort", "unknown"] },
+        "code": { "type": "string", "minLength": 1 },
+        "fault_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/hexAddress" },
+            { "type": "null" }
+          ]
+        },
+        "instruction_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/hexAddress" },
+            { "type": "null" }
+          ]
+        },
+        "description": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "registers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "values", "unavailable_reason"],
+      "properties": {
+        "status": { "enum": ["available", "partial", "unavailable"] },
+        "values": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z][A-Za-z0-9_]*$" },
+          "additionalProperties": { "$ref": "#/$defs/hexAddress" }
+        },
+        "unavailable_reason": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "path", "base_address", "end_address", "identity", "symbols"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "$ref": "#/$defs/nullableString" },
+        "base_address": { "$ref": "#/$defs/hexAddress" },
+        "end_address": { "$ref": "#/$defs/hexAddress" },
+        "identity": { "$ref": "#/$defs/identity" },
+        "symbols": { "$ref": "#/$defs/symbols" }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "instruction_address", "module_id", "symbol", "source_file", "source_line", "inline"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "instruction_address": { "$ref": "#/$defs/hexAddress" },
+        "module_id": { "$ref": "#/$defs/nullableString" },
+        "symbol": { "$ref": "#/$defs/nullableString" },
+        "source_file": { "$ref": "#/$defs/nullableString" },
+        "source_line": { "type": ["integer", "null"], "minimum": 1 },
+        "inline": { "type": "boolean" }
+      }
+    },
+    "thread": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "crashed", "name", "stack_status", "frames"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "crashed": { "type": "boolean" },
+        "name": { "$ref": "#/$defs/nullableString" },
+        "stack_status": { "enum": ["available", "partial", "unavailable"] },
+        "frames": {
+          "type": "array",
+          "maxItems": 2048,
+          "items": { "$ref": "#/$defs/frame" }
+        }
+      }
+    },
+    "sanitizer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "error_class", "summary"],
+      "properties": {
+        "kind": { "enum": ["address", "thread", "memory", "undefined_behavior", "leak", "other"] },
+        "error_class": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "access_type": { "$ref": "#/$defs/nullableString" },
+        "access_size": { "type": ["integer", "null"], "minimum": 1 },
+        "fault_address": {
+          "anyOf": [
+            { "$ref": "#/$defs/hexAddress" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applied", "fields", "raw_environment_included", "raw_memory_included"],
+      "properties": {
+        "applied": { "type": "boolean" },
+        "fields": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "raw_environment_included": { "const": false },
+        "raw_memory_included": { "const": false }
+      }
+    }
+  }
+}

@@ -5678,6 +5678,130 @@
           "Run mf workspace scan --projects-dir <dir> --json against the directory that contains cloned repositories."
         ]
       }
+    },
+    {
+      "id": "native-crash-evidence",
+      "schema_file": "native-crash-evidence.schema.json",
+      "producer": "validateNativeCrashEvidence / validateNativeCrashEvidenceJson",
+      "fixture": {
+        "schema_version": "1",
+        "kind": "native_crash_evidence",
+        "captured_at": "2026-07-29T10:15:30.000Z",
+        "source": {
+          "kind": "windows_minidump",
+          "artifact": {
+            "sha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "size_bytes": 16384,
+            "original_name": "game-crash.dmp"
+          },
+          "tool": {
+            "name": "DbgHelp",
+            "version": "10.0",
+            "command_fingerprint": null
+          }
+        },
+        "target": {
+          "platform": "windows",
+          "architecture": "x86_64",
+          "process_id": 4242,
+          "crashed_thread_id": "17"
+        },
+        "binary": {
+          "module_id": "main",
+          "name": "game.exe",
+          "path": "bin/game.exe",
+          "identity": {
+            "scheme": "pe_guid_age",
+            "value": "ABCD1234EF5678901",
+            "verified": true
+          }
+        },
+        "symbols": {
+          "status": "matched",
+          "expected_identity": {
+            "scheme": "pe_guid_age",
+            "value": "ABCD1234EF5678901",
+            "verified": true
+          },
+          "observed_identity": {
+            "scheme": "pe_guid_age",
+            "value": "ABCD1234EF5678901",
+            "verified": true
+          },
+          "symbol_file_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "detail": null
+        },
+        "exception": {
+          "kind": "exception",
+          "code": "0xc0000005",
+          "fault_address": "0x10",
+          "instruction_address": "0x7ff612341234",
+          "description": "Access violation"
+        },
+        "registers": {
+          "status": "available",
+          "values": {
+            "rip": "0x7ff612341234",
+            "rsp": "0xaabbccddee"
+          },
+          "unavailable_reason": null
+        },
+        "modules": [
+          {
+            "id": "main",
+            "name": "game.exe",
+            "path": "bin/game.exe",
+            "base_address": "0x7ff612340000",
+            "end_address": "0x7ff6127f0000",
+            "identity": {
+              "scheme": "pe_guid_age",
+              "value": "ABCD1234EF5678901",
+              "verified": true
+            },
+            "symbols": {
+              "status": "matched",
+              "expected_identity": {
+                "scheme": "pe_guid_age",
+                "value": "ABCD1234EF5678901",
+                "verified": true
+              },
+              "observed_identity": {
+                "scheme": "pe_guid_age",
+                "value": "ABCD1234EF5678901",
+                "verified": true
+              },
+              "symbol_file_sha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "detail": null
+            }
+          }
+        ],
+        "threads": [
+          {
+            "id": "17",
+            "crashed": true,
+            "name": "render",
+            "stack_status": "available",
+            "frames": [
+              {
+                "index": 0,
+                "instruction_address": "0x7ff612341234",
+                "module_id": "main",
+                "symbol": "Renderer::Submit",
+                "source_file": "src/render/renderer.cpp",
+                "source_line": 281,
+                "inline": false
+              }
+            ]
+          }
+        ],
+        "sanitizer": null,
+        "redaction": {
+          "applied": true,
+          "fields": ["binary.path", "modules[0].path"],
+          "raw_environment_included": false,
+          "raw_memory_included": false
+        }
+      }
     }
   ]
 }

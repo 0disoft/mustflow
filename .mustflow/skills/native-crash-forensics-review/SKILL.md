@@ -2,7 +2,7 @@
 mustflow_doc: skill.native-crash-forensics-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: native-crash-forensics-review
@@ -72,6 +72,9 @@ and the eventual design repair separate.
 - Crash artifact ledger: dump format and completeness, exact executable and loaded-module hashes or
   build IDs, separated symbols, compiler and linker identity, flags, macros, LTO/PGO mode,
   container or image digest, and source revision.
+- When portable structured evidence is available, a record conforming to
+  `schemas/native-crash-evidence.schema.json`; treat validator `rejected` as unusable attribution
+  evidence and `incomplete` as an explicit limit rather than silently promoting it to ready.
 - Machine-state ledger: fault address and code, program counter, current-frame registers,
   disassembly around the fault, stack pointer, unwind quality, thread list, and process memory map.
 - Environment capsule: OS and kernel, CPU model and stepping, microcode, architecture and enabled
@@ -121,6 +124,9 @@ and the eventual design repair separate.
      root-cause claim being evaluated.
    - Mark each artifact as exact, probable, mismatched, incomplete, transformed, or missing.
    - Separate observation, inference, reproduction, and confirmed repair evidence.
+   - Validate structured evidence against `native-crash-evidence` schema version `1` and its
+     semantic validator before using claimed symbol matches, module identity, crashed-thread
+     selection, or redaction state. Schema shape alone does not prove cross-field consistency.
 2. Prove binary and symbol identity before trusting source lines.
    - Match the dump to the exact executable and every relevant shared library or plugin by build ID,
      module identifier, hash, image digest, and load address.
@@ -217,6 +223,8 @@ and the eventual design repair separate.
 ## Postconditions
 
 - Binary, symbol, module, and environment identity are exact or their uncertainty is explicit.
+- Structured crash evidence is `ready`, `incomplete`, or `rejected` from the validator; a valid
+  JSON object or schema-only pass is never reported as analysis-ready by itself.
 - The detection point, earliest supported violation, root-cause hypothesis, and confirmed repair
   evidence are not conflated.
 - Machine-state classification includes fault address, access kind, instruction, effective address,
@@ -283,4 +291,3 @@ exists.
 - Artifact privacy, retention, and clustering decision
 - Verification receipts
 - Remaining native crash risk
-

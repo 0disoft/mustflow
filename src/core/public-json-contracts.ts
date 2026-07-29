@@ -727,6 +727,13 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		expectedExitCodes: [0, 1],
 	},
 	{
+		id: 'native-crash-evidence',
+		schemaFile: 'native-crash-evidence.schema.json',
+		producer: 'validateNativeCrashEvidence / validateNativeCrashEvidenceJson',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'version-sources-report',
 		schemaFile: 'version-sources-report.schema.json',
 		producer: 'mf version-sources --json',

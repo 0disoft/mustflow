@@ -79,6 +79,29 @@ test('related selection keeps package surface checks release-sensitive instead o
 	assert.deepEqual(report.selected, schemaSmokeTests);
 });
 
+test('related selection maps native crash evidence source and schema to focused contract tests', () => {
+	for (const changedFile of [
+		'src/core/native-crash-evidence.ts',
+		'schemas/native-crash-evidence.schema.json',
+	]) {
+		const report = selectRelated([changedFile]);
+		const selected = new Set(report.selected);
+
+		assert.equal(selected.has('native-crash-evidence.test.js'), true, changedFile);
+		for (const testName of schemaSmokeTests) {
+			assert.equal(selected.has(testName), true, `${changedFile} should select ${testName}`);
+		}
+		assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0, changedFile);
+	}
+});
+
+test('related selection maps public JSON backcompat fixtures without a full-suite fallback', () => {
+	const report = selectRelated(['tests/fixtures/schema-backcompat/2.84.8/public-json-fixtures.json']);
+
+	assert.deepEqual(report.selected, schemaSmokeTests);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+});
+
 test('related selection maps command config changes to contract surfaces', () => {
 	const report = selectRelated(['.mustflow/config/commands.toml']);
 	const selected = new Set(report.selected);

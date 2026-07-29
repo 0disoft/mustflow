@@ -505,6 +505,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('dist/core/script-pack-suggestions.js'));
 	assert.ok(files.has('dist/core/doc-review-triage.js'));
 	assert.ok(files.has('dist/core/public-json-contracts.js'));
+	assert.ok(files.has('dist/core/native-crash-evidence.js'));
 	assert.ok(files.has('dist/core/surface-decision-model.js'));
 	assert.ok(files.has('dist/cli/script-packs/core-text-budget.js'));
 	assert.ok(files.has('dist/cli/script-packs/code-export-diff.js'));
