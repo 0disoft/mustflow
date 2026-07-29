@@ -30,8 +30,12 @@ test('dependency and security reviews deduplicate alerts and harden privileged w
 	assert.match(securitySkill, /Treat `pull_request_target` as a privileged trust boundary/u);
 	assert.match(securitySkill, /never check out or evaluate the untrusted pull-request head/u);
 	assert.match(securitySkill, /Keep the human-readable release or channel in a comment/u);
+	assert.match(securitySkill, /repeated token class that can also consume its following delimiter/u);
+	assert.match(securitySkill, /A generous elapsed-time assertion is only a tripwire/u);
+	assert.match(securitySkill, /successful CodeQL workflow proves analysis ran, not that the alert disappeared/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 8/u);
-	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 27/u);
+	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 28/u);
+	assert.match(i18n, /\[documents\."skill\.security-regression-tests"\][\s\S]*?revision = 13/u);
 });
 
 test('admin control plane safety review treats backoffice tools as production control planes', () => {

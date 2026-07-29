@@ -1356,13 +1356,13 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 27
+revision = 28
 translations = {}
 
 [documents."skill.security-regression-tests"]
 source = "locales/en/.mustflow/skills/security-regression-tests/SKILL.md"
 source_locale = "en"
-revision = 12
+revision = 13
 translations = {}
 
 [documents."skill.search-ad-content-authoring"]

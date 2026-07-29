@@ -95,6 +95,22 @@ test('normalizes realistic sanitizer dialects and removes absolute source paths'
 	}
 });
 
+test('bounds sanitizer path redaction for adversarial separator-heavy input', { timeout: 2_000 }, () => {
+	const adversarialPath = `/${'!/'.repeat(25_000)}!:not-a-line`;
+	const source = [
+		'ERROR: AddressSanitizer: heap-use-after-free',
+		`SUMMARY: AddressSanitizer: ${adversarialPath}`,
+		'',
+	].join('\n');
+	const startedAt = process.hrtime.bigint();
+	const result = collectNativeCrashEvidence(new TextEncoder().encode(source), options('sanitizer', 'separator-heavy.log'));
+	const elapsedMilliseconds = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+
+	assert.equal(result.evidence.sanitizer.summary, adversarialPath);
+	assert.equal(result.evidence.redaction.applied, false);
+	assert.ok(elapsedMilliseconds < 1_000, `separator-heavy sanitizer redaction took ${elapsedMilliseconds.toFixed(2)}ms`);
+});
+
 test('bounds sanitizer frame materialization and reports truncation', () => {
 	const frames = Array.from({ length: 2049 }, (_, index) => `    #${index} 0x${(0x500000 + index).toString(16)} in frame_${index}`).join('\n');
 	const source = `WARNING: ThreadSanitizer: data race\n${frames}\nSUMMARY: ThreadSanitizer: data race\n`;

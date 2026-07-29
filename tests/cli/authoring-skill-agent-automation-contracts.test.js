@@ -708,6 +708,9 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.match(securitySkill, /dependency-reality-check/u);
 	assert.match(securitySkill, /ReDoS or inefficient-regular-expression findings/u);
 	assert.match(securitySkill, /bounded parser, token scanner, structured parser/u);
+	assert.match(securitySkill, /delimiter from the repeated token/u);
+	assert.match(regressionSkill, /regular-expression denial of service/u);
+	assert.match(regressionSkill, /bound the test itself so a regression cannot hang the entire suite/u);
 	assert.match(securitySkill, /lockfile CVEs/u);
 	assert.match(securitySkill, /vulnerable package version no longer appears in the resolved graph/u);
 	assert.match(securitySkill, /prototype-pollution sinks/u);

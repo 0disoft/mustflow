@@ -239,6 +239,45 @@ function collectElfCore(bytes: Uint8Array, options: NativeCrashCollectorOptions)
 	return { evidence, warnings: ['NT_PRSTATUS register decoding, NT_FILE module mapping, and unwind require an architecture-specific follow-up.'] };
 }
 
+function redactPortableAbsolutePaths(value: string): string {
+	let searchIndex = 0;
+	let copyIndex = 0;
+	let redacted = '';
+	while (searchIndex < value.length) {
+		const first = value.charCodeAt(searchIndex);
+		const drivePrefix = ((first >= 65 && first <= 90) || (first >= 97 && first <= 122))
+			&& value[searchIndex + 1] === ':'
+			&& (value[searchIndex + 2] === '/' || value[searchIndex + 2] === '\\');
+		const rootPrefixLength = value[searchIndex] === '/' ? 1 : drivePrefix ? 3 : 0;
+		if (rootPrefixLength === 0) {
+			searchIndex += 1;
+			continue;
+		}
+
+		const pathStart = searchIndex;
+		let pathEnd = pathStart + rootPrefixLength;
+		while (pathEnd < value.length) {
+			const current = value[pathEnd];
+			if (current === ':' || current === '\r' || current === '\n' || /\s/u.test(current)) break;
+			pathEnd += 1;
+		}
+		const hasPathBody = pathEnd > pathStart + rootPrefixLength;
+		const terminator = value[pathEnd];
+		const hasLineSuffix = terminator === ':' && /\d/u.test(value[pathEnd + 1] ?? '');
+		const validTerminator = pathEnd === value.length || hasLineSuffix || (terminator !== undefined && /\s/u.test(terminator));
+		if (hasPathBody && validTerminator) {
+			redacted += value.slice(copyIndex, pathStart);
+			redacted += '<redacted-path>';
+			copyIndex = pathEnd;
+			searchIndex = pathEnd;
+			continue;
+		}
+
+		searchIndex = Math.max(pathEnd, pathStart + rootPrefixLength);
+	}
+	return redacted.length === 0 ? value : redacted + value.slice(copyIndex);
+}
+
 function collectSanitizer(bytes: Uint8Array, options: NativeCrashCollectorOptions): NativeCrashCollectionResult {
 	let text: string;
 	try {
@@ -253,8 +292,7 @@ function collectSanitizer(bytes: Uint8Array, options: NativeCrashCollectorOption
 	const kind = detector === 'AddressSanitizer' ? 'address' : detector === 'ThreadSanitizer' ? 'thread' : detector === 'MemorySanitizer' ? 'memory' : detector === 'UndefinedBehaviorSanitizer' ? 'undefined_behavior' : 'leak';
 	const errorClass = new RegExp(`(?:ERROR|WARNING): ${detector}: ([^\\s]+)`, 'u').exec(text)?.[1] ?? (detector === 'UndefinedBehaviorSanitizer' && /\bruntime error:/iu.test(text) ? 'runtime-error' : detector);
 	const rawSummary = new RegExp(`SUMMARY: ${detector}: ([^\\r\\n]+)`, 'u').exec(text)?.[1] ?? (/\bruntime error:\s*([^\r\n]+)/iu.exec(text)?.[1] ?? errorClass);
-	const pathPattern = /(?:[A-Za-z]:[\\/]|\/)(?:[^\s:\r\n]+[\\/])*[^\s:\r\n]+(?=:\d+|\s|$)/gu;
-	const summary = rawSummary.replace(pathPattern, '<redacted-path>');
+	const summary = redactPortableAbsolutePaths(rawSummary);
 	const fault = /(?:on address|address) (0x[0-9a-f]+)/iu.exec(text)?.[1]?.toLowerCase() ?? null;
 	const access = /(READ|WRITE) of size (\d+)/iu.exec(text);
 	const framePattern = /^\s*#\d+\s+(0x[0-9a-f]+)\s+(?:in\s+)?([^\r\n]+)$/gimu;
@@ -264,7 +302,7 @@ function collectSanitizer(bytes: Uint8Array, options: NativeCrashCollectorOption
 	for (let match = framePattern.exec(text); match; match = framePattern.exec(text)) {
 		if (frames.length >= 2048) { framesTruncated = true; break; }
 		const rawTail = match[2].trim();
-		const safeTail = rawTail.replace(pathPattern, '<redacted-path>');
+		const safeTail = redactPortableAbsolutePaths(rawTail);
 		pathsRedacted ||= safeTail !== rawTail;
 		const symbol = /^(?:in\s+)?([^\s]+)(?:\s|$)/u.exec(safeTail)?.[1] ?? null;
 		frames.push({ index: frames.length, instruction_address: match[1].toLowerCase(), module_id: null, symbol, source_file: null, source_line: null, inline: false });

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:68e361f6e9efd298077335250a92ed67a72ca072b49e43f4a82bb9579d3aa173",
+  "source_fingerprint": "sha256:09cc4b0593b6083f05ebfe5b17be41fa844390257792e66cca897f17d55d8f62",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -9408,7 +9408,20 @@
         "unknown_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "codeql alert",
+        "delimiter overlap",
+        "exponential backtracking",
+        "inefficient regular expression",
+        "redos",
+        "regex denial of service",
+        "scanner alert",
+        "正则回溯",
+        "正则表达式拒绝服务",
+        "비효율적 정규식",
+        "정규식 백트래킹",
+        "정규식 서비스 거부"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -9437,7 +9450,18 @@
         "test_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "adversarial non match",
+        "redos regression",
+        "regex denial of service test",
+        "security regression",
+        "separator heavy input",
+        "恶意不匹配回归测试",
+        "正则表达式拒绝服务回归",
+        "보안 회귀 테스트",
+        "악성 non match 회귀 테스트",
+        "정규식 서비스 거부 회귀"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],

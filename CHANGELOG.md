@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Fixed sanitizer evidence path redaction so separator-heavy untrusted logs cannot trigger
+  exponential regular-expression backtracking while Windows and Unix absolute paths remain
+  redacted from portable evidence; strengthened built-in security review and regression-test
+  procedures with delimiter-overlap analysis, bounded adversarial non-match tests, and exact-alert
+  remote scanner closure evidence.
 - Added an installed test-suite value pruning skill that requires unique defect witnesses,
   historical incident and mutation evidence, replacement sensitivity, bounded shadow retirement,
   and a retained end-to-end wiring spine before tests are deleted, consolidated, or moved to a

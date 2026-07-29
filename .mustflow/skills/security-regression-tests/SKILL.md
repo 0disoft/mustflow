@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-regression-tests
 locale: en
 canonical: true
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: procedure
 name: security-regression-tests
@@ -115,6 +115,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
    - incomplete escaping, quoting, encoding, sanitization, or single-occurrence string replacement where the safe behavior can be asserted without invoking a real shell or network target
      - Include repeated metacharacters, mixed safe and unsafe characters, leading or trailing separators, and domain-specific reserved characters in the smallest representative cases.
      - Prefer asserting the canonical output or denied side effect from the project-owned encoder, URL builder, query binder, or renderer. Use source-pattern guards only when the runtime behavior is difficult to isolate, and do not assert scanner wording, line number, or severity.
+   - regular-expression denial of service where nested or adjacent repetition, overlapping alternatives, delimiter-consuming token classes, or optional loops can partition the same attacker-controlled prefix many ways
    - stack trace or internal error exposure through a user-visible API, report, dashboard, or command output
    - insecure password storage, custom cryptography, weak hash use, insecure randomness, or predictable reset or invite tokens
    - disabled certificate validation, insecure HTTP downgrade, or missing HTTPS enforcement for sensitive traffic
@@ -145,6 +146,7 @@ Convert security-sensitive behavior changes into safe negative tests that preser
 17. For architecture-drift boundaries, write the test around the security invariant, not the refactor shape: unauthorized access stays denied, sensitive output stays omitted, and side effects remain scoped after the generated structure changes.
 18. For policy-engine or governance-linter boundaries, add denied cases that prove the invariant cannot be bypassed by newly named entities, spoofed duplicate fields, self-declared ownership metadata, missing or misplaced rule files, or invalid-but-present values. Include an allowed control case when it clarifies the intended trusted source.
 19. For parser, validator, serializer, path, command, or workflow boundaries, consider a bounded property-based or fuzz-style regression when the invariant is clearer than a list of hand-written examples. Keep generators local, deterministic under the test runner, size-limited, and focused on the defensive invariant.
+    - For ReDoS fixes, retain ordinary positive controls, add the scanner's separator-heavy or prefix-sharing malformed non-match, and bound the test itself so a regression cannot hang the entire suite. Assert preserved output or rejection semantics first; use a generous timing ceiling only as a secondary tripwire, and verify remote scanner closure separately from the local test.
 20. When adding a fuzzing or property-based testing dependency, keep dependency metadata, lockfiles, test selection rules, and package tests synchronized. Prefer an existing project dependency when it can express the invariant cleanly.
 21. Use mocks or local fakes for external requests, uploads, redirects, webhooks, payment providers, file systems, shell commands, package registries, Git helpers, and CI workflows. Do not contact live suspicious endpoints or publish real artifacts.
 22. Name the test after the defensive expectation, such as `cannot_read_other_users_invoice` or `rejects_private_network_callback_url`.

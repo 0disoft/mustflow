@@ -1898,6 +1898,10 @@ priority = 30
 selection_axis = "risk"
 applies_to_reasons = ["security_change", "privacy_change", "package_metadata_change", "release_risk", "unknown_change"]
 
+[routes."security-privacy-review".contexts]
+positive_terms = ["codeql-alert", "delimiter-overlap", "exponential-backtracking", "inefficient-regular-expression", "redos", "regex-denial-of-service", "scanner-alert"]
+concept_aliases = ["정규식 서비스 거부", "정규식 백트래킹", "비효율적 정규식", "正则表达式拒绝服务", "正则回溯"]
+
 [routes."secret-exposure-response"]
 category = "security_privacy"
 route_type = "event"
@@ -1977,6 +1981,10 @@ route_type = "adjunct"
 priority = 50
 selection_axis = "risk"
 applies_to_reasons = ["security_change", "test_change"]
+
+[routes."security-regression-tests".contexts]
+positive_terms = ["adversarial-non-match", "redos-regression", "regex-denial-of-service-test", "security-regression", "separator-heavy-input"]
+concept_aliases = ["악성 non-match 회귀 테스트", "정규식 서비스 거부 회귀", "보안 회귀 테스트", "恶意不匹配回归测试", "正则表达式拒绝服务回归"]
 
 [routes."failure-triage"]
 category = "bug_failure"

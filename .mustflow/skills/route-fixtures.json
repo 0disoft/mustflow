@@ -853,6 +853,21 @@
       "forbidden_candidates": [
         "test-suite-value-pruning-review"
       ]
+    },
+    {
+      "id": "security-redos-codeql-korean",
+      "task": "CodeQL 비효율적 정규식 경고의 구분자 중첩 백트래킹을 고치고 긴 악성 non-match 회귀 테스트로 ReDoS를 막아",
+      "paths": [
+        "src/core/log-parser.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "security-privacy-review",
+        "security-regression-tests"
+      ]
     }
   ]
 }
