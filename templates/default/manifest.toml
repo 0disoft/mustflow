@@ -1285,6 +1285,7 @@ product = [
   "two-phase-transition-integrity-review",
   "session-handoff-integrity-review",
   "durable-workflow-orchestration",
+  "cross-platform-filesystem-safety",
   "crash-consistency-recovery-review",
   "feature-surface-completeness-review",
   "semantic-repository-discovery",

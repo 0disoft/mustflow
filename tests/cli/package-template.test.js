@@ -500,6 +500,7 @@ test('default template declares profile-specific skill surfaces', async () => {
 	assert.ok(template.manifest.skillProfiles.product.includes('ui-state-resurrection-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('information-visualization-integrity-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('native-crash-forensics-review'));
+	assert.ok(template.manifest.skillProfiles.product.includes('cross-platform-filesystem-safety'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-stress-layout-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-accessibility-tree-review'));
 	assert.ok(template.manifest.skillProfiles.product.includes('frontend-localization-review'));

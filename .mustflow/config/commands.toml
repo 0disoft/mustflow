@@ -2044,6 +2044,7 @@ argv = [
   "templates/default/locales/en/.mustflow/skills/routes.toml",
   "tests/cli/authoring-skill-performance-contracts.test.js",
   "tests/cli/authoring-skill-systems-contracts.test.js",
+  "tests/cli/package-template.test.js",
   "tests/cli/package-command-contracts.test.js",
   "tests/cli/package-metadata-contracts.test.js",
 ]
@@ -3597,6 +3598,21 @@ writes = []
 network = false
 destructive = false
 
+[intents.release_pack_install_test_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Pack the current 2.119.0 repository, install it into an isolated temporary consumer, and run the public strict workflow."
+argv = ["bun", "run", "check:install"]
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["package_metadata_change", "release_risk"]
+
 [intents.release_github_ci_forward_fix_run_v2_119_0]
 status = "configured"
 lifecycle = "oneshot"
@@ -3661,6 +3677,38 @@ destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
 
+[intents.release_github_ci_revision_fix_run_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact failed CI run for the 2.119.0 native crash revision-contract commit."
+argv = ["gh", "run", "view", "30431129684", "--repo", "0disoft/mustflow", "--json", "conclusion,createdAt,event,headBranch,headSha,jobs,name,status,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_ci_revision_fix_failed_log_v2_119_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only the failed step logs from the exact failed CI run for the 2.119.0 native crash revision-contract commit."
+argv = ["gh", "run", "view", "30431129684", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
 [intents.release_ci_fix_stage_v2_119_0]
 status = "configured"
 lifecycle = "oneshot"
@@ -3676,9 +3724,11 @@ argv = [
   "src/core/native-crash-fixture-external-validation.ts",
   "src/core/skill-route-resolution.ts",
   "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/manifest.toml",
   "tests/cli/native-crash-fixture-external-validation.test.js",
   "tests/cli/skill-route.test.js",
   "tests/cli/authoring-skill-systems-contracts.test.js",
+  "tests/cli/package-template.test.js",
 ]
 cwd = "."
 timeout_seconds = 60
@@ -3711,8 +3761,8 @@ run_policy = "agent_allowed"
 description = "Commit the reviewed 2.119.0 CI forward fix after focused and release verification."
 argv = [
   "git", "commit",
-  "-m", "🧪 test(skills): align native crash revision contract",
-  "-m", "Match the native crash skill's revision 3 canonical and i18n metadata in the Linux full-suite contract while retaining bounded CI failure diagnostics.",
+  "-m", "🐛 fix(template): close product skill dependencies",
+  "-m", "Install cross-platform filesystem safety alongside crash consistency in the product profile so filtered route dependencies remain strict-checkable in packed consumers; retain bounded CI diagnostics and a focused profile regression.",
   "-m", "Validation: mf run release_ci_fix_contract_test_v2_119_0; mf run native_crash_fixture_semantic_parser_build; mf run native_crash_fixture_external_validation; mf run native_crash_ci_contract_test; mf run test_release; mf run docs_validate_fast; mf run mustflow_check",
 ]
 cwd = "."
