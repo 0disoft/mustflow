@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:40f8b7716d25a6c0f2d05dc64d9ec05df0804069fb390d29eb168a7096fe3dff",
+  "source_fingerprint": "sha256:f15fba179715bdba911fae78ade1fdf0cd3050fec1919971052387812a25f4ff",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -596,17 +596,17 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "스프라이트 시트",
-        "精灵图集",
-        "투명 png",
-        "透明 png",
         "atlas extrude",
         "foot contact",
         "rgba",
         "sprite atlas",
         "sprite sheet",
         "stable pivot",
-        "transparent png"
+        "transparent png",
+        "精灵图集",
+        "透明 png",
+        "스프라이트 시트",
+        "투명 png"
       ],
       "negative_signals": [
         "ordinary ui icon",
@@ -1180,10 +1180,6 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "授权",
-        "인증 권한",
-        "접근 권한",
-        "权限",
         "access control",
         "authorization",
         "job scoped authority",
@@ -1192,7 +1188,11 @@
         "policy unavailable",
         "resource hidden",
         "session expired",
-        "step up required"
+        "step up required",
+        "授权",
+        "权限",
+        "인증 권한",
+        "접근 권한"
       ],
       "negative_signals": [
         "public copy only",
@@ -2879,10 +2879,6 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "崩溃一致性",
-        "비정상 종료 복구",
-        "충돌 일관성",
-        "异常退出恢复",
         "atomic replace",
         "crash consistency",
         "durability",
@@ -2890,7 +2886,11 @@
         "fsync",
         "power loss",
         "resumable",
-        "short write"
+        "short write",
+        "崩溃一致性",
+        "异常退出恢复",
+        "비정상 종료 복구",
+        "충돌 일관성"
       ],
       "negative_signals": [
         "css",
@@ -4581,16 +4581,16 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "功能完整性",
-        "기능 완성도",
-        "반쪽 구현",
-        "不完整实现",
         "change manifest",
         "consumer closure",
         "feature completeness",
         "feature scaffold",
         "partial implementation",
-        "sibling feature"
+        "sibling feature",
+        "不完整实现",
+        "功能完整性",
+        "기능 완성도",
+        "반쪽 구현"
       ],
       "negative_signals": [
         "disposable prototype",
@@ -5939,14 +5939,6 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "그래프",
-        "다이어그램",
-        "순서도",
-        "시각화",
-        "정보 시각화",
-        "차트",
-        "타임라인",
-        "표",
         "accessible chart",
         "axis",
         "chart",
@@ -5965,7 +5957,15 @@
         "text to visual",
         "timeline",
         "uncertainty band",
-        "visual specification"
+        "visual specification",
+        "그래프",
+        "다이어그램",
+        "순서도",
+        "시각화",
+        "정보 시각화",
+        "차트",
+        "타임라인",
+        "표"
       ],
       "negative_signals": [
         "accessibility tree only",
@@ -7157,11 +7157,6 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "세그멘테이션 폴트",
-        "세그폴트",
-        "접근 위반",
-        "코어 덤프",
-        "힙 손상",
         "access violation",
         "build id",
         "bus error",
@@ -7176,7 +7171,12 @@
         "segfault",
         "segmentation fault",
         "stack corruption",
-        "symbolization"
+        "symbolization",
+        "세그멘테이션 폴트",
+        "세그폴트",
+        "접근 위반",
+        "코어 덤프",
+        "힙 손상"
       ],
       "negative_signals": [
         "crash consistency only",
@@ -8753,14 +8753,14 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "독자 이득",
-        "독자 중심",
-        "读者收益",
-        "读者中心",
         "decision error",
         "practical content",
         "reader benefit",
-        "reader centered"
+        "reader centered",
+        "读者中心",
+        "读者收益",
+        "독자 이득",
+        "독자 중심"
       ],
       "negative_signals": [
         "internal only note",
@@ -9478,16 +9478,16 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "기존 구현 찾기",
-        "의미 기반 저장소 탐색",
-        "查找现有实现",
-        "语义仓库发现",
         "code archaeology",
         "duplicate prevention",
         "existing asset discovery",
         "new symbol justification",
         "reuse candidate",
-        "semantic repository discovery"
+        "semantic repository discovery",
+        "查找现有实现",
+        "语义仓库发现",
+        "기존 구현 찾기",
+        "의미 기반 저장소 탐색"
       ],
       "negative_signals": [
         "disposable prototype",
@@ -10950,10 +10950,6 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "타입 계약",
-        "타입 영향 범위",
-        "类型契约",
-        "类型影响范围",
         "consumer compile",
         "declaration diff",
         "generic constraint",
@@ -10963,7 +10959,11 @@
         "runtime schema",
         "structural implementation",
         "type contract",
-        "wire compatibility"
+        "wire compatibility",
+        "类型契约",
+        "类型影响范围",
+        "타입 계약",
+        "타입 영향 범위"
       ],
       "negative_signals": [
         "graphql only",

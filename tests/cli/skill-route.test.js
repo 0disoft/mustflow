@@ -8,6 +8,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+	buildSkillRouteCatalog,
 	readSkillRouteCatalogCacheStats,
 	resetSkillRouteCatalogCache,
 	resolveSkillRoutes,
@@ -174,6 +175,56 @@ test('keeps the generated route catalog synchronized with built-in skill frontma
 	assert.match(catalog.source_fingerprint, /^sha256:[a-f0-9]{64}$/u);
 	assert.equal(catalog.entries.length, skillDirectoryCount);
 	assert.ok(catalog.entries.every((entry) => ['language', 'task', 'risk', 'workflow'].includes(entry.selection_axis)));
+});
+
+test('builds route catalogs in locale-independent code-unit order', () => {
+	const resolutionSource = readFileSync(
+		path.join(projectRoot, 'src', 'core', 'skill-route-resolution.ts'),
+		'utf8',
+	);
+	assert.doesNotMatch(resolutionSource, /\.localeCompare\(/u);
+
+	const projectPath = createTempProject();
+
+	try {
+		const skillRoot = path.join(projectPath, '.mustflow', 'skills');
+		mkdirSync(path.join(skillRoot, 'a-a'), { recursive: true });
+		mkdirSync(path.join(skillRoot, 'aa'), { recursive: true });
+		for (const skill of ['a-a', 'aa']) {
+			writeFileSync(
+				path.join(skillRoot, skill, 'SKILL.md'),
+				`---\nname: ${skill}\ndescription: Route ${skill}.\n---\n\n# ${skill}\n`,
+			);
+		}
+		writeFileSync(
+			path.join(skillRoot, 'routes.toml'),
+			[
+				'schema_version = "1"',
+				'',
+				'[routes."a-a"]',
+				'category = "general_code"',
+				'route_type = "primary"',
+				'priority = 50',
+				'selection_axis = "task"',
+				'',
+				'[routes."a-a".contexts]',
+				'positive_terms = ["투명 png", "atlas extrude"]',
+				'',
+				'[routes."aa"]',
+				'category = "general_code"',
+				'route_type = "primary"',
+				'priority = 50',
+				'selection_axis = "task"',
+				'',
+			].join('\n'),
+		);
+
+		const catalog = buildSkillRouteCatalog(projectPath);
+		assert.deepEqual(catalog.entries.map((entry) => entry.skill), ['a-a', 'aa']);
+		assert.deepEqual(catalog.entries[0].positive_signals, ['atlas extrude', '투명 png']);
+	} finally {
+		removeTempProject(projectPath);
+	}
 });
 
 test('filters packaged catalog entries to skills installed by the selected profile', () => {

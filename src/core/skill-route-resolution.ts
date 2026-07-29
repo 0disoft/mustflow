@@ -22,6 +22,12 @@ const DEFAULT_MAX_ADJUNCTS = 2;
 const PATH_SKILL_HINT_SCORE = 15;
 const PATTERN_SIGNAL_TERM_SCORE = 20;
 const PATTERN_SIGNAL_MAX_SCORE = 60;
+
+function compareStrings(left: string, right: string): number {
+	if (left < right) return -1;
+	if (left > right) return 1;
+	return 0;
+}
 const NEGATIVE_SIGNAL_TERM_PENALTY = -25;
 const NEGATIVE_SIGNAL_MAX_PENALTY = -75;
 const DOCS_TREE_MARKDOWN_PATH_PATTERN =
@@ -298,13 +304,11 @@ function tokenize(value: string): string[] {
 				.map((token) => token.trim())
 				.filter((token) => token.length >= 2),
 		),
-	].sort((left, right) => left.localeCompare(right));
+	].sort(compareStrings);
 }
 
 function normalizeSignals(values: readonly string[]): string[] {
-	return [...new Set(values.map(normalizeRouteText).filter(Boolean))].sort((left, right) =>
-		left.localeCompare(right),
-	);
+	return [...new Set(values.map(normalizeRouteText).filter(Boolean))].sort(compareStrings);
 }
 
 function collectPathSkillHints(paths: readonly string[]): Set<string> {
@@ -528,7 +532,7 @@ function readSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
 	const skillDirectories = readdirSync(skillRoot, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
 		.map((entry) => entry.name)
-		.sort((left, right) => left.localeCompare(right));
+		.sort(compareStrings);
 
 	for (const skillDirectory of skillDirectories) {
 		const skillPath = `.mustflow/skills/${skillDirectory}/SKILL.md`;
@@ -584,7 +588,7 @@ function createSkillRouteCatalog(
 				command_intents: [...route.commandIntents],
 			};
 		})
-		.sort((left, right) => left.skill.localeCompare(right.skill));
+		.sort((left, right) => compareStrings(left.skill, right.skill));
 	const fingerprintInput = JSON.stringify(entries);
 
 	return {
@@ -665,7 +669,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			new Set(entry.command_intents).size !== entry.command_intents.length ||
 			seenSkills.has(entry.skill) ||
 			seenPaths.has(entry.skill_path) ||
-			(previousSkill !== '' && previousSkill.localeCompare(entry.skill) >= 0)
+			(previousSkill !== '' && compareStrings(previousSkill, entry.skill) >= 0)
 		) {
 			return null;
 		}
@@ -887,7 +891,7 @@ function readExternalSkillFrontmatterRoutes(projectRoot: string): SkillIndexRout
 	const skillDirectories = readdirSync(skillRoot, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
 		.map((entry) => entry.name)
-		.sort((left, right) => left.localeCompare(right));
+		.sort(compareStrings);
 
 	for (const skillDirectory of skillDirectories) {
 		const skillPath = `.mustflow/external-skills/${skillDirectory}/SKILL.md`;
@@ -1115,7 +1119,7 @@ function sortCandidates(
 		return priority;
 	}
 
-	return left.skill.localeCompare(right.skill);
+	return compareStrings(left.skill, right.skill);
 }
 
 function isSelectableMain(candidate: SkillRouteResolvedCandidate): boolean {
@@ -1440,9 +1444,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 		? routerConfig.selectionLimit
 		: clampCandidateLimit(input.maxCandidates);
 	const paths = input.paths.map(normalizeSkillPath);
-	const reasons = [...new Set(input.reasons.map((reason) => reason.trim()).filter(Boolean))].sort((left, right) =>
-		left.localeCompare(right),
-	);
+	const reasons = [...new Set(input.reasons.map((reason) => reason.trim()).filter(Boolean))].sort(compareStrings);
 	const taskTerms = tokenize(input.taskText ?? '');
 	const pathTerms = tokenize(paths.join(' '));
 	const pathSkillHints = collectPathSkillHints(paths);
