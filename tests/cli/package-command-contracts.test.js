@@ -782,3 +782,65 @@ test('2.119.0 native crash evidence contract commit stays bounded', () => {
 	assert.match(commitIntent, /✨ feat\(crash\): add native crash evidence contract/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 });
+
+test('2.121.0 Playwright reliability skill release stays bounded and remotely verifiable', () => {
+	const manifestIntent =
+		/\[intents\.manifest_lock_accept_browser_automation_skill_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stageIntent = /\[intents\.release_stage_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const mainRunsIntent = /\[intents\.release_github_main_runs_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const publishRunsIntent =
+		/\[intents\.release_github_publish_runs_v2_121_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const releaseIntent = /\[intents\.release_github_release_v2_121_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'.mustflow/review/docs.toml',
+		'.mustflow/skills/INDEX.md',
+		'.mustflow/skills/browser-automation-reliability-review/SKILL.md',
+		'REPO_FLOW.md',
+		'package.json',
+		'templates/default/i18n.toml',
+		'templates/default/locales/en/.mustflow/skills/INDEX.md',
+		'templates/default/locales/en/.mustflow/skills/browser-automation-reliability-review/SKILL.md',
+		'templates/default/manifest.toml',
+		'tests/cli/authoring-skill-agent-automation-contracts.test.js',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.match(manifestIntent, /\.mustflow\/config\/commands\.toml/u);
+	assert.doesNotMatch(manifestIntent, /browser-automation-reliability-review\/SKILL\.md/u);
+	assert.doesNotMatch(manifestIntent, /\.mustflow\/skills\/INDEX\.md/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): harden Playwright reliability review/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.121\.0"/u);
+});

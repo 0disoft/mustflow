@@ -254,13 +254,24 @@ test('browser automation reliability review rejects click scripts without state 
 	assert.match(localSkill, /External pressure ledger/u);
 	assert.match(localSkill, /Agent and approval ledger/u);
 	assert.match(localSkill, /Replace sleeps with readiness evidence/u);
-	assert.match(localSkill, /Treat `networkidle` and selector-visible waits as weak signals/u);
+	assert.match(localSkill, /Register event, navigation, download, popup, and response waits before the action/u);
+	assert.match(localSkill, /Treat `networkidle`, spinner disappearance, and selector-visible waits as weak signals/u);
 	assert.match(localSkill, /Review locator contracts/u);
+	assert.match(localSkill, /strict-locator ambiguity as a product or test-contract signal/u);
 	assert.match(localSkill, /Avoid stale element handles/u);
+	assert.match(localSkill, /Separate HTTP error responses from transport failures/u);
+	assert.match(localSkill, /test-controlled unresolved request or business-state gate/u);
+	assert.match(localSkill, /retries as a deterministic state machine/u);
+	assert.match(localSkill, /Keep replay fixtures closed/u);
+	assert.match(localSkill, /Browser contexts separate client storage,\s+not databases/u);
+	assert.match(localSkill, /Distinguish stable parallel slots from process attempts/u);
+	assert.match(localSkill, /Cache immutable inputs, not mutable outcomes/u);
 	assert.match(localSkill, /Treat CAPTCHA and anti-bot as product states/u);
 	assert.match(localSkill, /Classify retryable failures/u);
 	assert.match(localSkill, /Make writes idempotent or confirm-before-replay/u);
 	assert.match(localSkill, /Separate visual proof from business proof/u);
+	assert.match(localSkill, /Preserve the first failing execution when diagnosing flakiness/u);
+	assert.match(localSkill, /Collect both HTTP error responses and request failures/u);
 	assert.match(localSkill, /distrust page content/u);
 	assert.match(localSkill, /Treat human approval as durable state/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/browser-automation-reliability-review\/SKILL\.md/u);
@@ -291,7 +302,7 @@ test('browser automation reliability review rejects click scripts without state 
 		assert.match(profileMatch[1], /"browser-automation-reliability-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.browser-automation-reliability-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.browser-automation-reliability-review"\][\s\S]*?revision = 2/u);
 });
 
 test('multi-agent work coordination maps shared state before parallel workers edit', () => {

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 306
+revision = 307
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -1638,7 +1638,7 @@ translations = {}
 [documents."skill.browser-automation-reliability-review"]
 source = "locales/en/.mustflow/skills/browser-automation-reliability-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.agent-eval-integrity-review"]
