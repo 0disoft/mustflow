@@ -855,6 +855,201 @@
       ]
     },
     {
+      "id": "evidence-backed-actionable-feedback-korean",
+      "task": "칭찬과 양비론으로 흐리지 말고 애매한 답변을 판단, 증거, 오독, 수정 행동과 완료 기준이 있는 구체적인 지적으로 바꿔",
+      "paths": [
+        "docs/review.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "evidence-backed-actionable-feedback",
+      "required_candidates": [
+        "evidence-backed-actionable-feedback"
+      ]
+    },
+    {
+      "id": "consequence-driven-document-review-korean",
+      "task": "이 PRD를 냉정하게 리뷰해서 작성 의도와 실제 해석이 갈리는 첫 결정, 역할별로 달라지는 구현, 언제 발견되는지와 재작업 결과를 추적하고 BLOCKER MAJOR MINOR로 나눠 고칠 계약을 제시해",
+      "paths": [
+        "docs/product/feature-prd.md"
+      ],
+      "reasons": [
+        "docs_change",
+        "workflow_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "evidence-backed-actionable-feedback",
+      "required_candidates": [
+        "evidence-backed-actionable-feedback"
+      ]
+    },
+    {
+      "id": "document-summary-only-boundary",
+      "task": "Summary only: summarize this proposal without critique, severity, recommendations, or changes",
+      "paths": [
+        "docs/proposal.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "docs-update",
+      "required_candidates": [
+        "docs-update"
+      ],
+      "forbidden_candidates": [
+        "evidence-backed-actionable-feedback"
+      ]
+    },
+    {
+      "id": "actionable-feedback-code-discovery-only",
+      "task": "Code defect discovery only: inspect this diff for runtime regressions and report the findings",
+      "paths": [
+        "src/core/parser.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "typescript-code-change",
+      "required_candidates": [
+        "typescript-code-change"
+      ],
+      "forbidden_candidates": [
+        "evidence-backed-actionable-feedback"
+      ]
+    },
+    {
+      "id": "actionable-feedback-prose-cleanup-only",
+      "task": "Prose cleanup only: remove translationese and awkward phrasing without changing the review decision",
+      "paths": [
+        "docs/guide.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "docs-prose-review"
+      ],
+      "forbidden_candidates": [
+        "evidence-backed-actionable-feedback"
+      ]
+    },
+    {
+      "id": "automation-operating-model-korean",
+      "task": "자동화 운영 모델을 설계해서 예약 실행 이벤트 큐의 책임을 나누고 자동화 조용한 실패, 승인 경계, 보안 운영, 유효 결과 비용과 중단 조건까지 검증해",
+      "paths": [
+        "docs/architecture/automation.md"
+      ],
+      "reasons": [
+        "workflow_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "automation-operating-model-review",
+      "required_candidates": [
+        "automation-operating-model-review"
+      ]
+    },
+    {
+      "id": "automation-investment-only-boundary",
+      "task": "Automation ROI only: compare human touch time, wait cost, exception density, maintenance tax, break-even, and NPV before deciding whether to build",
+      "paths": [
+        "docs/decisions/automation-roi.md"
+      ],
+      "reasons": [
+        "product_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "automation-investment-case-review",
+      "required_candidates": [
+        "automation-investment-case-review"
+      ],
+      "forbidden_candidates": [
+        "automation-operating-model-review"
+      ]
+    },
+    {
+      "id": "queue-settlement-only-boundary",
+      "task": "Queue settlement only: fix consumer ack, visibility timeout, redelivery, poison message, and DLQ replay behavior",
+      "paths": [
+        "src/workers/email-consumer.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "queue-processing-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "automation-operating-model-review"
+      ]
+    },
+    {
+      "id": "managed-service-economics-korean",
+      "task": "같은 기능의 관리형 서비스를 비교해서 성공 작업 1건당 총비용, 정상 성장 장애월 비용 곡선, p95 p99 포화점, 약정 손익분기, 지원 품질과 탈출세까지 보고 하나를 골라",
+      "paths": [
+        "docs/decisions/service-provider.md"
+      ],
+      "reasons": [
+        "product_change",
+        "performance_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "technology-stack-selection",
+      "required_candidates": [
+        "technology-stack-selection"
+      ],
+      "forbidden_candidates": [
+        "pricing-model-integrity-review"
+      ]
+    },
+    {
+      "id": "cloud-scenario-bill-guardrails-korean",
+      "task": "Cloud cost guardrails only: 가상 청구서로 정상월 성장월 장애월 비용 폭증과 무료 티어 절벽을 계산하고 바닥 사용량 약정 손익분기, 예산 상한과 자동 중단을 검토해",
+      "paths": [
+        "infra/cost-policy.json"
+      ],
+      "reasons": [
+        "behavior_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "cloud-cost-guardrail-review"
+      ],
+      "forbidden_candidates": [
+        "technology-stack-selection",
+        "pricing-model-integrity-review"
+      ]
+    },
+    {
+      "id": "customer-pricing-model-boundary",
+      "task": "Customer pricing only: compare free trial, subscription, usage pricing, annual prepay, discounts, renewal consent, and retained contribution",
+      "paths": [
+        "docs/product/customer-pricing.md"
+      ],
+      "reasons": [
+        "product_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "pricing-model-integrity-review",
+      "required_candidates": [
+        "pricing-model-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "technology-stack-selection",
+        "cloud-cost-guardrail-review"
+      ]
+    },
+    {
       "id": "security-redos-codeql-korean",
       "task": "CodeQL 비효율적 정규식 경고의 구분자 중첩 백트래킹을 고치고 긴 악성 non-match 회귀 테스트로 ReDoS를 막아",
       "paths": [

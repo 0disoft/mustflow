@@ -121,6 +121,22 @@ first_seen_at = "2026-06-25T10:09:09.839Z"
 last_touched_at = "2026-07-28T09:28:38.707Z"
 
 [[documents]]
+path = ".mustflow/skills/automation-investment-case-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:45.872Z"
+last_touched_at = "2026-08-01T04:01:21.633Z"
+
+[[documents]]
+path = ".mustflow/skills/automation-operating-model-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:45.893Z"
+last_touched_at = "2026-08-01T04:01:21.664Z"
+
+[[documents]]
 path = ".mustflow/skills/axum-code-change/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -230,7 +246,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-02T10:48:21.286Z"
-last_touched_at = "2026-07-02T10:48:21.286Z"
+last_touched_at = "2026-08-01T04:01:21.686Z"
 
 [[documents]]
 path = ".mustflow/skills/completion-evidence-gate/SKILL.md"
@@ -369,6 +385,14 @@ first_seen_at = "2026-06-29T03:47:19.128Z"
 last_touched_at = "2026-06-29T05:43:28.607Z"
 
 [[documents]]
+path = ".mustflow/skills/evidence-backed-actionable-feedback/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:45.925Z"
+last_touched_at = "2026-08-01T04:01:21.702Z"
+
+[[documents]]
 path = ".mustflow/skills/failure-integrity-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -494,7 +518,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "Updated UI quality gate route to include visual geometry and task-flow recovery triggers."
 first_seen_at = "2026-06-04T05:51:15.159Z"
-last_touched_at = "2026-07-30T05:39:34.361Z"
+last_touched_at = "2026-08-01T04:01:21.718Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
@@ -896,7 +920,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-05T05:30:56.696Z"
-last_touched_at = "2026-07-05T05:47:37.770Z"
+last_touched_at = "2026-08-01T04:01:21.736Z"
 
 [[documents]]
 path = ".mustflow/skills/test-design-guard/SKILL.md"
@@ -1683,6 +1707,22 @@ first_seen_at = "2026-06-25T10:09:09.931Z"
 last_touched_at = "2026-07-28T09:28:38.887Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/automation-investment-case-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:45.965Z"
+last_touched_at = "2026-08-01T04:01:21.751Z"
+
+[[documents]]
+path = "templates/default/locales/en/.mustflow/skills/automation-operating-model-review/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:45.977Z"
+last_touched_at = "2026-08-01T04:01:21.767Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/axum-code-change/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -1792,7 +1832,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-02T10:48:21.332Z"
-last_touched_at = "2026-07-02T10:48:21.332Z"
+last_touched_at = "2026-08-01T04:01:21.781Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
@@ -1931,6 +1971,14 @@ first_seen_at = "2026-06-29T03:47:19.184Z"
 last_touched_at = "2026-06-29T05:43:28.692Z"
 
 [[documents]]
+path = "templates/default/locales/en/.mustflow/skills/evidence-backed-actionable-feedback/SKILL.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-08-01T03:46:46.000Z"
+last_touched_at = "2026-08-01T04:01:21.793Z"
+
+[[documents]]
 path = "templates/default/locales/en/.mustflow/skills/failure-integrity-review/SKILL.md"
 status = "pending"
 origin = "llm_modified"
@@ -2056,7 +2104,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T15:26:40.505Z"
-last_touched_at = "2026-07-30T05:39:34.390Z"
+last_touched_at = "2026-08-01T04:01:21.809Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/information-visualization-integrity-review/SKILL.md"
@@ -2456,7 +2504,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-05T05:30:56.776Z"
-last_touched_at = "2026-07-05T05:47:37.862Z"
+last_touched_at = "2026-08-01T04:01:21.825Z"
 
 [[documents]]
 path = "templates/default/locales/en/.mustflow/skills/test-design-guard/SKILL.md"

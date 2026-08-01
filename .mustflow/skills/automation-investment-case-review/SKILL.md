@@ -2,11 +2,11 @@
 mustflow_doc: skill.automation-investment-case-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: automation-investment-case-review
-description: Apply this skill when deciding whether an AI agent, workflow automation, internal tool, or operational integration is economically worth building, expanding, replacing, or retiring by comparing expected cost per accepted outcome, human alternatives, supervision, failure recovery, maintenance, break-even volume, throughput value, effective lifetime, NPV, and independent safety gates.
+description: Apply this skill when deciding whether an AI agent, workflow automation, internal tool, or operational integration is economically worth building, expanding, replacing, or retiring by comparing human touch and wait time, exception density, stable machine-readable boundaries, expected cost per accepted outcome, human alternatives, supervision, failure recovery, maintenance, break-even volume, throughput value, effective lifetime, NPV, and independent safety gates.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -40,6 +40,8 @@ cheap model call or impressive throughput demo from being mistaken for a viable 
   maintenance cost, effective lifetime, scenario analysis, discounting, or NPV.
 - A claimed saving excludes supervision, retries, manual review, incident response, rejected output,
   redesign, vendor changes, security, compliance, or rollback cost.
+- A team needs to rank repetitive work by human touches, handoffs, queue delay, error exposure,
+  exception rate, stable data access, or maintenance burden before choosing an automation candidate.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -62,6 +64,11 @@ cheap model call or impressive throughput demo from being mistaken for a viable 
   review, failure recovery, incident response, support, maintenance, retraining, migration, and exit.
 - Human comparator: labor time and loaded cost, tooling, management, training, queue delay, error and
   rework rates, review, escalation, coverage, turnover, and capacity constraints.
+- Workflow-friction ledger: human touches, clicks, copies, downloads, renames, reauthentication,
+  handoffs, approvals, waiting states, interruption cost, backlog age, and customer or revenue delay.
+- Automability ledger: machine-verifiable start and completion conditions, normal-path share,
+  exception families, irreversible effects, stable API, event, database, queue, file, or schema
+  boundary, UI-automation fallback, upstream change rate, and expected maintenance owner.
 - Reliability ledger: success, accepted without correction, accepted after correction, rejected,
   silent failure, duplicate or harmful effect, rollback or compensation, incident probability, and
   cost distribution.
@@ -96,46 +103,61 @@ cheap model call or impressive throughput demo from being mistaken for a viable 
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Define one accepted outcome. Count the business result that passes the quality and safety bar,
+1. Map human contact and waiting before pricing the automation. Count every copy, click, file move,
+   system hop, reauthentication, handoff, approval, follow-up, and manual verification. Separate
+   active labor from elapsed queue delay and interruption cost; a short decision surrounded by
+   repeated system handling may be a stronger candidate than a longer uninterrupted task.
+2. Classify the decision surface. Measure the normal-path share and enumerate exception families.
+   Prefer automating a stable normal lane and routing bounded exceptions to a person over pretending
+   that every case follows one rule. If each case requires materially different judgment, price the
+   work as a new decision system rather than a small automation.
+3. Require observable boundaries. Name machine-verifiable start and completion evidence and the
+   stable data path that carries the work. Treat browser clicking, screen scraping, manual exports,
+   mutable page text, and shared login state as maintenance debt unless no durable API, event,
+   database, queue, file, or schema boundary is available.
+4. Define one accepted outcome. Count the business result that passes the quality and safety bar,
    not a model response, tool call, attempted task, or superficially completed workflow.
-2. Model automation expected variable cost per accepted outcome. Include ordinary execution,
+5. Model automation expected variable cost per accepted outcome. Include ordinary execution,
    supervision, review, retries, rejected work, failure recovery, rollback or compensation, and the
    probability-weighted tail of incidents. Preserve distributions where rare failures dominate.
-3. Add fixed and step-fixed costs. Include design, implementation, integration, data work, evals,
+6. Add fixed and step-fixed costs. Include design, implementation, integration, data work, evals,
    security, compliance, rollout, training, change management, monitoring, maintenance, vendor and
    model migrations, and decommissioning.
-4. Build the human or current-system comparator on the same outcome contract. Include loaded labor,
+7. Build the human or current-system comparator on the same outcome contract. Include loaded labor,
    tools, review, rework, delay, error cost, escalation, management, training, and capacity limits.
    Do not compare automation's perfect-path variable cost with a human's fully loaded cost.
-5. Separate substitution, assistance, and new capability. An assistant may save minutes without
+8. Separate substitution, assistance, and new capability. An assistant may save minutes without
    removing a role; a new service may create demand rather than replace cost; a constrained queue may
    make throughput valuable even when unit cost is higher.
-6. Value throughput only when a binding constraint exists. Tie added capacity to observed backlog,
+9. Value throughput only when a binding constraint exists. Tie added capacity to observed backlog,
    avoided SLA penalties, faster cash collection, additional conversion or revenue, reduced risk,
    or another evidence-backed outcome. Otherwise report it as unused headroom.
-7. Calculate break-even with ranges. Compare fixed investment with the expected per-accepted-outcome
+10. Calculate break-even with ranges. Compare fixed investment with the expected per-accepted-outcome
    advantage across conservative, base, and optimistic volume, quality, supervision, and failure
    scenarios. Report when the denominator is zero, negative, or too uncertain for a meaningful
    break-even point.
-8. Use effective lifetime, not accounting optimism. Estimate how long the automation remains useful
+11. Use effective lifetime, not accounting optimism. Estimate how long the automation remains useful
    before a product redesign, policy change, provider change, data drift, integration replacement,
    or maintenance burden requires material reinvestment.
-9. Discount scenario cash flows when timing matters. Show NPV and payback under explicit assumptions,
+12. Discount scenario cash flows when timing matters. Show NPV and payback under explicit assumptions,
    including ramp-up, delayed benefits, recurring maintenance, redesign, migration, and exit cost.
-10. Run sensitivity and threshold analysis. Identify which assumptions can reverse the decision:
+13. Run sensitivity and threshold analysis. Identify which assumptions can reverse the decision:
     accepted-outcome rate, review time, incident cost, volume, demand value, maintenance burden,
     vendor pricing, lifetime, or discount rate. Ask for evidence on those first.
-11. Keep safety as a hard independent gate. Reject, narrow, or keep human execution when the design
+14. Keep safety as a hard independent gate. Reject, narrow, or keep human execution when the design
     cannot meet authorization, privacy, legal, irreversible-effect, audit, reconciliation, or
     rollback requirements, even if the expected financial return is positive.
-12. Choose a reversible next step. Prefer a bounded pilot or shadow measurement that resolves the
-    largest decision uncertainty without creating an irreversible operational dependency. Define
-    the evidence required to expand, redesign, pause, or stop.
+15. Choose a reversible next step. Prefer a bounded shadow comparison that records the human result,
+    automation result, exception class, correction effort, and accepted outcome without committing
+    external effects. Define the evidence required to move from shadow to recommendation, approval,
+    bounded automatic execution, expansion, redesign, pause, or retirement.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Automation and the current alternative use the same accepted-outcome definition.
+- Human touches, wait cost, exception density, machine-verifiable boundaries, and maintenance owner
+  are visible before the investment decision.
 - Variable, fixed, supervision, failure, maintenance, redesign, and exit costs are visible.
 - Break-even, throughput value, effective lifetime, and NPV use explicit ranges and evidence levels.
 - Safety and legal feasibility remain hard gates independent of financial return.
@@ -157,6 +179,9 @@ production, deployment, or vendor commands.
   changes and propose the smallest measurement that can resolve it.
 - If benefits depend on unproven demand or queue value, separate operational capacity from financial
   benefit.
+- If start or completion remains a human impression, or the only input path is unstable UI
+  automation, classify the proposal as rule-definition or integration work and price that missing
+  boundary explicitly.
 - If a positive case requires ignoring rare catastrophic loss, keep the tail risk explicit and hand
   the safety decision to the named authority.
 

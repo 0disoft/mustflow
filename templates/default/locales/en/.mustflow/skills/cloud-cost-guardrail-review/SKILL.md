@@ -2,11 +2,11 @@
 mustflow_doc: skill.cloud-cost-guardrail-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: cloud-cost-guardrail-review
-description: Apply this skill when cloud, infrastructure, Kubernetes, serverless, database, storage, logging, telemetry, CDN, NAT, egress, autoscaling, quota, budget, tagging, snapshot, container registry, Marketplace, LLM API, or third-party SaaS usage is created, changed, reviewed, or reported and the risk is whether spend can silently explode without account, project, quota, tag, lifecycle, retention, cap, or automated shutoff guardrails.
+description: Apply this skill when cloud, infrastructure, Kubernetes, serverless, database, storage, logging, telemetry, CDN, NAT, egress, autoscaling, quota, budget, tagging, snapshot, container registry, Marketplace, LLM API, or third-party SaaS usage is created, changed, reviewed, or reported and the risk is whether normal, growth, or incident usage can silently explode spend without scenario bills, account or project isolation, quotas, tags, lifecycle, retention, caps, commitment discipline, or automated shutoff guardrails.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -92,7 +92,12 @@ lifecycle cleanup, and service-specific caps before the bill becomes the first a
   block volume type, snapshot retention, archive policy, database storage autoscaling behavior,
   container registry cleanup, and backup ownership.
 - Commitment model: Savings Plans, Reserved Instances, committed use discounts, spot or
-  preemptible workloads, and which stable baseline spend remains after cleanup and rightsizing.
+  preemptible workloads, hourly or finer usage distribution, non-disappearing floor load, billing
+  granularity and efficiency, break-even utilization, stranded-capacity and cash-lock risk,
+  portability limits, and which stable baseline spend remains after cleanup and rightsizing.
+- Scenario-bill model: accepted user outcome, billable fan-out, retry and replication multipliers,
+  top-user tail, free-tier removal, plan steps, mandatory security or support tiers, normal, growth,
+  incident, and decline months, plus the safe action before each declared budget boundary.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -132,119 +137,129 @@ lifecycle cleanup, and service-specific caps before the bill becomes the first a
    registries, NAT, egress, load balancers, public IPs, CDN, logs, metrics, traces, Marketplace,
    AI/LLM APIs, and third-party SaaS calls. Mark unknown surfaces as missing evidence.
 
-2. Separate alerts from stops.
+2. Build scenario bills before optimizing line items.
+   Translate representative user outcomes into every billable request, byte, copy, log, retry,
+   replica, seat, and minimum charge. Run at least normal, growth, incident, and decline scenarios;
+   remove free-tier credits in a separate view and expose plan cliffs, mandatory enterprise features,
+   heavy-user tails, and costs that grow faster than useful outcomes.
+
+3. Separate alerts from stops.
    Budget alerts are signals, not circuit breakers. Check whether actual and forecast thresholds
    exist at multiple levels such as 25, 50, 75, 90, and 100 percent, and whether non-production
    environments have safe automated actions such as scale-to-zero, disable, pause, or owner paging.
    Report when production needs manual approval instead of automatic destruction.
 
-3. Reject imaginary provider spending limits.
+4. Reject imaginary provider spending limits.
    Do not assume a general cloud account stops charging at the budget. Verify whether the platform
    has a real hard spending limit for the exact subscription or account type. If it does not, require
    quotas, caps, alerts, and safe automation instead of treating budgets as a hard stop.
 
-4. Split billing blast radius.
+5. Split billing blast radius.
    Keep development, staging, production, experiments, customer-specific environments, and review
    apps in separate accounts, projects, subscriptions, namespaces, or quota domains where possible.
    A cost incident is worse when nobody can attribute or stop the offending slice.
 
-5. Treat quotas as card limits.
+6. Treat quotas as card limits.
    Review service quotas for GPU, high-cost VMs, NAT, public IPs, load balancers, serverless
    concurrency, container nodes, database storage, and expensive managed services. Prefer low
    defaults and explicit increases over wide-open quotas that turn a bug into a bill.
 
-6. Enforce required tags before creation.
+7. Enforce required tags before creation.
    Require a small controlled taxonomy such as `owner`, `env`, `service`, `cost_center`,
    `expires_at`, and `data_class` when those concepts exist locally. Check case sensitivity and
    allowed values. Report if cost allocation tags or labels must be activated before they are useful
    in billing reports.
 
-7. Give temporary resources an expiration.
+8. Give temporary resources an expiration.
    Review review apps, test databases, temporary buckets, experimental GPUs, batch clusters, and
    one-off environments for `expires_at`, owner, cleanup scope, and daily cleanup evidence. A manual
    "remember to delete" note is not a guardrail.
 
-8. Shut down the whole non-production stack.
+9. Shut down the whole non-production stack.
    Night and weekend scheduling should cover databases, NAT, load balancers, search clusters, Redis,
    logging pipelines, dev Kubernetes node groups, disks, and public IPs, not only VMs. Report hidden
    always-on services that keep charging after compute is stopped.
 
-9. Cap autoscaling and concurrency.
+10. Cap autoscaling and concurrency.
    Autoscaling is a spend multiplier. Check maximum instance counts, serverless concurrency,
    queue-worker limits, batch parallelism, retry concurrency, and deployment surge settings. Missing
    maximums are cost-risk findings even when autoscaling is useful.
 
-10. Bound Kubernetes namespaces.
+11. Bound Kubernetes namespaces.
     Require `ResourceQuota` and `LimitRange` or an equivalent policy when Kubernetes workloads can
     create pods, jobs, PVCs, or high resource requests. Review CPU and memory requests because
     inflated requests can trigger autoscaler node growth even when real usage is low.
 
-11. Remove avoidable NAT tolls.
+12. Remove avoidable NAT tolls.
     Check whether private workloads call cloud-native object storage, NoSQL, container registries,
     or provider APIs through NAT when a private endpoint, gateway endpoint, or private API access
     path exists. NAT hourly, processed-byte, and external IP charges should be explicit.
 
-12. Account for data transfer.
+13. Account for data transfer.
     Same-cloud traffic is not automatically free. Review internet egress, CDN origin traffic,
     cross-AZ traffic, cross-region traffic, database-to-app placement, cache placement, and large
     API responses. High-traffic services need deliberate AZ and cache decisions.
 
-13. Audit public IPv4 and idle addresses.
+14. Audit public IPv4 and idle addresses.
     Treat public IPv4 addresses, Elastic IPs, static external IPs, and load-balancer addresses as
     billable inventory. Require an owner, purpose, and cleanup path for idle or detached addresses.
 
-14. Use CDN and caches as cost controls.
+15. Use CDN and caches as cost controls.
     Review cacheable assets, downloads, public API responses, image transforms, and CDN keys.
     Cache hit rate, origin egress, purge behavior, and personalized-response safety should be known
     before claiming CDN savings.
 
-15. Control log ingest before retention.
+16. Control log ingest before retention.
     Log volume can charge before storage retention matters. Split hot operational logs from audit or
     forensic logs where the provider supports classes or buckets. Review log level, duplicate stack
     traces, flow logs, NAT logs, load-balancer logs, Kubernetes audit logs, sampling, and retention.
 
-16. Protect metric cardinality.
+17. Protect metric cardinality.
     Reject unbounded labels such as raw user id, request id, email, raw URL path, tenant id without
     budgeted bounds, SQL text, or arbitrary error messages. Metrics are for grouping; logs are for
     lookup. Track billable metric growth where the telemetry backend exposes it.
 
-17. Lifecycle object storage deliberately.
+18. Lifecycle object storage deliberately.
     Add lifecycle rules for TTL, old versions, multipart uploads, storage class transitions, and
     delete markers. Check minimum storage duration and small-object minimum billable size before
     moving tiny or short-lived objects to colder classes.
 
-18. Review block storage and snapshots.
+19. Review block storage and snapshots.
     Check volume type, provisioned IOPS, provisioned throughput, unattached disks, snapshot
     retention, archive policy, and snapshot reference behavior. Snapshots are backup evidence and a
     cost landfill unless retention and restore ownership are explicit.
 
-19. Treat database storage growth as sticky.
+20. Treat database storage growth as sticky.
     Database autoscaling, logs, imports, temp tables, indexes, and replicas can grow storage that is
     expensive or impossible to shrink in place. Require growth alarms, import runbooks, cleanup
     paths, and restore or rebuild notes for large storage spikes.
 
-20. Clean container registries.
+21. Clean container registries.
     CI can push images on every commit. Require lifecycle policies for untagged images, old tags,
     branch preview images, cache layers, SBOMs, and build artifacts. Keep rollback images intentionally
     retained and garbage-collect the rest.
 
-21. Buy commitments last.
+22. Buy commitments last and only against the floor.
     Savings Plans, Reserved Instances, committed use discounts, and long-term reservations should
     follow idle cleanup, scheduling, rightsizing, storage cleanup, NAT reduction, and log reduction.
-    Report commitment risk when the workload baseline is not proven stable.
+    Sort time-bucketed usage and reserve only the conservative load that survives low-demand periods.
+    Calculate `billing_efficiency = useful_work_time / billed_time` and break-even utilization before
+    applying the advertised discount. Keep burst and uncertain demand variable, and price unused
+    commitment, cash lock-up, region or resource-shape restrictions, transferability, cancellation,
+    and demand decline. Report commitment risk when the floor is not proven stable.
 
-22. Use spot or preemptible only for retryable work.
+23. Use spot or preemptible only for retryable work.
     Cheap interruptible capacity fits queues, batch, CI, image processing, and analytics that can
     retry safely. Do not treat it as safe for single databases, single Redis instances, singleton
     search nodes, or stateful components without replication and recovery.
 
-23. Monitor Marketplace, LLM, and SaaS costs separately.
+24. Monitor Marketplace, LLM, and SaaS costs separately.
     Provider anomaly tools may not cover every third-party charge. AI models, vector search,
     external APIs, observability vendors, security scanners, and Marketplace products need product
     limits, usage attribution, owner alerts, and kill switches when they can spend independently of
     compute.
 
-24. Build a cost stop runbook.
+25. Build a cost stop runbook.
     Name the cheapest safe stop for each environment: scale service to zero, pause workers, disable
     feature flag, lower concurrency, block provider calls, close public ingress, stop batch schedule,
     delete temporary resources, or page an owner. Separate non-production automation from production
@@ -280,6 +295,8 @@ lifecycle cleanup, and service-specific caps before the bill becomes the first a
   and container registry cleanup have owners and retention rules.
 - Commitments are based on cleaned-up stable baseline spend, and spot or preemptible usage is
   restricted to retryable workloads.
+- Scenario bills expose normal, growth, incident, and decline behavior, free-tier and plan cliffs,
+  billable fan-out, heavy-user tails, and an action before each budget boundary.
 - Marketplace, LLM, and SaaS spend has attribution, caps, owner alerts, and kill switches.
 
 <!-- mustflow-section: verification -->
@@ -317,6 +334,8 @@ When reporting a review or change, include:
 
 - Skills used.
 - Cost surfaces and billing boundaries reviewed.
+- Accepted outcome, billable fan-out, normal/growth/incident/decline scenario bills, free-tier and
+  plan cliffs, billing efficiency, stable floor load, and commitment break-even reviewed.
 - Budget, quota, tag, lifecycle, retention, autoscale, Kubernetes, network, telemetry, storage,
   registry, commitment, spot, Marketplace, LLM, and SaaS guardrails found or added.
 - Manual-only provider billing checks or destructive stop actions.

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:09cc4b0593b6083f05ebfe5b17be41fa844390257792e66cca897f17d55d8f62",
+  "source_fingerprint": "sha256:295a4e56e57bad7f362b49f48b83b0f89c68bc794c385ac4267a651c7172242c",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1239,12 +1239,16 @@
         "automation roi",
         "break even",
         "effective lifetime",
+        "exception density",
         "human comparator",
+        "human touch time",
+        "machine verifiable boundary",
         "maintenance cost",
         "npv",
         "payback",
         "supervision cost",
-        "throughput value"
+        "throughput value",
+        "wait cost"
       ],
       "negative_signals": [
         "cloud cost only",
@@ -1259,10 +1263,69 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when deciding whether an AI agent, workflow automation, internal tool, or operational integration is economically worth building, expanding, replacing, or retiring by comparing expected cost per accepted outcome, human alternatives, supervision, failure recovery, maintenance, break-even volume, throughput value, effective lifetime, NPV, and independent safety gates.",
+      "trigger": "Apply this skill when deciding whether an AI agent, workflow automation, internal tool, or operational integration is economically worth building, expanding, replacing, or retiring by comparing human touch and wait time, exception density, stable machine-readable boundaries, expected cost per accepted outcome, human alternatives, supervision, failure recovery, maintenance, break-even volume, throughput value, effective lifetime, NPV, and independent safety gates.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "automation-operating-model-review",
+      "skill_path": ".mustflow/skills/automation-operating-model-review/SKILL.md",
+      "category": "workflow_contracts",
+      "route_type": "primary",
+      "selection_axis": "workflow",
+      "priority": 68,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "docs_change",
+        "workflow_change",
+        "security_change",
+        "privacy_change",
+        "performance_change",
+        "product_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "automation operating model",
+        "automation registry",
+        "cron webhook queue",
+        "human approval boundary",
+        "silent automation failure",
+        "useful effect cost",
+        "예약 실행 이벤트 큐",
+        "유효 결과 비용",
+        "자동화 보안 운영",
+        "자동화 승인 경계",
+        "자동화 운영 모델",
+        "자동화 조용한 실패"
+      ],
+      "negative_signals": [
+        "automation roi only",
+        "browser automation only",
+        "cloud cost only",
+        "durable resume only",
+        "queue settlement only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when production automation, scheduled jobs, cron, polling, webhooks, events, queues, workers, durable workflows, approval steps, connectors, or operational pipelines are designed, changed, reviewed, or reported and the task must choose trigger responsibilities, prevent missed or duplicate work, detect silent wrong results, place human approval at the irreversible boundary, minimize credentials and personal data, control useful-effect cost, and keep an owned versioned automation registry.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -2082,15 +2145,40 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "billing efficiency",
+        "budget boundary",
+        "cloud cost",
+        "commitment break even",
+        "cost cliff",
+        "cost guardrail",
+        "free tier cliff",
+        "growth month",
+        "incident month",
+        "normal month",
+        "scenario bill",
+        "spend cap",
+        "stable floor load",
+        "virtual bill",
+        "가상 청구서",
+        "무료 티어 절벽",
+        "바닥 사용량",
+        "비용 가드레일",
+        "비용 폭증",
+        "약정 손익분기"
+      ],
+      "negative_signals": [
+        "customer pricing only",
+        "pricing model only",
+        "vendor selection only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when cloud, infrastructure, Kubernetes, serverless, database, storage, logging, telemetry, CDN, NAT, egress, autoscaling, quota, budget, tagging, snapshot, container registry, Marketplace, LLM API, or third-party SaaS usage is created, changed, reviewed, or reported and the risk is whether spend can silently explode without account, project, quota, tag, lifecycle, retention, cap, or automated shutoff guardrails.",
+      "trigger": "Apply this skill when cloud, infrastructure, Kubernetes, serverless, database, storage, logging, telemetry, CDN, NAT, egress, autoscaling, quota, budget, tagging, snapshot, container registry, Marketplace, LLM API, or third-party SaaS usage is created, changed, reviewed, or reported and the risk is whether normal, growth, or incident usage can silently explode spend without scenario bills, account or project isolation, quotas, tags, lifecycle, retention, caps, commitment discipline, or automated shutoff guardrails.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -4259,6 +4347,64 @@
         "test_related",
         "test",
         "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "evidence-backed-actionable-feedback",
+      "skill_path": ".mustflow/skills/evidence-backed-actionable-feedback/SKILL.md",
+      "category": "docs_release",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 72,
+      "applies_to_reasons": [
+        "docs_change",
+        "copy_change",
+        "workflow_change",
+        "unknown_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "actionable feedback",
+        "concrete critique",
+        "consequence driven review",
+        "contract ambiguity",
+        "decision ready review",
+        "divergent implementation",
+        "evidence backed feedback",
+        "first divergent decision",
+        "late discovery path",
+        "severity calibration",
+        "vague feedback",
+        "결과 중심 리뷰",
+        "구체적인 지적",
+        "기획서 냉정한 리뷰",
+        "문서 계약 문제",
+        "애매한 답변",
+        "의도와 실제 해석",
+        "칭찬과 양비론",
+        "판단 증거 오독 수정",
+        "행동 가능한 피드백"
+      ],
+      "negative_signals": [
+        "brainstorming only",
+        "code defect discovery only",
+        "grammar correction only",
+        "prose cleanup only",
+        "summary only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when a PRD, requirement, proposal, policy, operating procedure, game rule, system design, API contract, data model, code-change plan, review comment, decision memo, or agent answer needs consequence-driven critique that replaces vague praise, hedging, false balance, abstract adjectives, or unactionable criticism with an evidence-backed judgment, plausible competing readings, the first divergent decision, a concrete failure and late-discovery path, calibrated severity, a bounded correction, and an observable completion criterion.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -10541,15 +10687,38 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "accepted outcome cost",
+        "commitment pricing",
+        "cost performance lock in",
+        "exit tax",
+        "managed service",
+        "provider comparison",
+        "saturation curve",
+        "service comparison",
+        "tail performance",
+        "vendor comparison",
+        "관리형 서비스",
+        "비용 성능 락인",
+        "서비스 비교",
+        "예약 요금",
+        "종량제",
+        "직접 운영",
+        "탈출세"
+      ],
+      "negative_signals": [
+        "cloud cost guardrails only",
+        "customer monetization only",
+        "customer pricing only",
+        "pricing model only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when choosing, adding, replacing, upgrading, rejecting, or standardizing a technology stack, framework, runtime, database, cache, queue, auth provider, payment provider, AI provider, SDK, hosting platform, deployment tool, build tool, ORM, observability tool, or vendor integration, especially when the decision affects migration path, rollback path, ecosystem maturity, maintainer risk, debugging surface, lock-in, CI/CD cost, deployment cost, operating toil, or solo-maintainer survivability.",
+      "trigger": "Apply this skill when choosing, comparing, adding, replacing, upgrading, rejecting, or standardizing a technology stack, framework, runtime, database, cache, queue, auth provider, payment provider, AI provider, SDK, managed service, SaaS, hosting platform, deployment tool, build tool, ORM, observability tool, or vendor integration, especially when the decision depends on cost per accepted outcome, workload growth, saturation and tail performance, failure semantics, support and incident history, commitment pricing, migration and rollback, exit tax, lock-in, operating toil, or solo-maintainer survivability.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

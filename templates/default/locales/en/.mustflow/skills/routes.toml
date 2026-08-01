@@ -405,8 +405,20 @@ applies_to_reasons = ["product_change", "docs_change"]
 suggests_adjuncts = ["source-freshness-check"]
 
 [routes."automation-investment-case-review".contexts]
-positive_terms = ["accepted-outcome", "automation-roi", "break-even", "effective-lifetime", "human-comparator", "maintenance-cost", "npv", "payback", "supervision-cost", "throughput-value"]
+positive_terms = ["accepted-outcome", "automation-roi", "break-even", "effective-lifetime", "exception-density", "human-comparator", "human-touch-time", "machine-verifiable-boundary", "maintenance-cost", "npv", "payback", "supervision-cost", "throughput-value", "wait-cost"]
 negative_terms = ["cloud-cost-only", "model-token-cost-only", "vendor-selection-only"]
+
+[routes."automation-operating-model-review"]
+category = "workflow_contracts"
+route_type = "primary"
+priority = 68
+selection_axis = "workflow"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "workflow_change", "security_change", "privacy_change", "performance_change", "product_change"]
+
+[routes."automation-operating-model-review".contexts]
+positive_terms = ["automation-operating-model", "automation-registry", "cron-webhook-queue", "human-approval-boundary", "silent-automation-failure", "useful-effect-cost"]
+concept_aliases = ["자동화 운영 모델", "예약 실행 이벤트 큐", "자동화 조용한 실패", "자동화 승인 경계", "자동화 보안 운영", "유효 결과 비용"]
+negative_terms = ["automation-roi-only", "browser-automation-only", "cloud-cost-only", "durable-resume-only", "queue-settlement-only"]
 
 [routes."product-onboarding-activation-review"]
 category = "workflow_contracts"
@@ -1082,6 +1094,10 @@ priority = 77
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."cloud-cost-guardrail-review".contexts]
+positive_terms = ["billing-efficiency", "budget-boundary", "cloud-cost", "commitment-break-even", "cost-cliff", "cost-guardrail", "free-tier-cliff", "growth-month", "incident-month", "normal-month", "scenario-bill", "spend-cap", "stable-floor-load", "virtual-bill", "가상-청구서", "바닥-사용량", "비용-폭증", "비용-가드레일", "무료-티어-절벽", "약정-손익분기"]
+negative_terms = ["customer-pricing-only", "pricing-model-only", "vendor-selection-only"]
+
 [routes."rate-limit-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -1162,6 +1178,10 @@ route_type = "primary"
 priority = 79
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "docs_change", "product_change", "cross_cutting_code_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."technology-stack-selection".contexts]
+positive_terms = ["accepted-outcome-cost", "commitment-pricing", "cost-performance-lock-in", "exit-tax", "managed-service", "provider-comparison", "saturation-curve", "service-comparison", "tail-performance", "vendor-comparison", "관리형-서비스", "비용-성능-락인", "서비스-비교", "예약-요금", "종량제", "직접-운영", "탈출세"]
+negative_terms = ["cloud-cost-guardrails-only", "customer-monetization-only", "customer-pricing-only", "pricing-model-only"]
 
 [routes."structure-first-engineering"]
 category = "general_code"
@@ -2392,6 +2412,18 @@ route_type = "adjunct"
 priority = 70
 selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change"]
+
+[routes."evidence-backed-actionable-feedback"]
+category = "docs_release"
+route_type = "primary"
+priority = 72
+selection_axis = "task"
+applies_to_reasons = ["docs_change", "copy_change", "workflow_change", "unknown_change"]
+
+[routes."evidence-backed-actionable-feedback".contexts]
+positive_terms = ["actionable-feedback", "consequence-driven-review", "contract-ambiguity", "concrete-critique", "decision-ready-review", "divergent-implementation", "evidence-backed-feedback", "first-divergent-decision", "late-discovery-path", "severity-calibration", "vague-feedback"]
+concept_aliases = ["결과 중심 리뷰", "구체적인 지적", "기획서 냉정한 리뷰", "문서 계약 문제", "애매한 답변", "의도와 실제 해석", "칭찬과 양비론", "판단 증거 오독 수정", "행동 가능한 피드백"]
+negative_terms = ["brainstorming-only", "code-defect-discovery-only", "grammar-correction-only", "prose-cleanup-only", "summary-only"]
 
 [routes."web-asset-optimization"]
 category = "ui_assets"

@@ -2,11 +2,11 @@
 mustflow_doc: skill.technology-stack-selection
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: technology-stack-selection
-description: Apply this skill when choosing, adding, replacing, upgrading, rejecting, or standardizing a technology stack, framework, runtime, database, cache, queue, auth provider, payment provider, AI provider, SDK, hosting platform, deployment tool, build tool, ORM, observability tool, or vendor integration, especially when the decision affects migration path, rollback path, ecosystem maturity, maintainer risk, debugging surface, lock-in, CI/CD cost, deployment cost, operating toil, or solo-maintainer survivability.
+description: Apply this skill when choosing, comparing, adding, replacing, upgrading, rejecting, or standardizing a technology stack, framework, runtime, database, cache, queue, auth provider, payment provider, AI provider, SDK, managed service, SaaS, hosting platform, deployment tool, build tool, ORM, observability tool, or vendor integration, especially when the decision depends on cost per accepted outcome, workload growth, saturation and tail performance, failure semantics, support and incident history, commitment pricing, migration and rollback, exit tax, lock-in, operating toil, or solo-maintainer survivability.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -92,6 +92,17 @@ decisions.
 - Evidence: repository patterns, official docs, changelogs, migration guides, security advisories,
   issue trackers, production incidents, prototypes, CI results, command receipts, pricing pages, and
   support or SLA evidence when available.
+- Accepted-outcome and workload ledger: the user-visible completion condition, quality threshold,
+  failed-work treatment, hourly demand shape, concurrency, data size, read/write mix, cache state,
+  region, top-user tail, retry and replication multipliers, and normal, growth, incident, and decline
+  scenarios.
+- Service-economics ledger: full cost per accepted outcome, minimum and tier charges, seats, support,
+  compute, requests, storage copies, telemetry, egress, idle capacity, billing granularity, human
+  operations, missing-feature glue, outage loss, commitment waste, migration, dual-run, and exit cost.
+- Service-behavior and exit ledger: durability point, ordering, consistency, duplicate behavior,
+  recovery objective, saturation curve, p95 and p99 latency, support escalation, incident history,
+  export completeness and sustained speed, deletion evidence, compatibility contract tests, and the
+  code, data, permissions, operations, and automation coupled to provider-specific behavior.
 - Success and failure criteria: what must improve, what must not regress, what would stop the
   adoption, and what evidence would reverse the recommendation.
 
@@ -167,10 +178,34 @@ Reject a candidate for `production_core` or `irreversible_core` when any conditi
   searchable operational failure knowledge for the intended use.
 - Debugging crosses opaque generated code, hidden runtime state, async infrastructure, or remote
   vendor behavior without local reproduction, logs, traces, metrics, request IDs, and an error
-  taxonomy.
+taxonomy.
+
+`accepted_outcome` means the same useful, quality-qualified, durable result across every candidate.
+Queue admission, an HTTP 200, a model response, or a write acknowledged before required durability
+does not count when the product contract requires later work or stronger persistence.
+
+`full_cost_per_accepted_outcome` means every billable and human cost caused by an attempted outcome,
+including retries, replicas, storage copies, telemetry, egress, idle and minimum billing, support,
+operations, missing-feature glue, failure loss, and rejected or failed work, divided by accepted
+outcomes. Provider price-sheet units are inputs, not the comparison unit.
+
+`performance_envelope` means the latency, throughput, error, queue, and resource curve across cold
+and warm state, realistic data, sustained load, burst, failure, backup, failover, and saturation. A
+single average or peak throughput number is not an operating envelope.
+
+`exit_tax` means migration development, data export and transfer, conversion, verification, dual
+operation, downtime or lost work, retraining, contract penalties, abandoned provider-specific value,
+and time pressure. API syntax compatibility alone does not bound this tax.
 - The team cannot operate the technology and has no owner, training plan, runbook, or support plan.
 - License, pricing, data retention, region, privacy, compliance, or security constraints conflict
   with the project.
+- The candidate's advertised completion condition is weaker than the product's accepted outcome, or
+  its required workload reaches an unbounded latency, error, queue, or cost cliff before the planned
+  operating margin.
+- Required data, metadata, permissions, history, or operational state cannot be exported and
+  restored into a credible alternative within the declared recovery and contract-exit window.
+- Normal, growth, incident, and decline scenarios expose an unaffordable plan step, minimum spend,
+  mandatory enterprise feature, commitment waste, or exit tax that the owner cannot bound.
 - The candidate solves taste, novelty, resume value, or aesthetic discomfort rather than a real
   product, operational, security, performance, or maintenance bottleneck.
 - A local reversible problem would become a global architecture commitment.
@@ -225,38 +260,66 @@ and a rehearsed recovery path.
    additional candidates unless the user asks for a broader survey.
 4. Build the evidence ledger. Separate facts, inferences, assumptions, and unknowns. Prefer current
    primary evidence over social proof, benchmark marketing, generated advice, or repeated citations.
-5. Evaluate maintainer life. For solo or indie work, prefer the smallest operating surface: one
+5. Normalize every candidate to the same accepted outcome. State what completion, quality,
+   durability, recovery, and failed-work treatment mean before comparing feature names, price-sheet
+   units, or benchmark throughput.
+6. Model the workload envelope from time-bucketed demand rather than a monthly average. Include
+   realistic data size and mix, cold and warm state, concurrency, bursts, top-user tails, retries,
+   replication, backup, telemetry, and normal, growth, incident, and decline scenarios.
+7. Build virtual bills for each scenario and time horizon. Calculate full cost per accepted outcome
+   and 12- and 36-month total cost, including people, missing-feature glue, failure loss, migration,
+   dual-run, termination, minimums, plan steps, support, and data movement. Mark current provider
+   prices as time-sensitive evidence.
+8. Measure the performance envelope, not a vendor headline. Compare p50, p95, p99, error rate,
+   queue depth, sustained throughput, saturation and collapse points, cold starts, backup and
+   failover degradation, and user-perceived end-to-end completion. Use synthetic benchmarks to
+   narrow candidates and bounded read-only shadow traffic only when authorized to validate finalists.
+9. Compare feature semantics under failure. Translate labels such as backup, high availability,
+   ordering, retention, compatibility, and autoscaling into recovery time, data-loss bound,
+   duplicate behavior, consistency, limits, and operator action. A shared checkbox is not proof of
+   equivalent behavior.
+10. Price commitment options from the stable floor, not the average. Calculate billing efficiency
+    and break-even utilization; commit only the conservative non-disappearing baseline, leave burst
+    demand variable, and price lost flexibility, stranded capacity, cash lock-up, region or shape
+    restrictions, and cancellation terms.
+11. Decompose lock-in across data and metadata, API behavior, permissions and identity, operating
+    procedures, and surrounding automation. Calculate exit tax and run a bounded export, restore,
+    compatibility, cutover, and deletion-evidence rehearsal before treating escape as credible.
+12. Evaluate maintainer life. For solo or indie work, prefer the smallest operating surface: one
    understandable app path, managed boring infrastructure, simple CI/CD, automatic backups,
    observable failures, and cheap rollback. Treat maintainer time as a real cost.
-6. Place experimentation at the edge. New or experimental technology belongs in replaceable parts,
+13. Place experimentation at the edge. New or experimental technology belongs in replaceable parts,
    read-only paths, derived-data paths, internal tools, feature-flagged features, analytics, search,
    recommendation, or AI differentiators that can fail without corrupting the source of truth.
-7. Assess migration path for each candidate: source, target, compatibility layer, data conversion,
+14. Assess migration path for each candidate: source, target, compatibility layer, data conversion,
    dual-run or shadow mode, cutover, validation, owner, blast radius, and stop condition.
-8. Assess rollback path for each candidate: trigger, steps, data preservation, schema compatibility,
+15. Assess rollback path for each candidate: trigger, steps, data preservation, schema compatibility,
    feature flag or routing control, backup and restore limits, customer impact, irreversible cutoff,
    and rehearsal requirement.
-9. Assess ecosystem maturity and maintainer risk: docs, changelog, release cadence, security
+16. Assess ecosystem maturity and maintainer risk: docs, changelog, release cadence, security
    response, issue and PR handling, governance, funding, license stability, support, and exit path.
-10. Assess debugging surface: local reproduction, logs, traces, metrics, request IDs, error codes,
+17. Assess debugging surface: local reproduction, logs, traces, metrics, request IDs, error codes,
     generated code, runtime magic, caches, queues, network boundaries, vendor dashboards, and blind
     spots.
-11. Assess cost and operating surface: fixed cost, variable cost, CI/CD cost, observability cost,
+18. Reconcile the service-economics model with operational cost guardrails. Route budget alerts,
+    quotas, lifecycle, spend attribution, caps, and safe stops through
+    `cloud-cost-guardrail-review`; do not confuse a cheaper selected service with bounded spend.
+19. Assess cost and operating surface: fixed cost, variable cost, CI/CD cost, observability cost,
     backup and restore cost, failure-spike cost, egress, retry storms, log volume, billing meters,
     and monthly maintainer labor.
-12. Apply hard rejection criteria before scoring. Do not rescue a hard-failed candidate with
+20. Apply hard rejection criteria before scoring. Do not rescue a hard-failed candidate with
     popularity, performance, developer experience, or future promises.
-13. Score remaining candidates with one sentence of evidence for each dimension. Avoid invented
+21. Score remaining candidates with one sentence of evidence for each dimension. Avoid invented
     weights unless the user provided a decision model.
-14. Attack the leading candidate. State the strongest reason not to choose it and the smallest
+22. Attack the leading candidate. State the strongest reason not to choose it and the smallest
     evidence that would reverse the recommendation.
-15. Choose exactly one decision state: `adopt`, `adopt_with_constraints`, `experiment_first`,
+23. Choose exactly one decision state: `adopt`, `adopt_with_constraints`, `experiment_first`,
     `defer`, `reject`, or `reject_until_evidence_exists`.
-16. Define the next action. For adoption, specify the smallest safe rollout, guardrails, migration,
+24. Define the next action. For adoption, specify the smallest safe rollout, guardrails, migration,
     rollback, observability, owner, verification, and stop condition. For experiment, specify the
     question, timebox, success criteria, failure criteria, cleanup path, and decision-reversing
     evidence.
-17. Hand off to implementation only after selecting the narrower implementation skill and carrying
+25. Hand off to implementation only after selecting the narrower implementation skill and carrying
     forward accepted constraints, migration steps, rollback steps, observability, and verification.
 
 <!-- mustflow-section: postconditions -->
@@ -270,6 +333,8 @@ and a rehearsed recovery path.
   unless the project explicitly accepts the risk and can roll back.
 - Hard rejection criteria are applied before any score comparison.
 - Migration, rollback, observability, owner, and stop conditions are explicit.
+- Candidate economics use the same accepted outcome and expose workload, cost, saturation,
+  commitment, reliability, support, and exit assumptions across normal and adverse scenarios.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -298,6 +363,10 @@ verification instead of inventing raw commands.
   and a boring default.
 - If evidence is missing for a production-core decision, return `reject_until_evidence_exists` or
   `experiment_first`, not `adopt`.
+- If candidate-specific accepted-outcome cost, saturation and tail performance, failure semantics,
+  support or incident history, or export-and-restore evidence is missing, do not announce a
+  permanent winner. Preserve the status quo or choose only `experiment_first` or `defer`, label the
+  unproven cells, and name the bounded test that could change the decision.
 - If rollback is weak, constrain the candidate to experiment, edge usage, or non-core usage.
 - If a mature candidate creates a large debugging surface, require observability and local
   reproduction before adoption.
@@ -315,6 +384,8 @@ verification instead of inventing raw commands.
   `reject_until_evidence_exists`
 - Decision scope, baseline, boring default, criticality, reversibility class, owner, and time horizon
 - Candidate matrix with hard-gate result, scores, evidence, mitigations, and verdict
+- Accepted outcome, workload envelope, scenario bills, full cost per accepted outcome, saturation
+  and tail-performance evidence, commitment break-even, reliability and support evidence, and exit tax
 - Survival-path impact and experimental-edge placement
 - Migration path
 - Rollback path

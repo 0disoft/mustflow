@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 307
+revision = 311
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -578,7 +578,7 @@ translations = {}
 [documents."skill.cloud-cost-guardrail-review"]
 source = "locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.rate-limit-integrity-review"]
@@ -997,7 +997,7 @@ translations = {}
 [documents."skill.technology-stack-selection"]
 source = "locales/en/.mustflow/skills/technology-stack-selection/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.structure-first-engineering"]
@@ -1172,6 +1172,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/docs-prose-review/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.evidence-backed-actionable-feedback"]
+source = "locales/en/.mustflow/skills/evidence-backed-actionable-feedback/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.writing-elegance"]
@@ -1535,6 +1541,12 @@ translations = {}
 
 [documents."skill.automation-investment-case-review"]
 source = "locales/en/.mustflow/skills/automation-investment-case-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.automation-operating-model-review"]
+source = "locales/en/.mustflow/skills/automation-operating-model-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}

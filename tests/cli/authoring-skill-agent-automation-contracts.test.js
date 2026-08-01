@@ -217,6 +217,10 @@ test('automation investment cases price accepted outcomes and keep safety indepe
 
 	assert.equal(localSkill, templateSkill);
 	assert.match(localSkill, /accepted outcome/u);
+	assert.match(localSkill, /Map human contact and waiting before pricing the automation/u);
+	assert.match(localSkill, /normal-path share and enumerate exception families/u);
+	assert.match(localSkill, /machine-verifiable start and completion evidence/u);
+	assert.match(localSkill, /browser clicking, screen scraping, manual exports/u);
 	assert.match(localSkill, /expected variable cost per accepted outcome/u);
 	assert.match(localSkill, /human or current-system comparator/u);
 	assert.match(localSkill, /binding constraint exists/u);
@@ -224,11 +228,67 @@ test('automation investment cases price accepted outcomes and keep safety indepe
 	assert.match(localSkill, /effective lifetime/u);
 	assert.match(localSkill, /NPV/u);
 	assert.match(localSkill, /safety as a hard independent gate/u);
+	assert.match(localSkill, /bounded shadow comparison/u);
 	assert.match(localSkill, /universal numeric thresholds/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."automation-investment-case-review"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"\r?\npriority = 47/u);
 	assert.match(manifest, /"\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md"/u);
-	assert.match(i18n, /\[documents\."skill\.automation-investment-case-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.automation-investment-case-review"\][\s\S]*?revision = 2/u);
+});
+
+test('automation operating model separates triggers authority observability cost and specialist ownership', () => {
+	const skillName = 'automation-operating-model-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+	const routeFixtures = JSON.parse(readText('.mustflow/skills/route-fixtures.json'));
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Use a schedule when clock time or a closed business interval is the cause/u);
+	assert.match(localSkill, /Use an event when a state change or fact occurrence is the cause/u);
+	assert.match(localSkill, /Use a queue when already-discovered work must survive bursts/u);
+	assert.match(localSkill, /Do not treat a queue as event discovery or a cron expression as durable progress/u);
+	assert.match(localSkill, /Detect absence, not only errors/u);
+	assert.match(localSkill, /Verify business invariants independently/u);
+	assert.match(localSkill, /Install brakes before acceleration/u);
+	assert.match(localSkill, /Place human authority at the commit boundary/u);
+	assert.match(localSkill, /Increase authority in stages/u);
+	assert.match(localSkill, /workload identity,\s+short-lived tokens, dynamic credentials/u);
+	assert.match(localSkill, /Keep queues and diagnostics reference-based/u);
+	assert.match(localSkill, /Measure useful effects/u);
+	assert.match(localSkill, /Keep the operating definition versioned/u);
+	assert.match(localSkill, /queue-processing-integrity-review/u);
+	assert.match(localSkill, /durable-workflow-orchestration/u);
+	assert.match(localSkill, /security-privacy-review/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/automation-operating-model-review\/SKILL\.md/u);
+	assert.match(
+		routes,
+		/\[routes\."automation-operating-model-review"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"\r?\npriority = 68/u,
+	);
+	assert.match(manifest, /"\.mustflow\/skills\/automation-operating-model-review\/SKILL\.md"/u);
+	for (const profile of ['team', 'product']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"automation-operating-model-review"/u);
+	}
+	for (const profile of ['minimal', 'patterns', 'oss', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.doesNotMatch(profileMatch[1], /"automation-operating-model-review"/u);
+	}
+	const fixtureIds = new Set(routeFixtures.cases.map((entry) => entry.id));
+	assert.ok(fixtureIds.has('automation-operating-model-korean'));
+	assert.ok(fixtureIds.has('automation-investment-only-boundary'));
+	assert.ok(fixtureIds.has('queue-settlement-only-boundary'));
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
 });
 
 test('browser automation reliability review rejects click scripts without state evidence', () => {

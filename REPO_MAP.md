@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 311
+anchor_count: 313
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:ab4feae473f9e2ab822b1b383c5046cbdf04b0fd66372a132b27a1f0d743e49d"
+source_fingerprint: "sha256:ef0e77cd087b30336e7ff4fd7b4004c43c70e2a2f622aa5d76da5ebc106934b3"
 ---
 
 # REPO_MAP.md
@@ -160,6 +160,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/automation-investment-case-review/
 
 - `.mustflow/skills/automation-investment-case-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/automation-operating-model-review/
+
+- `.mustflow/skills/automation-operating-model-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/axum-code-change/
 
@@ -436,6 +440,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/error-message-integrity-review/
 
 - `.mustflow/skills/error-message-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/evidence-backed-actionable-feedback/
+
+- `.mustflow/skills/evidence-backed-actionable-feedback/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/evidence-stall-breaker/
 

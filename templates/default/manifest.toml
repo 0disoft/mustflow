@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.121.0"
+version = "2.122.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -255,6 +255,7 @@ creates = [
   ".mustflow/skills/agent-planning-recovery-review/SKILL.md",
   ".mustflow/skills/agent-release-bundle-rollout-review/SKILL.md",
   ".mustflow/skills/automation-investment-case-review/SKILL.md",
+  ".mustflow/skills/automation-operating-model-review/SKILL.md",
   ".mustflow/skills/product-onboarding-activation-review/SKILL.md",
   ".mustflow/skills/subscription-retention-profit-review/SKILL.md",
   ".mustflow/skills/product-engagement-retention-review/SKILL.md",
@@ -309,6 +310,7 @@ creates = [
   ".mustflow/skills/state-machine-pattern/SKILL.md",
   ".mustflow/skills/strategy-pattern/SKILL.md",
   ".mustflow/skills/docs-prose-review/SKILL.md",
+  ".mustflow/skills/evidence-backed-actionable-feedback/SKILL.md",
   ".mustflow/skills/docs-update/SKILL.md",
   ".mustflow/skills/writing-elegance/SKILL.md",
   ".mustflow/skills/writing-elegance/references/phrase-bank.md",
@@ -370,6 +372,7 @@ minimal = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
@@ -579,6 +582,7 @@ patterns = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
@@ -799,6 +803,7 @@ oss = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
@@ -1041,6 +1046,7 @@ team = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
@@ -1221,6 +1227,7 @@ team = [
   "idea-triage",
   "complex-decision-analysis",
   "automation-investment-case-review",
+  "automation-operating-model-review",
   "product-onboarding-activation-review",
   "subscription-retention-profit-review",
   "product-engagement-retention-review",
@@ -1277,6 +1284,7 @@ product = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",
@@ -1458,6 +1466,7 @@ product = [
   "idea-triage",
   "complex-decision-analysis",
   "automation-investment-case-review",
+  "automation-operating-model-review",
   "product-onboarding-activation-review",
   "subscription-retention-profit-review",
   "product-engagement-retention-review",
@@ -1529,6 +1538,7 @@ library = [
   "behavior-preserving-refactor",
   "split-refactor-residual-path-review",
   "code-review",
+  "evidence-backed-actionable-feedback",
   "bug-claim-evidence-gate",
   "ai-generated-code-hardening",
   "quality-gaming-guard",

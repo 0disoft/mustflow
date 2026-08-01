@@ -844,3 +844,81 @@ test('2.121.0 Playwright reliability skill release stays bounded and remotely ve
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.121\.0"/u);
 });
+
+test('2.122.0 decision and automation skill release stays bounded and remotely verifiable', () => {
+	const manifestIntent =
+		/\[intents\.manifest_lock_accept_skill_suite_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stageIntent = /\[intents\.release_stage_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const stagedDiffIntent = /\[intents\.release_staged_diff_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const commitIntent = /\[intents\.release_commit_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const pushIntent = /\[intents\.release_push_main_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const mainRunsIntent = /\[intents\.release_github_main_runs_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const publishRunsIntent =
+		/\[intents\.release_github_publish_runs_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const releaseIntent = /\[intents\.release_github_release_v2_122_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'.mustflow/review/docs.toml',
+		'.mustflow/skills/INDEX.md',
+		'.mustflow/skills/automation-investment-case-review/SKILL.md',
+		'.mustflow/skills/automation-operating-model-review/SKILL.md',
+		'.mustflow/skills/catalog.v2.json',
+		'.mustflow/skills/cloud-cost-guardrail-review/SKILL.md',
+		'.mustflow/skills/evidence-backed-actionable-feedback/SKILL.md',
+		'.mustflow/skills/route-fixtures.json',
+		'.mustflow/skills/routes.toml',
+		'.mustflow/skills/technology-stack-selection/SKILL.md',
+		'REPO_FLOW.md',
+		'REPO_MAP.md',
+		'package.json',
+		'templates/default/i18n.toml',
+		'templates/default/locales/en/.mustflow/skills/INDEX.md',
+		'templates/default/locales/en/.mustflow/skills/automation-investment-case-review/SKILL.md',
+		'templates/default/locales/en/.mustflow/skills/automation-operating-model-review/SKILL.md',
+		'templates/default/locales/en/.mustflow/skills/catalog.v2.json',
+		'templates/default/locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md',
+		'templates/default/locales/en/.mustflow/skills/evidence-backed-actionable-feedback/SKILL.md',
+		'templates/default/locales/en/.mustflow/skills/routes.toml',
+		'templates/default/locales/en/.mustflow/skills/technology-stack-selection/SKILL.md',
+		'templates/default/manifest.toml',
+		'tests/cli/authoring-skill-actionable-feedback-contracts.test.js',
+		'tests/cli/authoring-skill-agent-automation-contracts.test.js',
+		'tests/cli/authoring-skill-service-economics-contracts.test.js',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+		'tests/cli/skill-route.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.match(manifestIntent, /\.mustflow\/config\/commands\.toml/u);
+	assert.doesNotMatch(manifestIntent, /evidence-backed-actionable-feedback\/SKILL\.md/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): strengthen decision and automation reviews/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.122\.0"/u);
+});
