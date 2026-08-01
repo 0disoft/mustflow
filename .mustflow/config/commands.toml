@@ -4443,6 +4443,38 @@ destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
 
+[intents.release_github_ci_run_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact failed 2.122.0 CI run and its job-step conclusions."
+argv = ["gh", "run", "view", "30684043117", "--repo", "0disoft/mustflow", "--json", "conclusion,createdAt,event,headBranch,headSha,jobs,name,status,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_ci_failed_log_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only the failed step logs from the exact failed 2.122.0 CI run."
+argv = ["gh", "run", "view", "30684043117", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
 [intents.release_github_publish_runs_v2_122_0]
 status = "configured"
 lifecycle = "oneshot"
@@ -4474,3 +4506,79 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_ci_cleanup_fix_test_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Re-run the exact quality fixture test that failed while cleaning its temporary project in the 2.122.0 CI gate."
+argv = ["node", "--test", "tests/cli/quality.test.js"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_ci_cleanup_fix_stage_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.122.0 CI temporary-fixture cleanup fix and its release evidence."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "REPO_FLOW.md",
+  "tests/cli/quality.test.js",
+  "tests/cli/package-command-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_ci_cleanup_fix_staged_diff_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged paths for the 2.122.0 CI temporary-fixture cleanup fix."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_ci_cleanup_fix_commit_v2_122_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit only the reviewed 2.122.0 CI temporary-fixture cleanup fix after focused and release verification pass."
+argv = [
+  "git", "commit",
+  "-m", "🐛 fix(ci): retry temporary fixture cleanup",
+  "-m", "Retry recursive removal for bounded transient EBUSY, ENOTEMPTY, and EPERM cleanup races after synchronous CLI fixture execution.",
+  "-m", "Validation: mf run release_ci_cleanup_fix_test_v2_122_0; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

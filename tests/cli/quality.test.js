@@ -14,7 +14,12 @@ function createTempProject() {
 }
 
 function removeTempProject(projectPath) {
-	rmSync(projectPath, { recursive: true, force: true });
+	rmSync(projectPath, {
+		recursive: true,
+		force: true,
+		maxRetries: 30,
+		retryDelay: 100,
+	});
 }
 
 function runCli(cwd, args) {

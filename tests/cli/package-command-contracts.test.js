@@ -922,3 +922,49 @@ test('2.122.0 decision and automation skill release stays bounded and remotely v
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.122\.0"/u);
 });
+
+test('2.122.0 CI temporary-fixture cleanup fix stays bounded and diagnosable', () => {
+	const runIntent = /\[intents\.release_github_ci_run_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+		sourceCommandContract,
+	)?.[0] ?? '';
+	const failedLogIntent =
+		/\[intents\.release_github_ci_failed_log_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const focusedTestIntent =
+		/\[intents\.release_ci_cleanup_fix_test_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stageIntent =
+		/\[intents\.release_ci_cleanup_fix_stage_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stagedDiffIntent =
+		/\[intents\.release_ci_cleanup_fix_staged_diff_v2_122_0\][\s\S]*?(?=\n\[intents\.)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const commitIntent =
+		/\[intents\.release_ci_cleanup_fix_commit_v2_122_0\][\s\S]*?(?=\n\[intents\.|$)/u.exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+
+	assert.match(runIntent, /"30684043117"/u);
+	assert.match(runIntent, /headSha/u);
+	assert.match(failedLogIntent, /"30684043117"/u);
+	assert.match(failedLogIntent, /"--log-failed"/u);
+	assert.match(focusedTestIntent, /"tests\/cli\/quality\.test\.js"/u);
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'REPO_FLOW.md',
+		'tests/cli/quality.test.js',
+		'tests/cli/package-command-contracts.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /🐛 fix\(ci\): retry temporary fixture cleanup/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+});
