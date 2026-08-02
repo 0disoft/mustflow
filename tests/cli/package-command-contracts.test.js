@@ -1031,3 +1031,45 @@ test('2.123.0 PostgreSQL Ubuntu and Coolify skill release stays bounded and remo
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.123\.0"/u);
 });
+
+test('2.123.1 route corpus release fix stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const manifestIntent = intent('manifest_lock_accept_release_fix_v2_123_1');
+	const branchIntent = intent('release_branch_state_v2_123_1');
+	const stageIntent = intent('release_stage_v2_123_1');
+	const stagedDiffIntent = intent('release_staged_diff_v2_123_1');
+	const commitIntent = intent('release_commit_v2_123_1');
+	const pushIntent = intent('release_push_main_v2_123_1');
+	const mainRunsIntent = intent('release_github_main_runs_v2_123_1');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_123_1');
+	const releaseIntent = intent('release_github_release_v2_123_1');
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'REPO_FLOW.md',
+		'package.json',
+		'templates/default/manifest.toml',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+		'tests/cli/skill-route.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.match(manifestIntent, /\.mustflow\/config\/commands\.toml/u);
+	assert.match(branchIntent, /"git", "status", "--short", "--branch"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /🐛 fix\(test\): sync route corpus release gate/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.123\.1"/u);
+});
