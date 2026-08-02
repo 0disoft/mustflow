@@ -2,11 +2,11 @@
 mustflow_doc: skill.postgresql-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: postgresql-code-change
-description: Apply this skill when PostgreSQL-specific schema, query, transaction, migration, indexing, extension, role, row-level security, connection pooling, replication, backup, restore, managed Postgres, or Postgres runtime behavior is created, changed, reviewed, or reported.
+description: Apply this skill when PostgreSQL-specific schema, query, transaction, migration, indexing, extension, role, row-level security, connection pooling, replication, backup, restore, managed Postgres, or runtime behavior is created, changed, reviewed, or reported, including PostgreSQL 18 asynchronous I/O, B-tree skip scan, UUIDv7, virtual generated columns, RETURNING OLD/NEW, OAuth, logical-replication conflicts, observability, or 17-to-18 upgrades.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -84,7 +84,7 @@ PostgreSQL is not just "SQL with more features." Most production damage comes fr
 ## Procedure
 
 1. Classify the PostgreSQL role and topology. Name whether the database is primary truth, reporting replica, job store, analytics store, managed provider surface, or temporary store.
-2. Identify the actual version and provider constraints. Check server major/minor version, official PostgreSQL release notes for version-dependent behavior, extension versions, managed-service limitations, driver behavior, ORM behavior, and pooler mode before relying on new features.
+2. Identify the actual version and provider constraints. Check server major/minor version, official PostgreSQL release notes for version-dependent behavior, extension versions, managed-service limitations, driver behavior, ORM behavior, and pooler mode before relying on new features. For PostgreSQL 18 work, or a 17-to-18 upgrade, read [PostgreSQL 18 Operations Checklist](references/postgresql-18-operations-checklist.md) and refresh its dated minor-release snapshot before applying version-specific guidance.
 3. Check connection pressure. Count app instances, workers, background jobs, migrations, admin tasks, and pooler behavior. Prevent connection storms by bounding pool sizes and avoiding one pool per hot request path or serverless invocation when the platform cannot sustain it.
 4. Check transaction boundaries. Keep transactions short, avoid user interaction or external I/O while holding locks, and define isolation, timeout, retry, and idempotency behavior for conflicts, deadlocks, and serialization failures.
 5. Check lock behavior before changing schema. Decide whether an operation blocks reads, writes, both, or only metadata. For live tables, separate expand, backfill, validate, switch, and contract phases when needed.

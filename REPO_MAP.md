@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 313
+anchor_count: 315
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:ef0e77cd087b30336e7ff4fd7b4004c43c70e2a2f622aa5d76da5ebc106934b3"
+source_fingerprint: "sha256:2419b509980fe98eaa8629df8b0d6c033361a79a1a6afc73a254d16b573ae9d1"
 ---
 
 # REPO_MAP.md
@@ -296,6 +296,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/contract-sync-check/
 
 - `.mustflow/skills/contract-sync-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/coolify-operations-review/
+
+- `.mustflow/skills/coolify-operations-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/core-web-vitals-field-review/
 
@@ -1068,6 +1072,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/typescript-code-change/
 
 - `.mustflow/skills/typescript-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/ubuntu-server-operations-review/
+
+- `.mustflow/skills/ubuntu-server-operations-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/ui-dispatch-lifecycle-review/
 

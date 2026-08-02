@@ -1050,6 +1050,98 @@
       ]
     },
     {
+      "id": "postgresql-18-upgrade-operations",
+      "task": "PostgreSQL 17에서 18.4로 올리면서 pg_upgrade 체크섬·확장·통계 재구축, AIO 튜닝, skip scan 인덱스 판단, logical replication slot WAL 위험과 OAuth TLS 검증을 점검해",
+      "paths": [
+        "db/migrations/postgresql-18.sql",
+        "docs/operations/postgresql-18-upgrade.md"
+      ],
+      "reasons": [
+        "migration_change",
+        "data_change",
+        "performance_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "postgresql-code-change",
+      "required_candidates": [
+        "postgresql-code-change"
+      ]
+    },
+    {
+      "id": "ubuntu-lts-upgrade-and-recovery-korean",
+      "task": "Ubuntu 24.04.4 LTS 서버를 26.04 LTS로 올릴 수 있는지 현재 포인트 릴리스 경계, PPA와 Snap 소유권, needrestart, Livepatch, SSH socket, 백업 복원, OOB 콘솔과 재부팅 롤백까지 검토해",
+      "paths": [
+        "infra/images/ubuntu-server.pkr.hcl",
+        "docs/operations/ubuntu-lts-upgrade.md"
+      ],
+      "reasons": [
+        "migration_change",
+        "security_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "ubuntu-server-operations-review",
+      "required_candidates": [
+        "ubuntu-server-operations-review"
+      ]
+    },
+    {
+      "id": "ubuntu-host-performance-tuning-korean",
+      "task": "Ubuntu 24.04 서버의 sysctl 50개 복붙안을 거부하고 PSI, cgroup memory.events, CPU steal, IRQ NUMA, 디스크 큐, NIC drop과 애플리케이션 p99로 병목을 증명해",
+      "paths": [
+        "infra/sysctl/70-performance.conf",
+        "docs/operations/ubuntu-performance.md"
+      ],
+      "reasons": [
+        "performance_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "ubuntu-server-operations-review",
+      "required_candidates": [
+        "ubuntu-server-operations-review"
+      ]
+    },
+    {
+      "id": "coolify-rolling-backup-authority-korean",
+      "task": "Coolify 프로덕션 앱의 native rolling update 자격, healthcheck와 PID 1 SIGTERM, image digest rollback, APP_KEY와 SSH key, 앱 DB volume 복원, deploy API token 최소 권한을 검토해",
+      "paths": [
+        "infra/coolify/application.json",
+        "docs/operations/coolify-production.md"
+      ],
+      "reasons": [
+        "behavior_change",
+        "security_change",
+        "migration_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "coolify-operations-review",
+      "required_candidates": [
+        "coolify-operations-review"
+      ]
+    },
+    {
+      "id": "coolify-proxy-resource-incident-korean",
+      "task": "Coolify에서 재배포 뒤 랜덤 504와 unhealthy restart가 나고 Docker 로그와 빌드 캐시가 디스크를 채운다. Compose network, proxy target port, in-container healthcheck, UFW 우회, cleanup volume 삭제 위험을 진단해",
+      "paths": [
+        "compose.coolify.yaml",
+        "docs/runbooks/coolify-incident.md"
+      ],
+      "reasons": [
+        "unknown_change",
+        "performance_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "docker-runtime-triage",
+      "required_candidates": [
+        "docker-runtime-triage",
+        "coolify-operations-review"
+      ]
+    },
+    {
       "id": "security-redos-codeql-korean",
       "task": "CodeQL 비효율적 정규식 경고의 구분자 중첩 백트래킹을 고치고 긴 악성 non-match 회귀 테스트로 ReDoS를 막아",
       "paths": [

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 311
+revision = 314
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -575,6 +575,30 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.ubuntu-server-operations-review"]
+source = "locales/en/.mustflow/skills/ubuntu-server-operations-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.ubuntu-server-operations-review.ubuntu-lts-operations-checklist"]
+source = "locales/en/.mustflow/skills/ubuntu-server-operations-review/references/ubuntu-lts-operations-checklist.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.coolify-operations-review"]
+source = "locales/en/.mustflow/skills/coolify-operations-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.coolify-operations-review.coolify-production-checklist"]
+source = "locales/en/.mustflow/skills/coolify-operations-review/references/coolify-production-checklist.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.cloud-cost-guardrail-review"]
 source = "locales/en/.mustflow/skills/cloud-cost-guardrail-review/SKILL.md"
 source_locale = "en"
@@ -678,6 +702,12 @@ translations = {}
 
 [documents."skill.postgresql-code-change"]
 source = "locales/en/.mustflow/skills/postgresql-code-change/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.postgresql-code-change.postgresql-18-operations-checklist"]
+source = "locales/en/.mustflow/skills/postgresql-code-change/references/postgresql-18-operations-checklist.md"
 source_locale = "en"
 revision = 1
 translations = {}

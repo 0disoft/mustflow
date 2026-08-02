@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:295a4e56e57bad7f362b49f48b83b0f89c68bc794c385ac4267a651c7172242c",
+  "source_fingerprint": "sha256:e4a0f31a418bd5f5e6934f60917ee865fbe72c9d3b6ae69985affb9f27b14f33",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2868,6 +2868,49 @@
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "coolify-operations-review",
+      "skill_path": ".mustflow/skills/coolify-operations-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 88,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "performance_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [],
+      "negative_signals": [],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when self-hosted Coolify or Coolify Cloud servers, applications, services, databases, build servers, destinations, Docker Compose stacks, domains, TLS certificates, Traefik or Caddy proxies, health checks, rolling updates, preview deployments, environment variables, build secrets, API tokens, teams, backups, restores, updates, monitoring, cleanup, resource limits, networking, firewalls, or deployment and rollback behavior are created, changed, reviewed, diagnosed, migrated, secured, or operated.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -7992,7 +8035,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when PostgreSQL-specific schema, query, transaction, migration, indexing, extension, role, row-level security, connection pooling, replication, backup, restore, managed Postgres, or Postgres runtime behavior is created, changed, reviewed, or reported.",
+      "trigger": "Apply this skill when PostgreSQL-specific schema, query, transaction, migration, indexing, extension, role, row-level security, connection pooling, replication, backup, restore, managed Postgres, or runtime behavior is created, changed, reviewed, or reported, including PostgreSQL 18 asynchronous I/O, B-tree skip scan, UUIDv7, virtual generated columns, RETURNING OLD/NEW, OAuth, logical-replication conflicts, observability, or 17-to-18 upgrades.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -11362,6 +11405,49 @@
         "test_related",
         "test",
         "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "ubuntu-server-operations-review",
+      "skill_path": ".mustflow/skills/ubuntu-server-operations-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 87,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "performance_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [],
+      "negative_signals": [],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when Ubuntu Server or Ubuntu cloud images, especially Ubuntu 24.04 LTS or 26.04 LTS, are installed, upgraded, tuned, secured, diagnosed, backed up, restored, rebooted, or operated, including APT, dpkg, Snap, PPA, deb822 sources, unattended-upgrades, phased updates, needrestart, Livepatch, kernels, systemd services and timers, journald, cgroup v2, PSI, sysctl, CPU, memory, storage, network, SSH socket activation, AppArmor, UFW, Docker or Podman host integration, release upgrades, and remote recovery.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
+        "test_release",
         "mustflow_check"
       ]
     },

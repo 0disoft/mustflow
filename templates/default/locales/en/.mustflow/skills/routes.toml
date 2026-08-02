@@ -1087,6 +1087,20 @@ priority = 78
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."ubuntu-server-operations-review"]
+category = "general_code"
+route_type = "primary"
+priority = 87
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."coolify-operations-review"]
+category = "general_code"
+route_type = "primary"
+priority = 88
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
 [routes."cloud-cost-guardrail-review"]
 category = "general_code"
 route_type = "adjunct"

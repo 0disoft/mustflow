@@ -299,6 +299,260 @@ test('database lock contention review catches hot rows and blocking paths', () =
 	assert.match(i18n, /\[documents\."skill\.database-lock-contention-review"\][\s\S]*?revision = 1/u);
 });
 
+test('postgresql code change carries the PostgreSQL 18 operations contract', () => {
+	const localSkill = readText('.mustflow/skills/postgresql-code-change/SKILL.md');
+	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/postgresql-code-change/SKILL.md');
+	const localReference = readText(
+		'.mustflow/skills/postgresql-code-change/references/postgresql-18-operations-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/postgresql-code-change/references/postgresql-18-operations-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.match(localReference, /mustflow_doc: skill\.postgresql-code-change\.postgresql-18-operations-checklist/u);
+	assert.match(localReference, /authority: reference/u);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /revision: 2/u);
+	assert.match(localSkill, /PostgreSQL 18 Operations Checklist/u);
+	assert.match(localReference, /snapshot verified on 2026-08-02 was PostgreSQL 18\.4/u);
+	assert.match(localReference, /Do not preserve `18\.4` as an undated permanent latest-version claim/u);
+	for (const token of [
+		'io_method',
+		'io_workers',
+		'io_max_concurrency',
+		'effective_io_concurrency',
+		'pg_aios',
+		'skip scan',
+		'Index Searches',
+		'uuidv7()',
+		'VIRTUAL',
+		'STORED',
+		'RETURNING OLD/NEW',
+		'pg_upgrade',
+		'--clone',
+		'--swap',
+		'CREATE STATISTICS',
+		'max_slot_wal_keep_size',
+		'idle_replication_slot_timeout',
+		'oauth_validator_libraries',
+		'sslmode=verify-full',
+		'ssl_tls13_ciphers',
+		'pg_stat_io',
+		'autovacuum_worker_slots',
+	]) {
+		assert.match(localReference, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+	}
+	assert.match(skillIndex, /PostgreSQL 18 AIO, skip scan, UUIDv7/u);
+	assert.match(routes, /\[routes\."postgresql-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
+	assert.deepEqual(routeReasons(routes, 'postgresql-code-change'), [
+		'code_change',
+		'data_change',
+		'migration_change',
+		'behavior_change',
+		'public_api_change',
+		'test_change',
+		'docs_change',
+		'security_change',
+		'performance_change',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/postgresql-code-change\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/postgresql-code-change\/references\/postgresql-18-operations-checklist\.md"/u,
+	);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'postgresql-code-change', 2);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.postgresql-code-change\.postgresql-18-operations-checklist"\][\s\S]*?revision = 1/u,
+	);
+});
+
+test('ubuntu server operations review keeps host state owners and LTS gates explicit', () => {
+	const localSkill = readText('.mustflow/skills/ubuntu-server-operations-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/ubuntu-server-operations-review/SKILL.md',
+	);
+	const localReference = readText(
+		'.mustflow/skills/ubuntu-server-operations-review/references/ubuntu-lts-operations-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/ubuntu-server-operations-review/references/ubuntu-lts-operations-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.match(localReference, /mustflow_doc: skill\.ubuntu-server-operations-review\.ubuntu-lts-operations-checklist/u);
+	assert.match(localReference, /authority: reference/u);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /revision: 1/u);
+	assert.match(localSkill, /Ubuntu LTS Operations Checklist/u);
+	for (const token of [
+		'Ubuntu 24.04.4',
+		'Ubuntu 26.04 LTS',
+		'26.04.1',
+		'package-owner ledger',
+		'phased updates',
+		'needrestart',
+		'Livepatch',
+		'Pressure Stall Information',
+		'MemoryHigh',
+		'MemoryMax',
+		'Type=simple',
+		'network-online.target',
+		'AppArmor',
+		'cgroup v2',
+		'UFW',
+		'deleted-but-open',
+		'out-of-band',
+		'RPO',
+		'RTO',
+		'do-release-upgrade -d',
+		'Signed-By',
+		'deb822',
+	]) {
+		assert.match(localReference, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+	}
+	assert.match(skillIndex, /ubuntu-server-operations-review\/SKILL\.md/u);
+	assert.match(skillIndex, /forced LTS upgrade before point-release gate/u);
+	assert.match(
+		routes,
+		/\[routes\."ubuntu-server-operations-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u,
+	);
+	assert.match(
+		routes,
+		/\[routes\."ubuntu-server-operations-review"\][\s\S]*?selection_axis = "task"/u,
+	);
+	assert.deepEqual(routeReasons(routes, 'ubuntu-server-operations-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'migration_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/ubuntu-server-operations-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/ubuntu-server-operations-review\/references\/ubuntu-lts-operations-checklist\.md"/u,
+	);
+	assert.equal((manifest.match(/"ubuntu-server-operations-review"/gu) ?? []).length, 6);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'ubuntu-server-operations-review', 1);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.ubuntu-server-operations-review\.ubuntu-lts-operations-checklist"\][\s\S]*?revision = 1/u,
+	);
+});
+
+test('coolify operations review keeps control-plane status separate from production proof', () => {
+	const localSkill = readText('.mustflow/skills/coolify-operations-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/coolify-operations-review/SKILL.md',
+	);
+	const localReference = readText(
+		'.mustflow/skills/coolify-operations-review/references/coolify-production-checklist.md',
+	);
+	const templateReference = readText(
+		'templates/default/locales/en/.mustflow/skills/coolify-operations-review/references/coolify-production-checklist.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(localReference, templateReference);
+	assert.match(localReference, /mustflow_doc: skill\.coolify-operations-review\.coolify-production-checklist/u);
+	assert.match(localReference, /authority: reference/u);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /revision: 1/u);
+	assert.match(localSkill, /Coolify Production Operations Checklist/u);
+	for (const token of [
+		'management, execution, and build failure domains',
+		'2026-08-02',
+		'Exit 137',
+		'Dockerfile `HEALTHCHECK`',
+		'0.0.0.0',
+		'502, 503, 504, 404',
+		'Full (strict)',
+		'Docker Compose stacks do not gain native rolling updates',
+		'image digest',
+		'SIGTERM',
+		'APP_KEY',
+		'/data/coolify/ssh/keys',
+		'WAL/PITR',
+		'RPO',
+		'RTO',
+		'BuildKit secret mounts',
+		'public PR previews',
+		'read:sensitive',
+		'root bypasses permission checks',
+		'volume cleanup can cause data loss',
+		'automatic update was enabled by default',
+	]) {
+		assert.match(localReference, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+	}
+	assert.match(skillIndex, /coolify-operations-review\/SKILL\.md/u);
+	assert.match(skillIndex, /control-plane-only backup/u);
+	assert.match(
+		routes,
+		/\[routes\."coolify-operations-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"/u,
+	);
+	assert.match(routes, /\[routes\."coolify-operations-review"\][\s\S]*?selection_axis = "task"/u);
+	assert.deepEqual(routeReasons(routes, 'coolify-operations-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'performance_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'migration_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/coolify-operations-review\/SKILL\.md"/u);
+	assert.match(
+		manifest,
+		/"\.mustflow\/skills\/coolify-operations-review\/references\/coolify-production-checklist\.md"/u,
+	);
+	assert.equal((manifest.match(/"coolify-operations-review"/gu) ?? []).length, 6);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'coolify-operations-review', 1);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.coolify-operations-review\.coolify-production-checklist"\][\s\S]*?revision = 1/u,
+	);
+});
+
 test('clickhouse code change catches MergeTree, ingest, and query-plan traps', () => {
 	const localSkill = readText('.mustflow/skills/clickhouse-code-change/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/clickhouse-code-change/SKILL.md');
