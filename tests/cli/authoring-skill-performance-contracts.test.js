@@ -442,7 +442,7 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(manifest, /"\.mustflow\/skills\/web-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"web-render-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 3/u);
 });
 
 test('core web vitals field review treats CWV as real-user percentile operations', () => {

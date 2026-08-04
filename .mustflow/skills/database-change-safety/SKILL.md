@@ -2,7 +2,7 @@
 mustflow_doc: skill.database-change-safety
 locale: en
 canonical: true
-revision: 17
+revision: 18
 lifecycle: mustflow-owned
 authority: procedure
 name: database-change-safety
@@ -69,6 +69,9 @@ Use the smallest persistence boundary that proves the risk. Do not introduce rep
 - The change is pure in-memory logic with no persisted, cached, indexed, or generated state.
 - The task only changes external protocol mapping and no database-backed state; use `adapter-boundary`.
 - The task only changes file or template migration behavior and no database or persistence surface; use `migration-safety-check`.
+- The task primarily evaluates cross-provider exit readiness, control-asset separation, semantic
+  export archives, configuration reconstruction, alternate environments, or exit drills; use
+  `vendor-portability-exit-readiness-review` and return here only for persisted-state ownership.
 - The change only documents general database advice without touching or claiming project behavior.
 
 <!-- mustflow-section: required-inputs -->

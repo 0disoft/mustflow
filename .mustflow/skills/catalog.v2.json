@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:e4a0f31a418bd5f5e6934f60917ee865fbe72c9d3b6ae69985affb9f27b14f33",
+  "source_fingerprint": "sha256:8cd5f51f7586c84daca95f86b50efe8fa54f9ac6dbd990ba0eceebe9c18d9458",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1081,6 +1081,66 @@
         "test_related",
         "test",
         "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "async-operation-ux-review",
+      "skill_path": ".mustflow/skills/async-operation-ux-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "behavior_change",
+        "code_change",
+        "performance_change",
+        "data_change",
+        "test_change",
+        "public_api_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "background job",
+        "cancel requested",
+        "cancellation",
+        "eta",
+        "heartbeat",
+        "loading",
+        "offline",
+        "partial result",
+        "progress",
+        "queue position",
+        "retry",
+        "stale data"
+      ],
+      "negative_signals": [
+        "lcp",
+        "redis cluster",
+        "render blocking",
+        "worker lease"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "cache-integrity-review",
+          "frontend-state-ownership-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when a user-facing asynchronous operation needs truthful progress, phase, queue, delay, cancellation, retry, resume, background completion, partial-result, offline, or failure UX. Do not use it to design the durable workflow, queue, cache, or first-render mechanism itself; use the owning backend or frontend skill for those contracts.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
+        "test_release",
         "mustflow_check"
       ]
     },
@@ -5314,7 +5374,12 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [],
-      "negative_signals": [],
+      "negative_signals": [
+        "jetpack compose",
+        "native mobile",
+        "react native",
+        "swiftui"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -6486,6 +6551,157 @@
       ]
     },
     {
+      "skill": "jurisdictional-product-compliance-review",
+      "skill_path": ".mustflow/skills/jurisdictional-product-compliance-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 88,
+      "applies_to_reasons": [
+        "behavior_change",
+        "code_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "test_change",
+        "docs_change",
+        "public_api_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "age assurance",
+        "ai disclosure",
+        "child safety",
+        "compliance receipt",
+        "consent ledger",
+        "consumer rights",
+        "cookie consent",
+        "jurisdiction",
+        "legal policy",
+        "merchant of record",
+        "privacy notice",
+        "refund policy",
+        "regional addendum",
+        "regional compliance",
+        "regulatory monitoring",
+        "terms of service",
+        "管辖区",
+        "退款政策",
+        "隐私声明",
+        "개인정보처리방침",
+        "관할",
+        "규제",
+        "소비자 권리",
+        "약관",
+        "연령 확인",
+        "환불 정책"
+      ],
+      "negative_signals": [
+        "payment webhook only",
+        "security scanner only",
+        "wording only docs"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "policy-decision-integrity-review",
+          "payment-integrity-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when product behavior, terms of service, privacy notices, cookie or consent flows, refund and cancellation policy, age assurance, child safety, AI disclosure or labeling, regional availability, consumer rights, seller or merchant-of-record disclosure, regulatory monitoring, or jurisdiction-specific feature gates must stay aligned with current official authority and auditable runtime behavior. Do not use it as legal advice or as a substitute for security, payment, tax, moderation, or qualified legal review.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "large-screen-adaptive-ux-review",
+      "skill_path": ".mustflow/skills/large-screen-adaptive-ux-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 86,
+      "applies_to_reasons": [
+        "ui_change",
+        "behavior_change",
+        "code_change",
+        "performance_change",
+        "data_change",
+        "test_change",
+        "public_api_change",
+        "docs_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "adaptive layout",
+        "desktop windowed mobile",
+        "drag and drop",
+        "external display",
+        "foldable",
+        "freeform window",
+        "inspector pane",
+        "large screen",
+        "list detail",
+        "multi pane",
+        "multi selection",
+        "multi window",
+        "navigation rail",
+        "pointer input",
+        "split screen",
+        "stylus",
+        "supporting pane",
+        "tablet",
+        "window resize",
+        "대화면",
+        "멀티윈도",
+        "분할화면",
+        "태블릿"
+      ],
+      "negative_signals": [
+        "browser only",
+        "browser only responsive",
+        "container query",
+        "css container query only",
+        "css grid",
+        "phone only navigation"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "mobile-interaction-ux-review",
+          "frontend-state-ownership-review",
+          "async-operation-ux-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when native or cross-platform tablet, foldable, desktop-windowed mobile, split-screen, or large-screen UI needs adaptive multi-pane layout, list-detail, supporting-pane, inspector, mixed touch-pointer-keyboard-stylus input, window resizing, rotation, multi-window, drag-and-drop, or task-state continuity review. Do not use it for browser-only responsive CSS or ordinary phone interaction without a large-screen workspace contract.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
       "skill": "line-ending-hygiene",
       "skill_path": ".mustflow/skills/line-ending-hygiene/SKILL.md",
       "category": "workflow_contracts",
@@ -7027,6 +7243,70 @@
         "unlocks_on": []
       },
       "trigger": "Apply this skill when Android, iOS, React Native, Flutter, Tauri mobile, or other mobile app code is created, changed, reviewed, or reported and battery, energy, background work, wake locks, exact alarms, push or WebSocket behavior, polling, networking, cellular use, location, sensors, Bluetooth, rendering, animation, timers, disk I/O, Compose recomposition, Low Power Mode, Battery Saver, or platform energy diagnostics need review for whether the app wakes the phone, radio, GPS, sensors, GPU, CPU, or storage only when the user value justifies it.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "mobile-interaction-ux-review",
+      "skill_path": ".mustflow/skills/mobile-interaction-ux-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 85,
+      "applies_to_reasons": [
+        "ui_change",
+        "behavior_change",
+        "code_change",
+        "performance_change",
+        "data_change",
+        "test_change",
+        "public_api_change",
+        "docs_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "android",
+        "deep link",
+        "dismiss",
+        "flutter",
+        "ios",
+        "jetpack compose",
+        "keyboard inset",
+        "mobile navigation",
+        "predictive back",
+        "process recreation",
+        "react native",
+        "safe area",
+        "swiftui",
+        "talkback",
+        "touch target",
+        "voiceover"
+      ],
+      "negative_signals": [
+        "browser accessibility tree",
+        "css safe area",
+        "web responsive"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [
+          "async-operation-ux-review",
+          "frontend-state-ownership-review"
+        ],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when native or cross-platform iOS and Android UI needs review for back, up, dismiss, tabs, sheets, gestures, touch targets, system insets, keyboards, pickers, platform controls, accessibility, process restoration, deep links, or external-app return behavior. Do not use it for web-only responsive layout or for backend async-operation durability.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -7813,6 +8093,77 @@
         "unlocks_on": []
       },
       "trigger": "Apply this skill when payment, checkout, authorization, capture, refund, partial refund, subscription, invoice, credit note, receipt, tax document, trial, grace period, coupon, promotion, inventory reservation, fulfillment, entitlement, settlement, fee, payout, chargeback, dispute, fraud review, card testing, provider webhook, payment outbox, payment session, payment link, payment-provider integration, admin manual payment operation, payment logs, PCI-sensitive data handling, or payment-related tests need review for money-event integrity, idempotency, ordering, ownership, amount, currency, retry, reconciliation, ledger, or audit risk.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "payment-provider-underwriting-readiness-review",
+      "skill_path": ".mustflow/skills/payment-provider-underwriting-readiness-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 90,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "approved scope",
+        "domain review",
+        "kyb",
+        "kyc",
+        "merchant account",
+        "merchant underwriting",
+        "payment provider approval",
+        "payment provider rejection",
+        "payout hold",
+        "processor suspension",
+        "reserve review",
+        "risk remediation",
+        "transaction laundering",
+        "underwriting appeal",
+        "가맹점 심사",
+        "거래 세탁",
+        "결제사 심사",
+        "결제업체 거절",
+        "사업자 인증",
+        "승인 범위",
+        "심사 우회",
+        "재심사",
+        "정산 보류"
+      ],
+      "negative_signals": [
+        "payment webhook only",
+        "provider exit only",
+        "refund execution only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when payment processor, acquirer, merchant-of-record, marketplace, app-store, bank-transfer, invoice, or merchant-account underwriting, domain review, KYB or KYC, product approval, rejection, reserve, suspension, payout hold, remediation, appeal, approved-scope gating, or multi-provider merchant risk must be aligned with truthful business facts and actual server behavior. Do not use it to disguise a prohibited business, transaction-launder through another account or MID, evade a suspension, fabricate operating history, or optimize wording while the product remains outside the provider's current approved scope.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -11670,6 +12021,80 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "vendor-portability-exit-readiness-review",
+      "skill_path": ".mustflow/skills/vendor-portability-exit-readiness-review/SKILL.md",
+      "category": "data_external",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 89,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "data_change",
+        "migration_change",
+        "security_change",
+        "privacy_change",
+        "test_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "clean account rebuild",
+        "configuration reconstruction",
+        "control asset separation",
+        "data portability",
+        "exit drill",
+        "exit readiness",
+        "exit tax",
+        "independent restore",
+        "provider portability",
+        "provider replacement",
+        "recovery contract",
+        "saas export",
+        "semantic export",
+        "survival mode",
+        "vendor exit",
+        "vendor lock in",
+        "供应商锁定",
+        "语义导出",
+        "退出演练",
+        "공급자 교체",
+        "데이터 반출",
+        "독립 복구",
+        "락인",
+        "복구 계약",
+        "사업자 이전",
+        "탈출 계획"
+      ],
+      "negative_signals": [
+        "database schema only",
+        "migration execution only",
+        "technology choice only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when a cloud, managed service, SaaS, database, cache, queue, identity, payment, email, storage, observability, AI, deployment, or external API dependency must remain replaceable or recoverable through owned identifiers, semantic export, configuration reconstruction, provider adapters, control-plane separation, restore programs, exit drills, survival modes, and measured switching evidence. Do not use it merely to ban provider-specific features or to claim portability from Kubernetes, Terraform, open source, an export button, or an untested backup.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

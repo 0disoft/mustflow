@@ -6,6 +6,35 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added an installed async-operation UX review skill that derives progress from real work, separates
+  queued, running, stalled, cancelled, and failed states, requires durable background handoff and
+  user-consumable completion evidence, bounds optimistic and stale-data behavior, and gives users
+  safe cancel, retry, resume, partial-result, offline, and recovery controls; strengthened durable
+  workflow, cache, frontend-state, and web-render procedures at their ownership boundaries. Added a
+  native mobile interaction UX review skill for iOS and Android navigation semantics, tab branches,
+  platform presentation, gesture arbitration, touch geometry, runtime insets, keyboards, native
+  controls, lifecycle restoration, accessibility services, and real-device evidence; strengthened
+  general UI quality and onboarding permission and interrupted-flow recovery guidance. Added a
+  large-screen adaptive UX review skill for tablet, foldable, split-screen, freeform, and
+  desktop-windowed mobile workspaces, covering content-derived pane contracts, list-detail and
+  inspector transitions, selection and draft continuity, mixed input, per-window sessions, and
+  transition-path evidence instead of static tablet screenshots. Added a jurisdictional product
+  compliance review skill that derives policy documents and regional capability decisions from
+  product facts and current official authority, separates legal rules from rollout flags, models
+  consent, rights, refunds, age assurance, AI disclosure, seller identity, and regional restrictions,
+  and requires behavior-policy-document parity plus reproducible evidence without claiming legal
+  certification; clarified the security/privacy skill's ownership boundary. Added a vendor
+  portability and exit-readiness review skill that keeps useful provider-specific features while
+  requiring owned identifiers and product truth, semantic export, configuration and secret
+  reconstruction, independent control assets, restartable restore, reconciliation, survival modes,
+  measured exit cost, and clean-boundary drills; narrowed the neighboring technology selection,
+  structure discovery, database safety, and migration procedure boundaries. Added a payment-provider
+  underwriting readiness review skill that keeps one truthful merchant and product fact source,
+  maps provider-account-seller-domain-product-SKU-country approval scope, enforces that scope in
+  server behavior, classifies rejection and suspension evidence, requires measured remediation
+  before bounded appeals, and prevents transaction laundering, suspension evasion, unsafe
+  cross-provider retry, and approval claims without provider evidence; clarified the neighboring
+  payment integrity, jurisdictional compliance, and vendor exit boundaries.
 - Fixed sanitizer evidence path redaction so separator-heavy untrusted logs cannot trigger
   exponential regular-expression backtracking while Windows and Unix absolute paths remain
   redacted from portable evidence; strengthened built-in security review and regression-test

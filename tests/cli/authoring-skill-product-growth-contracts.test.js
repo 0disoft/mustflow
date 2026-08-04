@@ -44,6 +44,8 @@ test('product onboarding activation review keeps abandoners in the cohort and re
 	assert.match(localSkill, /email as a changeable contact attribute/u);
 	assert.match(localSkill, /Choose the instruction format from task complexity and consequence/u);
 	assert.match(localSkill, /do not count tutorial completion as activation/u);
+	assert.match(localSkill, /Request permissions at the first user action/u);
+	assert.match(localSkill, /Preserve signup work through recoverable failures/u);
 	assert.match(localSkill, /Choose one primary action per current intent/u);
 	assert.match(localSkill, /Randomize before the intervention/u);
 	assert.match(localSkill, /directly observed per-eligible-visitor outcomes/u);
@@ -62,7 +64,7 @@ test('product onboarding activation review keeps abandoners in the cohort and re
 		assert.doesNotMatch(readProfile(manifest, profile), /"product-onboarding-activation-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName, 3);
 });
 
 test('subscription retention profit review rejects save-rate theater and protects cancellation', () => {

@@ -2,7 +2,7 @@
 mustflow_doc: skill.web-render-performance-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: web-render-performance-review
@@ -46,6 +46,8 @@ The review question is not "did we compress assets?" It is "what blocks the firs
 
 - The task is only backend latency, database throughput, queue throughput, repeated work, or p95/p99 service behavior without browser first-render impact; use `hot-path-performance-review`, `database-query-bottleneck-review`, or `performance-budget-check`.
 - The task is only visible flicker, hydration flash, theme flash, route transition jank, or blank first render as a symptom; use `frontend-render-stability` first, then this skill only if the root cause is resource, data, cache, bundle, or main-thread performance.
+- The task is user-facing progress, cancellation, retry, background completion, partial-result, or
+  slow/offline recovery UX after an operation starts; use `async-operation-ux-review`.
 - The task only adds, converts, resizes, or replaces raster image files; use `web-asset-optimization` for asset bytes and this skill only if page delivery, LCP priority, or responsive markup also changes.
 - The task is only visual layout polish, accessibility, styling correctness, or design-token work with no render-performance claim; use `ui-quality-gate`, `html-code-change`, or `css-code-change`.
 - A real browser, network waterfall, Lighthouse, WebPageTest, trace, RUM, or lab measurement is required but no configured one-shot intent or explicit user-approved workflow exists. Report the measurement gap instead of inventing raw browser, server, profiler, or package-manager commands.
@@ -61,6 +63,8 @@ The review question is not "did we compress assets?" It is "what blocks the firs
 - Third-party script ledger: analytics, tag managers, ads, A/B testing, heatmaps, chat widgets, payment widgets, maps, embeds, consent gates, page scope, and user-intent loading.
 - JavaScript bundle and hydration ledger: initial route bundle, client/server boundaries, `use client` placement, dynamic imports, chunk graph, modulepreload, route prefetching, gzip or brotli transfer size, decompressed size, parse/compile/evaluate cost, and main-thread tasks.
 - Data and HTML delivery ledger: first-view data owner, SSR/RSC/loader/static generation, client effects, serialized initial data, streaming shell, Suspense or loading boundaries, personalization holes, and TTFB evidence.
+- First-decision ledger: the first useful user decision, content required for it, independently usable
+  lower-priority regions, dependency and failure boundaries, stable ordering, and persistent shell.
 - Cache, compression, and resource-hint ledger: CDN HTML cacheability, cache-control headers, fingerprinted assets, private data boundaries, text compression, Early Hints, preconnect origins, and preload accuracy.
 - Main-thread and long-task ledger: expensive parsing, syntax highlighting, charting, search indexing, markdown rendering, JSON work, layout-heavy below-fold DOM, idle work, worker offload, and chunking strategy.
 - Existing tests, performance budgets, traces, RUM, lab reports, build output, bundle output, server timing, or configured command-intent evidence.
@@ -106,17 +110,29 @@ The review question is not "did we compress assets?" It is "what blocks the firs
 19. Do not report gzip-only JavaScript wins as first-render wins. Check whether initial parse, compile, evaluate, hydration, and long tasks improved for the route; use `client-bundle-pruning-review` when unused initial code, chunk boundaries, barrels, side effects, or vendor chunks are the root cause.
 20. Use `modulepreload` only for critical initial modules. Preloading every possible route, widget, or secondary chunk creates a new waterfall in nicer clothes. Validate preload, prefetch, and route-prefetch priority with Resource Timing or configured evidence when a claim depends on request order.
 21. Do not fetch first-view data in a client effect when server, route loader, RSC, static generation, or serialized initial data can safely provide it. Client effects are for enhancement, subscriptions, and browser-only data, not required first pixels.
-22. Stream HTML and shell early. Send stable layout, navigation, critical content, and placeholders as soon as possible; put slow regions behind Suspense, loading boundaries, or progressive sections when the framework supports it.
-23. Split static shells from dynamic holes. Cache and reuse stable HTML around narrow personalized or fast-changing regions instead of making the whole page uncached and origin-bound for one username, cart count, or recommendation slot.
-24. Investigate slow TTFB before polishing the browser side. If TTFB is around or above one second, use Server-Timing, origin logs, cache status, query count, API count, SSR timing, or configured evidence to find the upstream wait.
-25. Cache HTML at the edge when it is safe. Low-personalization pages can often be CDN cached with revalidation or hole punching; private or user-specific pages need explicit cache boundaries to avoid data leaks.
-26. Cache fingerprinted assets with long immutable headers. Do not confuse `no-cache`, `no-store`, `private`, and long-lived immutable caching; the wrong header can either slow every visit or leak user-specific content.
-27. Enable text compression for HTML, CSS, JS, JSON, SVG, and other text resources. Do not waste time recompressing already compressed media such as JPEG, PNG, WebP, AVIF, video, or font formats that are already compressed.
-28. Use Early Hints and preconnect sparingly. They help only when the critical resource or origin is definitely needed soon; speculative hints for many origins can steal sockets and bandwidth from the real first-render path.
-29. Use `content-visibility: auto` with `contain-intrinsic-size` for huge below-fold DOM when supported. It can reduce early layout and paint work, but missing intrinsic size can cause scroll jumps.
-30. Break long main-thread tasks. Heavy JSON parsing, syntax highlighting, chart rendering, markdown rendering, search indexing, diffing, and data formatting may need chunking, idle callbacks, workers, virtualization, or server-side precomputation.
-31. Audit route prefetch behavior. Framework prefetching can help a few likely next clicks, but a page with hundreds of links can turn prefetch into a silent network and CPU tax; disable or move it to hover or viewport intent when needed.
-32. Label evidence honestly. If there is no configured browser trace, network waterfall, bundle report, RUM, or lab measurement, report findings as static critical-path risk or configured-test evidence, not measured Web Vitals improvement.
+22. Prioritize the first user decision, not the component tree. Classify content as required for the
+    first decision, independently useful next, or deferrable decoration and secondary detail. Send
+    actual decision content before dashboard chrome, broad skeletons, or low-value widgets.
+23. Stream HTML and shell early. Send stable layout, navigation, critical content, and placeholders as soon as possible; put slow regions behind Suspense, loading boundaries, or progressive sections when the framework supports it.
+    Place streaming boundaries around independent data dependencies and failure domains, not merely
+    around convenient component folders. Preserve stable ordering and reserve geometry so late
+    sections do not move focus, selection, scroll position, or already usable content.
+24. Split static shells from dynamic holes. Cache and reuse stable HTML around narrow personalized or fast-changing regions instead of making the whole page uncached and origin-bound for one username, cart count, or recommendation slot.
+25. Investigate slow TTFB before polishing the browser side. If TTFB is around or above one second, use Server-Timing, origin logs, cache status, query count, API count, SSR timing, or configured evidence to find the upstream wait.
+26. Cache HTML at the edge when it is safe. Low-personalization pages can often be CDN cached with revalidation or hole punching; private or user-specific pages need explicit cache boundaries to avoid data leaks.
+27. Cache fingerprinted assets with long immutable headers. Do not confuse `no-cache`, `no-store`, `private`, and long-lived immutable caching; the wrong header can either slow every visit or leak user-specific content.
+28. Enable text compression for HTML, CSS, JS, JSON, SVG, and other text resources. Do not waste time recompressing already compressed media such as JPEG, PNG, WebP, AVIF, video, or font formats that are already compressed.
+29. Use Early Hints and preconnect sparingly. They help only when the critical resource or origin is definitely needed soon; speculative hints for many origins can steal sockets and bandwidth from the real first-render path.
+30. Use `content-visibility: auto` with `contain-intrinsic-size` for huge below-fold DOM when supported. It can reduce early layout and paint work, but missing intrinsic size can cause scroll jumps.
+31. Break long main-thread tasks. Heavy JSON parsing, syntax highlighting, chart rendering, markdown rendering, search indexing, diffing, and data formatting may need chunking, idle callbacks, workers, virtualization, or server-side precomputation.
+32. Audit route prefetch behavior. Prefer a bounded set of high-probability next actions and intent
+    signals such as hover, keyboard focus, or pointer down. Abort unused fetches, discard obsolete
+    responses, and count module evaluation, image decode, memory, connection slots, data caps, and
+    battery as speculation cost. A page with hundreds of links must not prefetch them all.
+33. Preserve browser-native return paths. Check BFCache, history restoration, scroll restoration,
+    and persistent app-shell behavior before adding reload-on-back, unload handlers, or client caches
+    that make returning slower than a normal navigation.
+34. Label evidence honestly. If there is no configured browser trace, network waterfall, bundle report, RUM, or lab measurement, report findings as static critical-path risk or configured-test evidence, not measured Web Vitals improvement.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

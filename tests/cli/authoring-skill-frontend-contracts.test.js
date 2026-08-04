@@ -184,8 +184,178 @@ test('frontend state ownership review maps source-of-truth drift', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-state-ownership-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-state-ownership-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-state-ownership-review"\][\s\S]*?revision = 2/u);
 });
+
+test('async operation UX review keeps progress, control, and completion truthful', () => {
+	const skillName = 'async-operation-ux-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Polling, SSE, WebSocket, and push notification are transports/u);
+	assert.match(localSkill, /timer-driven percentage/u);
+	assert.match(localSkill, /phase-local progress/u);
+	assert.match(localSkill, /user-consumable completion/u);
+	assert.match(localSkill, /`cancel requested`/u);
+	assert.match(localSkill, /irreversible boundary/u);
+	assert.match(localSkill, /last durable checkpoint/u);
+	assert.match(localSkill, /global job tray/u);
+	assert.match(localSkill, /replace it atomically/u);
+	assert.match(localSkill, /block money, permission, inventory/u);
+	assert.match(localSkill, /payments, scarce inventory, external delivery/u);
+	assert.match(localSkill, /stable order/u);
+	assert.match(localSkill, /recovery-first error copy/u);
+	assert.match(localSkill, /`100%` without a consumable result/u);
+	assert.match(localSkill, /offline as an operating mode/u);
+	assert.match(localSkill, /first-use empty, filtered or search empty/u);
+	assert.match(skillIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+	assert.match(skillIndex, /truthful progress, phase, queue, ETA/u);
+	assert.match(
+		routes,
+		/\[routes\."async-operation-ux-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"\r?\npriority = 84/u,
+	);
+	assertRouteReasonsText(routes, [
+		'ui_change',
+		'behavior_change',
+		'code_change',
+		'performance_change',
+		'data_change',
+		'test_change',
+		'public_api_change',
+		'docs_change',
+	]);
+	assert.match(routes, /suggests_adjuncts = \["cache-integrity-review", "frontend-state-ownership-review"\]/u);
+	assert.match(manifest, /"\.mustflow\/skills\/async-operation-ux-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"async-operation-ux-review"/u);
+	}
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 2);
+});
+
+test('mobile interaction UX review preserves native platform semantics and lifecycle', () => {
+	const skillName = 'mobile-interaction-ux-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /`back`, `up`, `dismiss`, `close`, `cancel`, and `exit`/u);
+	assert.match(localSkill, /navigation stack or serializable route state/u);
+	assert.match(localSkill, /independent tab branches/u);
+	assert.match(localSkill, /Choose presentation from task lifetime/u);
+	assert.match(localSkill, /System edge navigation wins/u);
+	assert.match(localSkill, /Commit ordinary actions on release/u);
+	assert.match(localSkill, /prevent adjacent expanded targets from\s+overlapping/u);
+	assert.match(localSkill, /Consume runtime insets instead of guessed constants/u);
+	assert.match(localSkill, /use platform\s+keyboard\s+types/u);
+	assert.match(localSkill, /consume each result once/u);
+	assert.match(localSkill, /native controls as behavior packages/u);
+	assert.match(localSkill, /large text sizes, reflow rows and actions/u);
+	assert.match(localSkill, /Classify screen data states/u);
+	assert.match(localSkill, /real-device evidence/u);
+	assert.match(localSkill, /large-screen-adaptive-ux-review/u);
+	assert.match(skillIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+	assert.match(skillIndex, /back, up, dismiss, tab-stack/u);
+	assert.match(
+		routes,
+		/\[routes\."mobile-interaction-ux-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"\r?\npriority = 85/u,
+	);
+	assertRouteReasonsText(routes, [
+		'ui_change',
+		'behavior_change',
+		'code_change',
+		'performance_change',
+		'data_change',
+		'test_change',
+		'public_api_change',
+		'docs_change',
+		'release_risk',
+	]);
+	assert.match(routes, /positive_terms = \["android", "deep-link", "dismiss", "flutter", "ios"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/mobile-interaction-ux-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"mobile-interaction-ux-review"/u);
+	}
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 2);
+});
+
+test('large-screen adaptive UX review preserves workspace continuity across panes and inputs', () => {
+	const skillName = 'large-screen-adaptive-ux-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /list-detail, feed,\s+supporting-pane/u);
+	assert.match(localSkill, /content-derived minimum, preferred, and maximum pane sizes/u);
+	assert.match(localSkill, /available width and height after occlusion and insets/u);
+	assert.match(localSkill, /Preserve the active task while structure changes/u);
+	assert.match(localSkill, /Separate selection, navigation, and editing/u);
+	assert.match(localSkill, /layout state\. Documents,\s+selections, drafts/u);
+	assert.match(localSkill, /must not restart network requests, saving,\s+analytics/u);
+	assert.match(localSkill, /Route every input through semantic commands/u);
+	assert.match(localSkill, /hover, focus, selection, and pressed state distinct/u);
+	assert.match(localSkill, /visible, active, focused, and background states/u);
+	assert.match(localSkill, /Verify transition paths, not screenshots/u);
+	assert.match(localSkill, /selected ID, compact destination, draft, cursor, scroll anchor/u);
+	assert.match(skillIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+	assert.match(skillIndex, /content-derived geometry contract/u);
+	assert.match(
+		routes,
+		/\[routes\."large-screen-adaptive-ux-review"\]\r?\ncategory = "ui_assets"\r?\nroute_type = "adjunct"\r?\npriority = 86/u,
+	);
+	assertRouteReasonsText(routes, [
+		'ui_change',
+		'behavior_change',
+		'code_change',
+		'performance_change',
+		'data_change',
+		'test_change',
+		'public_api_change',
+		'docs_change',
+		'release_risk',
+	]);
+	assert.match(routes, /positive_terms = \["adaptive-layout", "desktop-windowed-mobile"/u);
+	assert.match(routes, /"대화면", "멀티윈도", "분할화면", "태블릿"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/large-screen-adaptive-ux-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"large-screen-adaptive-ux-review"/u);
+	}
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
+});
+
 
 test('split refactor residual path review catches old execution paths after file splits', () => {
 	const localSkill = readText('.mustflow/skills/split-refactor-residual-path-review/SKILL.md');

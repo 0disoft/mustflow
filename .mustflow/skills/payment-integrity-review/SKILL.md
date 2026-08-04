@@ -2,7 +2,7 @@
 mustflow_doc: skill.payment-integrity-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: payment-integrity-review
@@ -47,6 +47,10 @@ Review payment code as money-event integrity, not provider API success. The core
 - The task only designs a generic lifecycle state table with no payment-specific amount, provider, ledger, or fulfillment risk; use `state-machine-pattern`.
 - The task only reviews object authorization, tenant isolation, JWTs, sessions, or API access control; use `api-access-control-review` or `auth-permission-change`.
 - The task only reviews file upload, storage, preview, or download behavior; use `file-upload-security-review`.
+- The task primarily concerns merchant onboarding, domain review, KYB or KYC, product approval,
+  processor rejection, reserve, suspension, payout hold, remediation, appeal, or approved-scope
+  launch gating; use `payment-provider-underwriting-readiness-review` and return here for money-event
+  execution correctness.
 - The task requires live provider account actions, real payment execution, refunds, settlements, secret rotation, or production data changes without explicit user approval and configured command support.
 
 <!-- mustflow-section: required-inputs -->

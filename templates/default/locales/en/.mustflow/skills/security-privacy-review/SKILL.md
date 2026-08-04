@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 28
+revision: 29
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
@@ -71,6 +71,10 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 ## Do Not Use When
 
 - The task needs a concrete abuse-case regression test; use `security-regression-tests` for that part.
+- The primary task is to align jurisdiction-specific product behavior, terms, privacy notices,
+  consent, refund or cancellation policy, age assurance, AI disclosure, regional availability, or
+  consumer-rights evidence; use `jurisdictional-product-compliance-review` and this skill only for
+  its security, personal-data, retention, vendor, or incident boundary.
 - The task is only dependency availability, package version freshness, or artifact packaging without sensitive data.
 - The task is a general security checklist with no changed boundary, data flow, or disclosure surface to inspect.
 

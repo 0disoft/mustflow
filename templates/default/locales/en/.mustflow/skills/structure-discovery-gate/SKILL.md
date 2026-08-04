@@ -2,7 +2,7 @@
 mustflow_doc: skill.structure-discovery-gate
 locale: en
 canonical: true
-revision: 28
+revision: 29
 lifecycle: mustflow-owned
 authority: procedure
 name: structure-discovery-gate
@@ -80,6 +80,9 @@ data, authorization, failure behavior, scale, operations, or long-term structure
 - The task is a tiny mechanical edit with an obvious target file and no new boundary.
 - The user explicitly asks for a disposable prototype, spike, or one-off example where future structure is out of scope.
 - A structure decision has already been made in current project instructions, accepted design docs, or the immediately preceding user answer.
+- The structure is already implemented and the task primarily audits owned identifiers, semantic
+  export, configuration reconstruction, control assets, alternate environments, or exit drills;
+  use `vendor-portability-exit-readiness-review`.
 - The task is only to match an existing local pattern; use `pattern-scout` unless hidden product assumptions may still change the shape.
 
 <!-- mustflow-section: required-inputs -->

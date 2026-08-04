@@ -34,8 +34,146 @@ test('dependency and security reviews deduplicate alerts and harden privileged w
 	assert.match(securitySkill, /A generous elapsed-time assertion is only a tripwire/u);
 	assert.match(securitySkill, /successful CodeQL workflow proves analysis ran, not that the alert disappeared/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 8/u);
-	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 28/u);
+	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 29/u);
 	assert.match(i18n, /\[documents\."skill\.security-regression-tests"\][\s\S]*?revision = 13/u);
+});
+
+test('jurisdictional product compliance review binds behavior, policy, enforcement, and evidence', () => {
+	const skillName = 'jurisdictional-product-compliance-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(
+		`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`,
+	);
+	const securitySkill = readText('.mustflow/skills/security-privacy-review/SKILL.md');
+	const templateSecuritySkill = readText(
+		'templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(securitySkill, templateSecuritySkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const phrase of [
+		'Product facts ledger',
+		'current official authority',
+		'Build a jurisdiction-by-capability matrix',
+		'Separate legal decisions from rollout flags',
+		'Model age and child protection by purpose',
+		'Classify AI events before disclosure',
+		'Derive legal documents from behavior and rules',
+		'Model privacy rights as an owned workflow',
+		'Model refund and cancellation from transaction state',
+		'Create reproducible compliance receipts',
+		'Monitor regulatory change as a source-state machine',
+		'Test behavior-policy-document parity',
+		'does not determine legal advice',
+	]) {
+		assert.ok(localSkill.includes(phrase), `missing compliance contract phrase: ${phrase}`);
+	}
+	assert.match(securitySkill, /jurisdictional-product-compliance-review/u);
+	assert.match(skillIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+	assert.match(skillIndex, /generated prose as legal proof/u);
+	assert.match(
+		routes,
+		/\[routes\."jurisdictional-product-compliance-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"\r?\npriority = 88/u,
+	);
+	assert.deepEqual(routeReasons(routes, skillName), [
+		'behavior_change',
+		'code_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'test_change',
+		'docs_change',
+		'public_api_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, new RegExp(`"\\.mustflow/skills/${skillName}/SKILL\\.md"`, 'u'));
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], new RegExp(`"${skillName}"`, 'u'));
+	}
+	assertSkillsIndexRevision(i18n);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.jurisdictional-product-compliance-review"\][\s\S]*?revision = 2/u,
+	);
+});
+
+test('payment provider underwriting review binds truthful facts, approved scope, remediation, and runtime', () => {
+	const skillName = 'payment-provider-underwriting-readiness-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(
+		`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`,
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const phrase of [
+		'Create one canonical underwriting facts source',
+		'Reconcile the merchant identity graph',
+		'Describe transactions instead of marketing categories',
+		'Build a reviewable product path',
+		'Build the approval-scope matrix before the payment router',
+		'Enforce scope across every product surface',
+		'Separate legitimate product boundaries from evasion',
+		'Stage applications and changes for consistency',
+		'Classify rejection and suspension precisely',
+		'Analyze risk by cause and cohort',
+		'Fix the cause before preparing an appeal',
+		'Submit a bounded evidence packet',
+		'Control multi-provider retry and failover',
+		'Resume in observable stages',
+		'Treat alternative payment channels as new contracts',
+		'Test approval-policy-runtime parity',
+		'Never report that approval is guaranteed',
+	]) {
+		assert.ok(localSkill.includes(phrase), `missing underwriting contract phrase: ${phrase}`);
+	}
+	for (const neighbor of [
+		'payment-integrity-review',
+		'jurisdictional-product-compliance-review',
+		'vendor-portability-exit-readiness-review',
+	]) {
+		assert.match(readText(`.mustflow/skills/${neighbor}/SKILL.md`), new RegExp(skillName, 'u'));
+	}
+	assert.match(skillIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+	assert.match(
+		routes,
+		/\[routes\."payment-provider-underwriting-readiness-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 90/u,
+	);
+	assert.deepEqual(routeReasons(routes, skillName), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'public_api_change',
+		'security_change',
+		'privacy_change',
+		'data_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, new RegExp(`"\\.mustflow/skills/${skillName}/SKILL\\.md"`, 'u'));
+	assert.equal((manifest.match(new RegExp(`"${skillName}"`, 'gu')) ?? []).length, 6);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
 });
 
 test('admin control plane safety review treats backoffice tools as production control planes', () => {

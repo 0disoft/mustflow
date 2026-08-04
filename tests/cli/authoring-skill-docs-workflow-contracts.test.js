@@ -242,7 +242,7 @@ test('writing elegance skill stores reusable phrase fragments outside the main p
 		assert.equal(profileBlock(profile).includes('"writing-elegance"'), false, `${profile} profile should not include skill`);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.writing-elegance"\][\s\S]*?revision = 9/u);
+	assert.match(i18n, /\[documents\."skill\.writing-elegance"\][\s\S]*?revision = 10/u);
 	assert.match(i18n, /\[documents\."skill\.writing-elegance\.phrase-bank"\][\s\S]*?revision = 1/u);
 });
 
@@ -680,6 +680,11 @@ test('ui quality gate folds external UI review lessons into mustflow boundaries'
 	assert.match(localSkill, /vibe-coded UI/u);
 	assert.match(localSkill, /style drift/u);
 	assert.match(localSkill, /visual hierarchy/u);
+	assert.match(localSkill, /one decision the screen supports/u);
+	assert.match(localSkill, /Treat spacing as grammar/u);
+	assert.match(localSkill, /Budget strong emphasis/u);
+	assert.match(localSkill, /icons as recognition aids, not puzzles/u);
+	assert.match(localSkill, /Review AI-generated visual habits explicitly/u);
 	assert.match(localSkill, /touch targets/u);
 	assert.match(localSkill, /keyboard and focus/u);
 	assert.match(localSkill, /accessible names and states/u);

@@ -2,7 +2,7 @@
 mustflow_doc: skill.product-onboarding-activation-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: product-onboarding-activation-review
@@ -90,6 +90,9 @@ opens from masquerading as activation or paid conversion.
 - Instruction ledger: task complexity, prerequisite knowledge, safety or legal requirement,
   no-onboarding path, short task path, contextual help triggers, detailed tutorial, skip or advanced
   path, and successful task postcondition.
+- Permission and resume ledger: each permission's triggering user action, pre-prompt explanation,
+  denied-mode capability, settings recovery, draft fields, OTP or verification identity, resend
+  state, background or process-loss restoration, and idempotent submit identity.
 - Activation contract: user-owned result, required input, successful postcondition, allowed sample
   contribution, time window, repeat-value event, paid outcome, and invalid proxy events.
 - Funnel ledger: eligible visitor, core-task start, account checkpoint reached, account completed,
@@ -158,6 +161,9 @@ opens from masquerading as activation or paid conversion.
 8. Price each question against the work it changes. Ask an early question only when its answer
    changes the immediate sample, recommendation, primary action, permissions, or result path enough
    to plausibly offset abandonment. Defer fields inferable from later behavior.
+   Separate information required to create, secure, and recover the account from information useful
+   only for marketing, CRM enrichment, or later personalization. Optional fields must remain visibly
+   optional and cannot be smuggled into required terms.
 9. Prefer a low-effort intent choice over typed profiling. Add another question only when its answer
    creates a distinct first task or prevents a material wrong path. Do not copy a universal question
    count, field-drop rate, completion threshold, or three-step rule from another product.
@@ -185,26 +191,34 @@ opens from masquerading as activation or paid conversion.
     only when prerequisite knowledge, safety, irreversibility, or legal duty makes it necessary.
 16. Teach by completing the real task. Keep skip, back, resume, and advanced paths where safe; store
     progress only when useful; avoid long passive tours before value; and do not count tutorial completion as activation.
-17. Choose one primary action per current intent. Secondary navigation, escape, accessibility, and
+17. Request permissions at the first user action that needs them, not as an opening batch. Explain
+    the immediate value before the system prompt, keep unaffected features usable after denial, and
+    provide a settings or alternate path when the platform no longer permits an ordinary re-prompt.
+18. Preserve signup work through recoverable failures. Keep entered values after validation,
+    network, background, or process-loss failures; place actionable errors beside their owning
+    fields; retain the verification destination on OTP screens; support platform autofill and
+    password managers; and make submit and resend behavior idempotent and status-queryable.
+19. Choose one primary action per current intent. Secondary navigation, escape, accessibility, and
     safety controls remain available but visually subordinate. Reveal broader features after the
     first owned result or when the user explicitly asks for them.
-18. Randomize before the intervention. Compare the current path with bounded variants such as guest
+20. Randomize before the intervention. Compare the current path with bounded variants such as guest
     preview, a different account checkpoint, fewer questions, authentication choice, editable
     sample, contextual help, or a focused primary action. Avoid changing all mechanisms at once
     unless the experiment intentionally evaluates the complete bundle.
-19. Calculate friction break-even explicitly. When downstream outcome definitions are equal, a
+21. Calculate friction break-even explicitly. When downstream outcome definitions are equal, a
     conditional outcome lift must at least offset the ratio between control and variant completion.
     Prefer directly observed per-eligible-visitor outcomes over modeled or borrowed rates.
-20. Track outcome depth and durability separately: core-task start, account completion, first own
+22. Track outcome depth and durability separately: core-task start, account completion, first own
     result, repeated core action, retained use, paid conversion, refund or cancellation, support
-    burden, guest compute cost, abuse, duplicate accounts, recovery failure, and identity-link error.
-21. Predeclare guardrails and analysis policy. Include latency, accessibility, privacy, error rate,
+    burden, guest compute cost, abuse, duplicate accounts, recovery failure, identity-link error,
+    permission denial, verification cancellation, resend count, and interrupted-flow return.
+23. Predeclare guardrails and analysis policy. Include latency, accessibility, privacy, error rate,
     support contacts, sample cleanup, low-frequency use cases, segment heterogeneity, and delayed
     outcomes. Correct for repeated peeking and do not promote post-hoc segments as preregistered.
-22. Preserve experiment identity across anonymous state, account creation, authentication retries,
+24. Preserve experiment identity across anonymous state, account creation, authentication retries,
     devices, and identity linking. Record assignment and exposure separately so tracking prevention,
     duplicate events, or late loading cannot silently move units between variants.
-23. Promote only when the full assigned cohort improves or a declared target segment has a safe,
+25. Promote only when the full assigned cohort improves or a declared target segment has a safe,
     stable policy. Keep reversible fallbacks for unsupported intents, identity-provider failure,
     guest-transfer failure, and new-user states.
 

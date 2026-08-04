@@ -2,7 +2,7 @@
 mustflow_doc: skill.durable-workflow-orchestration
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: durable-workflow-orchestration
@@ -53,6 +53,9 @@ durable without pretending external effects can be rolled back like one database
 - The main failure is queue settlement, duplicate logical delivery, or child-task lifetime; use
   `queue-processing-integrity-review`, `idempotency-integrity-review`, or
   `structured-concurrency-supervision-review` respectively.
+- The workflow is already durable and the task is only truthful progress, cancellation controls,
+  retry presentation, partial results, or background-completion UX; use
+  `async-operation-ux-review`.
 - LLM autonomy, tool choice, or approval of model-directed work is the main concern; use
   `agent-execution-control-review` and apply this skill only to the durable workflow underneath it.
 - An order with one local `PENDING -> PAID -> SHIPPED` transition table is not automatically a
@@ -69,6 +72,9 @@ durable without pretending external effects can be rolled back like one database
 - Checkpoint and resume-compatibility ledger for code, state schema, configuration, and policy.
 - Compensation ledger linking each compensating command to its original effect and idempotency key.
 - Timer, lease, cancellation, late-event, terminal-state, and reconciliation ledgers.
+- Acceptance and progress ledger: durable handoff boundary, status lookup identity, lifecycle phase,
+  completed and total units when knowable, monotonic revision or event sequence, heartbeat,
+  user-consumable result predicate, and retention.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -98,6 +104,9 @@ durable without pretending external effects can be rolled back like one database
    workflow for a local sequence that cannot survive or need process loss.
 3. Create a stable workflow instance ID and pin the workflow definition, state schema, code,
    configuration, and policy versions required for safe resume.
+   - When an HTTP request accepts background work, commit the workflow or job record and its outbox
+     request before returning acceptance. Return a stable operation ID and status location; do not
+     bind workflow lifetime to the request handler or an in-memory promise.
 4. Record each step's normalized input snapshot, command identity, dependency, deadline, attempt,
    owner, next permitted events, and durable completion evidence.
    - Before an external or non-transactional effect, durably record the intended effect and stable
@@ -122,16 +131,30 @@ durable without pretending external effects can be rolled back like one database
    Migrate, continue under the pinned version, or stop for intervention; never guess through drift.
 10. Fence stale owners and reject late callbacks, timers, or completions from an older workflow
     generation or already-closed step.
+    - A renewable lease or heartbeat is not sufficient write authority by itself. Carry a monotonic
+      fencing token or generation into protected writes so an expired worker cannot publish after a
+      successor takes over.
 11. Define cancellation separately from compensation. State which pending work stops, which accepted
     external effects continue, which compensations start, and when cancellation becomes terminal.
-12. Preserve partial completion and compensation failure as observable outcomes such as
+    Treat `CANCEL_REQUESTED` as nonterminal until the current owner reaches a safe checkpoint or
+    reports an irreversible boundary.
+12. Persist progress as workflow evidence when it is user-visible or operationally actionable.
+    Record phase, completed units, total units when knowable, monotonic revision or event sequence,
+    heartbeat, retry state, and result availability. Do not derive progress from elapsed time, and
+    mark success only when the committed result or receipt is usable by the caller.
+13. Choose checkpoint frequency from replay cost, effect boundaries, write amplification, and the
+    recovery objective. Do not hardcode one interval for every workload.
+14. Expose resumable status without making transport authoritative. Polling, SSE, WebSocket, and push
+    can carry ordered status events, but reconnect must recover from the durable operation record and
+    a sequence cursor. Define result and event retention, expiry, and notification ownership.
+15. Preserve partial completion and compensation failure as observable outcomes such as
     `FORWARD_RECOVERY_REQUIRED` or `MANUAL_INTERVENTION`, not generic failure or false rollback.
-13. Test restart before and after every step, duplicate and late completion, version drift, timer
+16. Test restart before and after every step, duplicate and late completion, version drift, timer
     expiry, stale owner, cancellation, compensation failure, reconciliation, and manual resume.
     - This skill owns workflow-step, terminal-state, and compensation-state recovery. Route
       delivery, consumer-application, and projection convergence across independent commits to
       `dual-write-consistency`.
-14. Reconcile durable workflow claims periodically when independent systems can drift. Compare
+17. Reconcile durable workflow claims periodically when independent systems can drift. Compare
     terminal workflow states with result objects, provider receipts, reservations, compensations,
     and published effects. Route safe repair through an idempotent command and unsafe ambiguity to
     an auditable manual-intervention queue.

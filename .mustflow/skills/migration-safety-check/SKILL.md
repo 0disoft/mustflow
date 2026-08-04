@@ -2,7 +2,7 @@
 mustflow_doc: skill.migration-safety-check
 locale: en
 canonical: true
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: procedure
 name: migration-safety-check
@@ -53,6 +53,9 @@ Keep migrations reversible, scoped, and verified before they affect data, schema
 - The task only edits inert documentation and makes no claim about applying or validating a migration.
 - The migration would require live production access, destructive actions, or manual operator approval that is outside the current command contract.
 - The task defines workflow progression, checkpoint semantics, compensation order, run truth, attempt truth, effect truth, or public JSON meaning. Use the owning workflow, execution-ledger, or public-contract skill; this skill owns only the old-to-new transformation.
+- The task evaluates whether an adopted vendor is replaceable but does not yet execute an old-to-new
+  transformation; use `vendor-portability-exit-readiness-review` for the exit contract and return
+  here when a concrete migration plan exists.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs

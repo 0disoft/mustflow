@@ -1142,6 +1142,231 @@
       ]
     },
     {
+      "id": "native-mobile-navigation-lifecycle-ux",
+      "task": "Review a React Native iOS and Android flow so back, up, dismiss and cancel stay distinct, each tab preserves its stack, predictive back and edge gestures do not fight a carousel, keyboard insets keep the CTA visible, and an external payment result is consumed once after process recreation",
+      "paths": [
+        "apps/mobile/src/navigation/CheckoutFlow.tsx",
+        "apps/mobile/src/screens/CheckoutScreen.tsx"
+      ],
+      "reasons": [
+        "ui_change",
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "mobile-interaction-ux-review"
+      ],
+      "forbidden_candidates": [
+        "web-render-performance-review"
+      ]
+    },
+    {
+      "id": "web-responsive-safe-area-not-native-mobile",
+      "task": "Fix a browser-only responsive checkout footer that overlaps CSS safe-area-inset-bottom and loses focus at 200 percent browser zoom",
+      "paths": [
+        "src/web/checkout-footer.css",
+        "tests/web/checkout-footer.spec.ts"
+      ],
+      "reasons": [
+        "ui_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "frontend-stress-layout-review"
+      ],
+      "forbidden_candidates": [
+        "mobile-interaction-ux-review"
+      ]
+    },
+    {
+      "id": "tablet-adaptive-workspace-korean",
+      "task": "React Native 네이티브 모바일 앱을 태블릿과 폴더블에서 목록 상세 편집 패널을 현재 창 폭과 작업 상태에 맞춰 1개 2개 3개로 바꾸고, 분할 화면 회전 중에도 선택 ID 초안 포커스 스크롤을 보존해. 터치 펜 키보드 마우스가 같은 명령과 실행 취소 계약을 쓰게 해",
+      "paths": [
+        "apps/mobile/src/adaptive/WorkspaceLayout.tsx",
+        "apps/mobile/src/adaptive/WorkspaceLayout.test.tsx"
+      ],
+      "reasons": [
+        "ui_change",
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "large-screen-adaptive-ux-review"
+      ],
+      "forbidden_candidates": [
+        "frontend-stress-layout-review"
+      ]
+    },
+    {
+      "id": "browser-container-query-not-native-large-screen",
+      "task": "Fix a browser-only dashboard CSS grid so container queries collapse three columns inside a narrow embedded parent and remain usable at 200 percent zoom",
+      "paths": [
+        "src/web/dashboard-grid.css",
+        "tests/web/dashboard-grid.spec.ts"
+      ],
+      "reasons": [
+        "ui_change",
+        "web_asset_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "frontend-stress-layout-review"
+      ],
+      "forbidden_candidates": [
+        "large-screen-adaptive-ux-review"
+      ]
+    },
+    {
+      "id": "async-operation-progress-control-ux",
+      "task": "Review a long-running export UI so real processed rows drive phase-local progress, cancel requested stays pending until acknowledged, navigation continues through a global job tray, and 100% waits for a downloadable result",
+      "paths": [
+        "src/ui/export-job-progress.tsx",
+        "tests/ui/export-job-progress.test.tsx"
+      ],
+      "reasons": [
+        "ui_change",
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "async-operation-ux-review"
+      ],
+      "forbidden_candidates": [
+        "web-render-performance-review"
+      ]
+    },
+    {
+      "id": "worker-lease-fencing-without-user-ux",
+      "task": "Fix a background worker lease takeover so a stale worker cannot publish after a successor acquires a higher fencing generation",
+      "paths": [
+        "src/workers/export-worker.ts",
+        "tests/workers/export-worker.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "async-operation-ux-review"
+      ]
+    },
+    {
+      "id": "jurisdictional-product-compliance-korean",
+      "task": "국가와 기능별 관할 규칙을 버전 관리하고 실제 가입 결제 환불 삭제 AI 생성물 동작이 약관 개인정보처리방침 동의 기록 연령 확인 소비자 권리와 일치하는지 검증해. 공식 규제 상태와 시행일을 기록하고 서버 기능 게이트와 compliance receipt를 남겨",
+      "paths": [
+        "src/compliance/jurisdiction-policy.ts",
+        "docs/legal/privacy-notice.md",
+        "tests/compliance/jurisdiction-policy.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "privacy_change",
+        "docs_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "jurisdictional-product-compliance-review"
+      ]
+    },
+    {
+      "id": "payment-webhook-only-not-jurisdictional-compliance",
+      "task": "Fix a payment provider webhook retry so duplicate delivery cannot capture or fulfill an order twice",
+      "paths": [
+        "src/payments/provider-webhook.ts",
+        "tests/payments/provider-webhook.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "jurisdictional-product-compliance-review"
+      ]
+    },
+    {
+      "id": "vendor-exit-readiness-korean",
+      "task": "현재 SaaS와 클라우드 사업자 락인을 검토하고 제품 소유 ID, 관계와 권한을 보존하는 데이터 반출, 설정과 비밀 재발급, 독립 백업 키, 재시작 가능한 복구기, 빈 계정 독립 복구 훈련으로 실제 공급자 교체와 탈출 계획을 증명해",
+      "paths": [
+        "src/portability/provider-mapping.ts",
+        "docs/operations/vendor-exit.md",
+        "tests/portability/restore-drill.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "data_change",
+        "docs_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "vendor-portability-exit-readiness-review"
+      ]
+    },
+    {
+      "id": "technology-choice-not-exit-readiness",
+      "task": "Compare two managed databases for a new prototype using expected workload, cost per accepted outcome, support history, and maintainer toil before choosing one",
+      "paths": [
+        "docs/architecture/database-options.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "technology-stack-selection"
+      ],
+      "forbidden_candidates": [
+        "vendor-portability-exit-readiness-review"
+      ]
+    },
+    {
+      "id": "payment-provider-underwriting-remediation-korean",
+      "task": "결제사 가맹점 심사를 위해 하나의 사업자 사실 장부와 provider-account-seller-domain-product-SKU-country 승인 범위를 만들고 서버 동작과 약관을 맞춰. 거절 원인을 분류하고 실제 통제를 고친 뒤 분모가 있는 지표로 재심사 자료를 만들되 다른 MID로 거래를 세탁하거나 정지 계정을 우회하지 마",
+      "paths": [
+        "src/payments/approved-scope.ts",
+        "docs/payments/underwriting-remediation.md",
+        "tests/payments/approved-scope.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "security_change",
+        "docs_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "payment-provider-underwriting-readiness-review"
+      ]
+    },
+    {
+      "id": "payment-webhook-only-not-underwriting",
+      "task": "Fix webhook idempotency so a duplicate provider event cannot capture, refund, or fulfill twice",
+      "paths": [
+        "src/payments/provider-webhook.ts",
+        "tests/payments/provider-webhook.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "payment-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "payment-provider-underwriting-readiness-review"
+      ]
+    },
+    {
       "id": "security-redos-codeql-korean",
       "task": "CodeQL 비효율적 정규식 경고의 구분자 중첩 백트래킹을 고치고 긴 악성 non-match 회귀 테스트로 ReDoS를 막아",
       "paths": [

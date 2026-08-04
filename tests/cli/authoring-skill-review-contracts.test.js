@@ -544,7 +544,7 @@ test('payment integrity review keeps money events idempotent and auditable', () 
 	assert.match(manifest, /"\.mustflow\/skills\/payment-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"payment-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.payment-integrity-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.payment-integrity-review"\][\s\S]*?revision = 5/u);
 });
 
 test('notification delivery integrity review keeps message intent delivery and suppression explainable', () => {

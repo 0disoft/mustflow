@@ -735,6 +735,18 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 positive_terms = ["billing", "charge", "payment", "price", "subscription", "trial"]
 negative_terms = ["internal-cost-only", "provider-selection-only"]
 
+[routes."payment-provider-underwriting-readiness-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 90
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."payment-provider-underwriting-readiness-review".contexts]
+positive_terms = ["approved-scope", "domain-review", "kyb", "kyc", "merchant-account", "merchant-underwriting", "payment-provider-approval", "payment-provider-rejection", "payout-hold", "processor-suspension", "reserve-review", "risk-remediation", "transaction-laundering", "underwriting-appeal"]
+negative_terms = ["payment-webhook-only", "provider-exit-only", "refund-execution-only"]
+concept_aliases = ["가맹점 심사", "결제업체 거절", "결제사 심사", "사업자 인증", "심사 우회", "재심사", "정산 보류", "승인 범위", "거래 세탁"]
+
 [routes."credit-ledger-integrity-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -1658,6 +1670,18 @@ priority = 55
 selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."vendor-portability-exit-readiness-review"]
+category = "data_external"
+route_type = "adjunct"
+priority = 89
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "data_change", "migration_change", "security_change", "privacy_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."vendor-portability-exit-readiness-review".contexts]
+positive_terms = ["clean-account-rebuild", "configuration-reconstruction", "control-asset-separation", "data-portability", "exit-drill", "exit-readiness", "exit-tax", "independent-restore", "provider-portability", "provider-replacement", "recovery-contract", "semantic-export", "saas-export", "survival-mode", "vendor-exit", "vendor-lock-in"]
+negative_terms = ["database-schema-only", "migration-execution-only", "technology-choice-only"]
+concept_aliases = ["공급자 교체", "데이터 반출", "락인", "복구 계약", "사업자 이전", "탈출 계획", "독립 복구", "语义导出", "供应商锁定", "退出演练"]
+
 [routes."database-migration-change"]
 category = "data_external"
 route_type = "primary"
@@ -1936,6 +1960,21 @@ applies_to_reasons = ["security_change", "privacy_change", "package_metadata_cha
 positive_terms = ["codeql-alert", "delimiter-overlap", "exponential-backtracking", "inefficient-regular-expression", "redos", "regex-denial-of-service", "scanner-alert"]
 concept_aliases = ["정규식 서비스 거부", "정규식 백트래킹", "비효율적 정규식", "正则表达式拒绝服务", "正则回溯"]
 
+[routes."jurisdictional-product-compliance-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 88
+selection_axis = "task"
+applies_to_reasons = ["behavior_change", "code_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "public_api_change", "package_metadata_change", "release_risk"]
+
+[routes."jurisdictional-product-compliance-review".dependencies]
+suggests_adjuncts = ["policy-decision-integrity-review", "payment-integrity-review"]
+
+[routes."jurisdictional-product-compliance-review".contexts]
+positive_terms = ["age-assurance", "ai-disclosure", "child-safety", "compliance-receipt", "consent-ledger", "consumer-rights", "cookie-consent", "jurisdiction", "legal-policy", "merchant-of-record", "privacy-notice", "refund-policy", "regional-addendum", "regional-compliance", "regulatory-monitoring", "terms-of-service"]
+negative_terms = ["payment-webhook-only", "security-scanner-only", "wording-only-docs"]
+concept_aliases = ["개인정보처리방침", "관할", "규제", "약관", "연령 확인", "환불 정책", "소비자 권리", "隐私声明", "管辖区", "退款政策"]
+
 [routes."secret-exposure-response"]
 category = "security_privacy"
 route_type = "event"
@@ -2134,6 +2173,49 @@ priority = 80
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"]
 
+[routes."async-operation-ux-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change"]
+
+[routes."async-operation-ux-review".dependencies]
+suggests_adjuncts = ["cache-integrity-review", "frontend-state-ownership-review"]
+
+[routes."async-operation-ux-review".contexts]
+positive_terms = ["background-job", "cancel-requested", "cancellation", "eta", "heartbeat", "loading", "offline", "partial-result", "progress", "queue-position", "retry", "stale-data"]
+negative_terms = ["lcp", "redis-cluster", "render-blocking", "worker-lease"]
+
+[routes."mobile-interaction-ux-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 85
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change", "release_risk"]
+
+[routes."mobile-interaction-ux-review".dependencies]
+suggests_adjuncts = ["async-operation-ux-review", "frontend-state-ownership-review"]
+
+[routes."mobile-interaction-ux-review".contexts]
+positive_terms = ["android", "deep-link", "dismiss", "flutter", "ios", "jetpack-compose", "keyboard-inset", "mobile-navigation", "predictive-back", "process-recreation", "react-native", "safe-area", "swiftui", "talkback", "touch-target", "voiceover"]
+negative_terms = ["browser-accessibility-tree", "css-safe-area", "web-responsive"]
+
+[routes."large-screen-adaptive-ux-review"]
+category = "ui_assets"
+route_type = "adjunct"
+priority = 86
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change", "docs_change", "release_risk"]
+
+[routes."large-screen-adaptive-ux-review".dependencies]
+suggests_adjuncts = ["mobile-interaction-ux-review", "frontend-state-ownership-review", "async-operation-ux-review"]
+
+[routes."large-screen-adaptive-ux-review".contexts]
+positive_terms = ["adaptive-layout", "desktop-windowed-mobile", "drag-and-drop", "external-display", "foldable", "freeform-window", "inspector-pane", "large-screen", "list-detail", "multi-pane", "multi-selection", "multi-window", "navigation-rail", "pointer-input", "split-screen", "stylus", "supporting-pane", "tablet", "window-resize", "대화면", "멀티윈도", "분할화면", "태블릿"]
+negative_terms = ["browser-only", "browser-only-responsive", "container-query", "css-container-query-only", "css-grid", "phone-only-navigation"]
+
+
 [routes."ui-state-resurrection-review"]
 category = "ui_assets"
 route_type = "adjunct"
@@ -2160,6 +2242,9 @@ route_type = "adjunct"
 priority = 80
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "web_asset_change", "test_change", "docs_change"]
+
+[routes."frontend-stress-layout-review".contexts]
+negative_terms = ["jetpack-compose", "native-mobile", "react-native", "swiftui"]
 
 [routes."frontend-accessibility-tree-review"]
 category = "ui_assets"

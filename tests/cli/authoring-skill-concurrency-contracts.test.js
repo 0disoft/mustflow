@@ -112,7 +112,7 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 4/u);
 });
 
 test('ui dispatch lifecycle review rejects stale queued work on the right thread', () => {

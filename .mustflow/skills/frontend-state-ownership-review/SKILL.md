@@ -2,7 +2,7 @@
 mustflow_doc: skill.frontend-state-ownership-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: frontend-state-ownership-review
@@ -47,6 +47,9 @@ The core question is: "Can the same value live in two places and drift?" If yes,
 - The task only models impossible domain states in type shapes; use `type-state-modeling-review` first and this skill only when frontend ownership or synchronization is also at risk.
 - The task only reviews cache correctness outside frontend client state; use `cache-integrity-review` first and this skill only for client-side server-cache copies, query keys, stale rendering, or invalidation UI effects.
 - The task only reviews render timing, LCP, CLS, INP, hydration flash, or frame jank; use the matching frontend performance or render-stability skill first and this skill only when state ownership causes the symptom.
+- The task is mainly truthful progress, phase, cancellation, retry, background completion, partial
+  result, or slow/offline recovery UX; use `async-operation-ux-review` and apply this skill only when
+  duplicated or stale client state causes the lie.
 - The task is a purely visual or copy-only UI change with no state, data, routing, form, cache, or subscription behavior.
 - The framework or library owns the state contract and no project code creates, copies, derives, persists, or mutates the value; report that this skill does not apply instead of inventing state risk.
 
@@ -113,9 +116,17 @@ The core question is: "Can the same value live in two places and drift?" If yes,
 9. Review mutations and optimistic updates.
    - Each optimistic update needs rollback, duplicate-submit behavior, disabled or queued actions, failed retry behavior, and invalidation scope.
    - Mutation invalidation should refresh the smallest true data surface without leaving related lists, detail pages, badges, totals, or permissions stale.
+   - Classify the expected local state separately from confirmed server fact. Keep a visible pending
+     marker until confirmation and merge by stable mutation or temporary identity.
+   - Optimistic state is for reversible, low-harm actions. Payments, scarce inventory, external
+     delivery, permission changes, permanent deletion, and legal, medical, or similarly consequential
+     submissions must not appear confirmed before the authority accepts them.
 10. Review request races.
     - Search, filter, autocomplete, pagination, tab changes, and route changes need AbortController, request IDs, library cancellation, or query-key ownership so older responses cannot overwrite newer state.
-    - Do not accept "last promise wins" unless the library contract proves stale results are ignored.
+   - Do not accept "last promise wins" unless the library contract proves stale results are ignored.
+   - During a compatible background refresh, preserve the old semantic snapshot and replace it
+     atomically. Clear or isolate it when actor, tenant, authorization, resource identity, or schema
+     meaning changes.
 11. Review actions and setter exposure.
     - Avoid exporting raw setters through context or stores when callers need domain intent such as `selectProject`, `applyFilters`, `resetDraft`, or `markSaved`.
     - Repeated reset calls, scattered business logic, and component-local policy branches should move to an action, selector, or custom hook with one owner.

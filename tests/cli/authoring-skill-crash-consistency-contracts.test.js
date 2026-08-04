@@ -75,6 +75,6 @@ test('neighbor skills keep crash durability, workflow, security, and false-succe
 	assert.match(failure, /independently owned verifier or reconciliation/u);
 	assertI18nSkillDocument(i18n, 'cross-platform-filesystem-safety', 10);
 	assertI18nSkillDocument(i18n, 'file-upload-security-review', 4);
-	assertI18nSkillDocument(i18n, 'durable-workflow-orchestration', 2);
+	assertI18nSkillDocument(i18n, 'durable-workflow-orchestration', 3);
 	assertI18nSkillDocument(i18n, 'failure-integrity-review', 3);
 });

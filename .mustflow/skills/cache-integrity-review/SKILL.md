@@ -2,7 +2,7 @@
 mustflow_doc: skill.cache-integrity-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: cache-integrity-review
@@ -65,6 +65,8 @@ and what happens to the source system when the cache misses or fails?"
   use `http-delivery-streaming` first and this skill only for cache reuse correctness.
 - The task is a broad performance budget, profiling, benchmark, or load-test design; use
   `performance-budget-check` first and this skill for cache integrity boundaries.
+- The cache contract is already defined and the task is only user-visible stale labeling, progress,
+  cancellation, retry, or background-refresh controls; use `async-operation-ux-review`.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
@@ -87,6 +89,9 @@ and what happens to the source system when the cache misses or fails?"
 - Failure and concurrency contract: miss behavior, concurrent miss behavior, source timeout, Redis
   failure, source failure, negative cache policy, update race behavior, invalidation ordering, and
   stale serve policy.
+- Speculation contract: action probability, hover, focus, pointer, viewport, or prediction trigger;
+  network, CPU, memory, and decode budget; abort or discard behavior; and whether prefetched data is
+  scoped to the same actor, tenant, authorization, locale, and semantic resource identity.
 - Observability evidence: hit, miss, bypass, stale, refresh, negative-hit, set-failed, error,
   eviction, expiry, and fallback metrics; miss cost; hit-rate cost by endpoint or tenant; value
   size; key count; source query time; source call count; origin saturation; Redis client wait,
@@ -179,6 +184,8 @@ and what happens to the source system when the cache misses or fails?"
       mutation id, or operation owner before writing into cache or UI state.
     - Request coalescing is not obsolete-request discard. Same-key requests may share work; different
       keys or superseded views need apply-time freshness checks.
+    - Replace a compatible refreshed snapshot atomically. Do not render a half-old, half-new mixture
+      merely because fields or pages arrived at different times.
 11. Check partial entity overwrite.
     - A summary response should not erase fields that only a detail response owns.
     - Define merge policy for partial values, field completeness, null versus absent fields, and
@@ -192,6 +199,12 @@ and what happens to the source system when the cache misses or fails?"
       whole old cache snapshot blindly.
     - Prefer per-mutation rollback, server refetch, or versioned merge when more than one mutation can
       overlap.
+    - Classify optimistic eligibility before implementation. Payments, scarce inventory, external
+      delivery, permission changes, permanent deletion, and legal, medical, or similarly
+      consequential submissions must remain visibly pending until authoritative confirmation.
+    - Reuse an authoritative mutation response to hydrate affected detail and list caches when its
+      completeness and viewer scope are sufficient; do not throw it away and force an avoidable
+      refetch.
 13. Check list, query, and page caches separately from detail caches.
     - List caches are harder than detail caches because latest, popular, tag, author, search, filter,
       and page keys all change when one entity changes.
@@ -207,57 +220,68 @@ and what happens to the source system when the cache misses or fails?"
       permission context, locale where relevant, and app build or service-worker version when needed.
     - Test or review multi-tab, multi-device, admin-versus-user, logout/login, tenant switch,
       background refresh, and hydration-first-visible-state paths when those risks exist.
-15. Check cache layers.
+    - Preserve stale content only across the same semantic actor, tenant, resource, authorization,
+      and schema boundary. When that identity changes, clear or isolate the old snapshot instead of
+      using it as a placeholder.
+15. Check speculative prefetch as a cache write path.
+    - Prefer intent signals such as hover, keyboard focus, pointer down, or a small set of high-
+      probability next actions over prefetching every link.
+    - Cancel work that has not become useful and reject late prefetched responses whose generation,
+      query key, viewer scope, or route intent is obsolete.
+    - Count module evaluation, image decode, memory retention, connection slots, data caps, and
+      battery as costs. A cache hit is not a win when speculation steals resources from the current
+      task.
+16. Check cache layers.
     - Local in-memory cache splits truth per server. L1, L2, and DB each need TTL, invalidation,
       bypass, and failure behavior.
     - Deleting L2 while L1 survives can leave "sometimes stale" bugs that depend on load-balancer
       routing.
-16. Check cache outage fallback.
+17. Check cache outage fallback.
     - Redis down plus unbounded DB fallback can kill the source. Fallback needs rate limit, load
       shedding, stale serve, circuit breaker, bulkhead, or another source-protection mechanism.
     - Decide whether cache failure is disposable or correctness-sensitive. Sessions, permissions,
       rate limits, inventory, idempotency, and dedupe caches are not ordinary performance caches.
     - Compare normal cached traffic with an allowed bypass path or known miss path when evidence is
       available. If bypass is faster, fresher, or more correct, the cache policy itself is suspect.
-17. Check Redis keyspace and memory behavior.
+18. Check Redis keyspace and memory behavior.
     - Review value size, key size, key schema, bounded key cardinality, max memory, eviction policy,
       expired keys, evicted keys, and whether TTL-less keys are turning cache into state storage.
     - `noeviction` makes writes fail at memory limit. `volatile-*` policies only evict keys with TTL,
       so TTL-less keys can crowd out real cache behavior.
     - `KEYS *` in application code is a production bomb. Use `SCAN` only from bounded admin or
       maintenance paths with explicit limits.
-18. Check Redis latency, replication, and distribution.
+19. Check Redis latency, replication, and distribution.
     - Redis Slow Log does not include client round-trip time, connection wait, serialization,
       application loop overhead, DNS, TLS, or network path time. Do not use it as the only latency
       proof.
     - Review replica lag, failover behavior, cold replica warmup, persistence spikes, memory
       fragmentation, client connection pools, shard imbalance, and command mix when a cache incident
       is operational rather than semantic.
-19. Check hot keys and Redis Cluster distribution.
+20. Check hot keys and Redis Cluster distribution.
     - Sharding does not save one hot key. Use replicas, local L1, request coalescing, prewarm,
       chunking, or workload-specific splitting where semantics allow it.
     - Redis Cluster hash tags are useful for intentional multi-key locality, but overusing the same
       tag can force too many keys into one slot.
-20. Check HTTP cache semantics.
+21. Check HTTP cache semantics.
     - If responses vary by `Authorization`, `Cookie`, `Accept-Language`, `Accept-Encoding`, content
       negotiation, or user context, verify `Vary` and cache-control behavior.
     - `no-cache` means revalidate before reuse. `no-store` means do not store. Do not use one when
       the other is required.
     - Check freshness, validation, private versus public cacheability, CDN behavior, browser behavior,
       and generated-client or proxy expectations.
-21. Check permission and entitlement caches as security boundaries.
+22. Check permission and entitlement caches as security boundaries.
     - A permission cache, role cache, organization-membership cache, subscription cache, admin cache,
       or entitlement cache must be invalidated by revocation, role change, organization move,
       subscription expiry, ownership change, and emergency access changes.
     - Short TTL alone is not enough for decisions that should fail closed or revoke promptly.
-22. Check cache warming and cold-start behavior.
+23. Check cache warming and cold-start behavior.
     - Deployment, autoscale, failover, and rollback can create synchronized cold caches that push
       traffic to the source.
     - Prewarm only keys with clear ownership and backpressure. Do not build an unbounded warming job
       that becomes the outage.
     - Load-test or smoke the cold, warm, failover, replica-lag, source-slow, and cache-down scenarios
       when the repository has configured evidence. Otherwise report those as manual operational gaps.
-23. Check observability.
+24. Check observability.
     - Hit rate alone lies. Break down hits, misses, bypasses, stale serves, refreshes, negative hits,
       refresh failures, evictions, expirations, fallback serves, Redis errors, and set failures by
       endpoint, key-pattern, tenant, status-code, and cache layer where useful.
@@ -270,14 +294,14 @@ and what happens to the source system when the cache misses or fails?"
     - For developer or support diagnostics, expose safe provenance such as cache key class, fetchedAt,
       staleAt, dataVersion, source, lastInvalidatedAt, lastMutationId, writer, isOptimistic, and
       isHydrated when local UI or tooling patterns allow it.
-24. Check tests beyond the happy path.
+25. Check tests beyond the happy path.
     - "Second call is faster" is not enough.
     - Cover concurrent misses, update during read, delete then recreate, source failure, Redis
       failure, synchronized TTL expiry, old-version cached value, stale response after newer value,
       partial response after detail response, permission change, tenant separation, list invalidation,
       negative-cache classification, optimistic failure, persisted-storage reset, deploy rollback,
       and cache-layer bypass when those risks exist.
-25. Label evidence honestly. If the repository lacks deterministic cache, Redis, CDN, HTTP, browser,
+26. Label evidence honestly. If the repository lacks deterministic cache, Redis, CDN, HTTP, browser,
     or load tests, report the missing evidence instead of claiming the cache is safe.
 
 <!-- mustflow-section: postconditions -->

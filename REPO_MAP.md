@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 315
+anchor_count: 321
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:2419b509980fe98eaa8629df8b0d6c033361a79a1a6afc73a254d16b573ae9d1"
+source_fingerprint: "sha256:08f710aea914781a456617dceb6d8b01f76244288df631cb10e9fc3ae6b3cce2"
 ---
 
 # REPO_MAP.md
@@ -144,6 +144,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/astro-code-change/
 
 - `.mustflow/skills/astro-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/async-operation-ux-review/
+
+- `.mustflow/skills/async-operation-ux-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/async-timing-boundary-review/
 
@@ -629,6 +633,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/javascript-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/jurisdictional-product-compliance-review/
+
+- `.mustflow/skills/jurisdictional-product-compliance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/large-screen-adaptive-ux-review/
+
+- `.mustflow/skills/large-screen-adaptive-ux-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/line-ending-hygiene/
 
 - `.mustflow/skills/line-ending-hygiene/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -676,6 +688,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/mobile-energy-efficiency-review/
 
 - `.mustflow/skills/mobile-energy-efficiency-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/mobile-interaction-ux-review/
+
+- `.mustflow/skills/mobile-interaction-ux-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/modal-loop-reentrancy-review/
 
@@ -740,6 +756,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/payment-integrity-review/
 
 - `.mustflow/skills/payment-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/payment-provider-underwriting-readiness-review/
+
+- `.mustflow/skills/payment-provider-underwriting-readiness-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/performance-budget-check/
 
@@ -1096,6 +1116,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/vector-search-integrity-review/
 
 - `.mustflow/skills/vector-search-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/vendor-portability-exit-readiness-review/
+
+- `.mustflow/skills/vendor-portability-exit-readiness-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/version-freshness-check/
 

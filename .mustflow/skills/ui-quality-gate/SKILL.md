@@ -2,7 +2,7 @@
 mustflow_doc: skill.ui-quality-gate
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: ui-quality-gate
@@ -45,12 +45,17 @@ Keep user-facing interfaces usable, minimal, accessible, responsive, localizatio
 - The task changes only backend logic, CLI output, metadata, or documentation with no user-facing UI surface.
 - The task is specifically about conversational AI, chat, copilot, prompt, multimodal input, streaming generation, citations, feedback, or conversation history; use `llm-service-ux-review`.
 - The task is only image asset conversion; use `web-asset-optimization` for that part.
+- The main risk is native iOS or Android back, up, dismiss, tabs, sheets, gestures, system insets,
+  keyboards, pickers, platform controls, accessibility services, or process restoration; use
+  `mobile-interaction-ux-review`.
 - The UI change cannot be rendered or inspected in the current environment; report the inspection gap instead of claiming visual verification.
 
 <!-- mustflow-section: required-inputs -->
 ## Required Inputs
 
 - The changed UI surface, user task, and expected interaction path.
+- Decision and emphasis ledger: the one decision the screen should support, information needed for
+  that decision, primary and secondary actions, and every competing emphasis device.
 - Existing design patterns, task-essential controls, labels, states, accessibility conventions, and localization rules in the same area.
 - Viewports, themes, languages, and state combinations that need inspection.
 - The target devices and interaction style, including mobile-first behavior, pointer or touch input, expected keyboard use, and any project breakpoint or design-token conventions.
@@ -82,14 +87,23 @@ Keep user-facing interfaces usable, minimal, accessible, responsive, localizatio
 <!-- mustflow-section: procedure -->
 ## Procedure
 
-1. Identify the real user task and the UI surface that supports it.
+1. Identify the real user task, the one decision the screen supports, and the UI surface that
+   supports it. Arrange information by what happened, user impact, and next action rather than by
+   database entity, backend service, or component inventory.
 2. Check nearby UI patterns before adding new layout, component, color, copy, or state conventions.
 3. Keep task-essential controls only. Remove or avoid non-essential welcome text, feature summaries, decorative cards, fake metrics, marketing copy, invented filters, and controls that do not operate on real data.
 4. Check predictability and visual hierarchy. Follow familiar platform or product conventions, make the next likely action visible, and use spacing, size, weight, grouping, and order to make the primary task easier to scan.
+   - Treat spacing as grammar: keep related label, value, and row elements closer than separate
+     sections. Add a card or boundary only when the group is independently actionable, movable,
+     selectable, or semantically separate.
+   - Budget strong emphasis. Large or bold type, saturated color, filled surfaces, borders, shadows,
+     and animation compete for the same attention; reserve them for the primary state and next action.
 5. Check responsive and touch ergonomics. Prefer mobile-first layout decisions, preserve readable spacing at small widths, keep visible icon size separate from touch target size, and follow existing breakpoint, safe-area, keyboard, or design-token conventions instead of inventing one-off sizes.
 6. Check visual geometry before assuming flex alignment is enough. For icon/text, badge, tab, breadcrumb, list-row, alert, avatar, input-adornment, and button content, verify wrapper size, intrinsic SVG or glyph box, `currentColor`, line-height, height and padding compatibility, shrink behavior, selection-icon space, focus-ring space, and whether single-line content should center while multi-line content should align near the first line.
 7. Check overflow and stable dimensions. Long names, translated labels, URLs, code, counts, and file names need an owning width, `min-width: 0` or equivalent flex/grid constraint, truncation or wrapping policy, reserved loading and error space where needed, and fixed-format controls that do not resize or shift when hover, active, selected, loading, or error content appears.
 8. Verify controls are understandable and state-aware: icon buttons need accessible names or tooltips, destructive or state-changing actions need clear labels, hover, active, selected, loading, and disabled states need clear visual treatment, and disabled states need a visible reason when useful.
+   - Use icons as recognition aids, not puzzles. Keep visible labels for unfamiliar actions, and
+     reduce the menu before hiding essential meaning behind icon-only controls.
 9. Check keyboard and focus behavior before visual polish: native elements first, semantic landmarks when they clarify page structure, tab order, focus order and return, visible focus state, names for icon-only controls, form error linkage, live status announcements, reduced-motion handling, and sufficient contrast.
 10. Check accessible names and states against the actual interaction model, not only the rendered text. Dynamic controls must expose the current expanded, selected, checked, invalid, busy, or disabled state when applicable.
 11. Check form validation, error, and empty-state behavior. Keep labels separate from placeholders, validate close to the field when useful, place errors next to the action or input that needs attention, preserve user input after failure, link errors to controls, and distinguish first-use empty, filtered empty, search empty, permission denied, quota, loading, and failed states.
@@ -104,10 +118,17 @@ Keep user-facing interfaces usable, minimal, accessible, responsive, localizatio
 20. Check high-risk widgets. Toasts need placement, stacking, pauseable timing, and appropriate status announcements; dropdowns and popovers need collision and overflow handling; dialogs and drawers need focus trap, close behavior, scroll locking, and mobile layout; custom selects, comboboxes, command palettes, trees, editable grids, and virtualized lists need proven accessibility and keyboard patterns or an existing library.
 21. Check performance and asset-size awareness when the change adds images, icons, animation, third-party UI code, large client data, long lists, charts, maps, canvas, or extra network work. Prefer existing assets, lazy loading when appropriate, explicit image dimensions, bounded rendering cost, and virtualization only when dynamic-height behavior is understood.
 22. Check state coverage: loading, empty, error, saved, changed, disabled, selected, focused, hover, active, validating, permission denied, read-only, quota, stale, conflict, language-switched, and mobile states should update consistently where applicable.
-23. For complex surfaces, write or confirm a compact UI contract before broad implementation: view tree, data contract, interaction model, state model, geometry contract, design-token contract, and verification targets.
-24. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
-25. Use visual verification only when a configured one-shot command or approved browser workflow exists for the surface. Do not start development servers, watchers, or browser sessions directly from the skill.
-26. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
+    Distinguish initial loading, background refresh, pagination, first-use empty, filtered or search
+    empty, partial failure, full failure, cached content, and offline mode instead of using one
+    generic spinner, empty message, or error page.
+23. Review AI-generated visual habits explicitly. Remove decorative gradients, glass, glow, nested
+    cards, fake metrics, repeated hero copy, multiple primary buttons, unexplained icon clusters,
+    modal chains, duplicate success feedback, and placeholder dashboards unless each element helps a
+    named user decision or action.
+24. For complex surfaces, write or confirm a compact UI contract before broad implementation: view tree, data contract, interaction model, state model, geometry contract, design-token contract, and verification targets.
+25. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
+26. Use visual verification only when a configured one-shot command or approved browser workflow exists for the surface. Do not start development servers, watchers, or browser sessions directly from the skill.
+27. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

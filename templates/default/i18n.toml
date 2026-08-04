@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 314
+revision = 320
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -194,7 +194,7 @@ translations = {}
 [documents."skill.payment-integrity-review"]
 source = "locales/en/.mustflow/skills/payment-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
@@ -224,7 +224,7 @@ translations = {}
 [documents."skill.durable-workflow-orchestration"]
 source = "locales/en/.mustflow/skills/durable-workflow-orchestration/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.execution-ledger-integrity-review"]
@@ -344,7 +344,7 @@ translations = {}
 [documents."skill.web-render-performance-review"]
 source = "locales/en/.mustflow/skills/web-render-performance-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.core-web-vitals-field-review"]
@@ -407,10 +407,28 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.mobile-interaction-ux-review"]
+source = "locales/en/.mustflow/skills/mobile-interaction-ux-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.large-screen-adaptive-ux-review"]
+source = "locales/en/.mustflow/skills/large-screen-adaptive-ux-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.frontend-state-ownership-review"]
 source = "locales/en/.mustflow/skills/frontend-state-ownership-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
+translations = {}
+
+[documents."skill.async-operation-ux-review"]
+source = "locales/en/.mustflow/skills/async-operation-ux-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.ui-state-resurrection-review"]
@@ -458,7 +476,7 @@ translations = {}
 [documents."skill.cache-integrity-review"]
 source = "locales/en/.mustflow/skills/cache-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.quadratic-scan-review"]
@@ -662,7 +680,7 @@ translations = {}
 [documents."skill.database-change-safety"]
 source = "locales/en/.mustflow/skills/database-change-safety/SKILL.md"
 source_locale = "en"
-revision = 17
+revision = 18
 translations = {}
 
 [documents."skill.database-migration-change"]
@@ -1027,7 +1045,7 @@ translations = {}
 [documents."skill.technology-stack-selection"]
 source = "locales/en/.mustflow/skills/technology-stack-selection/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.structure-first-engineering"]
@@ -1260,7 +1278,7 @@ translations = {}
 [documents."skill.migration-safety-check"]
 source = "locales/en/.mustflow/skills/migration-safety-check/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 10
 translations = {}
 
 [documents."skill.multi-agent-work-coordination"]
@@ -1326,7 +1344,7 @@ translations = {}
 [documents."skill.structure-discovery-gate"]
 source = "locales/en/.mustflow/skills/structure-discovery-gate/SKILL.md"
 source_locale = "en"
-revision = 28
+revision = 29
 translations = {}
 
 [documents."skill.state-machine-pattern"]
@@ -1392,7 +1410,25 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 28
+revision = 29
+translations = {}
+
+[documents."skill.jurisdictional-product-compliance-review"]
+source = "locales/en/.mustflow/skills/jurisdictional-product-compliance-review/SKILL.md"
+source_locale = "en"
+revision = 2
+translations = {}
+
+[documents."skill.payment-provider-underwriting-readiness-review"]
+source = "locales/en/.mustflow/skills/payment-provider-underwriting-readiness-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.vendor-portability-exit-readiness-review"]
+source = "locales/en/.mustflow/skills/vendor-portability-exit-readiness-review/SKILL.md"
+source_locale = "en"
+revision = 2
 translations = {}
 
 [documents."skill.security-regression-tests"]
@@ -1584,7 +1620,7 @@ translations = {}
 [documents."skill.product-onboarding-activation-review"]
 source = "locales/en/.mustflow/skills/product-onboarding-activation-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.subscription-retention-profit-review"]
@@ -1698,7 +1734,7 @@ translations = {}
 [documents."skill.ui-quality-gate"]
 source = "locales/en/.mustflow/skills/ui-quality-gate/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.visual-review-artifact"]

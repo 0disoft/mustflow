@@ -498,7 +498,89 @@ test('technology stack selection gates survival-path choices by operability', ()
 	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
 		assert.ok(profileBlock(profile).includes('"technology-stack-selection"'), `${profile} profile missing skill`);
 	}
-	assert.match(i18n, /\[documents\."skill\.technology-stack-selection"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.technology-stack-selection"\][\s\S]*?revision = 3/u);
+});
+
+test('vendor portability exit readiness proves reconstruction instead of banning provider features', () => {
+	const skillName = 'vendor-portability-exit-readiness-review';
+	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);
+	const templateSkill = readText(
+		`templates/default/locales/en/.mustflow/skills/${skillName}/SKILL.md`,
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+	const profileBlock = (profile) => {
+		const match = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(match, `missing ${profile} profile`);
+		return match[1];
+	};
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	for (const phrase of [
+		'Define portability by user capability and exit trigger',
+		'Decompose lock-in instead of scoring only runtime choice',
+		'Separate product truth from provider execution',
+		'Use domain-shaped ports and honest capability declarations',
+		'Build semantic export and consistent snapshot evidence',
+		'Reconstruct configuration, secrets, and control assets',
+		'Export operational evidence continuously when history matters',
+		'Treat uncertain external outcomes explicitly',
+		'Migrate from one writer with reconciliation',
+		'Make restore and import restartable products',
+		'Design the smallest useful survival mode',
+		'Run exit drills against an independent boundary',
+	]) {
+		assert.ok(localSkill.includes(phrase), `missing portability contract phrase: ${phrase}`);
+	}
+	assert.match(
+		localSkill,
+		/Do not infer\s+portability from standards, adapters, multiple vendors, or the existence of a runbook/u,
+	);
+	for (const neighbor of [
+		'database-change-safety',
+		'technology-stack-selection',
+		'migration-safety-check',
+		'structure-discovery-gate',
+	]) {
+		assert.match(readText(`.mustflow/skills/${neighbor}/SKILL.md`), /vendor-portability-exit-readiness-review/u);
+	}
+	assert.match(skillIndex, /\.mustflow\/skills\/vendor-portability-exit-readiness-review\/SKILL\.md/u);
+	assert.match(skillIndex, /executable exit evidence/u);
+	assert.match(
+		routes,
+		/\[routes\."vendor-portability-exit-readiness-review"\]\r?\ncategory = "data_external"\r?\nroute_type = "adjunct"\r?\npriority = 89/u,
+	);
+	assert.deepEqual(routeReasons(routes, skillName), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'data_change',
+		'migration_change',
+		'security_change',
+		'privacy_change',
+		'test_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/vendor-portability-exit-readiness-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		assert.ok(profileBlock(profile).includes(`"${skillName}"`), `${profile} profile missing skill`);
+	}
+	assertSkillsIndexRevision(i18n);
+	assert.match(
+		i18n,
+		/\[documents\."skill\.vendor-portability-exit-readiness-review"\][\s\S]*?revision = 2/u,
+	);
+	assert.match(i18n, /\[documents\."skill\.database-change-safety"\][\s\S]*?revision = 18/u);
+	assert.match(i18n, /\[documents\."skill\.migration-safety-check"\][\s\S]*?revision = 10/u);
+	assert.match(i18n, /\[documents\."skill\.structure-discovery-gate"\][\s\S]*?revision = 29/u);
 });
 
 test('API, pipeline, auth, Docker, search, vector, and RAG triage skills stay template-synced and routeable', () => {

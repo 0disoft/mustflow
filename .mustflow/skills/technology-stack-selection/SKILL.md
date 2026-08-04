@@ -2,7 +2,7 @@
 mustflow_doc: skill.technology-stack-selection
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: technology-stack-selection
@@ -70,6 +70,9 @@ decisions.
   `runtime-target-selection` first, then this skill only for broader stack and operations tradeoffs.
 - A user or repository owner has already mandated the technology. In that case, use this skill only
   to document constraints, guardrails, migration, rollback, observability, and verification.
+- The technology is already adopted and the task primarily asks whether the service can exit,
+  reconstruct state, preserve critical capabilities, or survive provider loss; use
+  `vendor-portability-exit-readiness-review` for executable exit evidence.
 - The task asks for an unconstrained brainstorming list with no adoption decision. Use
   `idea-triage` or `complex-decision-analysis` when those narrower conditions match.
 
