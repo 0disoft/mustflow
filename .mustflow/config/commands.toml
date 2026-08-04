@@ -4968,6 +4968,38 @@ writes = []
 network = false
 destructive = false
 
+[intents.release_ci_run_v2_124_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the failed 2.124.0 branch CI run identity, jobs, and conclusion before changing files."
+argv = ["gh", "run", "view", "30879595838", "--repo", "0disoft/mustflow", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,jobs"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_ci_failed_log_v2_124_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only the failed job logs for the exact 2.124.0 branch CI run."
+argv = ["gh", "run", "view", "30879595838", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
 [intents.release_stage_v2_124_0]
 status = "configured"
 lifecycle = "oneshot"
@@ -5029,6 +5061,7 @@ argv = [
   "templates/default/manifest.toml",
   "tests/cli/authoring-skill-concurrency-contracts.test.js",
   "tests/cli/authoring-skill-crash-consistency-contracts.test.js",
+  "tests/cli/authoring-skill-delivery-contracts.test.js",
   "tests/cli/authoring-skill-docs-workflow-contracts.test.js",
   "tests/cli/authoring-skill-frontend-contracts.test.js",
   "tests/cli/authoring-skill-performance-contracts.test.js",
@@ -5076,6 +5109,28 @@ argv = [
   "-m", "✨ feat(skills): expand product operations review suite",
   "-m", "Add async and adaptive UX, jurisdictional compliance, vendor exit readiness, payment-provider underwriting, and related reliability guidance with synchronized routes, installed templates, and regression contracts.",
   "-m", "Validation: mf run test_skill_contracts; mf run skill_route_eval; mf run test_related_cached; mf run lint; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_ci_fix_commit_v2_124_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.124.0 full-suite revision expectation fix and exact CI diagnostics."
+argv = [
+  "git", "commit",
+  "-m", "🐛 fix(test): sync durable workflow revision",
+  "-m", "Update the full delivery-contract suite for durable workflow revision 3 and retain exact read-only diagnostics for the failed 2.124.0 branch CI run.",
+  "-m", "Validation: mf run test; mf run test_release; mf run mustflow_check",
 ]
 cwd = "."
 timeout_seconds = 120

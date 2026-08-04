@@ -1081,9 +1081,12 @@ test('2.124.0 product operations skill release stays bounded and remotely verifi
 		)?.[0] ?? '';
 	const manifestIntent = intent('manifest_lock_accept_skill_suite_v2_124_0');
 	const branchIntent = intent('release_branch_state_v2_124_0');
+	const ciRunIntent = intent('release_ci_run_v2_124_0');
+	const ciFailedLogIntent = intent('release_ci_failed_log_v2_124_0');
 	const stageIntent = intent('release_stage_v2_124_0');
 	const stagedDiffIntent = intent('release_staged_diff_v2_124_0');
 	const commitIntent = intent('release_commit_v2_124_0');
+	const ciFixCommitIntent = intent('release_ci_fix_commit_v2_124_0');
 	const pushIntent = intent('release_push_main_v2_124_0');
 	const authIntent = intent('release_github_auth_v2_124_0');
 	const mainRunsIntent = intent('release_github_main_runs_v2_124_0');
@@ -1110,6 +1113,7 @@ test('2.124.0 product operations skill release stays bounded and remotely verifi
 		'templates/default/i18n.toml',
 		'templates/default/locales/en/.mustflow/skills/payment-provider-underwriting-readiness-review',
 		'templates/default/manifest.toml',
+		'tests/cli/authoring-skill-delivery-contracts.test.js',
 		'tests/cli/package-command-contracts.test.js',
 		'tests/cli/package-metadata-contracts.test.js',
 		'tests/cli/skill-route.test.js',
@@ -1118,11 +1122,17 @@ test('2.124.0 product operations skill release stays bounded and remotely verifi
 	}
 	assert.match(manifestIntent, /\.mustflow\/config\/commands\.toml/u);
 	assert.match(branchIntent, /"git", "status", "--short", "--branch"/u);
+	assert.match(ciRunIntent, /"30879595838"/u);
+	assert.match(ciRunIntent, /headSha/u);
+	assert.match(ciFailedLogIntent, /"30879595838"/u);
+	assert.match(ciFailedLogIntent, /"--log-failed"/u);
 	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
 	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
 	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
 	assert.match(commitIntent, /✨ feat\(skills\): expand product operations review suite/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(ciFixCommitIntent, /🐛 fix\(test\): sync durable workflow revision/u);
+	assert.match(ciFixCommitIntent, /approval_actions = \["git_commit"\]/u);
 	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
 	assert.doesNotMatch(pushIntent, /--force/u);
 	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
