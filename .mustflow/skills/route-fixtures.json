@@ -1367,6 +1367,26 @@
       ]
     },
     {
+      "id": "traffic-abuse-defense-korean",
+      "task": "로그인, 가입, SMS 인증, 검색, 스크래핑, 무료 크레딧, 결제 카드 테스트, 업로드 폭탄, 웹소켓과 AI 생성의 생각지 못한 어뷰징과 비정상 트래픽을 다중 신호와 단계적 제재로 막아",
+      "paths": [
+        "src/security/abuse-policy.ts",
+        "tests/security/abuse-policy.test.ts"
+      ],
+      "reasons": [
+        "security_change",
+        "performance_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "rate-limit-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "cloud-cost-guardrail-review"
+      ]
+    },
+    {
       "id": "security-redos-codeql-korean",
       "task": "CodeQL 비효율적 정규식 경고의 구분자 중첩 백트래킹을 고치고 긴 악성 non-match 회귀 테스트로 ReDoS를 막아",
       "paths": [

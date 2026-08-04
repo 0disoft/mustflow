@@ -1131,6 +1131,11 @@ priority = 79
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."rate-limit-integrity-review".contexts]
+positive_terms = ["abuse-defense", "account-creation-abuse", "api-enumeration", "bot-traffic", "card-testing", "credential-stuffing", "device-velocity", "distributed-low-rate-abuse", "free-credit-farming", "graduated-enforcement", "identity-graph", "impossible-request-sequence", "otp-pumping", "rate-limit", "referral-farming", "scraping-defense", "session-replay", "sms-pumping", "traffic-abuse", "upload-bomb", "websocket-flood"]
+negative_terms = ["authorization-only", "billing-only", "client-retry-only", "volumetric-ddos-only"]
+concept_aliases = ["계정 생성 어뷰징", "다중 신호 차단", "분산 저속 어뷰징", "비정상 트래픽", "어뷰징 방어", "트래픽 남용", "트래픽 어뷰징"]
+
 [routes."idempotency-integrity-review"]
 category = "general_code"
 route_type = "adjunct"

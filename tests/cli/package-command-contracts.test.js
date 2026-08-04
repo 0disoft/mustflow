@@ -1141,3 +1141,58 @@ test('2.124.0 product operations skill release stays bounded and remotely verifi
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.124\.0"/u);
 });
+
+test('2.125.0 abuse traffic skill release stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const manifestIntent = intent('manifest_lock_accept_rate_limit_v2_125_0');
+	const branchIntent = intent('release_branch_state_v2_125_0');
+	const stageIntent = intent('release_stage_v2_125_0');
+	const stagedDiffIntent = intent('release_staged_diff_v2_125_0');
+	const commitIntent = intent('release_commit_v2_125_0');
+	const pushIntent = intent('release_push_main_v2_125_0');
+	const authIntent = intent('release_github_auth_v2_125_0');
+	const mainRunsIntent = intent('release_github_main_runs_v2_125_0');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_125_0');
+	const releaseIntent = intent('release_github_release_v2_125_0');
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'.mustflow/skills/catalog.v2.json',
+		'.mustflow/skills/rate-limit-integrity-review/SKILL.md',
+		'.mustflow/skills/route-fixtures.json',
+		'.mustflow/skills/routes.toml',
+		'CHANGELOG.md',
+		'REPO_FLOW.md',
+		'REPO_MAP.md',
+		'package.json',
+		'templates/default/i18n.toml',
+		'templates/default/locales/en/.mustflow/skills/catalog.v2.json',
+		'templates/default/locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md',
+		'templates/default/locales/en/.mustflow/skills/routes.toml',
+		'templates/default/manifest.toml',
+		'tests/cli/authoring-skill-operations-contracts.test.js',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+		'tests/cli/skill-route.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.match(manifestIntent, /\.mustflow\/config\/commands\.toml/u);
+	assert.match(branchIntent, /"git", "status", "--short", "--branch"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): harden abuse traffic defenses/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(authIntent, /"gh", "auth", "status"/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.125\.0"/u);
+});

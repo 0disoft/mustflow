@@ -488,11 +488,23 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(localSkill, /cached CDN hits/u);
 	assert.match(localSkill, /Rate limit is not authorization/u);
 	assert.match(localSkill, /hard cost-control ceiling/u);
+	assert.match(localSkill, /numeric thresholds as hypotheses, not portable defaults/u);
+	assert.match(localSkill, /Pair a short burst window with a longer sustained window/u);
+	assert.match(localSkill, /Combine signals without turning one identifier into guilt/u);
+	assert.match(localSkill, /Never claim a fingerprint uniquely\s+identifies a person or device/u);
+	assert.match(localSkill, /impossible sequences and replay at the state boundary/u);
+	assert.match(localSkill, /Use a graduated, scoped response ladder/u);
+	assert.match(localSkill, /Do not automatically deny refunds/u);
+	assert.match(localSkill, /Separate infrastructure attacks from product abuse/u);
+	assert.match(localSkill, /Backtest policy and measure harm as well as blocks/u);
+	assert.match(localSkill, /appealed, restored, and confirmed-abuse outcomes/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md/u);
 	assert.match(skillIndex, /rate-limit integrity triage/u);
 	assert.match(skillIndex, /protect a named resource without bypass/u);
 	assert.match(routes, /\[routes\."rate-limit-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 79/u);
+	assert.match(routes, /"distributed-low-rate-abuse"/u);
+	assert.match(routes, /"어뷰징 방어"/u);
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',
@@ -511,7 +523,7 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(manifest, /"\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"rate-limit-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('backend log evidence review reconstructs backend request and job paths', () => {

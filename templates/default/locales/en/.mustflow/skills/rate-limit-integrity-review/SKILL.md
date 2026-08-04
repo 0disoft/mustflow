@@ -2,11 +2,11 @@
 mustflow_doc: skill.rate-limit-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: rate-limit-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, or concurrency limits need review for protected-resource fit, key design, atomic counting, layered enforcement, client contract, and abuse or overload safety.
+description: Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -94,6 +94,14 @@ contract, observability, and operator escape hatch?"
 - Observability and operator evidence: policy id, key hash or safe key, layer, quota, remaining
   budget where safe, reset, request cost, route template, actor or tenant safe id, shadow decision,
   block reason, metric cardinality, lookup tool, reset tool, audit log, and tests.
+- Abuse hypothesis and signal ledger: protected action, attacker payoff, expected legitimate cadence,
+  burst and sustained windows, account, tenant, API key, session, token family, device or browser
+  evidence, IP or prefix, ASN or network change, sequence or nonce evidence, content similarity,
+  payment instrument, phone or email reuse, referral or reward linkage, confidence, and known
+  legitimate-collision cases.
+- Response and recovery ledger: observe, shape, challenge, delay, feature restrict, step-up auth,
+  session or token-family revoke, reward or payout hold, manual review, deny, decay, cooldown,
+  operator override, user recovery, appeal, false-positive owner, and irreversible-effect boundary.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -265,9 +273,69 @@ contract, observability, and operator escape hatch?"
       before or independently of quota.
     - Rate limit is not a hard cost-control ceiling; provider bills, retries, async fan-out, logs,
       egress, and queues can spend money outside the request counter.
-    - Rate limit is not proof of idempotency, bot defense, fraud prevention, fairness, or overload
-      safety unless the matching evidence exists.
-21. Test the ugly edges.
+   - Rate limit is not proof of idempotency, bot defense, fraud prevention, fairness, or overload
+     safety unless the matching evidence exists.
+21. Treat numeric thresholds as hypotheses, not portable defaults.
+   - Do not copy values such as five failures per minute or a 24-hour block into production policy
+     without traffic baselines, protected-resource capacity, legitimate-user cadence, support cost,
+     and false-positive evidence for the actual product.
+   - Pair a short burst window with a longer sustained window where low-and-slow or distributed
+     abuse can evade one threshold. Segment by route, actor maturity, trust tier, plan, and action
+     cost when those dimensions materially change risk.
+   - Keep emergency hard ceilings for clear resource-exhaustion invariants separate from behavioral
+     anomaly thresholds that need corroboration, shadow evaluation, and reversible enforcement.
+22. Combine signals without turning one identifier into guilt.
+   - IP addresses, TLS or browser fingerprints, user agents, device hints, geography, and timing are
+     noisy and spoofable. Shared offices, carriers, VPNs, accessibility tools, password managers,
+     automation used by legitimate customers, and household payment or phone reuse create collisions.
+   - Use an identity graph only with purpose limitation, retention limits, access control, safe
+     hashing or tokenization, and documented collision behavior. Never claim a fingerprint uniquely
+     identifies a person or device.
+   - Correlate independent evidence such as account velocity, impossible state transitions, reused
+     token families, repeated instruments, content similarity, reward linkage, and resource cost.
+     One weak signal may shape or challenge traffic; irreversible denial needs stronger evidence.
+23. Detect impossible sequences and replay at the state boundary.
+   - Missing page navigation is not proof of abuse because native clients, retries, deep links, and
+     accessibility flows may legitimately skip browser screens. Prefer server-issued operation
+     capabilities, nonce or state transitions, idempotency identity, token-family lineage, and
+     resource ownership over a fragile page-view breadcrumb.
+   - Treat honeypot fields, subhuman completion time, mechanically regular timing, sequential ID
+     walks, random-query cache busting, repeated bodies, and impossible country changes as risk
+     signals with explicit counterexamples, not automatic permanent bans.
+   - A reused rotated refresh token or cryptographically invalid transition can justify immediate
+     session-family containment when the token contract proves replay; preserve evidence and give
+     the legitimate user a recovery path.
+24. Use a graduated, scoped response ladder.
+   - Prefer the smallest response that protects the resource: coalesce duplicates, cap page or batch
+     size, reduce concurrency, queue work, add proof-of-work or challenge where appropriate, require
+     step-up authentication, restrict one feature, revoke one session family, or hold a reward for
+     review before blocking an account or network broadly.
+   - Escalate repeated high-confidence decisions with bounded cooldowns and decay old evidence.
+     Define what clears automatically, what an operator may reset, and what the user can recover.
+   - Do not automatically deny refunds, seize purchased value, close accounts, or make legal or
+     financial adverse decisions solely from heuristic abuse scores. Route those effects through
+     the matching payment, credit, compliance, and human-review contract.
+25. Separate infrastructure attacks from product abuse.
+   - CDN, DDoS protection, connection limits, body-size and header limits, slow-client timeouts,
+     decompression and decode budgets, WebSocket admission, and origin authentication protect the
+     transport and process boundary. Application policy protects accounts, rewards, search, export,
+     messaging, payments, and expensive jobs.
+   - Reject archive expansion ratios, nested archives, decoded pixel counts, animation frames,
+     GraphQL complexity, pagination depth, overlapping range requests, and upload or request sizes
+     before allocating the expensive resource when safe metadata permits it.
+   - Do not let an application ban list pretend to be volumetric DDoS protection or let a WAF rule
+     pretend to understand business-state abuse.
+26. Backtest policy and measure harm as well as blocks.
+   - Replay sanitized historical distributions or synthetic fixtures in shadow mode, including
+     legitimate bursts, NAT collisions, mobile IP churn, retries, provider outages, and distributed
+     low-rate attacks. Do not feed raw secrets, full payment data, or unnecessary personal data into
+     an abuse model or test corpus.
+   - Measure challenged, delayed, blocked, appealed, restored, and confirmed-abuse outcomes by policy
+     and cohort. A high block count is not success if support contacts, abandonment, accessibility
+     failures, payment loss, or false positives rise.
+   - Version policies and decision reasons so operators can explain which evidence and thresholds
+     acted, roll back a bad rule, and compare shadow, enforce, and post-recovery outcomes.
+27. Test the ugly edges.
     - Cover boundary burst, concurrent calls at the quota edge, missing TTL, Redis or store outage,
       fail-open or fail-closed behavior, missing or duplicate identity headers, route-template key
       normalization, request cost weights, shadow-to-enforce switch, 429 response shape,
@@ -283,8 +351,10 @@ contract, observability, and operator escape hatch?"
 - Protected resource, cost model, layer placement, key design, algorithm, storage atomicity, TTL,
   time source, local versus global scope, fail-open or fail-closed policy, failed-response counting,
   concurrency limit needs, response contract, jitter, blocked cache, shadow rollout, observability,
-  operator lookup and reset, async enqueue quota, cached-hit policy, and authorization or cost
-  boundaries are explicit.
+  operator lookup and reset, async enqueue quota, cached-hit policy, abuse hypothesis and signal
+  quality, identity-graph privacy, short and sustained windows, response ladder, recovery and appeal,
+  transport versus business-abuse boundary, policy versioning, and authorization or cost boundaries
+  are explicit.
 - IP-only authenticated limits, raw URL keys, fixed-window boundary bursts, non-atomic Redis
   counters, missing TTLs, app-clock reset drift, process-local "global" quotas, approximate edge
   limits treated as precise, hidden fail-open behavior, free failed requests, rate/concurrency
@@ -337,8 +407,9 @@ sessions, chaos tests, or manual dashboards outside the command contract.
 - Protected resource, cost model, layer model, key model, algorithm and storage model, atomicity,
   TTL, time source, local or global scope, fail mode, failed-response counting, concurrency limit,
   response contract, jitter, blocked-decision cache, shadow rollout, observability, operator reset,
-  async enqueue quota, cached-hit policy, authorization and cost-control boundary, and test evidence
-  findings
+  async enqueue quota, cached-hit policy, abuse hypothesis, signal quality, identity-graph privacy,
+  threshold evidence, response and recovery ladder, appeal and false-positive evidence, transport
+  versus application boundary, authorization and cost-control boundary, and test evidence findings
 - Rate-limit fixes made or recommended
 - Evidence level: configured-test evidence, storage or framework evidence, API contract evidence,
   operational evidence, static review risk, manual-only, missing, or not applicable

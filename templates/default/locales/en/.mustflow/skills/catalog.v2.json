@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:8cd5f51f7586c84daca95f86b50efe8fa54f9ac6dbd990ba0eceebe9c18d9458",
+  "source_fingerprint": "sha256:3b3e0fd88f356c7e870afae14b881f7333052e57e82c0f4e5a3e04c2208d2c25",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -9216,15 +9216,49 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "abuse defense",
+        "account creation abuse",
+        "api enumeration",
+        "bot traffic",
+        "card testing",
+        "credential stuffing",
+        "device velocity",
+        "distributed low rate abuse",
+        "free credit farming",
+        "graduated enforcement",
+        "identity graph",
+        "impossible request sequence",
+        "otp pumping",
+        "rate limit",
+        "referral farming",
+        "scraping defense",
+        "session replay",
+        "sms pumping",
+        "traffic abuse",
+        "upload bomb",
+        "websocket flood",
+        "계정 생성 어뷰징",
+        "다중 신호 차단",
+        "분산 저속 어뷰징",
+        "비정상 트래픽",
+        "어뷰징 방어",
+        "트래픽 남용",
+        "트래픽 어뷰징"
+      ],
+      "negative_signals": [
+        "authorization only",
+        "billing only",
+        "client retry only",
+        "volumetric ddos only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, or concurrency limits need review for protected-resource fit, key design, atomic counting, layered enforcement, client contract, and abuse or overload safety.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

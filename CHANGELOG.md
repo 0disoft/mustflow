@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Strengthened the installed rate-limit integrity review for credential stuffing, account creation
+  abuse, OTP and SMS pumping, scraping, enumeration, session replay, referral and free-credit
+  farming, card testing, upload bombs, WebSocket floods, slow clients, and expensive AI traffic.
+  Numeric thresholds are now treated as product-specific hypotheses, weak identifiers require
+  corroboration, enforcement is graduated and recoverable, infrastructure attacks stay separate
+  from business abuse, and heuristic scores cannot alone trigger irreversible financial or account
+  actions. Added Korean abuse-traffic route coverage and synchronized template, catalog, and release
+  contracts.
 - Added an installed async-operation UX review skill that derives progress from real work, separates
   queued, running, stalled, cancelled, and failed states, requires durable background handoff and
   user-consumable completion evidence, bounds optimistic and stale-data behavior, and gives users
