@@ -1400,6 +1400,147 @@
         "security-privacy-review",
         "security-regression-tests"
       ]
+    },
+    {
+      "id": "prompt-contract-evidence-routing",
+      "task": "Review a prompt contract with an atomic requirement ledger, evidence-type routing, conditional tool use, minimal contrast examples, held-out cases, and separate semantic and surface gates",
+      "paths": [
+        "src/ai/prompt-contract.ts",
+        "tests/ai/prompt-contract.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "prompt-contract-quality-review",
+      "required_candidates": [
+        "prompt-contract-quality-review"
+      ],
+      "forbidden_candidates": [
+        "llm-hallucination-control-review"
+      ]
+    },
+    {
+      "id": "llm-claim-state-uncertainty",
+      "task": "Gate an LLM answer with a claim-state ledger, three-item assumption budget, weakest-premise uncertainty propagation, separate fact and logic validation, and evidence sufficiency",
+      "paths": [
+        "src/ai/answer-grounding.ts",
+        "tests/ai/answer-grounding.test.ts"
+      ],
+      "reasons": [
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "llm-hallucination-control-review",
+      "required_candidates": [
+        "llm-hallucination-control-review"
+      ]
+    },
+    {
+      "id": "agent-deliverable-verification-graph",
+      "task": "Plan a long-running agent from observable deliverables using a dependency DAG, separate verification graph, entry conditions, shared read-write resources, completion evidence, pre-mortem, and plan-abandonment gates",
+      "paths": [
+        "src/agents/planning-recovery.ts"
+      ],
+      "reasons": [
+        "behavior_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-planning-recovery-review",
+      "required_candidates": [
+        "agent-planning-recovery-review"
+      ]
+    },
+    {
+      "id": "complex-decision-hidden-assumptions",
+      "task": "Write a decision record that treats the proposed solution as candidate A, exposes hidden assumptions and stakeholders, compares a null hypothesis and independent alternatives, runs a pre-mortem, and chooses the smallest discriminating experiment",
+      "paths": [
+        "docs/decisions/platform-choice.md"
+      ],
+      "reasons": [
+        "unknown_change",
+        "product_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "complex-decision-analysis",
+      "required_candidates": [
+        "complex-decision-analysis"
+      ]
+    },
+    {
+      "id": "agent-eval-compositional-generalization",
+      "task": "Build an agent eval with minimal contrasts, independent rule-domain-format-label factors, sealed compositional holdouts, valid metamorphic transformations, invariance and equivariance checks, arbitrary labels, and a difficulty curve",
+      "paths": [
+        "tests/agents/generalization-eval.test.ts"
+      ],
+      "reasons": [
+        "test_change",
+        "data_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "agent-eval-integrity-review",
+      "required_candidates": [
+        "agent-eval-integrity-review"
+      ]
+    },
+    {
+      "id": "typescript-runtime-erasure-security",
+      "task": "Harden TypeScript runtime security schemas against type erasure, unsafe assertions, target and lib drift, downlevel object spread semantics, decorator and class-field changes, then attack the emitted JavaScript with hostile inputs",
+      "paths": [
+        "src/security/runtime-contract.ts",
+        "tests/security/runtime-contract.artifact.test.mjs",
+        "tsconfig.json"
+      ],
+      "reasons": [
+        "code_change",
+        "security_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "typescript-code-change",
+      "required_candidates": [
+        "typescript-code-change",
+        "security-privacy-review"
+      ]
+    },
+    {
+      "id": "client-artifact-security-only",
+      "task": "Audit client artifact security only: public environment allowlist, transitive server-only imports, hydration payloads, public static files, hidden sourcemaps, final deployment bytes, decoy-secret differential builds, and inspect-once artifact provenance",
+      "paths": [
+        "src/client/entry.ts",
+        "vite.config.ts",
+        "dist/client-manifest.json"
+      ],
+      "reasons": [
+        "security_change",
+        "release_risk"
+      ],
+      "max_candidates": 10,
+      "required_main": "security-privacy-review",
+      "required_candidates": [
+        "security-privacy-review"
+      ],
+      "forbidden_candidates": [
+        "client-bundle-pruning-review"
+      ]
+    },
+    {
+      "id": "client-bundle-performance-only",
+      "task": "Reduce first-route JS and shared vendor dependency bloat with tree shaking and measured bundle-size budgets; no secret, source-map, hydration, or artifact-security change is involved",
+      "paths": [
+        "src/client/routes/dashboard.tsx"
+      ],
+      "reasons": [
+        "performance_change",
+        "ui_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "client-bundle-pruning-review"
+      ]
     }
   ]
 }

@@ -172,10 +172,15 @@ test('agent planning recovery keeps global intent stable and replay deterministi
 	assert.match(localSkill, /Resume deterministically before invoking a model/u);
 	assert.match(localSkill, /UNKNOWN/u);
 	assert.match(localSkill, /transactional outbox/u);
+	assert.match(localSkill, /Inventory observable deliverables before tasks/u);
+	assert.match(localSkill, /dependency DAG and a separate verification graph/u);
+	assert.match(localSkill, /read and write resources/u);
+	assert.match(localSkill, /bounded pre-mortem/u);
+	assert.match(localSkill, /requires abandoning the plan/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."agent-planning-recovery-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 75/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md"/u);
-	assert.match(i18n, /\[documents\."skill\.agent-planning-recovery-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.agent-planning-recovery-review"\][\s\S]*?revision = 2/u);
 });
 
 test('agent release bundles remain immutable through shadow canary and rollback', () => {
@@ -455,6 +460,11 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.match(localSkill, /fixed regression cases/u);
 	assert.match(localSkill, /recent real-traffic replay cases/u);
 	assert.match(localSkill, /generated or perturbed exploration cases/u);
+	assert.match(localSkill, /minimal contrast pairs/u);
+	assert.match(localSkill, /Hold out complete rule compositions/u);
+	assert.match(localSkill, /invariance/u);
+	assert.match(localSkill, /equivariance/u);
+	assert.match(localSkill, /arbitrary label mapping/u);
 	assert.match(localSkill, /Prevent contamination/u);
 	assert.match(localSkill, /Version expected truth/u);
 	assert.match(localSkill, /operational metric families separate/u);
@@ -481,7 +491,7 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.match(manifest, /"\.mustflow\/skills\/agent-eval-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-eval-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('agent memory and context governance keeps derived memory scoped, fresh, and deletable', () => {

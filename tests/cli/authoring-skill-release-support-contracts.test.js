@@ -405,6 +405,12 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	assert.match(localSkill, /no_action/u);
 	assert.match(localSkill, /smallest reversible next action/u);
 	assert.match(localSkill, /Decision-reversing evidence/u);
+	assert.match(localSkill, /proposed means as candidate A/u);
+	assert.match(localSkill, /no more than three material assumptions/u);
+	assert.match(localSkill, /materially independent\s+alternative and a null hypothesis/u);
+	assert.match(localSkill, /Give every hypothesis a falsifier/u);
+	assert.match(localSkill, /concise pre-mortem/u);
+	assert.match(localSkill, /smallest experiment whose result differs across competing hypotheses/u);
 	assert.match(localSkill, /Before implementation, select and read the narrowest matching implementation skill/u);
 	assert.match(skillIndex, /Use `complex-decision-analysis` as a primary route only/u);
 	assert.match(skillIndex, /both a material uncertainty signal and a material consequence\s+signal/u);
@@ -435,7 +441,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
 	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 30/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 2/u);
 });
 
 test('technology stack selection gates survival-path choices by operability', () => {

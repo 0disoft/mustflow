@@ -2,7 +2,7 @@
 mustflow_doc: skill.client-bundle-pruning-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: client-bundle-pruning-review
@@ -49,6 +49,10 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 - The task is only broad performance budgeting, measurement design, p95/p99 latency, throughput, memory, or backend cost; use `performance-budget-check`.
 - The task is only adding, converting, resizing, or replacing raster image files; use `web-asset-optimization`.
 - The task is only JavaScript or TypeScript runtime behavior with no client bundle, import graph, module format, dependency, or bundler-output risk; use the matching language skill.
+- The task is primarily about secrets, public environment variables, server-only imports, hydration
+  disclosure, public static files, sourcemaps, final deployment bytes, artifact provenance, or
+  post-deploy integrity; use `security-privacy-review`. Bundle pruning may remain an adjunct only
+  when client weight or import-graph bloat is also a material goal.
 - The needed proof requires an unconfigured bundle analyzer, browser trace, package-manager command, dev server, or build plugin installation. Report the missing measurement or tooling boundary instead of inventing raw commands.
 
 <!-- mustflow-section: required-inputs -->
@@ -70,6 +74,9 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 - Higher-priority instructions and `.mustflow/config/commands.toml` have been checked for the current scope.
 - Required inputs are available from current files, diffs, docs, configured outputs, or user-provided evidence, or missing inputs can be reported without guessing.
 - If package metadata, library exports, module formats, or public import paths change, also use `typescript-code-change`, `javascript-code-change`, `api-contract-change`, or `dependency-reality-check` as applicable.
+- If the review encounters client-visible secrets, private configuration, server modules, source
+  content, hydration leakage, public sourcemaps, or a mismatch between inspected and deployed bytes,
+  route the security decision through `security-privacy-review`; smaller output is not proof of safe output.
 - If a current external vendor behavior claim is needed, verify with source-fresh evidence or report the claim as snapshot-only.
 
 <!-- mustflow-section: allowed-edits -->
@@ -118,6 +125,10 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 33. Check inline asset thresholds. Large SVGs, fonts, or images inlined into JavaScript increase parse and transfer cost, couple cache lifetimes, and can force re-downloads when an app chunk changes; use separate resources unless the asset is small and truly critical.
 34. Check long-term chunk cache stability. One source edit should not churn every chunk hash unless the graph contract requires it. Inspect manifest use, stable vendor or route chunks, and rarely-used heavy chunks when deployment cache behavior is part of the claim.
 35. Label evidence honestly. If no configured bundle analyzer, coverage report, Resource Timing, budget, build output, or package-size proof exists, report the result as static import-graph risk or missing measurement, not a measured bundle reduction.
+36. Keep performance and disclosure gates separate. Tree shaking, minification, code splitting,
+    console dropping, dead-code elimination, or a smaller gzip receipt does not prove that client
+    output excludes secrets, server-only modules, source maps, debug strings, or unapproved origins.
+    Do not delete evidence or disable diagnostics merely to make a security fingerprint smaller.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -126,6 +137,7 @@ The review question is not "is code splitting enabled?" It is "which imports, pa
 - CJS-heavy imports, broad package roots, hot-path barrels, missing subpath exports, unsafe side-effect metadata, missing PURE hints, broad client boundaries, eager heavy widgets, event-time libraries, icon catalogs, date locale packs, highlighter/editor language packs, Node polyfills, old browser targets, broad polyfills, un-folded dev code, unsafe console drops, giant vendor chunks, modulepreload spam, dynamic Tailwind classes, broad safelists, and large inline assets are fixed or reported.
 - Bundle-size, unused-code, initial-JS, evaluate-time, long-task, preload, prefetch, and cache-stability claims are backed by current configured evidence or labeled as static import-graph risk, manual-only measurement, or missing evidence.
 - Public import compatibility, CSS, polyfills, localization, accessibility, logging semantics, and framework behavior remain intact or are reported as tradeoffs.
+- Client artifact security remains owned by `security-privacy-review` and is not inferred from bundle-size or dead-code evidence.
 
 <!-- mustflow-section: verification -->
 ## Verification
@@ -164,3 +176,4 @@ Use the narrowest configured test, build, docs, release, or mustflow intent that
 - Command intents run
 - Skipped bundle measurements and reasons
 - Remaining client-bundle pruning risk
+- Security handoff when final client artifact disclosure or provenance is involved

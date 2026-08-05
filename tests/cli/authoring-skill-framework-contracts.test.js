@@ -57,6 +57,17 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 	assert.match(tsSkill, /`--stableTypeOrdering` as a migration comparison tool/u);
 	assert.match(tsSkill, /adopted stable compiler, TS6 API compatibility check, or framework typecheck as the baseline/u);
 	assert.match(tsSkill, /compiler API consumers, language-service plugins, custom transformers/u);
+	assert.match(tsSkill, /compile-time evidence only/u);
+	assert.match(tsSkill, /runtime schema is the source of truth/u);
+	assert.match(tsSkill, /validate the normalized value/u);
+	assert.match(tsSkill, /type-aware lint or AST evidence/u);
+	assert.match(tsSkill, /emitted public declarations for `any`/u);
+	assert.match(tsSkill, /Treat `target` as an emitted-algorithm choice/u);
+	assert.match(tsSkill, /TypeScript 7, reject removed `target: "es5"`, `downlevelIteration`/u);
+	assert.match(tsSkill, /object rest as an allowlist/u);
+	assert.match(tsSkill, /getters or Proxy traps/u);
+	assert.match(tsSkill, /TypeScript `private` as soft privacy/u);
+	assert.match(tsSkill, /Attack the built JavaScript/u);
 
 	assert.match(dependencySkill, /TypeScript compiler tracks/u);
 	assert.match(dependencySkill, /snapshot checked on 2026-07-11/u);
@@ -106,7 +117,7 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 			'u',
 		),
 	);
-	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 8/u);
+	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 9/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 7/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
 });

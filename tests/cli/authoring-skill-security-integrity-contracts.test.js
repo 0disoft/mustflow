@@ -33,8 +33,16 @@ test('dependency and security reviews deduplicate alerts and harden privileged w
 	assert.match(securitySkill, /repeated token class that can also consume its following delimiter/u);
 	assert.match(securitySkill, /A generous elapsed-time assertion is only a tripwire/u);
 	assert.match(securitySkill, /successful CodeQL workflow proves analysis ran, not that the alert disappeared/u);
+	assert.match(securitySkill, /public client prefixes such as `VITE_\*`, `PUBLIC_\*`/u);
+	assert.match(securitySkill, /transitive client import graph/u);
+	assert.match(securitySkill, /server-to-browser serialization as different boundaries/u);
+	assert.match(securitySkill, /equivalent static roots as unprocessed publication paths/u);
+	assert.match(securitySkill, /hidden sourcemaps as generated but unreferenced, not private/u);
+	assert.match(securitySkill, /Inspect what users actually receive/u);
+	assert.match(securitySkill, /two different decoy secret sets/u);
+	assert.match(securitySkill, /promote it without rebuilding/u);
 	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 8/u);
-	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 29/u);
+	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 30/u);
 	assert.match(i18n, /\[documents\."skill\.security-regression-tests"\][\s\S]*?revision = 13/u);
 });
 

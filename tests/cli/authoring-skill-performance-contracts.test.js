@@ -643,6 +643,9 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(localSkill, /inline asset thresholds/u);
 	assert.match(localSkill, /cache lifetimes/u);
 	assert.match(localSkill, /long-term chunk cache stability/u);
+	assert.match(localSkill, /use `security-privacy-review`/u);
+	assert.match(localSkill, /smaller output is not proof of safe output/u);
+	assert.match(localSkill, /Keep performance and disclosure gates separate/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md/u);
 	assert.match(skillIndex, /client-bundle-pruning triage/u);
 	assert.match(skillIndex, /unmeasured bundle claim/u);
@@ -659,7 +662,7 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(manifest, /"\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md"/u);
 	assert.match(manifest, /"client-bundle-pruning-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 3/u);
 });
 
 test('frame render performance review catches layout, paint, and INP frame risks', () => {

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:3b3e0fd88f356c7e870afae14b881f7333052e57e82c0f4e5a3e04c2208d2c25",
+  "source_fingerprint": "sha256:cb63630e88b29c73273274b4dc24c09cdedada6935ae51d2f88fedde7d0eb626",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -181,14 +181,21 @@
       "mutually_exclusive_with": [],
       "positive_signals": [
         "adjudicator",
+        "arbitrary label",
         "behavior bundle",
         "benchmark",
+        "compositional holdout",
         "contamination",
+        "difficulty curve",
+        "equivariance",
         "eval",
         "false negative",
         "false positive",
         "grader",
+        "invariance",
         "judge",
+        "metamorphic",
+        "minimal contrast",
         "offline evaluation",
         "oracle",
         "regression",
@@ -211,7 +218,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when LLM agent evaluation loops, deterministic gates, trace or trajectory grading, LLM judges, verifier agents, repair cascades, outcome scoring, tool-call prechecks or postchecks, fixed, replay, or generated eval datasets, pass@k or pass^k metrics, shadow environments, production-monitoring-to-eval pipelines, or agent regression gates are created, changed, reviewed, or reported and the risk is false confidence, false rejection, stale eval truth, or correlated verification rather than runtime execution control alone.",
+      "trigger": "Apply this skill when LLM agent evaluation loops, deterministic gates, trace or trajectory grading, LLM judges, verifier agents, repair cascades, outcome scoring, tool-call prechecks or postchecks, fixed, replay, generated, compositional, metamorphic, or generalization eval datasets, pass@k or pass^k metrics, shadow environments, production-monitoring-to-eval pipelines, or agent regression gates are created, changed, reviewed, or reported and the risk is false confidence, false rejection, stale eval truth, contamination, surface-pattern memorization, or correlated verification rather than runtime execution control alone.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -371,17 +378,24 @@
       "mutually_exclusive_with": [],
       "positive_signals": [
         "append only event",
+        "completion evidence",
+        "deliverable inventory",
         "dependency dag",
         "deterministic replay",
         "effect id",
+        "entry condition",
         "global plan",
         "irreversible checkpoint",
+        "plan abandonment",
         "plan drift",
         "plan version",
+        "pre mortem",
+        "read write resource",
         "replan",
         "rolling plan",
         "snapshot",
         "unknown effect",
+        "verification graph",
         "workflow id"
       ],
       "negative_signals": [
@@ -403,7 +417,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when a long-running LLM agent or agentic workflow needs a stable global goal, constraints, milestones, dependency graph, irreversible checkpoints, a short rolling plan, event-triggered replanning, compact context reconstruction, deterministic replay, or safe recovery across interruptions and unknown effects.",
+      "trigger": "Apply this skill when a long-running LLM agent or agentic workflow needs observable deliverables, entry and exit evidence, a stable global goal, constraints, milestones, dependency and verification graphs, shared-resource conflict control, irreversible checkpoints, a short rolling plan, event-triggered replanning, compact context reconstruction, deterministic replay, or safe recovery across interruptions and unknown effects.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -2104,8 +2118,22 @@
         "web_asset_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "bundle size",
+        "dead code elimination",
+        "dependency bloat",
+        "first route js",
+        "initial js",
+        "shared vendor",
+        "tree shaking"
+      ],
+      "negative_signals": [
+        "browser bundle secret only",
+        "client artifact security only",
+        "hydration disclosure only",
+        "public sourcemap only",
+        "server only import leak only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -2657,15 +2685,31 @@
         "cross_cutting_code_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "decision record",
+        "discriminating experiment",
+        "falsifier",
+        "hidden assumption",
+        "lifecycle cost",
+        "null hypothesis",
+        "pareto",
+        "pre mortem",
+        "proposed solution",
+        "stakeholder"
+      ],
+      "negative_signals": [
+        "implementation only",
+        "known fix",
+        "routine change",
+        "single domain owner"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when analysis or a decision record is the current deliverable and the problem has both material uncertainty and material consequences before implementation.",
+      "trigger": "Apply this skill when analysis or a decision record is the current deliverable and the problem has both material uncertainty and material consequences before implementation, especially when a user's proposed solution, hidden assumptions, conflicting intent, competing hypotheses, failure scenarios, stakeholder effects, cost, risk, or reversibility must be tested before action.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -6748,15 +6792,28 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "answerability",
+        "assumption budget",
+        "claim state ledger",
+        "evidence sufficiency",
+        "fact logic separation",
+        "uncertainty propagation",
+        "unsupported claim",
+        "weakest premise"
+      ],
+      "negative_signals": [
+        "latency only",
+        "prompt authoring only",
+        "token cost only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when LLM answers, RAG responses, citations, source grounding, claim extraction, evidence IDs, answerability states, abstain behavior, retrieval thresholds, tool-backed facts, output validators, LLM judges, or hallucination-control metrics are created, changed, reviewed, or reported and the risk is unsupported factual output escaping the product boundary.",
+      "trigger": "Apply this skill when LLM answers, RAG responses, citations, source grounding, claim extraction, fact-inference-assumption separation, uncertainty propagation, evidence IDs, answerability states, abstain behavior, retrieval thresholds, tool-backed facts, output validators, LLM judges, or hallucination-control metrics are created, changed, reviewed, or reported and the risk is unsupported factual output escaping the product boundary.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -8785,15 +8842,28 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "conditional tool use",
+        "evidence type",
+        "held out example",
+        "interpretation confidence",
+        "minimal contrast",
+        "prompt contract",
+        "requirement ledger",
+        "semantic surface gate"
+      ],
+      "negative_signals": [
+        "answer grounding only",
+        "runtime orchestration only",
+        "token cost only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when prompts, prompt builders, system or developer messages, RAG prompt assembly, few-shot examples, structured outputs, tool-use instructions, model selection, reasoning-effort settings, eval sets, refusal or fallback handling, prompt versioning, or AI feature completion criteria are created, changed, reviewed, or reported and the risk is prompt quality as an input/output contract rather than wording polish.",
+      "trigger": "Apply this skill when prompts, prompt builders, system or developer messages, RAG prompt assembly, few-shot examples, structured outputs, requirement ledgers, evidence-type routing, conditional tool-use instructions, model selection, reasoning-effort settings, eval sets, refusal or fallback handling, prompt versioning, or AI feature completion criteria are created, changed, reviewed, or reported and the risk is prompt quality as an input/output contract rather than wording polish.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -9983,13 +10053,23 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
+        "browser bundle secret",
+        "client artifact",
+        "client environment",
         "codeql alert",
         "delimiter overlap",
+        "deployment bytes",
         "exponential backtracking",
+        "final archive",
+        "hidden sourcemap",
+        "hydration payload",
         "inefficient regular expression",
+        "public static file",
         "redos",
         "regex denial of service",
+        "runtime security",
         "scanner alert",
+        "server only import",
         "正则回溯",
         "正则表达式拒绝服务",
         "비효율적 정규식",
@@ -10003,7 +10083,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code, configuration, docs, templates, logs, telemetry, traces, baggage, behavior analytics, core events, credentials, data flows, data residency policy, region or processing-location claims, AI-generated code, AI prompts outputs usage cost records budgets policies or cache keys, authentication, authorization, server-side permission checks, admin operations, audit logs, file uploads or downloads, signed URLs, API responses, cache policy, cache-as-authority decisions, claim or policy data, comparison or affiliate data, user-generated content, webhooks, job queues, search logs, analytics SaaS exports, external API call records, network calls, dependencies, runtime security patch policy, vulnerability scanner advisories, development servers, test UI servers, third-party terms or data-use promises, cryptography, secure transport, agent configuration, or release surfaces affect secrets, personal data, retention, access control, vendor disclosure, or external disclosure.",
+      "trigger": "Apply this skill when code, configuration, docs, templates, logs, telemetry, traces, baggage, behavior analytics, core events, credentials, data flows, data residency policy, region or processing-location claims, AI-generated code, AI prompts outputs usage cost records budgets policies or cache keys, authentication, authorization, server-side permission checks, admin operations, audit logs, file uploads or downloads, signed URLs, API responses, cache policy, cache-as-authority decisions, claim or policy data, comparison or affiliate data, user-generated content, webhooks, job queues, search logs, analytics SaaS exports, external API call records, network calls, dependencies, runtime security patch policy, vulnerability scanner advisories, development servers, test UI servers, browser bundles, public environment variables, server-only imports, hydration payloads, public static files, sourcemaps, final deployment archives, artifact provenance, third-party terms or data-use promises, cryptography, secure transport, agent configuration, or release surfaces affect secrets, personal data, retention, access control, vendor disclosure, or external disclosure.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -11781,7 +11861,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 stable, development, API-compatibility, or native-preview tooling, runtime data validation, type safety, or TypeScript tests are created or changed.",
+      "trigger": "Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 stable, development, API-compatibility, or native-preview tooling, runtime data validation, assertion debt, emitted JavaScript semantics, downlevel transforms, TypeScript tests, or built-JavaScript tests are created or changed.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

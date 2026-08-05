@@ -2,11 +2,11 @@
 mustflow_doc: skill.security-privacy-review
 locale: en
 canonical: true
-revision: 29
+revision: 30
 lifecycle: mustflow-owned
 authority: procedure
 name: security-privacy-review
-description: Apply this skill when code, configuration, docs, templates, logs, telemetry, traces, baggage, behavior analytics, core events, credentials, data flows, data residency policy, region or processing-location claims, AI-generated code, AI prompts outputs usage cost records budgets policies or cache keys, authentication, authorization, server-side permission checks, admin operations, audit logs, file uploads or downloads, signed URLs, API responses, cache policy, cache-as-authority decisions, claim or policy data, comparison or affiliate data, user-generated content, webhooks, job queues, search logs, analytics SaaS exports, external API call records, network calls, dependencies, runtime security patch policy, vulnerability scanner advisories, development servers, test UI servers, third-party terms or data-use promises, cryptography, secure transport, agent configuration, or release surfaces affect secrets, personal data, retention, access control, vendor disclosure, or external disclosure.
+description: Apply this skill when code, configuration, docs, templates, logs, telemetry, traces, baggage, behavior analytics, core events, credentials, data flows, data residency policy, region or processing-location claims, AI-generated code, AI prompts outputs usage cost records budgets policies or cache keys, authentication, authorization, server-side permission checks, admin operations, audit logs, file uploads or downloads, signed URLs, API responses, cache policy, cache-as-authority decisions, claim or policy data, comparison or affiliate data, user-generated content, webhooks, job queues, search logs, analytics SaaS exports, external API call records, network calls, dependencies, runtime security patch policy, vulnerability scanner advisories, development servers, test UI servers, browser bundles, public environment variables, server-only imports, hydration payloads, public static files, sourcemaps, final deployment archives, artifact provenance, third-party terms or data-use promises, cryptography, secure transport, agent configuration, or release surfaces affect secrets, personal data, retention, access control, vendor disclosure, or external disclosure.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -62,6 +62,9 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - A change affects CI/CD workflow permissions, fork pull-request handling, build scripts, package lifecycle scripts, deployment secrets, container users, storage buckets, debug flags, or public admin, metrics, GraphQL, cache, or search endpoints.
 - Documentation, templates, examples, tests, or final reports mention sensitive data handling, privacy behavior, secret handling, or user-identifying data.
 - A diff could expose data through filenames, paths, command output, screenshots, generated artifacts, package contents, or public docs.
+- A frontend, SSR, static-site, worker, or browser build can expose secrets, server-only code,
+  internal paths, debug data, source content, privileged provider responses, or stale files through
+  JavaScript, HTML, hydration payloads, public assets, sourcemaps, compressed variants, or CDN output.
 - A change constructs, recommends, copies, resolves, or runs commands based on repository-controlled names, configuration, or generated reports.
 - A change reads or writes repository paths, follows filesystem links, packages files, or publishes release artifacts.
 - A workflow gains publish credentials, package registry identity, OIDC permissions, or third-party actions before artifact publication.
@@ -87,6 +90,10 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Permission model shape when authorization is involved: actor, resource, action, scope, condition, default decision, exception path, emergency-access path, and audit expectation.
 - Read, list, search, update, delete, upload, attach, download, invite, billing, and admin actions affected, including whether the server scopes each action by actor, owner, workspace, organization, team, role, or capability.
 - Cookie, JWT, OAuth, file upload, file download, business-value, database mutation, ORM bulk operation, CI/CD permission, deployment setting, or secret-source surface involved.
+- Client artifact ledger when browser output is involved: client entries, transitive module graph,
+  public environment allowlist, server-only module denylist, serialized server-to-client DTOs,
+  public-directory allowlist, output cleaning, sourcemap policy, final archive or CDN manifest,
+  compressed variants, build-secret availability, artifact digest, provenance, and post-deploy bytes.
 - Cryptographic primitive, password hashing, random-token, secure transport, certificate validation, scanner gate, or security invariant involved.
 - Existing project rules for secrets, privacy, generated state, public docs, package contents, and command output.
 - Policy or rule-catalog source of truth, trusted metadata source, fallback behavior when a rule file is missing, and any untrusted repository-local fields that might be treated as ownership, tier, role, or exemption evidence.
@@ -192,52 +199,91 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
    - For AI budget and gateway records, store enough information to enforce limits and investigate abuse without retaining prompt text, uploaded document contents, full outputs, or personal data by default. Record blocked, downgraded, and emergency-disabled decisions as security-relevant events when they protect cost, privacy, or region policy.
 28. For secrets, logs, and audit records, check hardcoded credentials, frontend bundle exposure, public versus secret key confusion, real-looking samples, raw request or session dumps, stack traces, error payloads, screenshots, receipts, generated reports, unbounded before/after snapshots, and whether leaked keys need revocation guidance.
     - If a real or plausible secret value appears, activate `secret-exposure-response` and stop repeating the value before continuing ordinary review.
-29. Treat shell commands, copyable command text, executable names, workflow action references, publish identities, package manifests, lifecycle scripts, Dockerfiles, and environment path entries as disclosure and execution surfaces, not as harmless strings.
-30. For dependency changes, activate `dependency-reality-check` to confirm the package is declared, real, necessary, locked when appropriate, and not an assistant-hallucinated or lookalike dependency.
+    - Treat public client prefixes such as `VITE_*`, `PUBLIC_*`, or framework equivalents as explicit
+      disclosure contracts, not secret storage. Default environment variables to server-only and
+      allowlist the small set intended for browser delivery; name-based secret heuristics are only a
+      secondary tripwire.
+    - Enforce server-only boundaries across the transitive client import graph, including barrels and
+      generated virtual modules. A server folder name or source lint on direct imports does not prove
+      that database drivers, admin SDKs, private environment modules, Node built-ins, or server auth
+      code stayed out of the final client chunks.
+    - Treat server execution and server-to-browser serialization as different boundaries. Build a
+      dedicated client DTO from allowlisted fields instead of returning whole config, user, locals,
+      error, provider, or database objects through load data, hydration, prerender, or API payloads.
+    - Treat `public/` and equivalent static roots as unprocessed publication paths. Start from a clean
+      output directory, allowlist expected paths, and reject backups, fixtures, dumps, config files,
+      credentials, and stale artifacts rather than relying on an extension denylist.
+    - Treat hidden sourcemaps as generated but unreferenced, not private. Inspect `.map` files and
+      inline maps for source paths, `sourcesContent`, names, server modules, test fixtures, and local
+      filesystem data; upload private maps separately when needed and exclude them from public output.
+    - Do not give a client-only build real server secrets. When SSR or prerender needs credentials,
+      separate the job and outputs or feed the browser build a bounded intermediate artifact.
+29. Inspect what users actually receive when client artifact disclosure is material.
+    - Assemble and inspect the final ZIP, TAR, OCI layer, CDN directory, or hosting upload input rather
+      than stopping at a bundler's `dist`. Include HTML, JavaScript, CSS, JSON, WASM, static files,
+      sourcemaps, and gzip or Brotli variants, and record hashes for the inspected publication set.
+    - Parse minified JavaScript structurally when available. Inventory code-generation calls, dynamic
+      imports, DOM HTML sinks, prototype mutation, workers, WebSockets, WebAssembly, storage APIs,
+      external origins, literal paths, internal endpoints, debug strings, and included modules; use
+      raw grep only as a supplementary signal.
+    - Normalize module, origin, string, sink, source-map, and debug-call evidence into a security
+      fingerprint and compare it with the accepted baseline. Require review for newly public origins,
+      server modules, source maps, code-generation paths, or secret-like values instead of failing on
+      harmless minifier churn.
+    - When the build is deterministic enough and a configured path exists, build the client artifact
+      with two different decoy secret sets. A normalized client artifact or fingerprint that changes
+      proves private build inputs can influence public output even when ordinary secret scanning does
+      not recover the original value.
+    - Inspect once, then sign, attest, or digest-pin that exact artifact and promote it without rebuilding.
+      After staging or deployment, fetch the referenced entry and transitive chunks, compare their
+      decompressed hashes with the manifest, and verify public source-map requests are denied when the
+      deployment contract exposes a configured check.
+30. Treat shell commands, copyable command text, executable names, workflow action references, publish identities, package manifests, lifecycle scripts, Dockerfiles, and environment path entries as disclosure and execution surfaces, not as harmless strings.
+31. For dependency changes, activate `dependency-reality-check` to confirm the package is declared, real, necessary, locked when appropriate, and not an assistant-hallucinated or lookalike dependency.
     - For third-party services used as core infrastructure, review whether the terms allow commercial use, export, backup, deletion, data retention control, model training opt-out, stable API limits, and service continuity. If the project cannot verify the terms under the current task, report the risk instead of claiming the provider is safe for sensitive or core data.
-31. For agent configuration, MCP/tool setup, prompt files, external instructions, or AI context settings, activate `external-prompt-injection-defense` and check hidden instruction text, suspicious Unicode controls, broad filesystem or shell permissions, network egress, sensitive context inclusion, and over-privileged service tokens.
-32. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
-33. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
+32. For agent configuration, MCP/tool setup, prompt files, external instructions, or AI context settings, activate `external-prompt-injection-defense` and check hidden instruction text, suspicious Unicode controls, broad filesystem or shell permissions, network egress, sensitive context inclusion, and over-privileged service tokens.
+33. For filesystem changes, distinguish lexical containment from the real target. Check symlinks, generated state, package contents, and file APIs that may follow links before claiming a path stays inside the repository.
+34. For code-scanning alerts, group findings by root cause and rule. Fix the underlying pattern, not only the exact flagged line, and separate repository-setting alerts such as branch protection or maintainer activity from code changes.
     - Deduplicate scanner records by advisory or rule identity, affected manifest or workflow, and resolved package or action reference. Multiple tools finding the same root cause raise confidence and coverage; they do not multiply the vulnerable dependency or mutable action into separate defects.
     - For incomplete escaping or encoding findings, search the same sink class for adjacent ad hoc sanitizer patterns such as first-occurrence `.replace`, non-global replacement, hand-escaped slashes, quotes, backslashes, path separators, or mixed URL encoders. Replace the pattern with a domain-owned transformation and add a regression test or narrow source-pattern guard when the behavior is release-sensitive.
     - For ReDoS or inefficient-regular-expression findings, identify whether attacker-controlled text, repository files, generated output, logs, Markdown, YAML, or source code can reach the expression. Prefer a bounded parser, token scanner, structured parser, or anchored non-overlapping expression over nested quantifiers, repeated alternatives that can match the same prefix, or optional whitespace loops.
       - Treat a repeated token class that can also consume its following delimiter as an ambiguous partition even when the expression looks path-shaped or line-bounded. Exclude the delimiter from the repeated token, make alternatives prefix-distinct, or replace the expression with a deterministic scanner instead of adding another lookaround.
       - Preserve accepted Windows, Unix, URL, identifier, or log syntax with positive controls, then add a long separator-heavy or prefix-sharing malformed non-match that exercises the scanner witness under a bounded test timeout. A generous elapsed-time assertion is only a tripwire; structural non-overlap and the repository input-size budget remain the primary proof.
       - Separate scanner execution from scanner closure. A successful CodeQL workflow proves analysis ran, not that the alert disappeared. Verify the exact rule and alert on the fixed commit or current branch before reporting remote closure.
-34. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, fork pull-request secret exposure, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
+35. For workflow scanner alerts, check action pinning, `persist-credentials`, job-level permissions, reusable workflow permissions, fork pull-request secret exposure, artifact upload boundaries, and privileged identity timing before treating the warning as cosmetic.
     - Treat `pull_request_target` as a privileged trust boundary, not as an automatic defect or automatic exemption. Require the workflow to execute only trusted base-branch code and immutable third-party action commits, never check out or evaluate the untrusted pull-request head, keep job permissions at the minimum for that phase, and separate read-only review from write-capable post-merge or maintainer-dispatched work. Dismiss a trigger-only alert only after those conditions are evidenced and recorded.
-35. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit. Keep the human-readable release or channel in a comment and refresh the immutable SHA through a reviewed dependency update instead of executing a mutable tag directly.
-36. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
+36. For pinned action references, distinguish tag objects from the commit that implements the tag. Verify pinned SHAs against the action repository so scanner tooling does not report an imposter or non-member commit. Keep the human-readable release or channel in a comment and refresh the immutable SHA through a reviewed dependency update instead of executing a mutable tag directly.
+37. For dependency scanner alerts, separate production dependency manifests from fixtures, examples, generated test repositories, and intentionally vulnerable samples. Narrow the scan scope before treating fixture-only alerts as product vulnerabilities.
     - For lockfile CVEs, inspect the manifest and lockfile together. Identify the direct parent that keeps the vulnerable transitive package in the graph, update the narrowest direct dependency or override needed to reach the fixed range, and confirm the vulnerable package version no longer appears in the resolved graph before claiming the alert is fixed.
     - For object merge, defaulting, or configuration merge advisories, trace whether parsed request bodies, database records, uploaded JSON, repository config, or provider payloads can become the first or highest-priority merge input. Treat `__proto__`, `constructor`, and `prototype` keys, inherited polluted values, and default-overwrite behavior as prototype-pollution sinks; prove the patched dependency is resolved or add a regression payload that cannot override trusted defaults.
     - For ORM or SQL-builder advisories around identifiers, aliases, dynamic sorting, report columns, CTE names, or `.as()`-style APIs, remember that value parameter binding does not protect identifier positions. Runtime input must map through an allowlist of known columns or aliases, and dialect quote delimiters inside identifiers must be escaped by the library before the identifier is wrapped.
     - For serializer or deserializer advisories, treat sparse arrays, giant indexes, deep objects, cyclic references, and attacker-controlled serialized payloads as allocation and CPU sinks. Bound serialized size, array length or highest index, nesting depth, and parse source trust before claiming a parser-only upgrade removes the availability risk.
     - For advisories involving development tools such as Vite, Vitest UI, browser-mode test servers, Storybook, docs preview, asset servers, or framework dev servers, do not dismiss the issue merely because the package is a devDependency. Check whether scripts, docs, Docker, Codespaces, CI previews, tunnels, or config bind the server to a non-localhost host, widen file-serving roots, disable deny lists, or expose privileged read, write, rerun, snapshot, attachment, or execute APIs.
-37. For deployment settings, check debug mode, sample admin accounts, default credentials, public admin panels, open metrics endpoints, public storage, root container users, HTTPS enforcement, and exposed GraphQL or development consoles.
-38. For runtime and framework security updates, check that supported versions are documented, end-of-life versions are rejected, dependency locks exist where appropriate, security patches can be tested and deployed quickly, and rollback or redeploy can happen without manual dashboard memory. Do not treat a fashionable or high-performance runtime as safe unless the patch path is operationally credible.
+38. For deployment settings, check debug mode, sample admin accounts, default credentials, public admin panels, open metrics endpoints, public storage, root container users, HTTPS enforcement, and exposed GraphQL or development consoles.
+39. For runtime and framework security updates, check that supported versions are documented, end-of-life versions are rejected, dependency locks exist where appropriate, security patches can be tested and deployed quickly, and rollback or redeploy can happen without manual dashboard memory. Do not treat a fashionable or high-performance runtime as safe unless the patch path is operationally credible.
     - Treat advisory exploit preconditions as review inputs, not excuses. If the exploit requires Windows, NTFS alternate data streams, 8.3 short names, non-localhost binding, exposed QUIC or SSH clients, oversized public keys, malformed protocol frames, or misbehaving peers, search for those conditions before marking the alert irrelevant.
-39. For transport security, check HTTPS/TLS requirements, certificate validation, insecure HTTP downgrade paths, disabled verification flags, and whether sensitive traffic can bypass the secure channel.
-40. For cryptography and security protocols, reject custom cryptography and tutorial-grade shortcuts. Check password hashing uses a password-hashing primitive such as bcrypt, scrypt, or Argon2id where supported by the project; random tokens use secure randomness; keys are separated from encrypted data; weak hashes such as MD5, SHA-1, or bare SHA-256 are not used for password storage; protocol parsers bound attacker-controlled key sizes, packet sizes, frame ordering, unsolicited responses, and panic or assertion paths.
-41. For policy engines, architecture linters, compliance validators, and generated governance gates, identify the canonical policy source and the canonical object identity before trusting a pass result.
+40. For transport security, check HTTPS/TLS requirements, certificate validation, insecure HTTP downgrade paths, disabled verification flags, and whether sensitive traffic can bypass the secure channel.
+41. For cryptography and security protocols, reject custom cryptography and tutorial-grade shortcuts. Check password hashing uses a password-hashing primitive such as bcrypt, scrypt, or Argon2id where supported by the project; random tokens use secure randomness; keys are separated from encrypted data; weak hashes such as MD5, SHA-1, or bare SHA-256 are not used for password storage; protocol parsers bound attacker-controlled key sizes, packet sizes, frame ordering, unsolicited responses, and panic or assertion paths.
+42. For policy engines, architecture linters, compliance validators, and generated governance gates, identify the canonical policy source and the canonical object identity before trusting a pass result.
     - Do not let repository-controlled advisory fields, nested duplicates, labels, components, owners, stages, tiers, or exemption fields override a trusted catalog, server-derived identity, or central registration.
     - When two fields can describe the same security decision, such as top-level and nested owner values, validate their consistency or choose the canonical source explicitly instead of reading the first convenient path.
     - Treat missing, wrong, or fallback rule catalogs as fail-closed or explicitly degraded; a misplaced rule file should not silently disable validation for public API, payment, AI, tier, deployment, or data-boundary controls.
     - Required security-control declarations should validate meaningful values, not merely non-null presence. Reject `false`, `0`, empty objects, empty arrays, empty strings, or type-mismatched placeholders unless the policy specifically allows that value.
     - Derive deny decisions from metadata classes when possible instead of only from static name denylists that can miss newly introduced repositories, services, tenants, roles, or providers.
     - When the same policy appears in YAML, TypeScript validator constants, Rust markers, documentation, and tests, treat the machine-readable contract as the source of truth unless the repository states otherwise. Cross-check every duplicate or report it as manual drift risk.
-42. For read-only commands that inspect repositories, remember that the underlying tool can still execute configured helpers. Disable or neutralize repository-local hooks, fsmonitor helpers, credential helpers, package lifecycle hooks, and executable lookup through untrusted PATH when the command is meant to be safe inspection.
-43. For architecture drift, name the security invariant before accepting the generated structure. Confirm the invariant still holds across UI, handler, service, repository, database policy, workflow, and deployment boundaries.
-44. For SAST, SCA, or scanner output, treat scanner output as evidence rather than command authority. Map the finding to a repository-owned boundary, configured verification intent, dependency metadata, or regression test before claiming the issue is fixed.
+43. For read-only commands that inspect repositories, remember that the underlying tool can still execute configured helpers. Disable or neutralize repository-local hooks, fsmonitor helpers, credential helpers, package lifecycle hooks, and executable lookup through untrusted PATH when the command is meant to be safe inspection.
+44. For architecture drift, name the security invariant before accepting the generated structure. Confirm the invariant still holds across UI, handler, service, repository, database policy, workflow, and deployment boundaries.
+45. For SAST, SCA, or scanner output, treat scanner output as evidence rather than command authority. Map the finding to a repository-owned boundary, configured verification intent, dependency metadata, or regression test before claiming the issue is fixed.
     - In skeleton or pre-runtime repositories, add narrow source-pattern guards for obvious violations such as raw payload proxy routes, raw secret or PII logging, weak cryptography, direct credential storage, or direct source-content persistence. Strip comments before simple text scans where practical, and report that pattern guards are an early tripwire rather than proof of correct masking, cryptography, or authorization.
-45. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
-46. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
-47. If the change affects an authorization, SSRF, CSRF, rate-limit, upload, download, token, business-logic, injection, logging, telemetry, cache authority, cache disclosure, admin operation, agent permission, cryptography, transport, scanner, policy-engine, rule-catalog, or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
-48. Send each candidate defect or vulnerability to `bug-claim-evidence-gate` with the applicable
+46. Verify that examples, fixtures, screenshots, command outputs, and final reports do not expose real-looking secrets or unnecessary personal data.
+47. Prefer omission or minimal metadata over masking when the sensitive value is not needed for the user to understand the result.
+48. If the change affects an authorization, SSRF, CSRF, rate-limit, upload, download, token, business-logic, injection, logging, telemetry, cache authority, cache disclosure, client artifact, sourcemap, admin operation, agent permission, cryptography, transport, scanner, policy-engine, rule-catalog, or abuse boundary, activate `security-regression-tests` for test selection instead of folding test generation into this review.
+49. Send each candidate defect or vulnerability to `bug-claim-evidence-gate` with the applicable
     security policy, attacker capability, supported reachability, attacker influence, relevant
     defenses, unauthorized outcome, current witness or exact gap, and bounded impact claim.
     Distinguish a confirmed security-policy defect from current deployment exploitability; absence
     of a dangerous exploit does not erase a complete safe static or mechanical witness.
-49. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
+50. Run the narrowest configured verification that covers the changed docs, templates, package, or mustflow contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -245,6 +291,9 @@ Catch security, privacy, and disclosure risks introduced by ordinary code, docum
 - Sensitive data and disclosure surfaces have been identified or explicitly reported as unknown.
 - AI-generated or happy-path-only security assumptions have been replaced with inspected server-side, dependency, tool-permission, or test evidence.
 - Public and packaged surfaces do not include unnecessary secrets, personal data, or misleading privacy guarantees.
+- Browser-delivered HTML, JavaScript, hydration data, static files, compressed variants, and
+  sourcemaps are checked as final publication bytes when client artifact disclosure is relevant;
+  an inspected artifact is not silently rebuilt before promotion.
 - Admin operations, shared-cache behavior, generated-state rebuilds, and audit logs are treated as security-sensitive when they affect private data, permissions, public indexing, traffic, or monetization.
 - Client-side permission displays, file upload or download flows, private asset URLs, and API response fields are treated as disclosure and access-control surfaces.
 - Permission models define actor, resource, action, scope, condition, and default-deny behavior when authorization is involved, or the missing model is reported as a risk.
@@ -297,6 +346,8 @@ Use a narrower configured test, build, or documentation intent when it better pr
 - Data residency, data classification, AI processing location, runtime patch, and hard-limit policy checked when relevant
 - Claim, comparison, affiliate, user-generated content, data-ownership, deletion, anonymization, export, and retention boundaries checked when relevant
 - Authorization, session, token, input, file, network, business-logic, dependency, cryptography, transport, deployment, scanner, and agent-tool boundaries checked
+- Client environment, server-import graph, hydration DTO, public static root, final archive,
+  sourcemap, security fingerprint, artifact provenance, and post-deploy byte boundaries checked
 - Development-server, test-UI, scanner-advisory, Windows filesystem, protocol parser, and dependency patchability boundaries checked when relevant
 - Permission exception and emergency-access boundaries checked when relevant
 - Redaction, omission, or wording changes made

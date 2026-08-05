@@ -5406,3 +5406,208 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.manifest_lock_accept_skills_v2_126_0]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept the reviewed 2.126.0 skill-suite release command contract without widening manifest-lock authority."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", ".mustflow/config/commands.toml"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["mustflow_config_change"]
+
+[intents.release_branch_state_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the current branch, upstream relation, and bounded 2.126.0 skill-suite worktree before staging."
+argv = ["git", "status", "--short", "--branch"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
+[intents.release_stage_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.126.0 reasoning, planning, TypeScript, browser-artifact security, bundle-boundary, routing, template, version, release-note, manifest, and regression-contract changes."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/agent-eval-integrity-review/SKILL.md",
+  ".mustflow/skills/agent-planning-recovery-review/SKILL.md",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/client-bundle-pruning-review/SKILL.md",
+  ".mustflow/skills/complex-decision-analysis/SKILL.md",
+  ".mustflow/skills/llm-hallucination-control-review/SKILL.md",
+  ".mustflow/skills/prompt-contract-quality-review/SKILL.md",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/security-privacy-review/SKILL.md",
+  ".mustflow/skills/typescript-code-change/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "package.json",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/agent-eval-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/agent-planning-recovery-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/client-bundle-pruning-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/complex-decision-analysis/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/llm-hallucination-control-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/locales/en/.mustflow/skills/security-privacy-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-agent-automation-contracts.test.js",
+  "tests/cli/authoring-skill-architecture-ai-contracts.test.js",
+  "tests/cli/authoring-skill-framework-contracts.test.js",
+  "tests/cli/authoring-skill-performance-contracts.test.js",
+  "tests/cli/authoring-skill-release-support-contracts.test.js",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/skill-route.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged paths for the reviewed 2.126.0 skill-suite release."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_commit_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.126.0 skill-suite release after route, package, release, and strict verification."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): strengthen reasoning and runtime verification",
+  "-m", "Harden planning, eval, hallucination, prompt, TypeScript runtime, browser artifact security, and client bundle boundaries with synchronized routing, templates, catalogs, and regression contracts.",
+  "-m", "Validation: mf run test_skill_contracts; mf run skill_route_eval; mf run test_related_cached; mf run lint; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.126.0 release commit from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before checking the 2.126.0 branch and release workflows."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_main_runs_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main GitHub Actions runs with commit identities for the 2.126.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "40", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_publish_runs_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs with commit identities for the 2.126.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_126_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.126.0 GitHub Release metadata after the publish workflow completes."
+argv = ["gh", "release", "view", "v2.126.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]

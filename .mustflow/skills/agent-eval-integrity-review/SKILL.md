@@ -2,11 +2,11 @@
 mustflow_doc: skill.agent-eval-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: agent-eval-integrity-review
-description: Apply this skill when LLM agent evaluation loops, deterministic gates, trace or trajectory grading, LLM judges, verifier agents, repair cascades, outcome scoring, tool-call prechecks or postchecks, fixed, replay, or generated eval datasets, pass@k or pass^k metrics, shadow environments, production-monitoring-to-eval pipelines, or agent regression gates are created, changed, reviewed, or reported and the risk is false confidence, false rejection, stale eval truth, or correlated verification rather than runtime execution control alone.
+description: Apply this skill when LLM agent evaluation loops, deterministic gates, trace or trajectory grading, LLM judges, verifier agents, repair cascades, outcome scoring, tool-call prechecks or postchecks, fixed, replay, generated, compositional, metamorphic, or generalization eval datasets, pass@k or pass^k metrics, shadow environments, production-monitoring-to-eval pipelines, or agent regression gates are created, changed, reviewed, or reported and the risk is false confidence, false rejection, stale eval truth, contamination, surface-pattern memorization, or correlated verification rather than runtime execution control alone.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -59,7 +59,7 @@ Review agent evaluation as an asymmetric evidence cascade, not a judge-model opi
 - Trace ledger: model calls, tool calls, handoffs, guardrails, approvals, retries, custom events, tool observations, intermediate plans, rejected actions, and final response.
 - Oracle ledger: deterministic checks, schemas, static analysis, tests, state queries, regex or exact matchers, semantic verifiers, secondary adjudicators, sampled human review, evidence type, expected independence, known shared failure modes, and which oracle owns each claim.
 - Tool-boundary ledger: precheck, postcheck, permission check, idempotency check, state-before, state-after, changed fields, evidence references, tool error, timeout, and token size.
-- Dataset ledger: fixed regression set, recent real-traffic replay set, generated or perturbed exploration set, representative and risk-biased sampling strata, capability set, manual smoke cases, source of each case, labels, expected outcomes, grouping keys, sealed holdout status, validity interval, tool and policy versions, flakiness, and release-gate status.
+- Dataset ledger: fixed regression set, recent real-traffic replay set, generated or perturbed exploration set, representative and risk-biased sampling strata, capability set, manual smoke cases, source of each case, labels, expected outcomes, grouping keys, rule/domain/format/label factors, relevant and irrelevant interventions, minimal contrast pairs, transformation family, invariance or equivariance contract, sealed holdout status, validity interval, tool and policy versions, flakiness, and release-gate status.
 - Metric ledger: verified task success, first-attempt success, silent failure, partial completion, user correction, plan deviation, pass@k, pass^k, per-task trial count, final-state success, trajectory safety, tool count, unnecessary tool calls, runtime distribution, approval wait, token consumption, cost per verified success, tool errors by class, retries, duplicate effects, human overrides, near misses, rollback and compensation rate, approval prompts, and approval rejection or cancellation.
 - Environment ledger: production, staging, sandbox, fake adapter, shadow environment, seed data, cleanup policy, isolation, state reset, and side-effect containment.
 - Monitoring ledger: user complaint, retry spike, timeout, tool error, human override, rollback, cost breach, guardrail block, and how each signal becomes an eval candidate.
@@ -118,13 +118,35 @@ Review agent evaluation as an asymmetric evidence cascade, not a judge-model opi
    - recent real-traffic replay cases estimate current distribution in a side-effect-free shadow environment, with representative and risk-biased samples reported separately;
    - generated or perturbed exploration cases vary scope, similar identities, time zones, permissions, timeouts, stale state, ambiguity, and other long-tail conditions around explicit invariants.
    Do not average one easy set over a regression in another set.
+   - Build minimal contrast pairs that change one conclusion-relevant variable and matched distractor
+     pairs that change names, prose, order, formatting, or domain without changing the governing rule.
+   - Cross rule, domain, input format, output format, and arbitrary label mapping independently so
+     no rule can be solved from a recurring surface feature or natural-language label meaning.
+   - Hold out complete rule compositions, relation graphs, or workflow structures rather than only
+     random rows with renamed entities. Keep private or procedurally generated cases outside prompts,
+     retrieval memory, fine-tuning data, and example generators.
+   - For each transformation, declare whether output must remain invariant, change by a known
+     function, or become incomparable. Validate that paraphrases preserve subject, quantifier,
+     negation, time, exception, and causal direction before scoring answer consistency.
+   - Separate rule extraction, challenge-case generation, and case adjudication when one context
+     could leak the intended answer into its own test. Give adjudicators the rule and case without
+     generator identity, rationale, or answer-revealing labels.
 23. Promote confirmed failures. A generated or noisy replay failure becomes a fixed regression only after a deterministic counterexample, independent confirmation, or human review establishes the expected behavior. Critical security, permission, financial, privacy, and irreversible-effect invariants may hard-block immediately when their truth is unambiguous.
 24. Keep capability evals separate from regression gates. Capability sets may start hard and improve over time; fixed regression cases for confirmed critical defects should remain fully passing before release. Quarantine flaky replay cases as diagnostic evidence rather than weakening the fixed gate.
 25. Prevent contamination. Group near-duplicate cases by user, task family, source artifact, template, and workflow lineage before splitting. Use time-based sealed holdouts when evaluating future behavior, keep private evaluation cases out of prompts, retrieval memory, fine-tuning, and generated examples, and record normalized-input hashes or similarity evidence where leakage matters.
+   - Reorder examples, permute arbitrary labels, anonymize domain nouns, and repeat across generation
+     seeds. Treat performance that collapses under meaning-preserving changes as surface dependence,
+     not as proof that the transformed case is harder.
+   - After any counterexample changes the inferred rule or oracle, rerun prior positive cases, prior
+     counterexamples, the new minimal counterexample, and nearby boundary cases before accepting it.
 26. Version expected truth. Record source, collection time, valid-from and valid-to bounds, tool schema, policy version, environment snapshot, time zone, oracle version, label owner, and training-use status as applicable. Expire or quarantine cases whose world, API, policy, or oracle changed instead of counting stale expectations as model regressions.
 27. Prefer invariant-based expected outcomes over brittle exact prose. Grade allowed targets, required state, forbidden duplicate effects, approval boundaries, amount or count constraints, and recovery obligations unless exact text or exact tool order is itself the contract.
 28. Run multiple trials where model variance matters. Use pass@k for `can solve at least once` capability claims and pass^k for `reliably solves every time` customer-facing claims.
 29. Keep operational metric families separate. Report outcomes, process, safety, efficiency, and approval experience independently. Do not combine them into one score that lets high search success, low cost, or easy traffic hide a high-risk miss.
+   - For generalization claims, also report unseen-problem accuracy, held-out composition transfer,
+     irrelevant-change invariance, relevant-change sensitivity, arbitrary-rule compliance, difficulty
+     curves, repeated-trial reproducibility, calibration, and the gap from in-distribution results.
+     A single aggregate may summarize these only when weak axes receive an explicit penalty.
 30. Measure verified success rather than self-reported completion. Track first-attempt success, silent failure, partial completion, user correction with mind-change separated from defect correction, plan deviation, repeated identical error, duplicate effect, rollback and compensation, near misses, unnecessary tool calls, and cost per verified success. Use task-specific latency percentiles and separate approval wait from execution time.
 31. Define alerts with both absolute rules and baseline movement. A single clear safety-invariant breach may block immediately. Rate-based alerts should declare minimum sample size, comparison window, segmentation, and both absolute and relative change so tiny samples and large baseline regressions are not treated alike.
 32. Segment by task type, risk tier, tool, model and prompt version, customer group, region, and language when those dimensions can hide localized regressions. Mark release and configuration changes on the same evidence timeline.
@@ -138,6 +160,9 @@ Review agent evaluation as an asymmetric evidence cascade, not a judge-model opi
 ## Postconditions
 
 - The eval loop grades final state, trajectory quality, tool-boundary evidence, recovery behavior, repeatability, and sensitive-data handling where relevant.
+- Generalization claims are separated from memorization and surface heuristics through controlled
+  interventions, minimal contrasts, unseen compositions, semantic transformations, arbitrary labels,
+  contamination controls, difficulty curves, and repeated trials.
 - Deterministic checks, semantic verifiers, secondary adjudicators, and human review have explicit ownership, verdict branches terminate, and model count is not treated as oracle independence.
 - Fixed regression, recent replay, generated exploration, representative and risk-biased strata, contamination, expiry, capability, pass@k, pass^k, shadow environment, production-monitoring, and trace-retention decisions are explicit when they affect agent quality claims.
 - Outcome, process, safety, efficiency, and approval-experience measures remain separate, with hard safety blocks distinguished from rate-based alerts.

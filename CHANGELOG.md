@@ -6,6 +6,27 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Strengthened TypeScript and browser-artifact security guidance without creating a competing broad
+  skill. TypeScript review now treats types, brands, assertions, soft privacy, enums, and declaration
+  files as compile-time evidence; requires schema-owned runtime boundaries, typed assertion-debt
+  checks, emitted-JavaScript review, TypeScript 7 removed-option handling, transform-sensitive object,
+  decorator, class-field, and import-elision checks, and hostile tests against built JavaScript.
+  Security review now treats public environment prefixes, transitive server imports, hydration data,
+  public static roots, hidden sourcemaps, final archives, compressed variants, security fingerprints,
+  decoy-secret differential builds, inspect-once promotion, and post-deploy bytes as disclosure and
+  provenance boundaries. Client bundle pruning now hands those decisions to security review instead
+  of inferring safety from minification, tree shaking, code splitting, or smaller output.
+- Strengthened five installed reasoning and agent-quality skills without adding a competing broad
+  router. Prompt contracts now keep atomic requirements, inferred intent, evidence-type routing,
+  conditional tool use, minimal contrasts, held-out examples, and semantic versus surface gates
+  explicit. Hallucination review now separates facts, inferences, bounded assumptions, and unknowns,
+  propagates uncertainty from the weakest premise, and checks premise truth separately from logic.
+  Planning review now starts from observable deliverables, separate dependency and verification
+  graphs, shared-resource conflicts, lifecycle evidence, pre-mortems, and plan-abandonment gates.
+  Complex decisions now test proposed means against independent and null hypotheses, falsifiers,
+  stakeholder and lifecycle effects, no-action alternatives, and the smallest discriminating
+  experiment. Agent eval review now covers minimal contrasts, compositional holdouts, validated
+  metamorphic transformations, invariance and equivariance, arbitrary labels, and difficulty curves.
 - Strengthened the installed rate-limit integrity review for credential stuffing, account creation
   abuse, OTP and SMS pumping, scraping, enumeration, session replay, referral and free-credit
   farming, card testing, upload bombs, WebSocket floods, slow clients, and expensive AI traffic.

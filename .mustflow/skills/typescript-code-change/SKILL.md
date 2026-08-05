@@ -2,11 +2,11 @@
 mustflow_doc: skill.typescript-code-change
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: typescript-code-change
-description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 stable, development, API-compatibility, or native-preview tooling, runtime data validation, type safety, or TypeScript tests are created or changed.
+description: Apply this skill when TypeScript source, declarations, tsconfig, package exports, module resolution, project references, type-check performance, compiler-version behavior, TypeScript 6-to-7 migration surfaces, TypeScript 7 stable, development, API-compatibility, or native-preview tooling, runtime data validation, assertion debt, emitted JavaScript semantics, downlevel transforms, TypeScript tests, or built-JavaScript tests are created or changed.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -52,6 +52,12 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 
 - Relevant `package.json`, `tsconfig*.json`, lockfile, build config, test config, and package entry files.
 - Existing source entrypoints, public exports, declaration files, validators, schemas, type tests, and nearby tests.
+- Emitted-JavaScript ledger when runtime behavior matters: compiler and bundler versions, `target`,
+  `lib`, `module`, `moduleResolution`, helper source, class-field and decorator modes, supported
+  runtimes, production output, and whether tests execute source or final JavaScript.
+- Assertion and boundary ledger: external `unknown` inputs, `any` flow, narrowing assertions,
+  non-null assertions, `@ts-*` directives, runtime schema owner, normalization order, authorization
+  checks, generated declarations, and existing typed-lint or AST evidence.
 - The target runtime and module system: Node, browser, worker, Bun, edge, ESM, CJS, or mixed boundary.
 - Workspace package dependency graph, `tsconfig` references graph, public package entrypoints, path alias policy, generated-type locations, and current import-boundary evidence when the repository is a monorepo or large TypeScript project.
 - TypeScript compiler track and tooling entrypoint when relevant. In the registry snapshot checked
@@ -88,16 +94,20 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 1. Read `package.json`, `tsconfig*.json`, package exports, build config, project references, and nearby tests before editing.
 2. Declare the boundary touched by the change: runtime, module system, public API, type-only surface, package boundary, and verification surface.
 3. Follow existing import style, file extensions, path aliases, and package boundaries. Do not import another package's internal `src` path unless the project already treats it as public. Treat `paths` aliases as type-resolution hints, not runtime aliases or package-boundary substitutes.
-4. Fix type errors at the narrowest truthful point. Prefer `unknown` plus runtime validation over new `any`.
+4. Fix type errors at the narrowest truthful point. Prefer `unknown` plus runtime validation over new `any`. Treat interfaces, generics, brands, `as`, `satisfies`, non-null assertions, `private`, and declaration files as compile-time evidence only; none proves a runtime value, permission, secret boundary, or invariant after type erasure.
 5. Treat external data as `unknown` until validated. This includes JSON parsing, HTTP bodies, environment variables, config files, form data, URL params, local storage, message events, queue payloads, framework request data, database raw rows, third-party SDK results, and generated client payloads.
 6. Pick the validation shape before assigning the domain type. Use a schema validator for object-shaped external data, nested data, coercion, defaults, transforms, dates, money, decimal, bigint, optional-or-null normalization, or user-facing validation errors. Use a type guard for small branching checks. Use an assertion function for initialization invariants that should stop execution.
-7. Keep validator and type definitions from drifting. When a schema is the source of truth, infer static types from it. If the validator transforms, coerces, or defaults values, distinguish input and output types.
+7. Keep validator and type definitions from drifting. When a runtime schema is the source of truth, infer static types, API validation, contract docs, fixtures, and message versions from it where the repository supports those outputs. If the validator transforms, coerces, removes, or defaults values, preserve the original input for evidence and distinguish input and output types.
+   - At hostile boundaries, bound size and nesting before expensive validation; parse, normalize explicitly, validate the normalized value, authorize the semantic operation, and use only the newly constructed internal object. Do not validate one representation and execute a later decoded, resolved, case-folded, or merged representation.
+   - Prefer closed object schemas and allowlisted DTO construction when extra properties can reach mass assignment, policy, storage, redirect, or configuration sinks. Schema shape validation does not replace tenant ownership, state-transition, amount, replay, or sink-specific checks.
 8. Separate DTOs, persistence rows, provider payloads, and internal domain types when runtime shape differs. Do not cast a DTO into a domain model when fields need casing changes, `Date` construction, amount branding, null stripping, enum normalization, class rehydration, or policy snapshots.
 9. Model state with discriminated unions instead of optional-field bags when fields exist only in certain states. Use stable internal discriminator strings, not UI copy or translated text. Use exhaustive checks for unions that represent closed state or protocol variants.
 10. Choose type constructs by contract shape. Use `interface` for extendable object contracts, `type` for unions, mapped types, conditional types, primitive aliases, and branded primitives. Brand IDs, currencies, cents, and other same-primitive values when accidental mixing is costly.
 11. Use generics only to preserve a real relationship between inputs, outputs, keys, callbacks, or container members. Add constraints such as `extends`, `keyof`, `const` type parameters, or `NoInfer` when needed. Remove unused or single-position generics that only decorate `unknown` behavior.
 12. Use function-property syntax for callback members when parameter variance matters. Avoid method-shaped callback contracts in listeners, middleware, validators, adapters, or event buses unless the repository intentionally accepts the looser method variance.
-13. Use `as` only for narrow runtime facts the compiler cannot infer. Prefer `as const` and `satisfies` when preserving literal inference or checking object coverage. Do not add broad `as Type`, `as any`, `as unknown as`, `as never`, broad non-null assertions, `@ts-ignore`, `skipLibCheck`, `strict: false`, `noCheck`, or equivalent safety downgrades.
+13. Use `as` only for narrow runtime facts the compiler cannot infer. Prefer `as const` and `satisfies` when preserving literal inference or checking object coverage, while recording that `satisfies` performs no runtime validation. Do not add broad `as Type`, `as any`, `as unknown as`, `as never`, broad non-null assertions, `@ts-ignore`, `skipLibCheck`, `strict: false`, `noCheck`, or equivalent safety downgrades.
+   - Use type-aware lint or AST evidence when available to track `any`, unsafe assignment/member/call/argument/return flow, narrowing assertions, non-null assertions, and suppression comments. For established debt, fail new growth and require bounded owner, reason, removal condition, and expiry rather than pretending a string count proves safety.
+   - Inspect emitted public declarations for `any`, `Promise<any>`, `Record<string, any>`, default generic `any`, and source-only paths. A safe internal implementation does not contain an `any` leak once the declaration surface exports it.
 14. Allow `!` only immediately after a same-scope runtime check that proves presence, such as a `has` check for the same key before `get`. Do not use `!` across `await`, callbacks, mutation, lifecycle boundaries, class async initialization gaps, or property chains.
 15. For type tests, prefer `@ts-expect-error` with a short reason. Do not use `@ts-ignore` in implementation code. Implementation `@ts-expect-error` needs an owner, removal condition, and risk report.
 16. If a public API changes, trace every consumer-visible import specifier, runtime export, type export, declaration output, docs example, type-only export, overload, generic default, interface field, enum or literal member, class member, and package entry condition.
@@ -108,6 +118,8 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 21. If ESM/CJS behavior changes, verify package `type`, `main`, `module`, `browser`, `exports`, condition order, extension rules, generated JS, generated declarations, and supported consumer resolver modes together. Remember that `exports.import` and `exports.require` select the condition used by the caller; file extension and package `type` still decide whether a target is ESM or CJS.
 22. For dual ESM/CJS packages, check whether runtime entries and declaration entries are separate where needed. Do not assume one `.d.ts` safely describes both `.mjs` and `.cjs`; use `.d.mts` and `.d.cts` when the package shape requires distinct module declarations.
 23. For `tsconfig` updates, make defaults explicit when they affect emitted shape, ambient types, or module semantics. Check `rootDir`, `include`, `exclude`, `files`, `references`, `types`, `lib`, `target`, `module`, `moduleResolution`, `verbatimModuleSyntax`, `noUncheckedSideEffectImports`, `strict`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `useUnknownInCatchVariables`, `strictFunctionTypes`, `noImplicitOverride`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, declaration output, and framework wrapper defaults together instead of relying on a compiler-major default.
+   - Treat `target` as an emitted-algorithm choice, `lib` as declarations rather than installed runtime features, and `module` plus `moduleResolution` as runtime package-entry selectors. Pin a concrete target instead of assuming `ESNext` is stable across compiler upgrades, and fail closed when a required security API is absent instead of silently downgrading to a weaker fallback.
+   - For TypeScript 7, reject removed `target: "es5"`, `downlevelIteration`, legacy module, and legacy resolution settings according to current official release evidence. Keep legacy TS5/TS6 or already-shipped ES5 analysis version-scoped rather than implying TypeScript 7 still supports those transforms.
 24. Treat `types` as an ambient-global allowlist. Add only the runtime or test environment globals the project actually uses, such as Node, Bun, DOM, Vitest, Jest, or Playwright. Do not restore broad ambient discovery just to hide missing imports or environment drift.
 25. For large repositories, check whether the root `tsconfig` is a solution file with `files: []`, whether referenced projects use `composite`, declaration output, and narrow `include`, and whether package dependency graph and `references` graph agree. Do not solve slow type-checking by widening `skipLibCheck`, `noCheck`, broad `exclude`, or path aliases that bypass public package entries.
 26. For type-check performance changes, prefer named exported return types, named conditional aliases, interface extension over repeated intersections when practical, smaller unions, bounded generated type inputs, and explicit public export annotations. Treat large anonymous public return types, massive unions, recursive mapped types, and all-visible `@types` globals as graph-size risks.
@@ -127,7 +139,13 @@ Preserve TypeScript's type, runtime validation, module, build, and public API bo
 34. Keep compiler API consumers, language-service plugins, custom transformers, and framework typecheck wrappers on the TS6 API compatibility track until their owners explicitly support the TS7 API surface. Stable TS7 `tsc` output does not prove that JavaScript compiler API consumers can migrate.
 35. When comparing TS7 stable `tsc`, TS6-compatible `tsc6`, `typescript@next`, or native-preview `tsgo`, classify differences before editing code: real type error, declaration emit order or printback noise, unsupported option, unsupported API, watch or incremental behavior gap, language-service gap, generated-output drift, or framework wrapper mismatch.
 36. Do not treat faster development or native-preview results as sufficient verification. Keep the repository's adopted stable compiler, TS6 API compatibility check, or framework typecheck as the baseline until repository policy explicitly adopts a different track.
-37. Choose the narrowest configured verification intents that cover typecheck, lint, tests, build output, declarations, package contract risk, downstream-style consumer risk, and type-check performance risk.
+37. Inspect emitted JavaScript whenever compiler, target, helper, module, decorator, class-field, enum, private-field, object spread/rest, iterator, or import-elision behavior can affect security or correctness.
+   - Do not use object rest as an allowlist or merge untrusted objects into trusted policy, actor, tenant, price, permission, or configuration objects. Copy named fields into a new DTO, reject `__proto__`, `constructor`, and `prototype` paths where keys are attacker-controlled, and use own-property checks for authorization data.
+   - Treat spread, rest, and `Object.assign` as property access that can execute getters or Proxy traps, lose descriptors and immutability, partially mutate a target before throwing, or change setter and `__proto__` behavior across native and downlevel helpers. Avoid validate-then-reread TOCTOU across hostile object references.
+   - Treat TypeScript `private` as soft privacy, numeric enum membership via `in` as unsafe validation, ambient `const enum` values as consumer-version coupling, decorators as import-time and order-sensitive wrappers, class fields as initialization-order and define-versus-assign behavior, and type-only import elision as capable of removing side-effect registration. Use explicit runtime checks and integration evidence instead of type syntax as the security boundary.
+38. Separate transpilation, type checking, typed lint, runtime-boundary tests, production build, declaration inspection, and final-JavaScript tests into distinct configured gates when the repository supports them. A Bun, Vite, esbuild, Babel, SWC, or Oxc build can emit JavaScript without proving type correctness.
+39. Attack the built JavaScript when runtime safety is material. Exercise final `dist` or packaged entries with missing fields, wrong discriminators, `null`, empty collections, extra privileged properties, deep input, getters, proxies, polluted prototypes, changed helper paths, and supported minimum runtimes. Source-level TypeScript tests alone do not prove behavior after types and syntax transforms disappear.
+40. Choose the narrowest configured verification intents that cover typecheck, typed lint, runtime validation, tests, build output, emitted JavaScript, declarations, package contract risk, downstream-style consumer risk, and type-check performance risk.
 
 <!-- mustflow-section: assertion-policy -->
 ## Assertion Policy
@@ -191,6 +209,8 @@ Reject or revise the patch when any of these appear without explicit evidence an
 
 - Type safety is preserved or improved.
 - Runtime input boundaries are validated before values receive domain types.
+- Compile-time types, brands, assertions, privacy markers, enums, and declarations are not treated as runtime security controls.
+- Compiler, target, helper, module, class-field, decorator, import-elision, and object-copy semantics are checked against emitted JavaScript when they can change behavior.
 - Runtime exports, type exports, and declaration output agree.
 - Assertions are narrow, justified, and contained.
 - DTO/domain, external input, optional property, index access, and generic relationship boundaries are honest about runtime behavior.
@@ -235,6 +255,7 @@ Report whether configured verification exists for declaration output, package ar
 - Public API or declaration impact
 - Project reference, monorepo boundary, or type-check performance impact
 - Compiler-version, RC, nightly, or API-track notes
+- Runtime schema, assertion-debt, emitted-JavaScript, downlevel-transform, and built-artifact test notes
 - Command intents run
 - Skipped checks and reasons
 - Remaining TypeScript risk

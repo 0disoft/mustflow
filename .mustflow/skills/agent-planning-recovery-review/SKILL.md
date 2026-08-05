@@ -2,11 +2,11 @@
 mustflow_doc: skill.agent-planning-recovery-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: agent-planning-recovery-review
-description: Apply this skill when a long-running LLM agent or agentic workflow needs a stable global goal, constraints, milestones, dependency graph, irreversible checkpoints, a short rolling plan, event-triggered replanning, compact context reconstruction, deterministic replay, or safe recovery across interruptions and unknown effects.
+description: Apply this skill when a long-running LLM agent or agentic workflow needs observable deliverables, entry and exit evidence, a stable global goal, constraints, milestones, dependency and verification graphs, shared-resource conflict control, irreversible checkpoints, a short rolling plan, event-triggered replanning, compact context reconstruction, deterministic replay, or safe recovery across interruptions and unknown effects.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -63,6 +63,9 @@ interruptions.
 
 - Global contract: goal, non-goals, invariants, constraints, acceptance criteria, milestones,
   dependency DAG, risk limits, irreversible checkpoints, stop conditions, and human owner.
+- Deliverable and task graph: observable artifacts, requirement IDs, atomic task inputs and outputs,
+  prerequisites, read and write resources, entry conditions, exit evidence, failure conditions,
+  rollback points, verification graph, and downstream consumers.
 - Rolling-plan ledger: plan ID and version, current horizon, selected steps, dependency and evidence
   for each step, expected observation, effect class, approval boundary, and replan trigger.
 - Event contract: workflow ID, sequence, event type and schema version, plan and step IDs, effect and
@@ -98,6 +101,22 @@ interruptions.
 1. Freeze the global contract, not the detailed route. Keep goal, invariants, constraints,
    acceptance criteria, milestone DAG, irreversible checkpoints, budgets, and stop conditions stable
    until a higher-authority change explicitly versions them.
+   - Inventory observable deliverables before tasks, then reverse-decompose only the work needed to
+     produce and verify those files, APIs, states, environments, tests, and operator evidence.
+   - Give each task one action, one input set, one output, one validation rule, and the acceptance
+     criteria it serves. Remove work whose output has no downstream consumer or completion claim.
+   - Build a dependency DAG and a separate verification graph. Run cheap contract, permission,
+     recovery, and external-assumption checks before costly implementation when possible.
+   - Record every read and write resource before allowing parallel work. Serialize overlapping
+     writes and read-after-write dependencies even when the logical task DAG has no direct edge.
+   - Give every task an entry condition, observable exit evidence, failure predicate, owner, and
+     rollback or recovery point. A performed action is not completion evidence.
+   - Track `implemented`, `automatically_verified`, `integrated`, `operationally_ready`, `deployed`,
+     and `traffic_enabled` as separate states with separate evidence and approval owners.
+   - Run a bounded pre-mortem across missing input, duplicate delivery, reordering, partial success,
+     timeout, disconnect, process loss, retry collision, operator error, and adversarial use. Mark
+     each case prevented, detected, contained, automatically recovered, manually recovered, or
+     unhandled, and define when residual risk requires abandoning the plan rather than patching it.
 2. Plan only to the next meaningful uncertainty boundary. Choose the rolling horizon from the next
    unknown observation, dependency uncertainty, irreversible effect, approval point, context budget,
    and recovery cost. Do not copy a universal step count or horizon formula.
@@ -146,6 +165,9 @@ interruptions.
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
+- Observable deliverables, atomic tasks, dependency and verification graphs, shared-resource
+  conflicts, entry conditions, completion evidence, lifecycle states, and abandonment conditions
+  are explicit before execution.
 - The global contract remains stable while rolling plans are short, evidence-bounded, and versioned.
 - Replanning is event-triggered and preserves admitted effect identity.
 - Append-only events are authoritative; snapshots and prompt context are rebuildable projections.

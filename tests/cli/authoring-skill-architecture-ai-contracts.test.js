@@ -232,6 +232,11 @@ test('prompt contract quality review treats prompts as product contracts', () =>
 	assert.match(localSkill, /dependent calls must run sequentially/u);
 	assert.match(localSkill, /reasoning and token budget/u);
 	assert.match(localSkill, /validation fields rather than hidden reasoning/u);
+	assert.match(localSkill, /Requirement ledger: atomic requirements/u);
+	assert.match(localSkill, /Evidence-need ledger/u);
+	assert.match(localSkill, /Treat examples as incomplete evidence, not instructions/u);
+	assert.match(localSkill, /minimal positive\/negative contrast pairs/u);
+	assert.match(localSkill, /held-out cases/u);
 	assert.match(localSkill, /Define agent completion/u);
 	assert.match(localSkill, /ok`, `needs_more_info`, `refused`, `unsafe`, `tool_failed`, `no_evidence/u);
 	assert.match(localSkill, /JSON-parse theater/u);
@@ -247,7 +252,7 @@ test('prompt contract quality review treats prompts as product contracts', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/prompt-contract-quality-review\/SKILL\.md"/u);
 	assert.match(manifest, /"prompt-contract-quality-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.prompt-contract-quality-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.prompt-contract-quality-review"\][\s\S]*?revision = 3/u);
 });
 
 test('LLM hallucination control review keeps factual answers evidence-gated', () => {
@@ -281,6 +286,11 @@ test('LLM hallucination control review keeps factual answers evidence-gated', ()
 	assert.match(localSkill, /Server-known `user_id`, `workspace_id`, `order_id`/u);
 	assert.match(localSkill, /Move calculations and deterministic facts to code or tools/u);
 	assert.match(localSkill, /source-of-truth priority/u);
+	assert.match(localSkill, /claim-state ledger/u);
+	assert.match(localSkill, /no more than three material assumptions/u);
+	assert.match(localSkill, /weakest material premise/u);
+	assert.match(localSkill, /Validate premise truth and inference validity in separate passes/u);
+	assert.match(localSkill, /Re-evaluate evidence after every tool call/u);
 	assert.match(localSkill, /dirty eval fixtures/u);
 	assert.match(localSkill, /LLM judges as triage signals, not sole truth/u);
 	assert.match(localSkill, /false_citation_rate/u);
@@ -295,7 +305,7 @@ test('LLM hallucination control review keeps factual answers evidence-gated', ()
 	assert.match(manifest, /"\.mustflow\/skills\/llm-hallucination-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-hallucination-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-hallucination-control-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.llm-hallucination-control-review"\][\s\S]*?revision = 3/u);
 });
 
 test('LLM token cost control review keeps model spend measurable and cache-aware', () => {

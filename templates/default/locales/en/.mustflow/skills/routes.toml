@@ -394,6 +394,10 @@ priority = 45
 selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "product_change", "cross_cutting_code_change"]
 
+[routes."complex-decision-analysis".contexts]
+positive_terms = ["decision-record", "hidden-assumption", "proposed-solution", "null-hypothesis", "falsifier", "discriminating-experiment", "pre-mortem", "pareto", "lifecycle-cost", "stakeholder"]
+negative_terms = ["implementation-only", "known-fix", "routine-change", "single-domain-owner"]
+
 [routes."automation-investment-case-review"]
 category = "workflow_contracts"
 route_type = "primary"
@@ -1485,12 +1489,20 @@ priority = 66
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
 
+[routes."prompt-contract-quality-review".contexts]
+positive_terms = ["prompt-contract", "requirement-ledger", "evidence-type", "conditional-tool-use", "minimal-contrast", "held-out-example", "interpretation-confidence", "semantic-surface-gate"]
+negative_terms = ["answer-grounding-only", "runtime-orchestration-only", "token-cost-only"]
+
 [routes."llm-hallucination-control-review"]
 category = "general_code"
 route_type = "primary"
 priority = 67
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."llm-hallucination-control-review".contexts]
+positive_terms = ["claim-state-ledger", "assumption-budget", "uncertainty-propagation", "weakest-premise", "fact-logic-separation", "evidence-sufficiency", "unsupported-claim", "answerability"]
+negative_terms = ["prompt-authoring-only", "token-cost-only", "latency-only"]
 
 [routes."rag-pipeline-triage"]
 category = "general_code"
@@ -1560,7 +1572,7 @@ applies_to_reasons = ["behavior_change"]
 suggests_adjuncts = ["execution-ledger-integrity-review", "idempotency-integrity-review"]
 
 [routes."agent-planning-recovery-review".contexts]
-positive_terms = ["append-only-event", "dependency-dag", "deterministic-replay", "effect-id", "global-plan", "irreversible-checkpoint", "plan-drift", "plan-version", "replan", "rolling-plan", "snapshot", "unknown-effect", "workflow-id"]
+positive_terms = ["append-only-event", "completion-evidence", "deliverable-inventory", "dependency-dag", "deterministic-replay", "effect-id", "entry-condition", "global-plan", "irreversible-checkpoint", "plan-abandonment", "plan-drift", "plan-version", "pre-mortem", "read-write-resource", "replan", "rolling-plan", "snapshot", "unknown-effect", "verification-graph", "workflow-id"]
 negative_terms = ["commit-publish", "database-commit", "deterministic-workflow-only", "generic-ledger-only", "outbox", "persistent-user-memory", "rollout-canary", "saga-compensation"]
 
 [routes."agent-release-bundle-rollout-review"]
@@ -1623,7 +1635,7 @@ selection_axis = "risk"
 applies_to_reasons = ["data_change", "privacy_change", "release_risk"]
 
 [routes."agent-eval-integrity-review".contexts]
-positive_terms = ["adjudicator", "behavior-bundle", "benchmark", "contamination", "eval", "false-negative", "false-positive", "grader", "judge", "offline-evaluation", "oracle", "regression", "replay-set", "safety-gate", "score", "trajectory", "verifier"]
+positive_terms = ["adjudicator", "arbitrary-label", "behavior-bundle", "benchmark", "compositional-holdout", "contamination", "difficulty-curve", "equivariance", "eval", "false-negative", "false-positive", "grader", "invariance", "judge", "metamorphic", "minimal-contrast", "offline-evaluation", "oracle", "regression", "replay-set", "safety-gate", "score", "trajectory", "verifier"]
 negative_terms = ["approval-token", "context-compaction", "memory-deletion", "persistent-memory", "tool-execution"]
 
 [routes."agent-memory-context-governance-review"]
@@ -1962,7 +1974,7 @@ selection_axis = "risk"
 applies_to_reasons = ["security_change", "privacy_change", "package_metadata_change", "release_risk", "unknown_change"]
 
 [routes."security-privacy-review".contexts]
-positive_terms = ["codeql-alert", "delimiter-overlap", "exponential-backtracking", "inefficient-regular-expression", "redos", "regex-denial-of-service", "scanner-alert"]
+positive_terms = ["browser-bundle-secret", "client-artifact", "client-environment", "codeql-alert", "delimiter-overlap", "deployment-bytes", "exponential-backtracking", "final-archive", "hidden-sourcemap", "hydration-payload", "inefficient-regular-expression", "public-static-file", "redos", "regex-denial-of-service", "runtime-security", "scanner-alert", "server-only-import"]
 concept_aliases = ["정규식 서비스 거부", "정규식 백트래킹", "비효율적 정규식", "正则表达式拒绝服务", "正则回溯"]
 
 [routes."jurisdictional-product-compliance-review"]
@@ -2156,6 +2168,10 @@ route_type = "adjunct"
 priority = 80
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change", "package_metadata_change", "web_asset_change"]
+
+[routes."client-bundle-pruning-review".contexts]
+positive_terms = ["bundle-size", "dead-code-elimination", "dependency-bloat", "first-route-js", "initial-js", "shared-vendor", "tree-shaking"]
+negative_terms = ["browser-bundle-secret-only", "client-artifact-security-only", "hydration-disclosure-only", "public-sourcemap-only", "server-only-import-leak-only"]
 
 [routes."frame-render-performance-review"]
 category = "ui_assets"

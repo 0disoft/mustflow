@@ -2,11 +2,11 @@
 mustflow_doc: skill.complex-decision-analysis
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: complex-decision-analysis
-description: Apply this skill when analysis or a decision record is the current deliverable and the problem has both material uncertainty and material consequences before implementation.
+description: Apply this skill when analysis or a decision record is the current deliverable and the problem has both material uncertainty and material consequences before implementation, especially when a user's proposed solution, hidden assumptions, conflicting intent, competing hypotheses, failure scenarios, stakeholder effects, cost, risk, or reversibility must be tested before action.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -63,6 +63,9 @@ Use this skill only when all of the following are true:
 ## Required Inputs
 
 - User request and any stated goals, constraints, examples, deadlines, non-goals, required evidence, or required output format.
+- Interpretation ledger separating explicit user statements, inferred intent, observed symptoms,
+  claimed causes, proposed means, affected stakeholders, hidden assumptions, ambiguous terms, and
+  the observable state change that would count as success.
 - Relevant current repository evidence, such as source, tests, schemas, configuration, documentation, context, changed files, existing behavior, and command contracts.
 - Known decision horizon: immediate, medium-term, and long-term when relevant.
 - Known decision owner and affected stakeholders when human or organizational choices matter.
@@ -99,6 +102,14 @@ Use this skill only when all of the following are true:
    - Record plausible skills that were intentionally skipped and why.
 2. Create the problem contract.
    - Separate the surface request, provisional underlying decision, observable success criteria, in-scope work, out-of-scope work, must-not-break behavior, time horizon, and decision owner.
+   - Decompose the request into goal, user-proposed means, constraints, observed facts, interpretations,
+     causal claims, and desired state change. Treat the proposed means as candidate A, not as the goal.
+   - Rewrite vague terms such as fast, safe, simple, expensive, or user-friendly as observable
+     measures or competing definitions. Do not infer priority from emotional intensity, repetition,
+     or message length; prioritize by failure cost and irreversibility.
+   - Ask what would make the request unnecessary, require the opposite action, or lose priority to a
+     larger problem. Also test whether the proposed solution could succeed technically while the
+     original user, business, operational, or risk outcome remains unchanged.
    - Tag non-obvious entries as `user_confirmed`, `repository_derived`, `safe_assumption`, or `unresolved`.
    - Do not present an inferred underlying goal as user-confirmed fact.
 3. Build the evidence ledger.
@@ -110,6 +121,12 @@ Use this skill only when all of the following are true:
    - For important facts, record source, freshness, scope, and limitations.
    - Prefer primary and current evidence over summaries, repeated citations, popularity signals, or generated advice.
    - Do not treat source count as independent confirmation when sources repeat the same underlying claim.
+   - Keep no more than three material assumptions active unless the decision contract explicitly
+     permits more. Record why each is needed, its impact if false, and the cheapest observation that
+     would confirm or reject it.
+   - Validate factual premises separately from the logic that connects them. Confidence in a
+     conclusion must not exceed the weakest material premise, and uncertainty should name its cause
+     rather than use an unsupported percentage.
    - If a current external fact may change the decision, obtain fresh evidence through an authorized research path or mark it unresolved.
 4. Establish the baseline and reference class.
    - Describe the current state and the no-action option.
@@ -117,14 +134,25 @@ Use this skill only when all of the following are true:
    - Check whether visible examples omit failures or represent exceptional cases.
    - Avoid judging a value as high, low, fast, safe, or successful without a baseline.
 5. Build the smallest useful causal model.
+   - Quarantine the first explanation as hypothesis A. Generate at least one materially independent
+     alternative and a null hypothesis in which the reported cause is absent, the measurement is
+     wrong, or the failure belongs to another layer. Do not derive B and C by paraphrasing A.
+   - Give every hypothesis a falsifier and a distinguishing prediction. A hypothesis that cannot be
+     disproved or distinguished from its competitors is not decision evidence.
    - Separate suspected causes, fixed constraints, controllable variables, indirectly influenceable variables, outcomes, and side effects.
    - Identify the bottleneck variable most likely to determine the result.
    - State the strongest alternative causal explanation.
    - When people or organizations can react, identify who decides, who benefits, who bears cost and risk, which metric can be gamed, and whether decision and accountability are separated.
    - When effects accumulate, compare immediate, medium-term, and long-term consequences, including lock-in and future switching cost.
+   - Trace the full lifecycle and stakeholder boundary: direct users, payers, operators, support,
+     developers, data subjects, harmed non-users, providers, and regulators; upstream inputs,
+     downstream consumers, failure notification, deletion, migration, refund, suspension, and exit.
+     Mark responsibilities without an owner and observable completion evidence as plan gaps.
    - Include feedback loops only when behavior can change in response to the decision.
 6. Fix decision criteria before ranking options.
    - Separate hard constraints from trade-off criteria.
+   - Define units for accuracy, cost, performance, and risk before scoring. Apply hard exclusions
+     before weights, and do not invent measurements for missing data.
    - Rank criteria by the user's stated goals and repository constraints.
    - Do not silently optimize for the agent's preferred architecture or style.
    - Avoid invented numerical weights or probabilities.
@@ -132,11 +160,23 @@ Use this skill only when all of the following are true:
 7. Construct a bounded option set.
    - Compare no more than four meaningful options unless the user requested more.
    - Include the status quo or no-action option when relevant.
+   - Include a materially different mechanism, a reduced-scope or manual-operating option, and the
+     user's proposed solution only when each survives hard constraints. Re-solve the problem once
+     with the user's proposed technology or feature unavailable to test whether it is actually necessary.
    - Include the smallest reversible experiment when uncertainty is material and an experiment is feasible.
    - Include the leading direct intervention and one materially different alternative when relevant.
    - Compare every option using the same fields: expected benefit, supporting evidence, cost and time, success conditions, failure conditions, downside if wrong, reversibility, switching cost, required capability, and immediate, medium-term, and long-term effects.
    - Do not compare one option's best case with another option's ordinary case.
+   - Compare current scale and the next credible scale separately, including transition thresholds,
+     total lifecycle cost, ordinary/peak/worst-plausible load, failure form, detectability, recovery
+     cost, lock-in, and exit cost. Remove Pareto-dominated options before weighted ranking.
 8. Attack the leading conclusion.
+   - Write a concise pre-mortem before defending the leading option. Break it at state transitions,
+     system boundaries, external dependencies, incentive boundaries, partial success, duplicate or
+     reordered events, timeout, response loss, cancellation, restart, operator error, and abuse.
+   - For each material counterexample, classify the design as preventing, detecting, containing,
+     automatically recovering, manually recovering, or leaving it unhandled. Revise or reject the
+     leading option when a high-impact unhandled case remains.
    - State the strongest argument against the leading option.
    - Identify evidence that would support the strongest competing hypothesis.
    - Test relevant edge cases, such as much higher or lower usage, malformed or adversarial inputs, external-provider failure, loss of a key maintainer, reduced budget or schedule, and success creating a new bottleneck.
@@ -149,6 +189,9 @@ Use this skill only when all of the following are true:
    - Ask the user only about decisions that belong to the user or another accountable owner, materially change scope, risk, compatibility, or reversibility, and cannot be answered from repository evidence.
    - Ask no more than three bounded questions at once.
    - Include a recommended default and its consequence with each question.
+   - Prefer the smallest experiment whose result differs across competing hypotheses. Define the
+     next decision for each possible result before running the experiment; do not collect evidence
+     that every candidate predicts equally well.
    - When the remaining uncertainty is cheap and reversible, proceed with a reported safe assumption instead of blocking.
 10. Make the decision.
     - Choose exactly one decision state:
@@ -177,10 +220,14 @@ Use this skill only when all of the following are true:
 ## Postconditions
 
 - The surface request and underlying decision are separated.
+- Explicit user statements, inferred intent, symptoms, claimed causes, proposed means, stakeholders,
+  hidden assumptions, and observable outcome are separated.
 - Facts, inferences, assumptions, and unknowns are distinguishable.
 - The recommendation is tied to observable success criteria.
 - Status quo and at least one meaningful alternative were considered when relevant.
 - The strongest competing hypothesis and decision-reversing evidence are visible.
+- Hard constraints, measurement units, independent and null hypotheses, falsifiers, lifecycle cost,
+  stakeholder effects, pre-mortem failures, recovery class, and plan-abandonment conditions are visible.
 - The chosen action is proportional to uncertainty and reversibility.
 - Exactly one decision state and one smallest next action are produced.
 - A narrower implementation skill is named before implementation edits.

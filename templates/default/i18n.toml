@@ -362,7 +362,7 @@ translations = {}
 [documents."skill.client-bundle-pruning-review"]
 source = "locales/en/.mustflow/skills/client-bundle-pruning-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.frame-render-performance-review"]
@@ -1099,7 +1099,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.type-contract-change"]
@@ -1320,7 +1320,7 @@ translations = {}
 [documents."skill.complex-decision-analysis"]
 source = "locales/en/.mustflow/skills/complex-decision-analysis/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.process-execution-safety"]
@@ -1410,7 +1410,7 @@ translations = {}
 [documents."skill.security-privacy-review"]
 source = "locales/en/.mustflow/skills/security-privacy-review/SKILL.md"
 source_locale = "en"
-revision = 29
+revision = 30
 translations = {}
 
 [documents."skill.jurisdictional-product-compliance-review"]
@@ -1548,13 +1548,13 @@ translations = {}
 [documents."skill.prompt-contract-quality-review"]
 source = "locales/en/.mustflow/skills/prompt-contract-quality-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.llm-hallucination-control-review"]
 source = "locales/en/.mustflow/skills/llm-hallucination-control-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.llm-token-cost-control-review"]
@@ -1596,7 +1596,7 @@ translations = {}
 [documents."skill.agent-planning-recovery-review"]
 source = "locales/en/.mustflow/skills/agent-planning-recovery-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.agent-release-bundle-rollout-review"]
@@ -1722,7 +1722,7 @@ translations = {}
 [documents."skill.agent-eval-integrity-review"]
 source = "locales/en/.mustflow/skills/agent-eval-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.agent-memory-context-governance-review"]

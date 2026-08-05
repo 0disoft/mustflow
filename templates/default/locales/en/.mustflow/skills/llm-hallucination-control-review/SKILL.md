@@ -2,11 +2,11 @@
 mustflow_doc: skill.llm-hallucination-control-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-hallucination-control-review
-description: Apply this skill when LLM answers, RAG responses, citations, source grounding, claim extraction, evidence IDs, answerability states, abstain behavior, retrieval thresholds, tool-backed facts, output validators, LLM judges, or hallucination-control metrics are created, changed, reviewed, or reported and the risk is unsupported factual output escaping the product boundary.
+description: Apply this skill when LLM answers, RAG responses, citations, source grounding, claim extraction, fact-inference-assumption separation, uncertainty propagation, evidence IDs, answerability states, abstain behavior, retrieval thresholds, tool-backed facts, output validators, LLM judges, or hallucination-control metrics are created, changed, reviewed, or reported and the risk is unsupported factual output escaping the product boundary.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -60,7 +60,7 @@ Keep unsupported factual claims from leaving an LLM feature by turning answerabi
 
 - Answer contract ledger: answer type, factual risk level, allowed states, answerability rule, abstain rule, escalation path, and downstream consumers.
 - Evidence ledger: source IDs, source authority, retrieval inputs, retrieval outputs, scores, rerank decisions, metadata, chunk boundaries, original spans, freshness, conflict handling, and access-control filters.
-- Claim ledger: generated claims, required evidence IDs per claim, unsupported claim handling, citation validation, source coverage, and false-citation detection.
+- Claim ledger: claim text, status as direct input fact, external evidence, calculation result, execution result, inference, bounded assumption, or unknown, required evidence IDs, uncertainty cause, unsupported claim handling, citation validation, source coverage, and false-citation detection.
 - Tool ledger: tool names, trusted server-known parameters, model-supplied parameters, tool output shape, calculation or lookup responsibility, timeout and partial-data states.
 - Validator ledger: schema validation, semantic validation, domain-specific parsers or matchers, allowlists, registry checks, numeric or date calculation code, and post-generation rejection paths.
 - Eval ledger: ground-truth fixtures, dirty real-world samples, ambiguous or unanswerable questions, conflicting sources, stale documents, access-denied sources, similar names, dates, numbers, partial context, and expected abstain behavior.
@@ -89,29 +89,35 @@ Keep unsupported factual claims from leaving an LLM feature by turning answerabi
 ## Procedure
 
 1. Classify the output risk. Decide whether the model is answering from known facts, retrieved evidence, tools, calculation code, current web or vendor data, internal data, or creative generation.
-2. Make "not answerable" a normal product state. Ensure the contract can return `answerable: false`, `missing_info`, `no_evidence`, `conflicting_evidence`, `access_denied`, `tool_failed`, `needs_human`, or a repository-specific equivalent.
-3. Require evidence for claims. Factual sentences should map to allowed `evidence_ids` or a claim map before they become final output; evidence-free claims should be removed, rejected, or escalated.
-4. Validate citations and source IDs. The model should choose only from source IDs supplied by retrieval or tools, and post-processing should reject fabricated, missing, unauthorized, stale, or mismatched IDs.
-5. Review retrieval quality gates. Define what happens when top-k is empty, scores are below threshold, documents conflict, authority is weak, access filters remove evidence, or retrieval returns noisy near-matches.
-6. Review search strategy fit. Use lexical, vector, hybrid, rerank, or exact-ID search according to the data shape; names, IDs, SKUs, error codes, dates, legal clauses, package names, and numbers need exact or keyword safeguards.
-7. Review chunk shape. Chunks should preserve title, parent section, version, date, region, audience, authority, neighboring context, and original span when those facts affect answerability.
-8. Prefer original evidence spans over summary-only evidence. Summaries may help scanning, but final factual claims should remain tied to original spans or tool results.
-9. Split complex factual tasks into subquestions. Verify each subquestion's evidence before asking the model for synthesis, and make any missing subanswer visible.
-10. Keep tool arguments owned by code when code already knows them. Server-known `user_id`, `workspace_id`, `order_id`, permissions, dates, region, tenant, and plan identifiers should not be guessed by the model.
-11. Move calculations and deterministic facts to code or tools. Money, tax, discounts, inventory, rates, date math, counts, rankings, registry lookups, policy IDs, and URL allowlists should be verified outside free-form generation.
-12. Add domain validators. Use parsers, schemas, allowlists, ID matchers, registry checks, clause matchers, numeric checks, or policy checkers that fit the product domain.
-13. Treat source-of-truth priority as code and prompt policy. Define which source wins when internal DB, explicit user input, uploaded files, official docs, web results, retrieved docs, and model memory disagree.
-14. Add dirty eval fixtures. Cover typos, informal language, ambiguous references, stale docs, conflicting docs, unauthorized docs, similar names, date conflicts, partial context, low retrieval score, and expected abstain cases.
-15. Review automated judges carefully. Use LLM judges as triage signals, not sole truth; keep human or deterministic checks for high-value factual decisions and monitor judge disagreement.
-16. Add hallucination observability. Log or metric safe structured fields such as `retrieval_hit`, `source_coverage`, `unsupported_claim_count`, `abstain_rate`, `false_citation_rate`, validation failure counts, and escalation counts.
-17. Check rollout and model changes. Treat model snapshot or retrieval index changes as behavior changes that need eval evidence before claiming reduced hallucination.
-18. Verify with the narrowest configured tests, eval fixtures, schema checks, docs validation, release checks, and mustflow validation that cover the grounding contract.
+2. Separate the user's observations from the user's interpretation, causal claim, desired outcome, and proposed solution. Keep model-supplied intent or cause as inference until evidence supports it; do not reward agreement before verification.
+3. Build a claim-state ledger. Mark each material claim as direct input fact, externally verified fact, calculation result, execution result, inference, assumption, or unknown, and record the evidence boundary that permits that label.
+4. Bound assumptions. Permit no more than three material assumptions by default unless the product contract declares another limit; record why each is needed, what value was chosen, which conclusions depend on it, and what happens if it is false.
+5. Propagate uncertainty through dependencies. A conclusion must not receive a stronger certainty label than its weakest material premise. Name the cause as missing information, source conflict, future prediction, ambiguous term, environment dependence, or model-memory dependence instead of inventing a percentage.
+6. Validate premise truth and inference validity in separate passes. First check whether each premise is supported; then check whether the conclusion follows from the accepted premises without adding a new fact.
+7. Make "not answerable" a normal product state. Ensure the contract can return `answerable: false`, `missing_info`, `no_evidence`, `conflicting_evidence`, `access_denied`, `tool_failed`, `needs_human`, or a repository-specific equivalent.
+8. Require evidence for claims. Factual sentences should map to allowed `evidence_ids` or a claim map before they become final output; evidence-free claims should be removed, rejected, or escalated.
+9. Validate citations and source IDs. The model should choose only from source IDs supplied by retrieval or tools, and post-processing should reject fabricated, missing, unauthorized, stale, or mismatched IDs.
+10. Review retrieval quality gates. Define what happens when top-k is empty, scores are below threshold, documents conflict, authority is weak, access filters remove evidence, or retrieval returns noisy near-matches.
+11. Review search strategy fit. Use lexical, vector, hybrid, rerank, or exact-ID search according to the data shape; names, IDs, SKUs, error codes, dates, legal clauses, package names, and numbers need exact or keyword safeguards.
+12. Review chunk shape. Chunks should preserve title, parent section, version, date, region, audience, authority, neighboring context, and original span when those facts affect answerability.
+13. Prefer original evidence spans over summary-only evidence. Summaries may help scanning, but final factual claims should remain tied to original spans or tool results.
+14. Split complex factual tasks into subquestions. Verify each subquestion's evidence before asking the model for synthesis, and make any missing subanswer visible.
+15. Keep tool arguments owned by code when code already knows them. Server-known `user_id`, `workspace_id`, `order_id`, permissions, dates, region, tenant, and plan identifiers should not be guessed by the model.
+16. Move calculations and deterministic facts to code or tools. Money, tax, discounts, inventory, rates, date math, counts, rankings, registry lookups, policy IDs, and URL allowlists should be verified outside free-form generation.
+17. Add domain validators. Use parsers, schemas, allowlists, ID matchers, registry checks, clause matchers, numeric checks, or policy checkers that fit the product domain.
+18. Treat source-of-truth priority as code and prompt policy. Define which source wins when internal DB, explicit user input, uploaded files, official docs, web results, retrieved docs, and model memory disagree.
+19. Re-evaluate evidence after every tool call. Check relevance, freshness, directness, completeness, and what the result cannot prove; keep the claim unresolved or use a different evidence type when the result is insufficient.
+20. Add dirty eval fixtures. Cover typos, informal language, ambiguous references, stale docs, conflicting docs, unauthorized docs, similar names, date conflicts, partial context, low retrieval score, and expected abstain cases.
+21. Review automated judges carefully. Use LLM judges as triage signals, not sole truth; keep human or deterministic checks for high-value factual decisions and monitor judge disagreement.
+22. Add hallucination observability. Log or metric safe structured fields such as `retrieval_hit`, `source_coverage`, `unsupported_claim_count`, `abstain_rate`, `false_citation_rate`, validation failure counts, and escalation counts.
+23. Check rollout and model changes. Treat model snapshot or retrieval index changes as behavior changes that need eval evidence before claiming reduced hallucination.
+24. Verify with the narrowest configured tests, eval fixtures, schema checks, docs validation, release checks, and mustflow validation that cover the grounding contract.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Unsupported factual claims have a detection, rejection, abstain, or escalation path.
-- Final factual output is tied to allowed evidence IDs, original spans, deterministic tool outputs, or declared absence states.
+- Final factual output is tied to allowed evidence IDs, original spans, deterministic tool outputs, or declared absence states, with facts, inferences, bounded assumptions, and unknowns kept distinct.
 - Retrieval thresholds, source metadata, chunk shape, source priority, tool-argument ownership, validators, and dirty eval fixtures are explicit where relevant.
 - Metrics or logs can show whether grounding improved or merely sounded better.
 - Final reports distinguish proven grounding controls from prompt wording, low-temperature settings, single-judge scores, and unverified accuracy claims.
@@ -141,6 +147,7 @@ Use the narrowest configured eval, schema, fixture, integration, docs, package, 
 - If citation validation fails, reject the answer or remove unsupported claims instead of asking the model to fix citations without evidence.
 - If the model and validator disagree, treat the validator or source of truth as authority and report the disagreement path.
 - If source freshness matters and was not refreshed, avoid claiming current truth and route through `source-freshness-check`.
+- If a material unknown remains, name the evidence needed, the safe default when evidence is unavailable, and the recovery path if the provisional decision is wrong instead of either inventing certainty or stopping all progress.
 - If untrusted retrieved text may inject instructions, pause grounding work and apply `external-prompt-injection-defense`.
 
 <!-- mustflow-section: output-format -->
