@@ -10,6 +10,10 @@ async function importActiveRunLocks() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'active-run-locks.js')).href);
 }
 
+async function importProcessIdentity() {
+	return import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'process-identity.js')).href);
+}
+
 function createWriteContract() {
 	return {
 		defaults: {},
@@ -75,6 +79,64 @@ test('active run locks do not delete a mutex while another recovery owns it', as
 		assert.equal(JSON.parse(readFileSync(path.join(mutexPath, 'owner.json'), 'utf8')).token, 'stale-owner');
 	} finally {
 		rmSync(recoveryPath, { recursive: true, force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('run state mutex never steals from a live owner based on age alone', async () => {
+	const projectPath = createTempProject('mustflow-live-old-mutex-');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	const { readCurrentProcessStartToken } = await importProcessIdentity();
+	const mutexPath = writeMutexOwner(projectPath, {
+		lock_id: 'live-old-lock',
+		owner_token: 'live-old-owner',
+		pid: process.pid,
+		process_start_token: readCurrentProcessStartToken(),
+		started_at: '2000-01-01T00:00:00.000Z',
+		heartbeat_at: '2000-01-01T00:00:00.000Z',
+	});
+
+	try {
+		assert.throws(() => acquireActiveRunLock(projectPath, createWriteContract(), 'writer'), /active_run_lock_mutex_busy/u);
+		assert.equal(existsSync(mutexPath), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('run state mutex recovers a reused live pid with a different start token', async () => {
+	const projectPath = createTempProject('mustflow-reused-pid-mutex-');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	writeMutexOwner(projectPath, {
+		lock_id: 'reused-pid-lock',
+		owner_token: 'reused-pid-owner',
+		pid: process.pid,
+		process_start_token: 'mismatched-process-start-token',
+		started_at: new Date().toISOString(),
+		heartbeat_at: new Date().toISOString(),
+	});
+	try {
+		const result = acquireActiveRunLock(projectPath, createWriteContract(), 'writer');
+		assert.equal(result.ok, true);
+		result.handle.release();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('run state mutex release preserves a replaced owner record', async () => {
+	const projectPath = createTempProject('mustflow-replaced-mutex-owner-');
+	const { withRunStateUpdateMutex } = await importActiveRunLocks();
+	const mutexPath = path.join(projectPath, '.mustflow', 'state', 'locks', 'mutex');
+	const ownerPath = path.join(mutexPath, 'owner.json');
+
+	try {
+		withRunStateUpdateMutex(projectPath, () => {
+			const owner = JSON.parse(readFileSync(ownerPath, 'utf8'));
+			writeFileSync(ownerPath, `${JSON.stringify({ ...owner, owner_token: 'replacement-owner' }, null, 2)}\n`);
+		});
+		assert.equal(existsSync(mutexPath), true);
+	} finally {
 		removeTempProject(projectPath);
 	}
 });

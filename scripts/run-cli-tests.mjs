@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
@@ -13,16 +13,12 @@ import {
 } from './lib/test-ordering.mjs';
 import { buildFreshnessReport as readBuildFreshnessReport } from './lib/build-freshness.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
+import { readProcessStartToken } from './lib/process-identity.mjs';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testRunnerLockRoot = path.join(os.tmpdir(), 'mustflow-test-runner-locks');
 const testRunnerLockOwnerFile = 'owner.json';
 const latestProfilePath = path.join(repoRoot, '.mustflow', 'state', 'runs', 'latest.profile.json');
-const millisecondsPerSecond = 1000;
-const secondsPerMinute = 60;
-const minutesPerHour = 60;
-const staleLockHours = 6;
-const staleLockMs = staleLockHours * minutesPerHour * secondsPerMinute * millisecondsPerSecond;
 const testsRoot = path.join(repoRoot, 'tests', 'cli');
 const distCliEntrypoint = path.join(repoRoot, 'dist', 'cli', 'index.js');
 const allCliTests = readdirSync(testsRoot)
@@ -154,14 +150,31 @@ function readLockOwner(lockDir) {
 }
 
 function isStaleLock(owner) {
-	const startedAtMs = Date.parse(String(owner?.started_at ?? ''));
-	return !isProcessAlive(Number(owner?.pid)) || !Number.isFinite(startedAtMs) || Date.now() - startedAtMs > staleLockMs;
+	const pid = Number(owner?.pid);
+	if (!Number.isInteger(pid) || pid <= 0) {
+		return false;
+	}
+	if (!isProcessAlive(pid)) {
+		return true;
+	}
+
+	const recordedStartToken = typeof owner?.process_start_token === 'string' ? owner.process_start_token : undefined;
+	const currentStartToken = recordedStartToken ? readProcessStartToken(pid) : undefined;
+	return currentStartToken !== undefined && currentStartToken !== recordedStartToken;
 }
 
 function acquireTestRunnerLock() {
 	const lockDir = testRunnerLockDir();
+	const processStartToken = readProcessStartToken(process.pid);
+	if (!processStartToken) {
+		console.error(`Cannot determine the test runner process start token on ${process.platform}.`);
+		process.exit(2);
+	}
 	const owner = {
+		lock_id: randomUUID(),
+		owner_token: randomUUID(),
 		pid: process.pid,
+		process_start_token: processStartToken,
 		cwd: repoRoot,
 		command: process.argv.join(' '),
 		started_at: new Date().toISOString(),
@@ -179,7 +192,14 @@ function acquireTestRunnerLock() {
 					return;
 				}
 				released = true;
-				rmSync(lockDir, { recursive: true, force: true });
+				const currentOwner = readLockOwner(lockDir);
+				if (
+					currentOwner?.lock_id === owner.lock_id &&
+					currentOwner?.owner_token === owner.owner_token &&
+					currentOwner?.process_start_token === owner.process_start_token
+				) {
+					rmSync(lockDir, { recursive: true, force: true });
+				}
 			};
 		} catch (error) {
 			if (error?.code !== 'EEXIST') {

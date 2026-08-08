@@ -388,9 +388,11 @@ function createRecord(
 }
 
 interface ActiveMutexOwner {
+	readonly lockId: string | null;
 	readonly pid: number;
+	readonly processStartToken: string | null;
 	readonly startedAt: string;
-	readonly token: string;
+	readonly ownerToken: string;
 }
 
 function readMutexOwner(ownerPath: string): ActiveMutexOwner | null {
@@ -399,15 +401,25 @@ function readMutexOwner(ownerPath: string): ActiveMutexOwner | null {
 			readUtf8FileInsideWithoutSymlinks(path.dirname(ownerPath), ownerPath, {
 				maxBytes: ACTIVE_LOCK_OWNER_MAX_BYTES,
 			}),
-		) as { pid?: unknown; started_at?: unknown; token?: unknown };
-		if (typeof owner.started_at !== 'string' || typeof owner.token !== 'string') {
+		) as {
+			lock_id?: unknown;
+			owner_token?: unknown;
+			pid?: unknown;
+			process_start_token?: unknown;
+			started_at?: unknown;
+			token?: unknown;
+		};
+		const ownerToken = typeof owner.owner_token === 'string' ? owner.owner_token : owner.token;
+		if (typeof owner.started_at !== 'string' || typeof ownerToken !== 'string') {
 			return null;
 		}
 
 		return {
+			lockId: typeof owner.lock_id === 'string' ? owner.lock_id : null,
 			pid: Number(owner.pid),
+			processStartToken: typeof owner.process_start_token === 'string' ? owner.process_start_token : null,
 			startedAt: owner.started_at,
-			token: owner.token,
+			ownerToken,
 		};
 	} catch {
 		return null;
@@ -415,13 +427,21 @@ function readMutexOwner(ownerPath: string): ActiveMutexOwner | null {
 }
 
 function sameMutexOwner(left: ActiveMutexOwner, right: ActiveMutexOwner | null): boolean {
-	return right !== null && left.pid === right.pid && left.startedAt === right.startedAt && left.token === right.token;
+	return right !== null &&
+		left.pid === right.pid &&
+		left.lockId === right.lockId &&
+		left.processStartToken === right.processStartToken &&
+		left.startedAt === right.startedAt &&
+		left.ownerToken === right.ownerToken;
 }
 
 function mutexOwnerIsStale(owner: ActiveMutexOwner): boolean {
-	const ownerStartedAt = Date.parse(owner.startedAt);
-	const staleByAge = Number.isFinite(ownerStartedAt) && Date.now() - ownerStartedAt > LOCK_MUTEX_STALE_MS;
-	return !isProcessLive(owner.pid) || staleByAge;
+	if (!isProcessLive(owner.pid)) {
+		return true;
+	}
+
+	const currentStartToken = owner.processStartToken === null ? null : readProcessStartToken(owner.pid);
+	return currentStartToken !== null && currentStartToken !== owner.processStartToken;
 }
 
 function beginMutexRecovery(mutex: string): (() => void) | null {
@@ -457,7 +477,9 @@ function beginMutexRecovery(mutex: string): (() => void) | null {
 }
 
 function moveMutexAsideForRecovery(mutex: string, owner: ActiveMutexOwner | null): string | null {
-	const tokenSource = owner ? `${owner.pid}:${owner.startedAt}:${owner.token}` : `${process.pid}:${Date.now()}:${process.hrtime.bigint()}`;
+	const tokenSource = owner
+		? `${owner.pid}:${owner.startedAt}:${owner.ownerToken}`
+		: `${process.pid}:${Date.now()}:${process.hrtime.bigint()}`;
 	const stalePath = path.join(path.dirname(mutex), `mutex.stale-${sha256(tokenSource)}`);
 
 	try {
@@ -505,7 +527,7 @@ function recoverStaleMutexWithoutOwner(mutex: string): boolean {
 
 	try {
 		const ownerPath = path.join(mutex, 'owner.json');
-		if (readMutexOwner(ownerPath) !== null) {
+		if (existsSync(ownerPath)) {
 			return false;
 		}
 
@@ -527,7 +549,24 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 	const root = activeLockRoot(projectRoot);
 	const mutex = activeLockMutexDirectory(projectRoot);
 	const ownerPath = path.join(mutex, 'owner.json');
-	const ownerToken = sha256(`${process.pid}:${Date.now()}:${process.hrtime.bigint()}`);
+	const processStartToken = readCurrentProcessStartToken();
+	if (processStartToken === null) {
+		throw new Error(`active_run_lock_process_start_token_unavailable:${process.platform}`);
+	}
+	const ownerRecord = {
+		lock_id: randomUUID(),
+		owner_token: randomUUID(),
+		pid: process.pid,
+		process_start_token: processStartToken,
+		started_at: new Date().toISOString(),
+	};
+	const expectedOwner: ActiveMutexOwner = {
+		lockId: ownerRecord.lock_id,
+		pid: ownerRecord.pid,
+		processStartToken: ownerRecord.process_start_token,
+		startedAt: ownerRecord.started_at,
+		ownerToken: ownerRecord.owner_token,
+	};
 	mkdirSync(root, { recursive: true });
 	const startedAt = Date.now();
 	const waitMs = options.waitMs ?? LOCK_MUTEX_WAIT_MS;
@@ -535,7 +574,6 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 	while (true) {
 		try {
 			mkdirSync(mutex);
-			const ownerRecord = { pid: process.pid, started_at: new Date().toISOString(), token: ownerToken };
 			try {
 				writeJsonFileInsideWithoutSymlinks(root, ownerPath, ownerRecord);
 			} catch (error) {
@@ -544,12 +582,7 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 			}
 			return () => {
 				try {
-					const owner = JSON.parse(
-						readUtf8FileInsideWithoutSymlinks(path.dirname(ownerPath), ownerPath, {
-							maxBytes: ACTIVE_LOCK_OWNER_MAX_BYTES,
-						}),
-					) as { pid?: unknown; token?: unknown };
-					if (Number(owner.pid) === ownerRecord.pid && owner.token === ownerRecord.token) {
+					if (sameMutexOwner(expectedOwner, readMutexOwner(ownerPath))) {
 						rmSync(mutex, { recursive: true, force: true });
 					}
 				} catch {

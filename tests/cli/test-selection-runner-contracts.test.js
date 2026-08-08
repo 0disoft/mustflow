@@ -276,7 +276,7 @@ test('related cached execution refuses stale dist for deleted TypeScript sources
 	}
 });
 
-test('test runner refuses overlapping repository build and test locks', () => {
+test('test runner never steals an old repository lock from a live owner', () => {
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-test-lock-'));
 	const lockDir = path.join(tempRoot, 'lock');
 
@@ -288,7 +288,7 @@ test('test runner refuses overlapping repository build and test locks', () => {
 				pid: process.pid,
 				cwd: projectRoot,
 				command: 'node scripts/run-cli-tests.mjs --build full-auto',
-				started_at: new Date().toISOString(),
+				started_at: '2000-01-01T00:00:00.000Z',
 			})}\n`,
 		);
 
