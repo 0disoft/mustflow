@@ -5611,3 +5611,97 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.agent_plugin_build]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Generate and locally validate the selective Mustflow Agent Plugin bundle under dist/."
+argv = ["node", "dist/cli/index.js", "plugin", "build", "--json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/agent-plugins/mustflow-review/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/agent-plugins/mustflow-review/**", lock = "agent_plugin_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+required_after = ["public_api_change", "package_metadata_change"]
+
+[intents.agent_plugin_stage_task_12]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed Agent Plugin outputter, contracts, docs, tests, and generated repository map."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "README.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "schemas/README.md",
+  "schemas/agent-plugin-build-report.schema.json",
+  "scripts/lib/test-selection.mjs",
+  "src/cli/commands/plugin.ts",
+  "src/cli/i18n/en.ts",
+  "src/cli/i18n/es.ts",
+  "src/cli/i18n/fr.ts",
+  "src/cli/i18n/hi.ts",
+  "src/cli/i18n/ko.ts",
+  "src/cli/i18n/zh.ts",
+  "src/cli/index.ts",
+  "src/cli/lib/command-registry.ts",
+  "src/core/agent-plugin-bundle.ts",
+  "src/core/public-json-contracts.ts",
+  "tests/cli/agent-plugin-bundles.test.js",
+  "tests/cli/test-selection-runner-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.agent_plugin_staged_diff_task_12]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged Agent Plugin outputter paths before committing."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.agent_plugin_commit_task_12]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed selective Agent Plugin outputter and validation contracts."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(plugins): build portable agent bundles",
+  "-m", "Add a selective Agent Plugins outputter with bounded source and output paths, local structural validation, public JSON contracts, documentation, and focused regression coverage.",
+  "-m", "Validation: mf run lint; mf run test_fast; mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

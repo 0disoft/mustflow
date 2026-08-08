@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/agent-plugin-build-report.schema.json",
+  "title": "mustflow Agent Plugin build report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "command", "ok", "plugin", "bundle_path", "output_directory", "manifest_path", "skill_count", "mcp_server_count", "specification_version", "source_refresh", "validation", "issues"],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "command": { "const": "plugin_build" },
+    "ok": { "type": "boolean" },
+    "plugin": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "bundle_path": { "type": "string", "minLength": 1 },
+    "output_directory": { "type": "string", "pattern": "^dist/agent-plugins/" },
+    "manifest_path": { "type": "string", "pattern": "^dist/agent-plugins/.+/plugin\\.json$" },
+    "skill_count": { "type": "integer", "minimum": 1 },
+    "mcp_server_count": { "type": "integer", "minimum": 0 },
+    "specification_version": { "type": "string", "minLength": 1 },
+    "source_refresh": { "enum": ["live", "user_supplied_snapshot"] },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest_valid", "skills_valid", "mcp_valid"],
+      "properties": {
+        "manifest_valid": { "type": "boolean" },
+        "skills_valid": { "type": "boolean" },
+        "mcp_valid": { "type": "boolean" }
+      }
+    },
+    "issues": { "type": "array", "items": { "type": "string" } }
+  }
+}

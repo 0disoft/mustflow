@@ -247,6 +247,8 @@ output is intentionally excluded.
 - `agent-plugin-bundle.schema.json`: source-of-truth declarations that select canonical Mustflow
   skills and MCP configuration for generated Agent Plugins v1 output without replacing Mustflow's
   command authority or embedding secrets.
+- `agent-plugin-build-report.schema.json`: output of `mf plugin build --json`, including generated
+  paths, component counts, structural validation, and specification-source provenance.
 
 Current `classify`, `verify`, `run`, dashboard export, and verify state outputs may include
 `correlation_id` so local artifacts from one work incident can be connected without storing raw

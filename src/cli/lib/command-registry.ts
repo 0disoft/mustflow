@@ -289,6 +289,13 @@ export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 		loadRunner: async () => (await import('../commands/skill.js')).runSkill,
 	},
 	{
+		id: 'plugin',
+		usage: 'mf plugin',
+		summaryKey: 'command.plugin.summary',
+		contract: commandContract(TEXT_JSON_OUTPUT, ['agent-plugin-build-report']),
+		loadRunner: async () => (await import('../commands/plugin.js')).runPlugin,
+	},
+	{
 		id: 'dashboard',
 		usage: 'mf dashboard',
 		summaryKey: 'command.dashboard.summary',

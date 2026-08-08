@@ -55,6 +55,7 @@ export const zhMessages = {
   "command.index.summary": "构建本地 mustflow SQLite 索引",
   "command.search.summary": "搜索本地 mustflow SQLite 索引",
   "command.skill.summary": "解析紧凑的 skill route 候选项",
+  "command.plugin.summary": "构建可移植的 Agent Plugin 包",
   "command.dashboard.summary":
     "启动本地 mustflow 仪表板",
   "command.version.summary": "显示包版本和 npm 更新状态",

@@ -163,6 +163,7 @@ export function createTestSelection(allCliTests, options = {}) {
 
 	const fastCommandSurfaceTests = [
 		'adapters.test.js',
+		'agent-plugin-bundles.test.js',
 		'classify.test.js',
 		'evidence.test.js',
 		'impact.test.js',
@@ -208,6 +209,7 @@ export function createTestSelection(allCliTests, options = {}) {
 	const commandTestNames = new Set(allCliTests);
 	const commandRelatedTests = new Map([
 		['adapters', ['adapters.test.js', ...schemaSmokeTests]],
+		['plugin', ['agent-plugin-bundles.test.js', ...schemaSmokeTests]],
 		['check', [...checkTests, ...schemaSmokeTests]],
 		['classify', ['classify.test.js', ...schemaSmokeTests]],
 		['context', ['context.test.js', ...schemaSmokeTests]],
@@ -400,6 +402,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/change-verification\.ts$/u, tests: verificationPlanningTests },
 		{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', ...schemaSmokeTests] },
+		{ match: /^src\/core\/agent-plugin-bundle\.ts$/u, tests: ['agent-plugin-bundles.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check-command-contracts.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/(release-version-validation|version-impact|version-sources|version-sync-policy)\.ts$/u, tests: versioningTests },
 		{ match: /^src\/core\/handoff-record\.ts$/u, tests: ['handoff.test.js', ...schemaSmokeTests] },

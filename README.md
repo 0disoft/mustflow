@@ -150,6 +150,7 @@ mustflow installs and validates an agent workflow for user projects.
 - Exports bounded static dashboard reports with `mf dashboard --export-json <path>` or `mf dashboard --export <path>` for pull requests and continuous integration artifacts. The export includes a `harness_report` summary for install state, changed surfaces, verification decisions, latest receipt metadata, document-review status, and remaining risks without raw command-output tails or mutation controls.
 - Previews and applies bundled template updates safely with `mf update`.
 - Publishes JSON Schemas for automation-facing reports and command contracts in `schemas/`.
+- Builds selective, vendor-neutral Agent Plugins from canonical Mustflow skills with `mf plugin build`.
 
 ## What it does not do
 

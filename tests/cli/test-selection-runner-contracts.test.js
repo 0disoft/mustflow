@@ -308,8 +308,9 @@ test('test runner never steals an old repository lock from a live owner', () => 
 test('fast baseline keeps lightweight command and workflow contracts', () => {
 	const report = listSuite('fast');
 
-	assert.deepEqual(report.selected.slice(0, 11), [
+	assert.deepEqual(report.selected.slice(0, 12), [
 		'adapters.test.js',
+		'agent-plugin-bundles.test.js',
 		'classify.test.js',
 		'evidence.test.js',
 		'impact.test.js',

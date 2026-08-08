@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 321
+anchor_count: 322
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:08f710aea914781a456617dceb6d8b01f76244288df631cb10e9fc3ae6b3cce2"
+source_fingerprint: "sha256:410310f4ad8ffb93faa355e3789e522cd8839879243354a5093a755f5824bd4f"
 ---
 
 # REPO_MAP.md
@@ -1238,6 +1238,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### examples/nested-repos/
 
 - `examples/nested-repos/README.md`: Directory guide for this area.
+
+### plugin-bundles/
+
+- `plugin-bundles/README.md`: Directory guide for this area.
 
 ### schemas/
 

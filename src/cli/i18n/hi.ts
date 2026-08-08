@@ -55,6 +55,7 @@ export const hiMessages = {
   "command.index.summary": "स्थानीय mustflow SQLite इंडेक्स बनाएँ",
   "command.search.summary": "स्थानीय mustflow SQLite इंडेक्स में खोजें",
   "command.skill.summary": "छोटे skill route उम्मीदवार चुनें",
+  "command.plugin.summary": "Portable Agent Plugin bundle बनाएँ",
   "command.dashboard.summary":
     "स्थानीय mustflow डैशबोर्ड शुरू करें",
   "command.version.summary": "Package version और npm update status दिखाएँ",
