@@ -1,0 +1,47 @@
+{
+  "schema_version": "1",
+  "kind": "agent_plugin_bundle",
+  "plugin": {
+    "name": "mustflow-review",
+    "description": "Read-oriented Mustflow review procedures for evidence-backed bug, concurrency, filesystem, and security analysis.",
+    "homepage": "https://0disoft.github.io/mustflow/",
+    "repository": "https://github.com/0disoft/mustflow",
+    "license": "MIT-0"
+  },
+  "version_source": {
+    "file": "package.json",
+    "json_pointer": "/version"
+  },
+  "output_directory": "dist/agent-plugins/mustflow-review",
+  "skills": [
+    {
+      "name": "bug-claim-evidence-gate",
+      "source": ".mustflow/skills/bug-claim-evidence-gate/SKILL.md"
+    },
+    {
+      "name": "concurrency-invariant-review",
+      "source": ".mustflow/skills/concurrency-invariant-review/SKILL.md"
+    },
+    {
+      "name": "cross-platform-filesystem-safety",
+      "source": ".mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
+    },
+    {
+      "name": "security-privacy-review",
+      "source": ".mustflow/skills/security-privacy-review/SKILL.md"
+    }
+  ],
+  "mcp_servers": [],
+  "authority": {
+    "skill_source_of_truth": ".mustflow/skills",
+    "command_contract": ".mustflow/config/commands.toml",
+    "plugin_permissions_authoritative": false,
+    "secrets_embedded": false
+  },
+  "provenance": {
+    "specification": "https://agent-plugins.org/specification",
+    "specification_version": "1.0.0",
+    "checked_at": "2026-08-08",
+    "source_refresh": "user_supplied_snapshot"
+  }
+}

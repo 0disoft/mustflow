@@ -21,6 +21,7 @@
     "dist/",
     "templates/",
     "schemas/",
+    "plugin-bundles/",
     "examples/",
     "README.md",
     "LICENSE"

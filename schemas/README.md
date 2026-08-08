@@ -244,6 +244,10 @@ Current schemas:
 These schemas define stable, automation-facing fields. Human-readable command  
 output is intentionally excluded.
 
+- `agent-plugin-bundle.schema.json`: source-of-truth declarations that select canonical Mustflow
+  skills and MCP configuration for generated Agent Plugins v1 output without replacing Mustflow's
+  command authority or embedding secrets.
+
 Current `classify`, `verify`, `run`, dashboard export, and verify state outputs may include
 `correlation_id` so local artifacts from one work incident can be connected without storing raw
 transcripts, environment values, or hidden reasoning.

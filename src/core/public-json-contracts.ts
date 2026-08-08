@@ -10,6 +10,13 @@ export interface PublicJsonSchemaContract {
 
 const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 	{
+		id: 'agent-plugin-bundle',
+		schemaFile: 'agent-plugin-bundle.schema.json',
+		producer: 'plugin-bundles/*.bundle.json',
+		packaged: true,
+		documented: true,
+	},
+	{
 		id: 'adapter-compatibility-report',
 		schemaFile: 'adapter-compatibility-report.schema.json',
 		producer: 'mf adapters status --json',

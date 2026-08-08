@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mustflow.github.io/schemas/agent-plugin-bundle.schema.json",
+  "title": "mustflow Agent Plugin bundle declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "plugin",
+    "version_source",
+    "output_directory",
+    "skills",
+    "mcp_servers",
+    "authority",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": { "const": "1" },
+    "kind": { "const": "agent_plugin_bundle" },
+    "plugin": { "$ref": "#/$defs/plugin" },
+    "version_source": { "$ref": "#/$defs/versionSource" },
+    "output_directory": {
+      "type": "string",
+      "pattern": "^dist/agent-plugins/[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/skill" }
+    },
+    "mcp_servers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mcpServer" }
+    },
+    "authority": { "$ref": "#/$defs/authority" },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "homepage", "repository", "license"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "description": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "homepage": { "type": "string", "format": "uri" },
+        "repository": { "type": "string", "format": "uri" },
+        "license": { "type": "string", "minLength": 1 }
+      }
+    },
+    "versionSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "json_pointer"],
+      "properties": {
+        "file": { "const": "package.json" },
+        "json_pointer": { "const": "/version" }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "source": {
+          "type": "string",
+          "pattern": "^\\.mustflow/skills/[a-z0-9]+(?:-[a-z0-9]+)*/SKILL\\.md$"
+        }
+      }
+    },
+    "mcpServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source"],
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "source": {
+          "type": "string",
+          "pattern": "^plugin-bundles/mcp/[a-z0-9]+(?:-[a-z0-9]+)*\\.json$"
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skill_source_of_truth", "command_contract", "plugin_permissions_authoritative", "secrets_embedded"],
+      "properties": {
+        "skill_source_of_truth": { "const": ".mustflow/skills" },
+        "command_contract": { "const": ".mustflow/config/commands.toml" },
+        "plugin_permissions_authoritative": { "const": false },
+        "secrets_embedded": { "const": false }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["specification", "specification_version", "checked_at", "source_refresh"],
+      "properties": {
+        "specification": { "const": "https://agent-plugins.org/specification" },
+        "specification_version": { "const": "1.0.0" },
+        "checked_at": { "type": "string", "format": "date" },
+        "source_refresh": { "enum": ["live", "user_supplied_snapshot"] }
+      }
+    }
+  }
+}
