@@ -32,7 +32,7 @@ export interface VerificationScheduleEntry {
 	readonly intent: string;
 	readonly status: 'runnable';
 	readonly parallelEligible: boolean;
-	readonly parallelReason: 'explicit_effects' | 'missing_explicit_effects' | 'undeclared_write_drift';
+	readonly parallelReason: 'explicit_effects' | 'missing_explicit_effects' | 'undeclared_write_drift' | 'write_drift_coverage_incomplete';
 	readonly effects: readonly VerificationScheduleEffect[];
 	readonly locks: readonly string[];
 	readonly conflicts: readonly VerificationScheduleConflict[];
@@ -94,17 +94,26 @@ function readJsonFile(projectRoot: string, filePath: string): unknown {
 	}
 }
 
-function getUndeclaredWriteIntent(value: unknown): string | null {
+type WriteDriftRiskReason = 'undeclared_write_drift' | 'write_drift_coverage_incomplete';
+
+function getWriteDriftRisk(value: unknown): { readonly intent: string; readonly reason: WriteDriftRiskReason } | null {
 	if (!isObject(value) || typeof value.intent !== 'string') {
 		return null;
 	}
 
 	const writeDrift = value.write_drift;
-	if (!isObject(writeDrift) || writeDrift.has_undeclared_changes !== true) {
+	if (!isObject(writeDrift)) {
 		return null;
 	}
 
-	return value.intent;
+	if (writeDrift.has_undeclared_changes === true) {
+		return { intent: value.intent, reason: 'undeclared_write_drift' };
+	}
+	if (writeDrift.coverage_complete !== true) {
+		return { intent: value.intent, reason: 'write_drift_coverage_incomplete' };
+	}
+
+	return null;
 }
 
 function resolveStateRelativePath(projectRoot: string, relativePath: unknown): string | null {
@@ -126,18 +135,18 @@ function resolveStateRelativePath(projectRoot: string, relativePath: unknown): s
 	return resolved;
 }
 
-function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: Record<string, unknown>): ReadonlySet<string> {
+function readVerifyManifestWriteDriftRisks(projectRoot: string, latest: Record<string, unknown>): ReadonlyMap<string, WriteDriftRiskReason> {
 	const manifestPath = resolveStateRelativePath(projectRoot, latest.manifest_path);
 	if (!manifestPath) {
-		return new Set();
+		return new Map();
 	}
 
 	const manifest = readJsonFile(projectRoot, manifestPath);
 	if (!isObject(manifest) || manifest.command !== 'verify' || !Array.isArray(manifest.receipts)) {
-		return new Set();
+		return new Map();
 	}
 
-	const intents = new Set<string>();
+	const risks = new Map<string, WriteDriftRiskReason>();
 	for (const entry of manifest.receipts) {
 		if (!isObject(entry)) {
 			continue;
@@ -148,29 +157,29 @@ function readVerifyManifestUndeclaredWriteIntents(projectRoot: string, latest: R
 			continue;
 		}
 
-		const intent = getUndeclaredWriteIntent(readJsonFile(projectRoot, receiptPath));
-		if (intent) {
-			intents.add(intent);
+		const risk = getWriteDriftRisk(readJsonFile(projectRoot, receiptPath));
+		if (risk) {
+			risks.set(risk.intent, risk.reason);
 		}
 	}
 
-	return intents;
+	return risks;
 }
 
-function readLatestUndeclaredWriteIntents(projectRoot: string): ReadonlySet<string> {
+function readLatestWriteDriftRisks(projectRoot: string): ReadonlyMap<string, WriteDriftRiskReason> {
 	const latestPath = path.join(projectRoot, '.mustflow', 'state', 'runs', 'latest.json');
 	const parsed = readJsonFile(projectRoot, latestPath);
-	const directIntent = getUndeclaredWriteIntent(parsed);
+	const directRisk = getWriteDriftRisk(parsed);
 
-	if (directIntent) {
-		return new Set([directIntent]);
+	if (directRisk) {
+		return new Map([[directRisk.intent, directRisk.reason]]);
 	}
 
 	if (!isObject(parsed) || parsed.command !== 'verify') {
-		return new Set();
+		return new Map();
 	}
 
-	return readVerifyManifestUndeclaredWriteIntents(projectRoot, parsed);
+	return readVerifyManifestWriteDriftRisks(projectRoot, parsed);
 }
 
 function entriesConflict(left: VerificationScheduleEntry, right: VerificationScheduleEntry): VerificationScheduleConflict[] {
@@ -240,7 +249,7 @@ export function createVerificationSchedule(
 	commandContract: CommandContract,
 	candidates: readonly VerificationCandidate[],
 ): VerificationSchedule {
-	const latestUndeclaredWriteIntents = readLatestUndeclaredWriteIntents(projectRoot);
+	const latestWriteDriftRisks = readLatestWriteDriftRisks(projectRoot);
 	const runnableIntents = uniqueSorted(
 		candidates
 			.filter((candidate) => candidate.status === 'runnable' && candidate.intent.length > 0)
@@ -249,14 +258,14 @@ export function createVerificationSchedule(
 	const baseEntries = runnableIntents.map((intent) => {
 		const effects = normalizeCommandEffects(projectRoot, commandContract, intent).map(toScheduleEffect);
 		const hasExplicitEffects = effects.length > 0 && effects.every((effect) => effect.source === 'effects');
-		const hasUndeclaredWriteDrift = latestUndeclaredWriteIntents.has(intent);
-		const parallelEligible = hasExplicitEffects && !hasUndeclaredWriteDrift;
+		const writeDriftRisk = latestWriteDriftRisks.get(intent);
+		const parallelEligible = hasExplicitEffects && writeDriftRisk === undefined;
 		return {
 			intent,
 			status: 'runnable' as const,
 			parallelEligible,
-			parallelReason: hasUndeclaredWriteDrift
-				? ('undeclared_write_drift' as const)
+			parallelReason: writeDriftRisk
+				? writeDriftRisk
 				: hasExplicitEffects
 					? ('explicit_effects' as const)
 					: ('missing_explicit_effects' as const),
@@ -291,8 +300,10 @@ export function createVerificationSchedule(
 		notes: [
 			'Batches explain resource compatibility for planning only.',
 			'Only entries backed by explicit effects are marked parallel eligible; writes fallback remains serial-only.',
-			...uniqueSorted(latestUndeclaredWriteIntents).map(
-				(intent) => `Latest receipt for ${intent} reported undeclared writes; it is not parallel eligible.`,
+			...uniqueSorted(latestWriteDriftRisks.keys()).map(
+				(intent) => latestWriteDriftRisks.get(intent) === 'undeclared_write_drift'
+					? `Latest receipt for ${intent} reported undeclared writes; it is not parallel eligible.`
+					: `Latest receipt for ${intent} has incomplete write-drift coverage; it is not parallel eligible.`,
 			),
 			'If a future parallel batch has already started, let it finish and stop before the next batch on failure.',
 			'The runner names the default copied-command path; mf verify --parallel may execute eligible entries in bounded chunks and writes the latest run summary after each batch completes.',

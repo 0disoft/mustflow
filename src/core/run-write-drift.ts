@@ -31,6 +31,7 @@ interface SnapshotResult {
 
 export interface RunWriteDriftReceipt {
 	readonly status: RunWriteDriftStatus;
+	readonly coverage_complete: boolean;
 	readonly declared_paths: readonly string[];
 	readonly observed_paths: readonly string[];
 	readonly declared_observed_paths: readonly string[];
@@ -258,10 +259,48 @@ function captureGitStatusSnapshot(projectRoot: string, env: SnapshotEnvironment)
 		}
 	}
 
+	const ignored = spawnSync(
+		'git',
+		[
+			'-C', projectRoot,
+			'ls-files', '--others', '--ignored', '--exclude-standard', '-z',
+			'--', '.', ':(exclude,glob)**/node_modules/**',
+		],
+		{
+			encoding: 'utf8',
+			env,
+			input: '',
+			maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
+			stdio: ['ignore', 'pipe', 'pipe'],
+			timeout: GIT_STATUS_TIMEOUT_MS,
+			windowsHide: true,
+		},
+	);
+	if (ignored.error || ignored.status !== 0) {
+		return {
+			status: 'partial',
+			entries,
+			reason: 'git_ignored_paths_unavailable',
+			source: 'git_status',
+		};
+	}
+
+	for (const ignoredPath of ignored.stdout.split('\0').filter(Boolean).map(normalizeRelativePath)) {
+		if (entries.size >= MAX_SNAPSHOT_FILES) {
+			return {
+				status: 'partial',
+				entries,
+				reason: 'snapshot_file_limit_exceeded',
+				source: 'git_status',
+			};
+		}
+		entries.set(ignoredPath, signatureForGitStatusPath(projectRoot, ignoredPath, '!!'));
+	}
+
 	return {
-		status: 'partial',
+		status: 'checked',
 		entries,
-		reason: 'git_status_untracked_files_all',
+		reason: null,
 		source: 'git_status',
 	};
 }
@@ -314,6 +353,7 @@ function createUnavailableWriteDriftReceipt(
 ): RunWriteDriftReceipt {
 	return {
 		status: 'unavailable',
+		coverage_complete: false,
 		declared_paths: declaredPaths,
 		observed_paths: [],
 		declared_observed_paths: [],
@@ -441,6 +481,7 @@ export function finishRunWriteBatchTracking(
 
 		receipts.set(intent.intentName, {
 			status,
+			coverage_complete: status === 'checked',
 			declared_paths: declaredPaths,
 			observed_paths: observed.paths,
 			declared_observed_paths: declaredObserved.paths,
@@ -488,6 +529,7 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 
 	return {
 		status,
+		coverage_complete: status === 'checked',
 		declared_paths: tracker.declaredPaths,
 		observed_paths: observed.paths,
 		declared_observed_paths: declaredObserved.paths,

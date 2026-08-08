@@ -280,6 +280,7 @@
       "additionalProperties": false,
       "required": [
         "status",
+        "coverage_complete",
         "declared_paths",
         "observed_paths",
         "declared_observed_paths",
@@ -292,6 +293,7 @@
       ],
       "properties": {
         "status": { "enum": ["checked", "partial", "unavailable"] },
+        "coverage_complete": { "type": "boolean" },
         "declared_paths": {
           "type": "array",
           "items": { "type": "string" }

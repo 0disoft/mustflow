@@ -133,6 +133,7 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.coverage_complete, true);
 		assert.deepEqual(receipt.write_drift.declared_paths, ['dist/**']);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['dist/output.js']);
 		assert.deepEqual(receipt.write_drift.declared_observed_paths, ['dist/output.js']);
@@ -228,6 +229,49 @@ destructive = false
 	}
 });
 
+test('write drift observes undeclared changes inside Git ignored paths', (t) => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.gitignore'), 'ignored/\n');
+		if (!commitGitBaseline(projectPath)) {
+			t.skip('git is not available in this environment');
+			return;
+		}
+		appendIntent(
+			projectPath,
+			`
+[intents.ignored_undeclared_write]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write into an ignored path outside the declared scope."
+argv = ['${process.execPath}', '-e', 'require("node:fs").mkdirSync("ignored", { recursive: true }); require("node:fs").writeFileSync("ignored/secret.txt", "secret")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["declared/**"]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'ignored_undeclared_write', '--json']);
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.coverage_complete, true);
+		assert.deepEqual(receipt.write_drift.observed_paths, ['ignored/secret.txt']);
+		assert.deepEqual(receipt.write_drift.undeclared_paths, ['ignored/secret.txt']);
+		assert.equal(receipt.write_drift.has_undeclared_changes, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('uses git status write-drift tracking without recursive snapshot opt-in', (t) => {
 	const projectPath = createTempProject();
 
@@ -261,12 +305,13 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.status, 'passed');
-		assert.equal(receipt.write_drift.status, 'partial');
+		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.coverage_complete, true);
 		assert.deepEqual(receipt.write_drift.declared_paths, []);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['git-sneaky.txt']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['git-sneaky.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
-		assert.equal(receipt.write_drift.reason, 'git_status_untracked_files_all');
+		assert.equal(receipt.write_drift.reason, null);
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -307,11 +352,12 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.status, 'passed');
-		assert.equal(receipt.write_drift.status, 'partial');
+		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.coverage_complete, true);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['scratch/note.txt']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['scratch/note.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
-		assert.equal(receipt.write_drift.reason, 'git_status_untracked_files_all');
+		assert.equal(receipt.write_drift.reason, null);
 		assert.equal(readFileSync(path.join(projectPath, 'scratch', 'note.txt'), 'utf8'), 'after\n');
 	} finally {
 		removeTempProject(projectPath);
@@ -399,12 +445,13 @@ destructive = false
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.status, 'passed');
-		assert.equal(receipt.write_drift.status, 'partial');
+		assert.equal(receipt.write_drift.status, 'checked');
+		assert.equal(receipt.write_drift.coverage_complete, true);
 		assert.deepEqual(receipt.write_drift.declared_paths, []);
 		assert.deepEqual(receipt.write_drift.observed_paths, ['dirty.txt']);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, ['dirty.txt']);
 		assert.equal(receipt.write_drift.has_undeclared_changes, true);
-		assert.equal(receipt.write_drift.reason, 'git_status_untracked_files_all');
+		assert.equal(receipt.write_drift.reason, null);
 		assert.equal(readFileSync(path.join(projectPath, 'dirty.txt'), 'utf8'), 'after\n');
 	} finally {
 		removeTempProject(projectPath);

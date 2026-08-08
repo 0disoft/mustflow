@@ -915,6 +915,56 @@ effects = [
 	}
 });
 
+test('removes parallel eligibility when latest write-drift coverage is incomplete', async () => {
+	const projectPath = createSchedulerProject();
+
+	try {
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_incomplete_drift]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Effect-backed check with incomplete drift coverage."
+argv = ['${process.execPath}', '-e', 'console.log("incomplete")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["coverage_verify"]
+effects = [{ type = "write", mode = "replace", path = "coverage.txt", concurrency = "exclusive" }]
+`,
+		);
+		const runsDir = path.join(projectPath, '.mustflow', 'state', 'runs');
+		mkdirSync(runsDir, { recursive: true });
+		writeFileSync(
+			path.join(runsDir, 'latest.json'),
+			`${JSON.stringify({
+				intent: 'verify_incomplete_drift',
+				write_drift: {
+					has_undeclared_changes: false,
+					coverage_complete: false,
+				},
+			})}\n`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'coverage_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const entry = report.schedule.entries.find((scheduleEntry) => scheduleEntry.intent === 'verify_incomplete_drift');
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(entry.parallelEligible, false);
+		assert.equal(entry.parallelReason, 'write_drift_coverage_incomplete');
+		assert.equal(report.schedule.notes.some((note) => note.includes('incomplete write-drift coverage')), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('removes parallel eligibility from per-intent receipt referenced by verify latest pointer', async () => {
 	const projectPath = createSchedulerProject();
 

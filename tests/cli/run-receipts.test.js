@@ -132,6 +132,7 @@ destructive = false
 		assert.equal(receipt.redaction.redaction_count, 0);
 		assert.deepEqual(receipt.redaction.fields, []);
 		assert.equal(receipt.write_drift.status, 'unavailable');
+		assert.equal(receipt.write_drift.coverage_complete, false);
 		assert.deepEqual(receipt.write_drift.declared_paths, []);
 		assert.deepEqual(receipt.write_drift.observed_paths, []);
 		assert.deepEqual(receipt.write_drift.undeclared_paths, []);
