@@ -995,7 +995,7 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('runs non-conflicting explicit-effect verification batches in parallel when requested', async () => {
+test('holds non-conflicting explicit-effect verification batches at serial execution while the safety gate is active', async () => {
 	const projectPath = createSchedulerProject();
 	const startAPath = path.join(projectPath, 'parallel-a-start.txt');
 	const startBPath = path.join(projectPath, 'parallel-b-start.txt');
@@ -1076,19 +1076,17 @@ required_after = ["parallel_verify"]
 			planReport.schedule.entries.map((entry) => entry.parallelEligible),
 			[true, true],
 		);
+		assert.equal(runReport.parallelism.effective, 1);
+		assert.equal(runReport.parallelism.mode, 'serial');
 		assert.ok(
-			startDifference < parallelStartToleranceMs,
-			`expected parallel start times under ${parallelStartToleranceMs}ms, got ${startDifference}ms`,
+			startDifference >= parallelStartToleranceMs,
+			`expected safety-held serial start times at least ${parallelStartToleranceMs}ms apart, got ${startDifference}ms`,
 		);
 		assert.deepEqual(ranResults.map((result) => result.intent), scheduledIntents);
 		for (const result of ranResults) {
 			assert.equal(result.receipt.write_drift.status, 'checked');
-			assert.equal(result.receipt.write_drift.attribution_mode, 'parallel_chunk');
-			assert.deepEqual(result.receipt.write_drift.chunk_intents, scheduledIntents);
 			assert.equal(result.receipt.write_drift.has_undeclared_changes, false);
 			assert.deepEqual(result.receipt.write_drift.undeclared_paths, []);
-			assert.deepEqual(result.receipt.write_drift.ambiguous_paths, []);
-			assert.equal(result.receipt.write_drift.ambiguous_count, 0);
 			assert.equal(
 				result.receipt.write_drift.declared_observed_paths.every((changedPath) =>
 					changedPath.startsWith(result.intent === 'verify_parallel_a' ? 'parallel-a-' : 'parallel-b-'),
@@ -1103,7 +1101,7 @@ required_after = ["parallel_verify"]
 	}
 });
 
-test('attributes undeclared parallel write drift without blaming sibling intents', async () => {
+test('attributes undeclared write drift per serial intent while the parallel safety gate is active', async () => {
 	const projectPath = createSchedulerProject();
 
 	try {
@@ -1159,12 +1157,8 @@ required_after = ["parallel_drift"]
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.ok(cleanResult);
 		assert.ok(driftResult);
-		assert.equal(cleanResult.receipt.write_drift.attribution_mode, 'parallel_chunk');
-		assert.equal(driftResult.receipt.write_drift.attribution_mode, 'parallel_chunk');
 		assert.deepEqual(cleanResult.receipt.write_drift.undeclared_paths, []);
-		assert.deepEqual(cleanResult.receipt.write_drift.ambiguous_paths, []);
 		assert.deepEqual(driftResult.receipt.write_drift.undeclared_paths, ['parallel-sneaky.txt']);
-		assert.deepEqual(driftResult.receipt.write_drift.ambiguous_paths, []);
 		assert.equal(report.completion_verdict.evidence.write_drift_risk_count, 1);
 	} finally {
 		removeTempProject(projectPath);
@@ -1226,9 +1220,7 @@ required_after = ["parallel_state"]
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(stateResult);
 		assert.equal(stateResult.receipt.write_drift.has_undeclared_changes, false);
-		assert.deepEqual(stateResult.receipt.write_drift.observed_paths, []);
-		assert.deepEqual(stateResult.receipt.write_drift.undeclared_paths, []);
-		assert.deepEqual(stateResult.receipt.write_drift.ambiguous_paths, []);
+		assert.equal(stateResult.receipt.write_drift.status, 'checked');
 	} finally {
 		removeTempProject(projectPath);
 	}

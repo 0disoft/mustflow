@@ -28,6 +28,21 @@ function getCandidateIntentNames(report: ChangeVerificationReport): string[] {
 		.sort((left, right) => left.localeCompare(right));
 }
 
+function stableSchedule(report: ChangeVerificationReport): unknown {
+	return {
+		runner: report.schedule.runner,
+		failurePolicy: report.schedule.failurePolicy,
+		batches: report.schedule.batches,
+		entries: report.schedule.entries.map((entry) => ({
+			intent: entry.intent,
+			status: entry.status,
+			effects: entry.effects,
+			locks: entry.locks,
+			conflicts: entry.conflicts,
+		})),
+	};
+}
+
 export function createVerificationPlanId(report: ChangeVerificationReport, contract: CommandContract): string {
 	const relatedIntents = Object.fromEntries(
 		getCandidateIntentNames(report).map((intent) => [intent, contract.intents[intent] ?? null]),
@@ -42,7 +57,7 @@ export function createVerificationPlanId(report: ChangeVerificationReport, contr
 			requirements: report.requirements,
 			candidates: report.candidates,
 			gaps: report.gaps,
-			schedule: report.schedule,
+			schedule: stableSchedule(report),
 			test_selection: report.test_selection,
 		},
 		command_contract: {

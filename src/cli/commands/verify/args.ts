@@ -11,6 +11,7 @@ import {
 
 export const DEFAULT_VERIFY_PARALLELISM = 1;
 export const MAX_VERIFY_PARALLELISM = 8;
+export const VERIFY_PARALLEL_EXECUTION_ENABLED = false;
 
 const VERIFY_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
@@ -133,19 +134,22 @@ export function resolveVerifyParallelism(
 	cpuAvailable: number | null = readAvailableParallelism(),
 ): VerifyParallelismSettings {
 	const cpuLimit = cpuAvailable === null ? MAX_VERIFY_PARALLELISM : Math.max(DEFAULT_VERIFY_PARALLELISM, cpuAvailable);
-	const effectiveLimit = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(MAX_VERIFY_PARALLELISM, cpuLimit));
+	const configuredLimit = VERIFY_PARALLEL_EXECUTION_ENABLED ? MAX_VERIFY_PARALLELISM : DEFAULT_VERIFY_PARALLELISM;
+	const effectiveLimit = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(configuredLimit, cpuLimit));
 	const effective = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(requested, effectiveLimit));
 	const capped = effective !== requested;
 	const mode = effective > DEFAULT_VERIFY_PARALLELISM ? 'parallel_chunks' : 'serial';
 	const note =
-		mode === 'parallel_chunks'
+		!VERIFY_PARALLEL_EXECUTION_ENABLED
+			? 'Parallel verification is temporarily held at serial execution until process, lock, path-scope, and write-drift safety gates are satisfied.'
+			: mode === 'parallel_chunks'
 			? 'Parallel verification is a bounded optimization for eligible non-conflicting entries; it is not stronger evidence than serial verification.'
 			: 'Verification runs serially unless an eligible non-conflicting batch receives an effective parallelism greater than 1.';
 
 	return {
 		requested,
 		effective,
-		repositoryMax: MAX_VERIFY_PARALLELISM,
+		repositoryMax: configuredLimit,
 		cpuAvailable,
 		capped,
 		mode,

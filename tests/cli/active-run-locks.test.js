@@ -125,3 +125,22 @@ test('active run locks ignore symlinked active record entries', async (t) => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('active run locks fail closed on malformed regular records before write acquisition', async () => {
+	const projectPath = createTempProject('mustflow-active-lock-');
+	const activeDirectory = path.join(projectPath, '.mustflow', 'state', 'locks', 'active');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+
+	mkdirSync(activeDirectory, { recursive: true });
+	writeFileSync(path.join(activeDirectory, 'malformed.json'), '{not-json');
+
+	try {
+		assert.throws(
+			() => acquireActiveRunLock(projectPath, createWriteContract(), 'writer'),
+			/active_run_lock_record_unreadable:malformed\.json/u,
+		);
+		assert.equal(existsSync(path.join(activeDirectory, 'malformed.json')), true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

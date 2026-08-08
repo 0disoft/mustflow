@@ -232,7 +232,10 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 	};
 }
 
-function readActiveRecords(projectRoot: string): readonly ActiveRunLockRecord[] {
+function readActiveRecords(
+	projectRoot: string,
+	options: { readonly failClosedOnUnreadable?: boolean } = {},
+): readonly ActiveRunLockRecord[] {
 	const directory = activeLockDirectory(projectRoot);
 	if (!existsSync(directory)) {
 		return [];
@@ -254,11 +257,21 @@ function readActiveRecords(projectRoot: string): readonly ActiveRunLockRecord[] 
 					}),
 				),
 			);
-			if (record) {
-				records.push(record);
+			if (!record) {
+				if (options.failClosedOnUnreadable) {
+					throw new Error(`active_run_lock_record_unreadable:${name}`);
+				}
+				continue;
 			}
-		} catch {
-			// Unreadable lock records are ignored until a later cleanup can inspect them safely.
+			records.push(record);
+		} catch (error) {
+			if (options.failClosedOnUnreadable) {
+				if (error instanceof Error && error.message.startsWith('active_run_lock_record_unreadable:')) {
+					throw error;
+				}
+				throw new Error(`active_run_lock_record_unreadable:${name}`, { cause: error });
+			}
+			// Read-only inspection ignores malformed records; write/exclusive acquisition fails closed below.
 		}
 	}
 
@@ -636,7 +649,9 @@ export function acquireActiveRunLock(
 	const releaseMutex = acquireMutex(projectRoot);
 
 	try {
-		const records = readActiveRecords(projectRoot);
+		const records = readActiveRecords(projectRoot, {
+			failClosedOnUnreadable: effects.some((effect) => effect.access === 'write' || effect.concurrency === 'exclusive'),
+		});
 		const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
 		for (const stale of staleRecords) {
 			const staleRecord = records.find((record) => record.run_id === stale.runId);
