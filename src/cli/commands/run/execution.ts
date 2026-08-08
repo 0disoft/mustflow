@@ -26,7 +26,6 @@ import {
 } from '../../lib/run-plan.js';
 import { getRunStatus, runArgvCommandStreaming, runShellCommandStreaming } from './executor.js';
 import { emitOutput, isOutputLimitExceededError } from './output.js';
-import { createPendingTimeoutTermination, getKillMethod, terminateProcessTree } from './process-tree.js';
 import { writeLatestRunProfile } from './profile.js';
 import { assembleRunReceipt } from './receipt.js';
 
@@ -330,6 +329,7 @@ export async function executeRunCommand(
 		return { exitCode: 1, receipt: null };
 	}
 
+	let releaseActiveRunLock = true;
 	try {
 		const runReceiptPolicy = profiler.measure('retention_policy', () =>
 			resolveRunReceiptRetentionPolicy(runContext.mustflowConfig),
@@ -403,12 +403,10 @@ export async function executeRunCommand(
 		let killMethod: string | null = null;
 		let termination: RunTerminationReceipt | null = null;
 
-		if (runStatus === 'timed_out') {
-			termination = result.termination ?? createPendingTimeoutTermination(getKillMethod());
+		if (result.termination) {
+			termination = result.termination;
 			killMethod = termination.method;
-			if (!result.termination && result.pid) {
-				terminateProcessTree(result.pid);
-			}
+			releaseActiveRunLock = termination.confirmed;
 		}
 
 		const receipt = profiler.measure('receipt_create', () =>
@@ -479,6 +477,8 @@ export async function executeRunCommand(
 
 		return { exitCode: commandExitCode, receipt };
 	} finally {
-		activeRunLock.handle.release();
+		if (releaseActiveRunLock) {
+			activeRunLock.handle.release();
+		}
 	}
 }

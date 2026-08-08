@@ -21,10 +21,15 @@ export type RunReceiptErrorKind = 'timeout' | 'start_failed' | 'output_limit_exc
 export type RunCommandMode = 'argv' | 'shell';
 
 export interface RunTerminationReceipt {
-	readonly reason: 'timeout';
+	readonly reason: 'timeout' | 'output_limit' | 'parent_signal';
+	readonly state: 'running' | 'graceful_termination_requested' | 'force_termination_requested' | 'process_tree_confirmed_gone';
 	readonly method: string;
 	readonly graceful_signal: string | null;
 	readonly forced_signal: string | null;
+	readonly direct_child_closed_at: string | null;
+	readonly graceful_signal_sent_at: string | null;
+	readonly force_kill_sent_at: string | null;
+	readonly process_tree_confirmed_gone_at: string | null;
 	readonly forced_kill_attempted: boolean;
 	readonly confirmed: boolean;
 	readonly cleanup_pending: boolean;

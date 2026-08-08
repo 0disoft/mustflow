@@ -906,6 +906,9 @@ destructive = false
 		assert.equal(receipt.performance.result_summary.status, 'output_limit_exceeded');
 		assert.equal(receipt.performance.result_summary.error_kind, 'output_limit_exceeded');
 		assert.equal(receipt.performance.result_summary.timed_out, false);
+		assert.equal(receipt.termination.reason, 'output_limit');
+		assert.equal(receipt.termination.confirmed, process.platform !== 'win32');
+		assert.equal(receipt.termination.cleanup_pending, process.platform === 'win32');
 		assert.notEqual(receipt.status, 'start_failed');
 		assert.match(receipt.error, /maxBuffer|ENOBUFS|exceeded/i);
 		assert.deepEqual(latest, receipt);
@@ -999,15 +1002,18 @@ destructive = false
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
 		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
-		assert.deepEqual(receipt.termination, {
-			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
-			graceful_signal: 'SIGTERM',
-			forced_signal: 'SIGKILL',
-			forced_kill_attempted: process.platform === 'win32',
-			confirmed: true,
-			cleanup_pending: false,
-		});
+		assert.equal(receipt.termination.reason, 'timeout');
+		assert.equal(receipt.termination.state, process.platform === 'win32' ? 'force_termination_requested' : 'process_tree_confirmed_gone');
+		assert.equal(receipt.termination.method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.equal(receipt.termination.graceful_signal, 'SIGTERM');
+		assert.equal(receipt.termination.forced_signal, 'SIGKILL');
+		assert.equal(receipt.termination.forced_kill_attempted, process.platform === 'win32');
+		assert.equal(receipt.termination.confirmed, process.platform !== 'win32');
+		assert.equal(receipt.termination.cleanup_pending, process.platform === 'win32');
+		assert.equal(typeof receipt.termination.direct_child_closed_at, 'string');
+		assert.equal(typeof receipt.termination.graceful_signal_sent_at, 'string');
+		assert.equal(receipt.termination.force_kill_sent_at === null, process.platform !== 'win32');
+		assert.equal(receipt.termination.process_tree_confirmed_gone_at === null, process.platform === 'win32');
 		assert.deepEqual(latest, receipt);
 		assertMatchesSchema(schemaRoot, 'run-receipt.schema.json', receipt);
 	} finally {
@@ -1034,7 +1040,7 @@ cwd = "."
 timeout_seconds = 1
 stdin = "closed"
 success_exit_codes = [0]
-writes = []
+writes = ["protected.txt"]
 network = false
 destructive = false
 `,
@@ -1056,15 +1062,23 @@ destructive = false
 		assert.equal(receipt.exit_code, null);
 		assert.equal(receipt.timeout_seconds, 1);
 		assert.equal(receipt.kill_method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
-		assert.deepEqual(receipt.termination, {
-			reason: 'timeout',
-			method: process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm',
-			graceful_signal: 'SIGTERM',
-			forced_signal: 'SIGKILL',
-			forced_kill_attempted: true,
-			confirmed: true,
-			cleanup_pending: false,
-		});
+		assert.equal(receipt.termination.reason, 'timeout');
+		assert.equal(receipt.termination.state, process.platform === 'win32' ? 'force_termination_requested' : 'process_tree_confirmed_gone');
+		assert.equal(receipt.termination.method, process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm');
+		assert.equal(receipt.termination.graceful_signal, 'SIGTERM');
+		assert.equal(receipt.termination.forced_signal, 'SIGKILL');
+		assert.equal(receipt.termination.forced_kill_attempted, true);
+		assert.equal(receipt.termination.confirmed, process.platform !== 'win32');
+		assert.equal(receipt.termination.cleanup_pending, process.platform === 'win32');
+		assert.equal(typeof receipt.termination.direct_child_closed_at, 'string');
+		assert.equal(typeof receipt.termination.graceful_signal_sent_at, 'string');
+		assert.equal(typeof receipt.termination.force_kill_sent_at, 'string');
+		assert.equal(receipt.termination.process_tree_confirmed_gone_at === null, process.platform === 'win32');
+		const activeLockDirectory = path.join(projectPath, '.mustflow', 'state', 'locks', 'active');
+		const activeLockRecords = existsSync(activeLockDirectory)
+			? readdirSync(activeLockDirectory).filter((name) => name.endsWith('.json'))
+			: [];
+		assert.equal(activeLockRecords.length, process.platform === 'win32' ? 1 : 0);
 		assert.match(result.stderr, /timed out/i);
 	} finally {
 		removeTempProject(projectPath);

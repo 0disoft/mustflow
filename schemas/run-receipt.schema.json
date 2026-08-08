@@ -224,18 +224,35 @@
       "additionalProperties": false,
       "required": [
         "reason",
+        "state",
         "method",
         "graceful_signal",
         "forced_signal",
+        "direct_child_closed_at",
+        "graceful_signal_sent_at",
+        "force_kill_sent_at",
+        "process_tree_confirmed_gone_at",
         "forced_kill_attempted",
         "confirmed",
         "cleanup_pending"
       ],
       "properties": {
-        "reason": { "const": "timeout" },
+        "reason": { "enum": ["timeout", "output_limit", "parent_signal"] },
+        "state": {
+          "enum": [
+            "running",
+            "graceful_termination_requested",
+            "force_termination_requested",
+            "process_tree_confirmed_gone"
+          ]
+        },
         "method": { "type": "string" },
         "graceful_signal": { "type": ["string", "null"] },
         "forced_signal": { "type": ["string", "null"] },
+        "direct_child_closed_at": { "type": ["string", "null"], "format": "date-time" },
+        "graceful_signal_sent_at": { "type": ["string", "null"], "format": "date-time" },
+        "force_kill_sent_at": { "type": ["string", "null"], "format": "date-time" },
+        "process_tree_confirmed_gone_at": { "type": ["string", "null"], "format": "date-time" },
         "forced_kill_attempted": { "type": "boolean" },
         "confirmed": { "type": "boolean" },
         "cleanup_pending": { "type": "boolean" }

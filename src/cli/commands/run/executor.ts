@@ -1,14 +1,15 @@
 import { spawn } from 'node:child_process';
 
 import { BoundedOutputBuffer, type BoundedOutputSnapshot } from '../../../core/bounded-output.js';
+import {
+	ProcessSupervisor,
+	type ProcessTerminationReason,
+} from '../../../core/process-supervisor.js';
 import type { RunReceiptStatus, RunTerminationReceipt } from '../../../core/run-receipt.js';
 import type { Reporter } from '../../lib/reporter.js';
 import type { ResolvedArgvCommand } from '../../lib/run-plan.js';
 import {
-	createPendingTimeoutTermination,
-	forceTerminateProcessTree,
-	getKillMethod,
-	terminateProcessTree,
+	createProcessTreeBackend,
 } from './process-tree.js';
 import {
 	createOutputLimitError,
@@ -20,6 +21,7 @@ import {
 import { createWindowsCommandScriptSpawn } from './windows-command-script.js';
 
 const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
+const TERMINATION_CONFIRMATION_POLL_MS = 25;
 
 export interface CommandResult {
 	readonly status: number | null;
@@ -116,9 +118,13 @@ function runSpawnedCommandStreaming(
 		let timeout: NodeJS.Timeout | undefined;
 		let forceKillTimeout: NodeJS.Timeout | undefined;
 		let terminationFallbackTimeout: NodeJS.Timeout | undefined;
+		let terminationPollTimeout: NodeJS.Timeout | undefined;
 		let terminationStarted = false;
 		let outputLimitMarkerWritten = false;
-		let termination: RunTerminationReceipt | null = null;
+		let childClosed = false;
+		let childCloseStatus: number | null = null;
+		let childCloseSignal: string | null = null;
+		let supervisor: ProcessSupervisor | null = null;
 
 		const spawnCommand = normalizeSpawnedCommandInput(command);
 		const child = spawn(spawnCommand.executable, spawnCommand.args, {
@@ -132,7 +138,15 @@ function runSpawnedCommandStreaming(
 		});
 		childPid = child.pid;
 
-		const finish = (status: number | null, signal: string | null, terminationConfirmed = true): void => {
+		const parentSignalHandlers = new Map<NodeJS.Signals, () => void>();
+		const clearParentSignalHandlers = (): void => {
+			for (const [signal, handler] of parentSignalHandlers) {
+				process.off(signal, handler);
+			}
+			parentSignalHandlers.clear();
+		};
+
+		const finish = (status: number | null, signal: string | null): void => {
 			if (settled) {
 				return;
 			}
@@ -148,13 +162,12 @@ function runSpawnedCommandStreaming(
 			if (terminationFallbackTimeout) {
 				clearTimeout(terminationFallbackTimeout);
 			}
-			const confirmedTermination = termination ?
-				{
-					...termination,
-					confirmed: terminationConfirmed,
-					cleanup_pending: !terminationConfirmed,
-				} :
-				null;
+			if (terminationPollTimeout) {
+				clearTimeout(terminationPollTimeout);
+			}
+			clearParentSignalHandlers();
+			const supervisorSnapshot = supervisor?.snapshot() ?? null;
+			const termination = supervisorSnapshot === null ? null : (({ pid: _pid, ...receipt }) => receipt)(supervisorSnapshot);
 			resolve({
 				status: timedOut ? null : status,
 				signal: timedOut ? null : signal,
@@ -162,11 +175,22 @@ function runSpawnedCommandStreaming(
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
 				pid: childPid,
-				termination: confirmedTermination,
+				termination: termination?.reason ? termination as RunTerminationReceipt : null,
 			});
 		};
 
-		const beginTermination = (): void => {
+		const pollForTermination = (): void => {
+			if (settled || !supervisor) {
+				return;
+			}
+			if (supervisor.refreshProcessTreeState() === 'gone' && childClosed) {
+				finish(childCloseStatus, childCloseSignal);
+				return;
+			}
+			terminationPollTimeout = setTimeout(pollForTermination, TERMINATION_CONFIRMATION_POLL_MS);
+		};
+
+		const beginTermination = (reason: ProcessTerminationReason): void => {
 			if (terminationStarted) {
 				return;
 			}
@@ -174,23 +198,22 @@ function runSpawnedCommandStreaming(
 			terminationStarted = true;
 			child.stdout?.destroy();
 			child.stderr?.destroy();
-			terminateProcessTree(childPid);
+			if (childPid) {
+				supervisor = new ProcessSupervisor(childPid, createProcessTreeBackend());
+				supervisor.requestGracefulTermination(reason);
+			}
 
 			const forceAfterMs = killAfterSeconds * 1000;
 			forceKillTimeout = setTimeout(() => {
-				if (termination) {
-					termination = {
-						...termination,
-						forced_kill_attempted: true,
-					};
-				}
-				forceTerminateProcessTree(childPid);
+				supervisor?.requestForceTermination(reason);
 			}, forceAfterMs);
 
 			terminationFallbackTimeout = setTimeout(() => {
+				supervisor?.refreshProcessTreeState();
 				child.unref();
-				finish(null, null, false);
+				finish(childCloseStatus, childCloseSignal);
 			}, forceAfterMs + TERMINATION_CONFIRMATION_FALLBACK_MS);
+			pollForTermination();
 		};
 
 		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
@@ -203,7 +226,7 @@ function runSpawnedCommandStreaming(
 				clearTimeout(timeout);
 				timeout = undefined;
 			}
-			beginTermination();
+			beginTermination('output_limit');
 		};
 
 		const writeOutputLimitMarkerOnce = (): void => {
@@ -253,8 +276,27 @@ function runSpawnedCommandStreaming(
 			childError = error;
 		});
 		child.once('close', (status, signal) => {
-			finish(status, signal);
+			childClosed = true;
+			childCloseStatus = status;
+			childCloseSignal = signal;
+			if (!terminationStarted) {
+				finish(status, signal);
+				return;
+			}
+			supervisor?.markDirectChildClosed();
+			if (supervisor?.refreshProcessTreeState() === 'gone') {
+				finish(status, signal);
+			}
 		});
+
+		for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+			const handler = (): void => {
+				childError ??= Object.assign(new Error(`Command interrupted by parent ${signal}`), { code: 'EINTERRUPTED' });
+				beginTermination('parent_signal');
+			};
+			parentSignalHandlers.set(signal, handler);
+			process.once(signal, handler);
+		}
 
 		timeout = setTimeout(() => {
 			if (settled || childError) {
@@ -262,8 +304,7 @@ function runSpawnedCommandStreaming(
 			}
 
 			timedOut = true;
-			termination = createPendingTimeoutTermination(getKillMethod());
-			beginTermination();
+			beginTermination('timeout');
 		}, timeoutSeconds * 1000);
 	});
 }
@@ -338,6 +379,9 @@ export function getRunStatus(error: Error | undefined, exitCode: number | null, 
 
 	if (isOutputLimitExceededError(error)) {
 		return 'output_limit_exceeded';
+	}
+	if (errorWithCode?.code === 'EINTERRUPTED') {
+		return 'failed';
 	}
 
 	if (error) {

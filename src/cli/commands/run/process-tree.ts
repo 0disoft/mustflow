@@ -126,9 +126,14 @@ export function createProcessTreeBackend(): ProcessSupervisorBackend {
 export function createPendingTimeoutTermination(method: string, forcedKillAttempted = false): RunTerminationReceipt {
 	return {
 		reason: 'timeout',
+		state: 'graceful_termination_requested',
 		method,
 		graceful_signal: 'SIGTERM',
 		forced_signal: 'SIGKILL',
+		direct_child_closed_at: null,
+		graceful_signal_sent_at: null,
+		force_kill_sent_at: null,
+		process_tree_confirmed_gone_at: null,
 		forced_kill_attempted: forcedKillAttempted,
 		confirmed: false,
 		cleanup_pending: true,
