@@ -64,7 +64,7 @@ test('indexes source anchors only when source indexing is requested', async () =
 	const [methodFingerprint] = queryRows(database, 'SELECT * FROM source_anchor_fingerprints WHERE anchor_id = "auth.session.store.get-user"');
 	const [status] = queryRows(database, 'SELECT * FROM source_anchor_status WHERE anchor_id = "auth.session.resolve"');
 
-	assert.equal(output.schema_version, '21');
+	assert.equal(output.schema_version, '22');
 	assert.equal(output.source_index_enabled, true);
 	assert.equal(output.source_anchor_count, 4);
 	assert.ok(output.indexed_paths.includes('src/auth.ts'));

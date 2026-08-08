@@ -82,8 +82,8 @@ test('enforces source candidate fingerprints through the SQLite schema', async (
 		);
 
 		database.run(
-			'INSERT INTO indexed_files (path, source_scope, size_bytes, mtime_ms, content_hash, indexed_at, index_mode, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-			['src/candidate.ts', 'source_anchor', 1, 1, 'sha256:test', '2026-07-10T00:00:00.000Z', 'full', '1'],
+			'INSERT INTO indexed_files (path, source_scope, size_bytes, mtime_ms, ctime_ms, file_identity, content_hash, indexed_at, index_mode, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+			['src/candidate.ts', 'source_anchor', 1, 1, 1, '1:1', 'sha256:test', '2026-07-10T00:00:00.000Z', 'full', '1'],
 		);
 		database.run('INSERT INTO indexed_source_candidates (path) VALUES (?)', ['src/candidate.ts']);
 
@@ -310,7 +310,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'SELECT gram FROM search_ngrams WHERE target_kind = "command_intent" AND target_key = "mustflow_check" ORDER BY gram',
 		).map((row) => row.gram);
 
-		assert.equal(output.schema_version, '21');
+		assert.equal(output.schema_version, '22');
 		assert.equal(output.ok, true);
 		assert.equal(output.content_mode, 'metadata_and_snippets');
 		assert.equal(output.store_full_content, false);
@@ -344,7 +344,7 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 		assert.equal(output.source_anchor_risk_signal_count, 0);
 		assert.equal(header, 'SQLite format 3\0');
 		assertLocalIndexStorageBoundary(database, tableNames, viewNames);
-		assert.equal(metadata.schema_version, '21');
+		assert.equal(metadata.schema_version, '22');
 		assert.equal(metadata.content_mode, 'metadata_and_snippets');
 		assert.equal(metadata.store_full_content, 'false');
 		assert.equal(metadata.max_snippet_bytes_per_document, '2048');
@@ -413,6 +413,8 @@ test('writes a sqlite local index for mustflow documents and command intents', a
 			'source_scope',
 			'size_bytes',
 			'mtime_ms',
+			'ctime_ms',
+			'file_identity',
 			'content_hash',
 			'indexed_at',
 			'index_mode',

@@ -20,6 +20,8 @@ CREATE TABLE indexed_files (
   source_scope TEXT NOT NULL,
   size_bytes INTEGER NOT NULL,
   mtime_ms INTEGER NOT NULL,
+  ctime_ms INTEGER NOT NULL,
+  file_identity TEXT NOT NULL,
   content_hash TEXT NOT NULL,
   indexed_at TEXT NOT NULL,
   index_mode TEXT NOT NULL,

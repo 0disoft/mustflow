@@ -187,6 +187,8 @@ export function readIndexedFileMetadataRecord(
 		sourceScope,
 		sizeBytes: stats.size,
 		mtimeMs: Math.round(stats.mtimeMs),
+		ctimeMs: Math.round(stats.ctimeMs),
+		fileIdentity: `${stats.dev}:${stats.ino}`,
 	};
 }
 

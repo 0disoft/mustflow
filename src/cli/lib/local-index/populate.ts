@@ -350,12 +350,14 @@ export function populateDatabase(
 
 	for (const indexedFile of indexedFiles) {
 		database.run(
-			'INSERT INTO indexed_files (path, source_scope, size_bytes, mtime_ms, content_hash, indexed_at, index_mode, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			'INSERT INTO indexed_files (path, source_scope, size_bytes, mtime_ms, ctime_ms, file_identity, content_hash, indexed_at, index_mode, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 			[
 				indexedFile.path,
 				indexedFile.sourceScope,
 				indexedFile.sizeBytes,
 				indexedFile.mtimeMs,
+				indexedFile.ctimeMs,
+				indexedFile.fileIdentity,
 				indexedFile.contentHash,
 				indexedAt,
 				indexMode,

@@ -44,7 +44,6 @@ import {
 	collectIndexedFileRecords,
 	collectSourceAnchorCandidatePaths,
 	getSourceScopeHash,
-	hashIndexedFileMetadataRecords,
 	normalizeIndexedFileSourceScope,
 	readIndexedFileRecord,
 	readLocalIndexSourceConfig,
@@ -310,7 +309,7 @@ function indexedFileMtimeMsEqual(storedMtimeMs: number | null, currentMtimeMs: n
 function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonly IndexedFileMetadataRecord[]): boolean {
 	const rows = queryRows(
 		database,
-		'SELECT path, source_scope, size_bytes, mtime_ms, parser_version FROM indexed_files ORDER BY path',
+		'SELECT path, source_scope, size_bytes, mtime_ms, ctime_ms, file_identity, parser_version FROM indexed_files ORDER BY path',
 	);
 
 	if (rows.length !== currentFiles.length) {
@@ -331,6 +330,8 @@ function indexedFileMetadataMatch(database: SqlJsDatabase, currentFiles: readonl
 			normalizeIndexedFileSourceScope(toSearchString(row.source_scope)) !== current.sourceScope ||
 			toNullableNumber(row.size_bytes) !== current.sizeBytes ||
 			!indexedFileMtimeMsEqual(toNullableNumber(row.mtime_ms), current.mtimeMs) ||
+			!indexedFileMtimeMsEqual(toNullableNumber(row.ctime_ms), current.ctimeMs) ||
+			toSearchString(row.file_identity) !== current.fileIdentity ||
 			toSearchString(row.parser_version) !== LOCAL_INDEX_PARSER_VERSION
 		) {
 			return false;
@@ -384,12 +385,6 @@ async function readIncrementalPreflightReuse(
 		}
 
 		if (!indexedFileMetadataMatch(database, currentFiles)) {
-			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
-		}
-
-		const hashedCurrentFiles = hashIndexedFileMetadataRecords(projectRoot, currentFiles);
-
-		if (!indexedFilesMatch(database, hashedCurrentFiles)) {
 			return { result: null, rebuildReason: 'file_fingerprint_mismatch' };
 		}
 

@@ -56,6 +56,8 @@ export interface IndexedFileRecord {
 	readonly sourceScope: 'workflow' | 'source_anchor' | 'state';
 	readonly sizeBytes: number;
 	readonly mtimeMs: number;
+	readonly ctimeMs: number;
+	readonly fileIdentity: string;
 	readonly contentHash: string;
 }
 
