@@ -3,7 +3,8 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const PROCESS_QUERY_TIMEOUT_MS = 2_000;
+const POSIX_PROCESS_QUERY_TIMEOUT_MS = 2_000;
+const WINDOWS_PROCESS_QUERY_TIMEOUT_MS = 15_000;
 const PROCESS_QUERY_MAX_BUFFER = 16 * 1024;
 
 function readLinuxProcessStartToken(pid: number): string | null {
@@ -31,7 +32,7 @@ function readWindowsProcessStartToken(pid: number): string | null {
 	const result = spawnSync(executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
 		encoding: 'utf8',
 		windowsHide: true,
-		timeout: PROCESS_QUERY_TIMEOUT_MS,
+		timeout: WINDOWS_PROCESS_QUERY_TIMEOUT_MS,
 		maxBuffer: PROCESS_QUERY_MAX_BUFFER,
 	});
 	const ticks = result.status === 0 ? result.stdout.trim() : '';
@@ -41,7 +42,7 @@ function readWindowsProcessStartToken(pid: number): string | null {
 function readDarwinProcessStartToken(pid: number): string | null {
 	const result = spawnSync('/bin/ps', ['-o', 'lstart=', '-p', String(pid)], {
 		encoding: 'utf8',
-		timeout: PROCESS_QUERY_TIMEOUT_MS,
+		timeout: POSIX_PROCESS_QUERY_TIMEOUT_MS,
 		maxBuffer: PROCESS_QUERY_MAX_BUFFER,
 	});
 	const startedAt = result.status === 0 ? result.stdout.trim().replace(/\s+/gu, ' ') : '';

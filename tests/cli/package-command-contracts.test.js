@@ -39,6 +39,17 @@ test('CI workflow exercises release-sensitive package smoke paths', () => {
 	assert.ok(ciWorkflow.indexOf('run: npm run check:install') > ciWorkflow.indexOf('run: npm run check:core:node'));
 });
 
+test('Windows process identity probes allow bounded cold startup without weakening POSIX bounds', () => {
+	const coreProcessIdentity = readProjectText('src/core/process-identity.ts');
+	const runnerProcessIdentity = readProjectText('scripts/lib/process-identity.mjs');
+
+	for (const source of [coreProcessIdentity, runnerProcessIdentity]) {
+		assert.match(source, /POSIX_PROCESS_QUERY_TIMEOUT_MS = 2_000/u);
+		assert.match(source, /WINDOWS_PROCESS_QUERY_TIMEOUT_MS = 15_000/u);
+		assert.match(source, /timeout: WINDOWS_PROCESS_QUERY_TIMEOUT_MS/u);
+	}
+});
+
 test('native crash fixture workflow validates locked semantics across pinned runner families', () => {
 	assert.match(nativeCrashFixtureWorkflow, /permissions:\n  contents: read/u);
 	assert.match(nativeCrashFixtureWorkflow, /fail-fast: false/u);

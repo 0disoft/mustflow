@@ -6,6 +6,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Allowed bounded Windows process-identity probes up to 15 seconds so cold PowerShell startup on
+  hosted runners does not abort Node-only checks, while preserving the 2-second POSIX bound and
+  fail-closed process-token validation.
 - Fixed the packed-package install gate so repository-scoped Agent Plugin builds are not invoked in
   empty consumer projects that do not contain a bundle declaration or canonical skill sources.
 - Kept Windows command locking available when process-start inspection times out by issuing an

@@ -2,9 +2,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+const POSIX_PROCESS_QUERY_TIMEOUT_MS = 2_000;
+const WINDOWS_PROCESS_QUERY_TIMEOUT_MS = 15_000;
 const queryOptions = {
 	encoding: 'utf8',
-	timeout: 2_000,
+	timeout: POSIX_PROCESS_QUERY_TIMEOUT_MS,
 	maxBuffer: 16 * 1024,
 };
 
@@ -32,6 +34,7 @@ export function readProcessStartToken(pid) {
 		const script = `$p=Get-Process -Id ${pid} -ErrorAction Stop; [Console]::Out.Write($p.StartTime.ToUniversalTime().Ticks)`;
 		const result = spawnSync(executable, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script], {
 			...queryOptions,
+			timeout: WINDOWS_PROCESS_QUERY_TIMEOUT_MS,
 			windowsHide: true,
 		});
 		const ticks = result.status === 0 ? result.stdout.trim() : '';
