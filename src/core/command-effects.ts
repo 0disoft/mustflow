@@ -10,6 +10,7 @@ import {
 } from './config-loading.js';
 import { resolveSafeProjectCwd } from './command-cwd.js';
 import { readEffectiveCommandCwd } from './command-run-constraints.js';
+import { parsePathScope, pathScopesIntersect } from './path-scope.js';
 
 export const COMMAND_EFFECT_MODES = new Set(['read', 'write', 'append', 'replace', 'delete_recreate']);
 export const COMMAND_EFFECT_TYPES = new Set(['read', 'write']);
@@ -44,7 +45,7 @@ function normalizeRelativePath(rawPath: string): string {
 }
 
 function pathLockKey(relativePath: string): string {
-	return `path:${normalizeRelativePath(relativePath)}`;
+	return `path:${parsePathScope(relativePath).expression}`;
 }
 
 function validateEffectPath(projectRoot: string, commandContract: CommandContract, intent: TomlTable, rawPath: string): string {
@@ -57,7 +58,7 @@ function validateEffectPath(projectRoot: string, commandContract: CommandContrac
 		throw new Error(`Command effect path must stay inside the current root: ${rawPath}`);
 	}
 
-	return normalizeRelativePath(relative);
+	return parsePathScope(normalizeRelativePath(relative)).expression;
 }
 
 function readResourcePaths(commandContract: CommandContract, lock: string): string[] {
@@ -194,7 +195,12 @@ export function normalizeCommandEffects(
 }
 
 export function commandEffectsConflict(left: NormalizedCommandEffect, right: NormalizedCommandEffect): boolean {
-	if (left.lock !== right.lock) {
+	const sameLock = left.lock === right.lock;
+	const overlappingPaths = left.path !== null
+		&& right.path !== null
+		&& pathScopesIntersect(parsePathScope(left.path), parsePathScope(right.path));
+
+	if (!sameLock && !overlappingPaths) {
 		return false;
 	}
 

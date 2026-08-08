@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
-import { projectRoot } from './helpers/cli-harness.js';
+import { createTempProject, projectRoot, removeTempProject } from './helpers/cli-harness.js';
 
 async function importPathScope() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'path-scope.js')).href);
+}
+
+async function importCommandEffects() {
+	return import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'command-effects.js')).href);
 }
 
 test('path scopes normalize separators and preserve the supported scope kind', async () => {
@@ -88,4 +92,49 @@ test('path scope comparison folds case only when the platform policy is insensit
 	assert.equal(pathScopesIntersect(upper, lower, { caseSensitive: false }), true);
 	assert.equal(pathScopeContainsPath(upper, 'DIST/file.js', { caseSensitive: true }), false);
 	assert.equal(pathScopeContainsPath(upper, 'DIST/file.js', { caseSensitive: false }), true);
+});
+
+test('command effects conflict on overlapping scopes even when their derived locks differ', async () => {
+	const { commandEffectsConflict } = await importCommandEffects();
+	const effect = (pathExpression, access = 'write') => ({
+		intent: pathExpression,
+		source: 'effects',
+		access,
+		mode: access,
+		path: pathExpression,
+		lock: `path:${pathExpression}`,
+		concurrency: 'shared',
+	});
+
+	assert.equal(commandEffectsConflict(effect('dist/**'), effect('dist/file.js')), true);
+	assert.equal(commandEffectsConflict(effect('dist/a/**'), effect('dist/b/**')), false);
+	assert.equal(commandEffectsConflict(effect('dist/**', 'read'), effect('dist/file.js', 'read')), false);
+	assert.equal(commandEffectsConflict(effect('dist/**', 'read'), effect('dist/file.js')), true);
+});
+
+test('command effect normalization rejects unsupported middle-glob scopes', async () => {
+	const projectPath = createTempProject('mustflow-path-scope-contract-');
+	const { normalizeCommandEffects, validateCommandEffects } = await importCommandEffects();
+	const contract = {
+		defaults: {},
+		resources: {},
+		intents: {
+			invalid: {
+				writes: ['src/**/*.ts'],
+			},
+		},
+	};
+
+	try {
+		assert.throws(
+			() => normalizeCommandEffects(projectPath, contract, 'invalid'),
+			/path_scope_unsupported_pattern:src\/\*\*\/\*\.ts/u,
+		);
+		assert.match(
+			validateCommandEffects(projectPath, { intents: contract.intents })[0]?.message ?? '',
+			/path_scope_unsupported_pattern:src\/\*\*\/\*\.ts/u,
+		);
+	} finally {
+		removeTempProject(projectPath);
+	}
 });

@@ -144,3 +144,31 @@ test('active run locks fail closed on malformed regular records before write acq
 		removeTempProject(projectPath);
 	}
 });
+
+test('active run locks detect overlapping path scopes with different derived lock names', async () => {
+	const projectPath = createTempProject('mustflow-active-lock-scope-');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	const contract = {
+		defaults: {},
+		resources: {},
+		intents: {
+			parent: { writes: ['dist/**'] },
+			child: { writes: ['dist/file.js'] },
+			sibling: { writes: ['other/**'] },
+		},
+	};
+
+	try {
+		const parent = acquireActiveRunLock(projectPath, contract, 'parent');
+		assert.equal(parent.ok, true);
+		const child = acquireActiveRunLock(projectPath, contract, 'child');
+		assert.equal(child.ok, false);
+		assert.equal(child.conflicts.length, 1);
+		const sibling = acquireActiveRunLock(projectPath, contract, 'sibling');
+		assert.equal(sibling.ok, true);
+		sibling.handle.release();
+		parent.handle.release();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});

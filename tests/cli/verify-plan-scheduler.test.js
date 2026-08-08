@@ -389,6 +389,81 @@ required_after = ["custom_verify"]
 	}
 });
 
+test('schedules overlapping path scopes serially without conflating sibling subtrees', async () => {
+	const projectPath = createSchedulerProject();
+
+	try {
+		appendIntent(
+			projectPath,
+			`
+[intents.verify_scope_parent]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Parent scope."
+argv = ['${process.execPath}', '-e', 'console.log("parent")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+effects = [{ type = "write", mode = "write", path = "dist/a/**", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["path_scope_verify"]
+
+[intents.verify_scope_child]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Child scope."
+argv = ['${process.execPath}', '-e', 'console.log("child")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+effects = [{ type = "write", mode = "write", path = "dist/a/file.js", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["path_scope_verify"]
+
+[intents.verify_scope_sibling]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Sibling scope."
+argv = ['${process.execPath}', '-e', 'console.log("sibling")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+effects = [{ type = "write", mode = "write", path = "dist/b/**", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["path_scope_verify"]
+`,
+		);
+
+		const result = await runCli(projectPath, ['verify', '--reason', 'path_scope_verify', '--plan-only', '--json']);
+		const report = JSON.parse(result.stdout);
+		const parent = report.schedule.entries.find((entry) => entry.intent === 'verify_scope_parent');
+		const sibling = report.schedule.entries.find((entry) => entry.intent === 'verify_scope_sibling');
+		const batches = report.schedule.batches.map((batch) => batch.intents);
+		const parentBatch = batches.findIndex((batch) => batch.includes('verify_scope_parent'));
+		const childBatch = batches.findIndex((batch) => batch.includes('verify_scope_child'));
+		const siblingBatch = batches.find((batch) => batch.includes('verify_scope_sibling'));
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(batches.length, 2);
+		assert.notEqual(parentBatch, childBatch);
+		assert.equal(siblingBatch.length, 2);
+		assert.equal(parent.conflicts.some((conflict) => conflict.conflictsWith === 'verify_scope_child'), true);
+		assert.equal(parent.conflicts.some((conflict) => conflict.conflictsWith === 'verify_scope_sibling'), false);
+		assert.equal(sibling.conflicts.length, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('does not select a narrower runnable intent when a selected runnable intent explicitly subsumes it', async () => {
 	const projectPath = createSchedulerProject();
 

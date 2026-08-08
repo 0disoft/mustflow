@@ -305,20 +305,10 @@ function findConflicts(
 	records: readonly ActiveRunLockRecord[],
 ): readonly ActiveRunLockConflict[] {
 	const conflicts: ActiveRunLockConflict[] = [];
-	const effectsByLock = new Map<string, NormalizedCommandEffect[]>();
-
-	for (const effect of effects) {
-		const existing = effectsByLock.get(effect.lock);
-		if (existing) {
-			existing.push(effect);
-		} else {
-			effectsByLock.set(effect.lock, [effect]);
-		}
-	}
 
 	for (const record of records) {
 		for (const activeEffect of commandEffectsFromRecord(record)) {
-			for (const effect of effectsByLock.get(activeEffect.lock) ?? []) {
+			for (const effect of effects) {
 				if (!commandEffectsConflict(effect, activeEffect)) {
 					continue;
 				}

@@ -145,6 +145,45 @@ destructive = false
 	}
 });
 
+test('write drift does not treat a literal declared path as a subtree', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		appendIntent(
+			projectPath,
+			`
+[intents.literal_dist_write]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Write below a literal declared path."
+argv = ['${process.execPath}', '-e', 'require("node:fs").mkdirSync("dist", { recursive: true }); require("node:fs").writeFileSync("dist/output.js", "ok")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist"]
+network = false
+destructive = false
+`,
+		);
+
+		const result = runCli(projectPath, ['run', 'literal_dist_write', '--json'], {
+			env: createEnvWithRecursiveWriteDriftSnapshot(),
+		});
+		const receipt = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(receipt.write_drift.declared_paths, ['dist']);
+		assert.deepEqual(receipt.write_drift.declared_observed_paths, []);
+		assert.deepEqual(receipt.write_drift.undeclared_paths, ['dist/output.js']);
+		assert.equal(receipt.write_drift.has_undeclared_changes, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('records undeclared file changes in JSON run receipts without blocking execution', () => {
 	const projectPath = createTempProject();
 

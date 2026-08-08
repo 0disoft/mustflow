@@ -4,6 +4,7 @@ import { existsSync, lstatSync, readFileSync, readlinkSync, readdirSync } from '
 import path from 'node:path';
 
 import { normalizeCommandEffects } from './command-effects.js';
+import { parsePathScope, pathScopeContainsPath } from './path-scope.js';
 import type { CommandContract } from './config-loading.js';
 
 const MAX_SNAPSHOT_FILES = 20_000;
@@ -288,15 +289,7 @@ function listObservedChangedPaths(before: ReadonlyMap<string, FileSignature>, af
 }
 
 function declaredPathCoversObservedPath(declaredPath: string, observedPath: string): boolean {
-	const declaredKey = pathKey(declaredPath);
-	const observedKey = pathKey(observedPath);
-
-	if (declaredKey.endsWith('/**')) {
-		const baseKey = declaredKey.slice(0, -3) || '.';
-		return baseKey === '.' || observedKey === baseKey || observedKey.startsWith(`${baseKey}/`);
-	}
-
-	return declaredKey === '.' || observedKey === declaredKey || observedKey.startsWith(`${declaredKey}/`);
+	return pathScopeContainsPath(parsePathScope(declaredPath), observedPath);
 }
 
 function truncatePaths(paths: readonly string[]): { readonly paths: readonly string[]; readonly truncated: boolean } {
