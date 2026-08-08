@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
 	existsSync,
 	mkdirSync,
@@ -19,8 +19,10 @@ import {
 	readUtf8FileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
 } from './safe-filesystem.js';
+import { readCurrentProcessStartToken, readProcessStartToken } from './process-identity.js';
 
-const ACTIVE_LOCK_SCHEMA_VERSION = '1';
+const ACTIVE_LOCK_SCHEMA_VERSION = '2';
+const LEGACY_ACTIVE_LOCK_SCHEMA_VERSION = '1';
 const ACTIVE_LOCK_KIND = 'active_run_lock';
 const LOCK_ROOT_RELATIVE_PATH = '.mustflow/state/locks';
 export const ACTIVE_RUN_LOCK_ID_ENV = 'MUSTFLOW_ACTIVE_RUN_LOCK_ID';
@@ -43,11 +45,13 @@ export interface ActiveRunLockEffect {
 }
 
 export interface ActiveRunLockRecord {
-	readonly schema_version: typeof ACTIVE_LOCK_SCHEMA_VERSION;
+	readonly schema_version: typeof ACTIVE_LOCK_SCHEMA_VERSION | typeof LEGACY_ACTIVE_LOCK_SCHEMA_VERSION;
 	readonly kind: typeof ACTIVE_LOCK_KIND;
 	readonly run_id: string;
+	readonly owner_token: string | null;
 	readonly intent: string;
 	readonly pid: number;
+	readonly process_start_token: string | null;
 	readonly started_at: string;
 	readonly root_hash: string;
 	readonly command_hash: string | null;
@@ -183,7 +187,7 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 
 	const record = value as Record<string, unknown>;
 	if (
-		record.schema_version !== ACTIVE_LOCK_SCHEMA_VERSION ||
+		(record.schema_version !== ACTIVE_LOCK_SCHEMA_VERSION && record.schema_version !== LEGACY_ACTIVE_LOCK_SCHEMA_VERSION) ||
 		record.kind !== ACTIVE_LOCK_KIND ||
 		typeof record.run_id !== 'string' ||
 		typeof record.intent !== 'string' ||
@@ -193,6 +197,14 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 		!(typeof record.command_hash === 'string' || record.command_hash === null) ||
 		!Array.isArray(record.effects) ||
 		!Array.isArray(record.writes)
+	) {
+		return null;
+	}
+	const isCurrentSchema = record.schema_version === ACTIVE_LOCK_SCHEMA_VERSION;
+	if (
+		isCurrentSchema &&
+		(typeof record.owner_token !== 'string' ||
+			typeof record.process_start_token !== 'string')
 	) {
 		return null;
 	}
@@ -219,11 +231,13 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 	}
 
 	return {
-		schema_version: ACTIVE_LOCK_SCHEMA_VERSION,
+		schema_version: isCurrentSchema ? ACTIVE_LOCK_SCHEMA_VERSION : LEGACY_ACTIVE_LOCK_SCHEMA_VERSION,
 		kind: ACTIVE_LOCK_KIND,
 		run_id: record.run_id,
+		owner_token: isCurrentSchema ? record.owner_token as string : null,
 		intent: record.intent,
 		pid: Number(record.pid),
+		process_start_token: isCurrentSchema ? record.process_start_token as string : null,
 		started_at: record.started_at,
 		root_hash: record.root_hash,
 		command_hash: record.command_hash,
@@ -279,16 +293,24 @@ function readActiveRecords(
 }
 
 function staleRecordFor(record: ActiveRunLockRecord): ActiveRunLockStaleRecord | null {
-	if (isProcessLive(record.pid)) {
-		return null;
+	if (!isProcessLive(record.pid)) {
+		return {
+			runId: record.run_id,
+			intent: record.intent,
+			pid: record.pid,
+			reason: 'process_not_live',
+		};
 	}
 
-	return {
-		runId: record.run_id,
-		intent: record.intent,
-		pid: record.pid,
-		reason: 'process_not_live',
-	};
+	const currentStartToken = record.process_start_token === null ? null : readProcessStartToken(record.pid);
+	return currentStartToken !== null && currentStartToken !== record.process_start_token
+		? {
+			runId: record.run_id,
+			intent: record.intent,
+			pid: record.pid,
+			reason: 'process_start_token_mismatch',
+		}
+		: null;
 }
 
 function removeRecord(projectRoot: string, record: ActiveRunLockRecord): void {
@@ -343,14 +365,20 @@ function createRecord(
 		.filter((effect) => effect.access === 'write' && effect.path !== null)
 		.map((effect) => effect.path as string)
 		.sort((left, right) => left.localeCompare(right));
-	const runId = `${process.pid}:${startedAt}:${intentName}:${sha256(JSON.stringify(effects))}`;
+	const runId = randomUUID();
+	const processStartToken = readCurrentProcessStartToken();
+	if (processStartToken === null) {
+		throw new Error(`active_run_lock_process_start_token_unavailable:${process.platform}`);
+	}
 
 	return {
 		schema_version: ACTIVE_LOCK_SCHEMA_VERSION,
 		kind: ACTIVE_LOCK_KIND,
 		run_id: runId,
+		owner_token: randomUUID(),
 		intent: intentName,
 		pid: process.pid,
+		process_start_token: processStartToken,
 		started_at: startedAt,
 		root_hash: sha256(path.resolve(projectRoot)),
 		command_hash: commandHash,
@@ -678,7 +706,18 @@ export function acquireActiveRunLock(
 						return;
 					}
 					released = true;
-					rmSync(recordPath, { force: true });
+					try {
+						const currentRecord = parseRecord(JSON.parse(readUtf8FileInsideWithoutSymlinks(
+							activeLockDirectory(projectRoot),
+							recordPath,
+							{ maxBytes: ACTIVE_LOCK_RECORD_MAX_BYTES },
+						)));
+						if (currentRecord?.run_id === record.run_id && currentRecord.owner_token === record.owner_token) {
+							rmSync(recordPath, { force: true });
+						}
+					} catch {
+						// Missing, malformed, or replaced records are no longer owned by this handle.
+					}
 				},
 			},
 		};

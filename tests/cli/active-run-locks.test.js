@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -26,6 +27,11 @@ function writeMutexOwner(projectPath, owner) {
 	mkdirSync(mutexPath, { recursive: true });
 	writeFileSync(path.join(mutexPath, 'owner.json'), `${JSON.stringify(owner, null, 2)}\n`);
 	return mutexPath;
+}
+
+function recordPath(projectPath, runId) {
+	const hash = createHash('sha256').update(runId).digest('hex');
+	return path.join(projectPath, '.mustflow', 'state', 'locks', 'active', `${hash}.json`);
 }
 
 test('active run locks recover stale mutexes before acquiring a write lock', async () => {
@@ -168,6 +174,73 @@ test('active run locks detect overlapping path scopes with different derived loc
 		assert.equal(sibling.ok, true);
 		sibling.handle.release();
 		parent.handle.release();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('active run locks use unique UUID identities for concurrent shared readers', async () => {
+	const projectPath = createTempProject('mustflow-active-lock-identity-');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	const contract = {
+		defaults: {},
+		resources: {},
+		intents: {
+			reader: {
+				effects: [{ type: 'read', mode: 'read', path: 'dist/**', concurrency: 'shared' }],
+			},
+		},
+	};
+
+	try {
+		const first = acquireActiveRunLock(projectPath, contract, 'reader');
+		const second = acquireActiveRunLock(projectPath, contract, 'reader');
+		assert.equal(first.ok, true);
+		assert.equal(second.ok, true);
+		assert.match(first.handle.record.run_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
+		assert.match(first.handle.record.owner_token, /^[0-9a-f-]{36}$/u);
+		assert.ok(first.handle.record.process_start_token.length > 0);
+		assert.notEqual(first.handle.record.run_id, second.handle.record.run_id);
+		assert.notEqual(first.handle.record.owner_token, second.handle.record.owner_token);
+		first.handle.release();
+		assert.equal(existsSync(recordPath(projectPath, second.handle.record.run_id)), true);
+		second.handle.release();
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('active run locks classify a live reused pid by process start token mismatch', async () => {
+	const projectPath = createTempProject('mustflow-active-lock-process-token-');
+	const { acquireActiveRunLock, listActiveRunLocks } = await importActiveRunLocks();
+	const result = acquireActiveRunLock(projectPath, createWriteContract(), 'writer');
+
+	try {
+		assert.equal(result.ok, true);
+		const activePath = recordPath(projectPath, result.handle.record.run_id);
+		const replacedRecord = { ...result.handle.record, process_start_token: 'mismatched-process-start-token' };
+		writeFileSync(activePath, `${JSON.stringify(replacedRecord, null, 2)}\n`);
+
+		const state = listActiveRunLocks(projectPath);
+		assert.equal(state.activeRecords.length, 0);
+		assert.equal(state.staleRecords[0]?.reason, 'process_start_token_mismatch');
+	} finally {
+		result.ok && result.handle.release();
+		removeTempProject(projectPath);
+	}
+});
+
+test('active run lock release preserves a record whose owner token was replaced', async () => {
+	const projectPath = createTempProject('mustflow-active-lock-owner-token-');
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	const result = acquireActiveRunLock(projectPath, createWriteContract(), 'writer');
+
+	try {
+		assert.equal(result.ok, true);
+		const activePath = recordPath(projectPath, result.handle.record.run_id);
+		writeFileSync(activePath, `${JSON.stringify({ ...result.handle.record, owner_token: 'replacement-owner' }, null, 2)}\n`);
+		result.handle.release();
+		assert.equal(existsSync(activePath), true);
 	} finally {
 		removeTempProject(projectPath);
 	}
