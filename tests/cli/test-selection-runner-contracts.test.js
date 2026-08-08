@@ -39,7 +39,7 @@ import {
 	writeFileSync,
 } from './helpers/test-selection-contracts.js';
 import { utimesSync } from 'node:fs';
-import { buildFreshnessReport } from '../../scripts/lib/build-freshness.mjs';
+import { buildFreshnessReport, writeBuildFingerprintManifest } from '../../scripts/lib/build-freshness.mjs';
 
 test('profile timing order runs known slow tests first and keeps unknown tests stable', () => {
 	const testPaths = [
@@ -205,13 +205,11 @@ test('related cached list mirrors related selection without requiring a fresh di
 	assert.deepEqual(relatedCached.selection_reasons, related.selection_reasons);
 });
 
-test('build freshness report detects missing stale fresh and deleted-source dist states', () => {
+test('build freshness report detects stale content even with a clean changed-file list and older mtimes', () => {
 	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-build-freshness-'));
 	const distCliPath = path.join(tempRoot, 'dist', 'cli', 'index.js');
 	const sourcePath = path.join(tempRoot, 'src', 'core', 'example.ts');
-	const compiledPath = path.join(tempRoot, 'dist', 'core', 'example.js');
 	const older = new Date('2026-01-01T00:00:00.000Z');
-	const newer = new Date('2026-01-02T00:00:00.000Z');
 
 	try {
 		assert.equal(buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath }).reason, 'missing_dist');
@@ -220,25 +218,23 @@ test('build freshness report detects missing stale fresh and deleted-source dist
 		mkdirSync(path.dirname(sourcePath), { recursive: true });
 		writeFileSync(distCliPath, 'export {};\n');
 		writeFileSync(sourcePath, 'export {};\n');
-		utimesSync(distCliPath, older, older);
-		utimesSync(sourcePath, newer, newer);
 
 		let report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
 		assert.equal(report.fresh, false);
-		assert.equal(report.reason, 'stale_inputs');
+		assert.equal(report.reason, 'missing_fingerprint');
 		assert.deepEqual(report.staleFiles, ['src/core/example.ts']);
 
-		utimesSync(sourcePath, older, older);
+		writeBuildFingerprintManifest(tempRoot);
 		report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
 		assert.equal(report.fresh, true);
 		assert.equal(report.reason, 'fresh');
 		assert.deepEqual(report.staleFiles, []);
 
-		rmSync(sourcePath, { force: true });
-		mkdirSync(path.dirname(compiledPath), { recursive: true });
-		writeFileSync(compiledPath, 'export {};\n');
-		report = buildFreshnessReport(tempRoot, ['src/core/example.ts'], { distCliPath });
+		writeFileSync(sourcePath, 'export const changed = true;\n');
+		utimesSync(sourcePath, older, older);
+		report = buildFreshnessReport(tempRoot, [], { distCliPath });
 		assert.equal(report.fresh, false);
+		assert.equal(report.reason, 'fingerprint_mismatch');
 		assert.deepEqual(report.staleFiles, ['src/core/example.ts']);
 	} finally {
 		rmSync(tempRoot, { recursive: true, force: true });
