@@ -205,7 +205,7 @@ function applyRunReceiptRetention(projectRoot: string, policy: RunReceiptRetenti
 		totalBytes -= directory.sizeBytes;
 	}
 
-	return readRunStateDirectories(projectRoot);
+	return directories.filter((directory) => kept.has(directory.name));
 }
 
 function readJsonObject(filePath: string): Record<string, unknown> | null {
