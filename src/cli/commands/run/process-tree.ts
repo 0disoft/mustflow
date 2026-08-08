@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 
+import type { ProcessSupervisorBackend, ProcessTreeInspection } from '../../../core/process-supervisor.js';
 import type { RunTerminationReceipt } from '../../../core/run-receipt.js';
 
 function windowsTaskkillArgs(pid: number, signal: NodeJS.Signals): string[] {
@@ -89,6 +90,37 @@ export function forceTerminateProcessTreeNonBlocking(pid: number | undefined): v
 
 export function getKillMethod(): string {
 	return process.platform === 'win32' ? 'taskkill_process_tree' : 'process_group_sigterm';
+}
+
+function inspectProcessTree(pid: number): ProcessTreeInspection {
+	if (process.platform === 'win32') {
+		try {
+			process.kill(pid, 0);
+			return 'alive';
+		} catch (error) {
+			const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+			return code === 'EPERM' ? 'alive' : 'unknown';
+		}
+	}
+
+	try {
+		process.kill(-pid, 0);
+		return 'alive';
+	} catch (error) {
+		const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
+		return code === 'EPERM' ? 'alive' : 'gone';
+	}
+}
+
+export function createProcessTreeBackend(): ProcessSupervisorBackend {
+	return {
+		method: getKillMethod(),
+		gracefulSignal: 'SIGTERM',
+		forcedSignal: 'SIGKILL',
+		requestGracefulTermination: (pid) => terminateProcessTree(pid),
+		requestForceTermination: (pid) => forceTerminateProcessTree(pid),
+		inspectProcessTree,
+	};
 }
 
 export function createPendingTimeoutTermination(method: string, forcedKillAttempted = false): RunTerminationReceipt {
