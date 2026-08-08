@@ -11,7 +11,11 @@ import {
 	type RunReceipt,
 	type RunTerminationReceipt,
 } from '../../../core/run-receipt.js';
-import { finishRunWriteTracking, startRunWriteTracking } from '../../../core/run-write-drift.js';
+import {
+	createUnavailableRunWriteDriftReceipt,
+	finishRunWriteTracking,
+	startRunWriteTracking,
+} from '../../../core/run-write-drift.js';
 import { resolveRunReceiptRetentionPolicy } from '../../../core/retention-policy.js';
 import { renderCliError } from '../../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../../lib/i18n.js';
@@ -36,6 +40,7 @@ export interface RunCommandOptions {
 	readonly recordPerformanceHistory?: boolean;
 	readonly testTargets?: readonly string[];
 	readonly additionalDeclaredWritePaths?: readonly string[];
+	readonly writeDriftTracking?: 'individual' | 'batch';
 }
 
 export type RunCommandExecutionOutputMode = 'text' | 'json' | 'silent';
@@ -338,12 +343,14 @@ export async function executeRunCommand(
 			createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
 		);
 		env[ACTIVE_RUN_LOCK_ID_ENV] = activeRunLock.handle.record.run_id;
-		const writeTracker = profiler.measure('write_drift_before', () =>
-			startRunWriteTracking(projectRoot, contract, request.intentName, {
-				additionalDeclaredPaths: options.additionalDeclaredWritePaths,
-				env,
-			}),
-		);
+		const writeTracker = options.writeDriftTracking === 'batch'
+			? null
+			: profiler.measure('write_drift_before', () =>
+				startRunWriteTracking(projectRoot, contract, request.intentName, {
+					additionalDeclaredPaths: options.additionalDeclaredWritePaths,
+					env,
+				}),
+			);
 		const stdoutTailBytes = Math.min(runReceiptPolicy.stdoutTailBytes, plan.maxOutputBytes);
 		const stderrTailBytes = Math.min(runReceiptPolicy.stderrTailBytes, plan.maxOutputBytes);
 		let streamedOutput = false;
@@ -397,7 +404,9 @@ export async function executeRunCommand(
 		});
 		const childDurationMs = performance.now() - childStartedAtMs;
 		const finishedAt = new Date();
-		const writeDrift = profiler.measure('write_drift_after', () => finishRunWriteTracking(writeTracker));
+		const writeDrift = writeTracker === null
+			? createUnavailableRunWriteDriftReceipt([], 'parallel_batch_tracking_pending')
+			: profiler.measure('write_drift_after', () => finishRunWriteTracking(writeTracker));
 		const exitCode = typeof result.status === 'number' ? result.status : null;
 		const runStatus = getRunStatus(result.error, exitCode, plan.successExitCodes);
 		let killMethod: string | null = null;

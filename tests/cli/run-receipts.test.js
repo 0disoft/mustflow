@@ -807,12 +807,17 @@ destructive = false
 				writeLatestReceipt: false,
 				writeLatestProfile: false,
 				recordPerformanceHistory: false,
+				writeDriftTracking: 'batch',
 			},
 		);
 		const receipt = JSON.parse(stdout.join(''));
 
 		assert.equal(status, 0, stderr.join(''));
 		assert.equal(receipt.status, 'passed');
+		assert.equal(receipt.write_drift.status, 'unavailable');
+		assert.equal(receipt.write_drift.reason, 'parallel_batch_tracking_pending');
+		assert.equal(receipt.performance.phases.some((phase) => phase.name === 'write_drift_before'), false);
+		assert.equal(receipt.performance.phases.some((phase) => phase.name === 'write_drift_after'), false);
 		assert.equal(existsSync(latestRunReceiptPath(projectPath)), false);
 		assert.equal(existsSync(latestRunProfilePath(projectPath)), false);
 		assert.equal(existsSync(runPerformanceSamplesPath(projectPath)), false);

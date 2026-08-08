@@ -347,7 +347,7 @@ function pathsCoverObservedPath(declaredPaths: readonly string[], observedPath: 
 	return declaredPaths.some((declaredPath) => declaredPathCoversObservedPath(declaredPath, observedPath));
 }
 
-function createUnavailableWriteDriftReceipt(
+export function createUnavailableRunWriteDriftReceipt(
 	declaredPaths: readonly string[],
 	reason: string | null,
 ): RunWriteDriftReceipt {
@@ -403,7 +403,7 @@ export function finishRunWriteBatchTracking(
 	for (const intent of intents) {
 		fallbackReceipts.set(
 			intent.intentName,
-			createUnavailableWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), tracker.before.reason),
+			createUnavailableRunWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), tracker.before.reason),
 		);
 	}
 
@@ -416,7 +416,7 @@ export function finishRunWriteBatchTracking(
 		return new Map(
 			intents.map((intent) => [
 				intent.intentName,
-				createUnavailableWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), after.reason),
+				createUnavailableRunWriteDriftReceipt(uniqueSortedPaths(intent.declaredPaths), after.reason),
 			]),
 		);
 	}
@@ -504,12 +504,12 @@ export function finishRunWriteBatchTracking(
 
 export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftReceipt {
 	if (tracker.before.status === 'unavailable') {
-		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, tracker.before.reason);
+		return createUnavailableRunWriteDriftReceipt(tracker.declaredPaths, tracker.before.reason);
 	}
 
 	const after = captureSnapshot(tracker.projectRoot, tracker.env);
 	if (after.status === 'unavailable') {
-		return createUnavailableWriteDriftReceipt(tracker.declaredPaths, after.reason);
+		return createUnavailableRunWriteDriftReceipt(tracker.declaredPaths, after.reason);
 	}
 
 	const observedPaths = listObservedChangedPaths(tracker.before.entries, after.entries);

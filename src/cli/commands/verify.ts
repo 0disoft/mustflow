@@ -431,6 +431,7 @@ async function runVerificationIntent(
 	correlationId: string,
 	testTargets: readonly string[] = [],
 	additionalDeclaredWritePaths: readonly string[] = [],
+	writeDriftTracking: 'individual' | 'batch' = 'individual',
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
 	const runResult = await executeRunCommand(
@@ -451,6 +452,7 @@ async function runVerificationIntent(
 			recordPerformanceHistory: false,
 			testTargets,
 			additionalDeclaredWritePaths,
+			writeDriftTracking,
 		},
 	);
 	const exitCode = runResult.exitCode;
@@ -527,6 +529,8 @@ async function runVerificationEntriesInParallelChunks(
 					verificationPlanId,
 					correlationId,
 					scheduledTestTargets.get(entry.intent) ?? [],
+					[],
+					'batch',
 				),
 			),
 		);
