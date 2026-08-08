@@ -526,7 +526,7 @@
           "type": "boolean"
         },
         "parallelReason": {
-          "enum": ["explicit_effects", "missing_explicit_effects", "undeclared_write_drift"]
+          "enum": ["explicit_effects", "missing_explicit_effects", "undeclared_write_drift", "write_drift_coverage_incomplete"]
         },
         "effects": {
           "type": "array",

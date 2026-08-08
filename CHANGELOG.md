@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Fixed the packed-package install gate so repository-scoped Agent Plugin builds are not invoked in
+  empty consumer projects that do not contain a bundle declaration or canonical skill sources.
+- Kept Windows command locking available when process-start inspection times out by issuing an
+  unverified per-process token that cannot be used to reclaim a live owner's lock.
 - Added selective Agent Plugins packaging without migrating Mustflow's canonical repository layout.
   `mf plugin build` now materializes bounded `plugin.json`, skill directories, and optional MCP
   configuration under `dist/agent-plugins/`, validates the generated structure, publishes a stable

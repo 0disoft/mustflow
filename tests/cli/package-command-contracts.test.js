@@ -1312,3 +1312,28 @@ test('2.127.0 safety performance and Agent Plugins release stays bounded and rem
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.127\.0"/u);
 });
+
+test('2.127.1 installed plugin smoke fix stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const installIntent = intent('release_pack_install_test_v2_127_1');
+	const stageIntent = intent('release_stage_v2_127_1');
+	const commitIntent = intent('release_commit_v2_127_1');
+	const pushIntent = intent('release_push_main_v2_127_1');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_127_1');
+	const releaseIntent = intent('release_github_release_v2_127_1');
+
+	assert.match(installIntent, /"bun", "run", "check:install"/u);
+	assert.match(stageIntent, /"src\/core\/public-json-contracts\.ts"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.match(commitIntent, /unblock package smoke/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.127\.1"/u);
+});

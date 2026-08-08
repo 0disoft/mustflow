@@ -19,7 +19,11 @@ import {
 	readUtf8FileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
 } from './safe-filesystem.js';
-import { readCurrentProcessStartToken, readProcessStartToken } from './process-identity.js';
+import {
+	processStartTokensProveMismatch,
+	readCurrentProcessStartToken,
+	readProcessStartToken,
+} from './process-identity.js';
 
 const ACTIVE_LOCK_SCHEMA_VERSION = '2';
 const LEGACY_ACTIVE_LOCK_SCHEMA_VERSION = '1';
@@ -303,7 +307,7 @@ function staleRecordFor(record: ActiveRunLockRecord): ActiveRunLockStaleRecord |
 	}
 
 	const currentStartToken = record.process_start_token === null ? null : readProcessStartToken(record.pid);
-	return currentStartToken !== null && currentStartToken !== record.process_start_token
+	return processStartTokensProveMismatch(record.process_start_token, currentStartToken)
 		? {
 			runId: record.run_id,
 			intent: record.intent,
@@ -367,9 +371,6 @@ function createRecord(
 		.sort((left, right) => left.localeCompare(right));
 	const runId = randomUUID();
 	const processStartToken = readCurrentProcessStartToken();
-	if (processStartToken === null) {
-		throw new Error(`active_run_lock_process_start_token_unavailable:${process.platform}`);
-	}
 
 	return {
 		schema_version: ACTIVE_LOCK_SCHEMA_VERSION,
@@ -441,7 +442,7 @@ function mutexOwnerIsStale(owner: ActiveMutexOwner): boolean {
 	}
 
 	const currentStartToken = owner.processStartToken === null ? null : readProcessStartToken(owner.pid);
-	return currentStartToken !== null && currentStartToken !== owner.processStartToken;
+	return processStartTokensProveMismatch(owner.processStartToken, currentStartToken);
 }
 
 function beginMutexRecovery(mutex: string): (() => void) | null {
@@ -550,9 +551,6 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 	const mutex = activeLockMutexDirectory(projectRoot);
 	const ownerPath = path.join(mutex, 'owner.json');
 	const processStartToken = readCurrentProcessStartToken();
-	if (processStartToken === null) {
-		throw new Error(`active_run_lock_process_start_token_unavailable:${process.platform}`);
-	}
 	const ownerRecord = {
 		lock_id: randomUUID(),
 		owner_token: randomUUID(),

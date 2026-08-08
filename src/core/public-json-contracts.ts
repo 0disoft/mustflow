@@ -22,8 +22,6 @@ const PUBLIC_JSON_SCHEMA_CONTRACTS: readonly PublicJsonSchemaContract[] = [
 		producer: 'mf plugin build --json',
 		packaged: true,
 		documented: true,
-		installedCommand: ['mf', 'plugin', 'build', '--json'],
-		expectedExitCodes: [0, 1],
 	},
 	{
 		id: 'adapter-compatibility-report',

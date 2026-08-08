@@ -5742,7 +5742,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Run the focused CLI execution and active-lock regression file for the 2.127.0 release fix."
-argv = ["node", "--test", "tests/cli/run-execution.test.js"]
+argv = ["node", "--test", "tests/cli/run-execution.test.js", "tests/cli/active-run-locks.test.js"]
 cwd = "."
 timeout_seconds = 300
 stdin = "closed"
@@ -5857,6 +5857,171 @@ lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Verify the immutable v2.127.0 GitHub Release metadata after publication."
 argv = ["gh", "release", "view", "v2.127.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_ci_run_v2_127_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the failed 2.127.0 publish workflow metadata and job conclusions."
+argv = ["gh", "run", "view", "31247552319", "--repo", "0disoft/mustflow", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,jobs"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_ci_failed_log_v2_127_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read only failed log sections from the 2.127.0 publish workflow."
+argv = ["gh", "run", "view", "31247552319", "--repo", "0disoft/mustflow", "--log-failed"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_pack_install_test_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Pack mustflow and run the isolated installed-package workflow for the 2.127.1 release fix."
+argv = ["bun", "run", "check:install"]
+cwd = "."
+timeout_seconds = 900
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["dist/**"]
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "dist_build_output", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_stage_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.127.1 installed-package release fix and current release diagnostics."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "package.json",
+  "schemas/change-verification-report.schema.json",
+  "src/core/active-run-locks.ts",
+  "src/core/process-identity.ts",
+  "src/core/public-json-contracts.ts",
+  "templates/default/manifest.toml",
+  "tests/cli/active-run-locks.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged paths for the reviewed 2.127.1 release fix."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_commit_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.127.1 installed-package release fix."
+argv = [
+  "git", "commit",
+  "-m", "🐛 fix(release): unblock package smoke",
+  "-m", "Keep repository-scoped Agent Plugin generation out of empty consumers and preserve fail-closed Windows locks when process-start inspection is unavailable.",
+  "-m", "Validation: mf run lint; mf run test_run_execution_v2_127_0; mf run release_pack_install_test_v2_127_1; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.127.1 release fix from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_publish_runs_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs for the 2.127.1 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_127_1]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.127.1 GitHub Release metadata after publication."
+argv = ["gh", "release", "view", "v2.127.1", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"

@@ -292,6 +292,14 @@ test('active run locks classify a live reused pid by process start token mismatc
 	}
 });
 
+test('unverified process start tokens never prove that a live lock owner was replaced', async () => {
+	const { processStartTokensProveMismatch } = await importProcessIdentity();
+
+	assert.equal(processStartTokensProveMismatch('win32:100', 'win32:200'), true);
+	assert.equal(processStartTokensProveMismatch('unverified:win32:10:owner', 'win32:200'), false);
+	assert.equal(processStartTokensProveMismatch('win32:100', null), false);
+});
+
 test('active run lock release preserves a record whose owner token was replaced', async () => {
 	const projectPath = createTempProject('mustflow-active-lock-owner-token-');
 	const { acquireActiveRunLock } = await importActiveRunLocks();
