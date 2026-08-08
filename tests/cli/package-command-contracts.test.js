@@ -1271,3 +1271,44 @@ test('2.126.0 reasoning and runtime verification skill release stays bounded and
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.126\.0"/u);
 });
+
+test('2.127.0 safety performance and Agent Plugins release stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stageIntent = intent('release_stage_v2_127_0');
+	const stagedDiffIntent = intent('release_staged_diff_v2_127_0');
+	const commitIntent = intent('release_commit_v2_127_0');
+	const pushIntent = intent('release_push_main_v2_127_0');
+	const mainRunsIntent = intent('release_github_main_runs_v2_127_0');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_127_0');
+	const releaseIntent = intent('release_github_release_v2_127_0');
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'CHANGELOG.md',
+		'REPO_FLOW.md',
+		'REPO_MAP.md',
+		'package.json',
+		'schemas/run-receipt.schema.json',
+		'templates/default/manifest.toml',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+		'tests/cli/run-execution.test.js',
+		'tests/fixtures/schema-backcompat/2.84.8/public-json-fixtures.json',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /prepare mustflow 2\.127\.0/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.127\.0"/u);
+});

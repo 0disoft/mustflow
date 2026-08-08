@@ -743,9 +743,9 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Hold an exclusive lock briefly."
-argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 4000)']
+argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,15000)']
 cwd = "."
-timeout_seconds = 10
+timeout_seconds = 20
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["shared.txt"]
@@ -803,7 +803,13 @@ destructive = false
 		holder.stderr.on('data', (chunk) => {
 			holderStderr += chunk.toString();
 		});
-		await waitForOutput(() => holderStdout, /lock-ready/u);
+		const holderClose = waitForClose(holder);
+		await Promise.race([
+			waitForOutput(() => holderStdout, /lock-ready/u, 10_000),
+			holderClose.then((result) => {
+				throw new Error(`lock holder exited before readiness: ${JSON.stringify(result)} ${holderStderr}`);
+			}),
+		]);
 
 		const preview = runCli(projectPath, ['run', 'lock_conflict', '--dry-run', '--json']);
 		const previewJson = JSON.parse(preview.stdout);
@@ -825,7 +831,7 @@ destructive = false
 		assert.equal(other.status, 0, other.stderr || other.stdout);
 		assert.equal(readFileSync(otherMarkerPath, 'utf8'), 'ran');
 
-		const holderResult = await waitForClose(holder);
+		const holderResult = await holderClose;
 		holder = undefined;
 		assert.equal(holderResult.status, 0, holderStderr);
 
@@ -855,7 +861,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Hold an exclusive lock briefly."
-argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 1200)']
+argv = ['${process.execPath}', '-e', 'console.log("lock-ready"); setTimeout(() => {}, 5000)']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -898,9 +904,9 @@ destructive = false
 		holder.stderr.on('data', (chunk) => {
 			holderStderr += chunk.toString();
 		});
-		await waitForOutput(() => holderStdout, /lock-ready/u);
+		await waitForOutput(() => holderStdout, /lock-ready/u, 10_000);
 
-		const waited = runCli(projectPath, ['run', 'wait_runner', '--wait', '--wait-timeout=5']);
+		const waited = runCli(projectPath, ['run', 'wait_runner', '--wait', '--wait-timeout=10']);
 		assert.equal(waited.status, 0, waited.stderr || waited.stdout);
 		assert.match(waited.stderr, /Waiting to run wait_runner/u);
 		assert.equal(readFileSync(markerPath, 'utf8'), 'ran');

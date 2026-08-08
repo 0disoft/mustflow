@@ -6,6 +6,18 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added selective Agent Plugins packaging without migrating Mustflow's canonical repository layout.
+  `mf plugin build` now materializes bounded `plugin.json`, skill directories, and optional MCP
+  configuration under `dist/agent-plugins/`, validates the generated structure, publishes a stable
+  JSON report contract, and preserves `.mustflow/skills` plus `commands.toml` as the authority source.
+  The bundled review plugin records when validation relies on the user-supplied 1.0.0 snapshot
+  instead of claiming an unavailable live official-schema refresh.
+- Hardened completion and concurrency evidence. Parallel verification is held behind explicit safety
+  gates; lock scopes share one canonical path model; lock ownership binds UUID tokens to live process
+  identity; mutexes no longer steal live owners by age; supervised process cleanup distinguishes a
+  closed direct child from a proven-dead tree; and incomplete write-drift coverage fails closed.
+- Reduced repeated verification work by sharing batch snapshots, comparing build content
+  fingerprints, reusing unchanged local-index metadata, and avoiding a second receipt-retention scan.
 - Strengthened TypeScript and browser-artifact security guidance without creating a competing broad
   skill. TypeScript review now treats types, brands, assertions, soft privacy, enums, and declaration
   files as compile-time evidence; requires schema-owned runtime boundaries, typed assertion-debt
