@@ -236,7 +236,16 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineScript, /'AGENTS\.md'/u);
 	assert.match(baselineScript, /'\.mustflow\/docs\/agent-workflow\.md'/u);
 	assert.match(baselineScript, /'\.mustflow\/config\/commands\.toml'/u);
-	assert.match(baselineScript, /markManifestLockFileCustomized/u);
+	const planIntent = /\[intents\.manifest_lock_plan_workspace_routing\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const applyIntent = /\[intents\.manifest_lock_apply_workspace_routing\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	assert.match(planIntent, /"plan"/u);
+	assert.match(planIntent, /manifest-lock-plans\/workspace-routing\.json/u);
+	assert.match(planIntent, /mode = "create"/u);
+	assert.match(applyIntent, /"apply"/u);
+	assert.match(applyIntent, /manifest_lock_baseline/u);
+	assert.match(applyIntent, /mode = "delete"/u);
+	assert.match(baselineScript, /createManifestLockCustomizationPlan/u);
+	assert.match(baselineScript, /applyManifestLockCustomizationPlan/u);
 });
 
 test('source repository bounds security skill manifest baseline acceptance to reviewed files', () => {
