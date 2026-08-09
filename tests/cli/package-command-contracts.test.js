@@ -1357,3 +1357,34 @@ test('2.127.1 installed plugin smoke fix stays bounded and remotely verifiable',
 	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
 	assert.match(releaseIntent, /"v2\.127\.1"/u);
 });
+
+test('2.128.0 delegated workspace isolation release stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const stageIntent = intent('release_stage_v2_128_0_contract');
+	const commitIntent = intent('release_commit_v2_128_0_contract');
+	const pushIntent = intent('release_push_main_v2_128_0');
+	const mainRunsIntent = intent('release_github_main_runs_v2_128_0');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_128_0');
+	const releaseIntent = intent('release_github_release_v2_128_0');
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'REPO_FLOW.md',
+		'tests/cli/package-command-contracts.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.match(commitIntent, /2\.128\.0 delivery contract/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.128\.0"/u);
+});
