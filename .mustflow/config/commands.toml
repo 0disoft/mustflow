@@ -6192,3 +6192,37 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.workspace_routing_stage_delegated_guidance]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed delegated intent discovery guidance, translations, and regression tests."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "src/cli/commands/run/execution.ts", "src/cli/commands/run/preview.ts", "src/cli/i18n/en.ts", "src/cli/i18n/es.ts", "src/cli/i18n/fr.ts", "src/cli/i18n/hi.ts", "src/cli/i18n/ko.ts", "src/cli/i18n/zh.ts", "src/cli/lib/run-context.ts", "src/cli/lib/run-delegated-suggestion.ts", "tests/cli/run-execution.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.workspace_routing_commit_delegated_guidance]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed delegated intent discovery guidance."
+argv = ["git", "commit", "-m", "✨ feat(workspace): guide delegated command routing", "-m", "When a root command is missing, discover exact delegated repository candidates and return copyable --repo commands in text and JSON previews.\n\nValidation: mf run build; mf run test_run_execution_v2_127_0"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

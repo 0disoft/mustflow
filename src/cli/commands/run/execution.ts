@@ -21,6 +21,7 @@ import { renderCliError } from '../../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../../lib/i18n.js';
 import { assessRunRootTrust } from '../../lib/run-root-trust.js';
 import { resolveRunCommandContext } from '../../lib/run-context.js';
+import { addDelegatedIntentGuidance } from '../../lib/run-delegated-suggestion.js';
 import type { Reporter } from '../../lib/reporter.js';
 import {
 	createRunPlan,
@@ -145,6 +146,9 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 		case 'intent_not_table':
 		default:
 			message = t(lang, 'run.error.unknownIntent', { intent: plan.intentName });
+			if (plan.detail) {
+				message = `${message}\n\n${plan.detail}`;
+			}
 			break;
 	}
 
@@ -292,10 +296,10 @@ export async function executeRunCommand(
 
 	const contract = profiler.measure('command_contract', () => runContext.contract);
 	const plan = profiler.measure('plan_creation', () =>
-		createRunPlan(projectRoot, contract, request.intentName, {
+		addDelegatedIntentGuidance(createRunPlan(projectRoot, contract, request.intentName, {
 			testTargets: options.testTargets,
 			approvedActions: request.allowApprovals,
-		}),
+		}), runContext, lang),
 	);
 
 	if (!plan.ok) {

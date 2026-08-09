@@ -25,12 +25,17 @@ export interface RunWorkspaceScope {
 	readonly contract: string;
 }
 
+export interface DelegatedIntentCandidate extends RunWorkspaceScope {
+	readonly runCommand: string;
+}
+
 export interface RunCommandContext {
 	readonly projectRoot: string;
 	readonly contract: CommandContract;
 	readonly mustflowConfig: TomlTable | undefined;
 	readonly workspaceScope: RunWorkspaceScope | null;
 	readonly trustPaths: readonly string[] | undefined;
+	readonly delegatedIntentCandidates: readonly DelegatedIntentCandidate[];
 }
 
 export interface ResolveRunCommandContextOptions {
@@ -156,7 +161,42 @@ function createScopedContext(
 			contract: contractPath,
 		},
 		trustPaths: [MUSTFLOW_CONFIG_RELATIVE_PATH, contractPath],
+		delegatedIntentCandidates: [],
 	};
+}
+
+function findDelegatedIntentCandidates(
+	projectRoot: string,
+	contracts: readonly WorkspaceCommandContractScope[],
+	intentName: string | undefined,
+): readonly DelegatedIntentCandidate[] {
+	if (!intentName) {
+		return [];
+	}
+
+	const candidates: DelegatedIntentCandidate[] = [];
+	for (const scope of contracts) {
+		try {
+			const contract = readScopedCommandContract(
+				projectRoot,
+				scope.file,
+				`workspace:${scope.repository}`,
+				scope.repository,
+			);
+			if (!isRecord(contract.intents[intentName])) {
+				continue;
+			}
+			candidates.push({
+				repository: scope.repository,
+				contract: `.mustflow/config/${scope.file}`,
+				runCommand: `mf run ${intentName} --repo ${scope.repository}`,
+			});
+		} catch {
+			// A malformed unrelated fragment must not hide valid candidates from other repositories.
+		}
+	}
+
+	return candidates;
 }
 
 export function resolveRunCommandContext(options: ResolveRunCommandContextOptions = {}): RunCommandContext {
@@ -176,6 +216,7 @@ export function resolveRunCommandContext(options: ResolveRunCommandContextOption
 			mustflowConfig,
 			workspaceScope: null,
 			trustPaths: undefined,
+			delegatedIntentCandidates: [],
 		};
 	}
 
@@ -194,11 +235,15 @@ export function resolveRunCommandContext(options: ResolveRunCommandContextOption
 		throw new Error(`No delegated workspace contract is mapped for working directory: ${relativeStart}`);
 	}
 
+	const contract = readCommandContract(projectRoot);
 	return {
 		projectRoot,
-		contract: readCommandContract(projectRoot),
+		contract,
 		mustflowConfig,
 		workspaceScope: null,
 		trustPaths: [MUSTFLOW_CONFIG_RELATIVE_PATH],
+		delegatedIntentCandidates: isRecord(contract.intents[options.intentName ?? ''])
+			? []
+			: findDelegatedIntentCandidates(projectRoot, workspaceAuthority.contracts, options.intentName),
 	};
 }

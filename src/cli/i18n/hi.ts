@@ -1504,6 +1504,8 @@ export const hiMessages = {
     "{intent} चलाने के लिए wait कर रहे हैं; active intent {activeIntent} conflicting lock रखता है (timeout: {seconds}s)",
   "run.error.missingIntent": "कमांड नाम नहीं दिया गया",
   "run.error.unknownIntent": "अज्ञात कमांड: {intent}",
+  "run.error.delegatedIntentSuggestion": "प्रत्यायोजित रिपॉज़िटरी स्कोप का उपयोग करें: {command}",
+  "run.error.delegatedIntentChoices": "यह कमांड कई प्रत्यायोजित रिपॉज़िटरी में है। किसी एक को स्पष्ट रूप से चुनें:\n{commands}",
   "run.error.statusNotConfigured":
     'कमांड "{intent}" {status} है; केवल configured कमांड चलाई जा सकती हैं',
   "run.error.lifecycleNotOneshot":

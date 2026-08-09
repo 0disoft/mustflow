@@ -1494,6 +1494,8 @@ export const zhMessages = {
     "正在等待运行 {intent}；活动 intent {activeIntent} 持有冲突锁（超时：{seconds} 秒）",
   "run.error.missingIntent": "缺少命令名称",
   "run.error.unknownIntent": "未知命令：{intent}",
+  "run.error.delegatedIntentSuggestion": "请使用委派仓库范围：{command}",
+  "run.error.delegatedIntentChoices": "多个委派仓库中存在此命令。请明确选择一个：\n{commands}",
   "run.error.statusNotConfigured":
     '命令 "{intent}" 的状态为 {status}；只能运行已配置的命令',
   "run.error.lifecycleNotOneshot":

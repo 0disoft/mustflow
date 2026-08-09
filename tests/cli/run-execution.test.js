@@ -89,15 +89,10 @@ function configureDelegatedWorkspace(projectPath) {
 }
 
 function writeDelegatedWorkspaceContracts(projectPath) {
-	const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 	const fragmentDirectory = path.join(projectPath, '.mustflow', 'config', 'commands');
 	mkdirSync(fragmentDirectory, { recursive: true });
 	mkdirSync(path.join(projectPath, 'projects', 'alpha'), { recursive: true });
 	mkdirSync(path.join(projectPath, 'projects', 'beta'), { recursive: true });
-	writeFileSync(
-		commandsPath,
-		`${readFileSync(commandsPath, 'utf8')}\n[include]\nfiles = ["commands/alpha.toml", "commands/beta.toml"]\n`,
-	);
 	for (const [name, message] of [
 		['alpha', 'alpha scoped command'],
 		['beta', 'beta scoped command'],
@@ -125,7 +120,35 @@ function writeDelegatedWorkspaceContracts(projectPath) {
 				'network = false',
 				'destructive = false',
 				'',
+				'[intents.shared_child]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run one command shared only by delegated repositories."',
+				`argv = [${JSON.stringify(process.execPath)}, "-e", "console.log('shared child')"]`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+				'',
 				...(name === 'alpha' ? [
+					'[intents.alpha_only]',
+					'status = "configured"',
+					'lifecycle = "oneshot"',
+					'run_policy = "agent_allowed"',
+					'description = "Run one command unique to alpha."',
+					`argv = [${JSON.stringify(process.execPath)}, "-e", "console.log('alpha only')"]`,
+					'cwd = "."',
+					'timeout_seconds = 10',
+					'stdin = "closed"',
+					'success_exit_codes = [0]',
+					'writes = []',
+					'network = false',
+					'destructive = false',
+					'',
 					'[intents.write_artifact]',
 					'status = "configured"',
 					'lifecycle = "oneshot"',
@@ -144,7 +167,6 @@ function writeDelegatedWorkspaceContracts(projectPath) {
 			].join('\n'),
 		);
 	}
-	trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
 	trackManifestLockFile(projectPath, '.mustflow/config/commands/alpha.toml');
 	trackManifestLockFile(projectPath, '.mustflow/config/commands/beta.toml');
 }
@@ -318,6 +340,44 @@ test('runs an explicit delegated workspace contract from the workspace root', ()
 		assert.match(receipt.stdout.tail, /beta scoped command/);
 		assert.equal(receipt.workspace_scope.repository, 'projects/beta');
 		assert.equal(receipt.workspace_scope.contract, '.mustflow/config/commands/beta.toml');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('suggests the exact delegated repository when a root command is missing', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+
+		const result = runCli(projectPath, ['run', 'alpha_only']);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Unknown command: alpha_only/u);
+		assert.match(result.stderr, /mf run alpha_only --repo projects\/alpha/u);
+
+		const preview = runCli(projectPath, ['run', 'alpha_only', '--dry-run', '--json']);
+		assert.equal(preview.status, 1);
+		assert.match(JSON.parse(preview.stdout).detail, /mf run alpha_only --repo projects\/alpha/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('lists every delegated repository when a missing root command is ambiguous', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+
+		const result = runCli(projectPath, ['run', 'shared_child']);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /mf run shared_child --repo projects\/alpha/u);
+		assert.match(result.stderr, /mf run shared_child --repo projects\/beta/u);
 	} finally {
 		removeTempProject(projectPath);
 	}

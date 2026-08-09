@@ -1496,6 +1496,8 @@ export const koMessages = {
     "{intent} 실행 대기 중; 활성 intent {activeIntent}가 충돌하는 잠금을 보유 중입니다(timeout: {seconds}초)",
   "run.error.missingIntent": "명령 이름이 없습니다",
   "run.error.unknownIntent": "알 수 없는 명령: {intent}",
+  "run.error.delegatedIntentSuggestion": "위임된 저장소 범위를 사용하세요: {command}",
+  "run.error.delegatedIntentChoices": "여러 위임 저장소에 같은 명령이 있습니다. 하나를 명시하세요:\n{commands}",
   "run.error.statusNotConfigured":
     '명령 "{intent}"의 상태는 {status}입니다. 설정된 상태(configured)인 명령만 실행할 수 있습니다',
   "run.error.lifecycleNotOneshot":

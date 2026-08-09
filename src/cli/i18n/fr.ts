@@ -1504,6 +1504,8 @@ Lisez ces fichiers avant de travailler :
     "Attente avant d'exécuter {intent} ; l'intention active {activeIntent} détient un verrou en conflit (timeout : {seconds}s)",
   "run.error.missingIntent": "Nom de commande manquant",
   "run.error.unknownIntent": "Commande inconnue : {intent}",
+  "run.error.delegatedIntentSuggestion": "Utilisez la portée du dépôt délégué : {command}",
+  "run.error.delegatedIntentChoices": "La commande existe dans plusieurs dépôts délégués. Choisissez-en un explicitement :\n{commands}",
   "run.error.statusNotConfigured":
     'La commande "{intent}" est {status} ; seules les commandes configurées peuvent être exécutées',
   "run.error.lifecycleNotOneshot":

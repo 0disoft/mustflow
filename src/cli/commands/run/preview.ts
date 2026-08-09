@@ -2,6 +2,7 @@ import { RunProfiler } from '../../../core/run-profile.js';
 import type { CliLang } from '../../lib/i18n.js';
 import type { Reporter } from '../../lib/reporter.js';
 import { resolveRunCommandContext } from '../../lib/run-context.js';
+import { addDelegatedIntentGuidance } from '../../lib/run-delegated-suggestion.js';
 import {
 	createRunPlan,
 	createRunPreview,
@@ -37,10 +38,10 @@ export function executeRunPreviewCommand(
 	const projectRoot = runContext.projectRoot;
 	const contract = profiler.measure('command_contract', () => runContext.contract);
 	const plan = profiler.measure('plan_creation', () =>
-		createRunPlan(projectRoot, contract, input.intentName, {
+		addDelegatedIntentGuidance(createRunPlan(projectRoot, contract, input.intentName, {
 			testTargets: options.testTargets,
 			approvedActions: input.allowApprovals,
-		}),
+		}), runContext, lang),
 	);
 
 	profiler.measure('preview_render', () => {

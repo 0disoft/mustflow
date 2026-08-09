@@ -1504,6 +1504,8 @@ Lee estos archivos antes de trabajar:
     "Esperando para ejecutar {intent}; el intent activo {activeIntent} mantiene un bloqueo en conflicto (timeout: {seconds}s)",
   "run.error.missingIntent": "Falta el nombre del comando",
   "run.error.unknownIntent": "Comando desconocido: {intent}",
+  "run.error.delegatedIntentSuggestion": "Usa el ámbito del repositorio delegado: {command}",
+  "run.error.delegatedIntentChoices": "El comando existe en varios repositorios delegados. Elige uno explícitamente:\n{commands}",
   "run.error.statusNotConfigured":
     'El comando "{intent}" está en estado {status}; sólo se pueden ejecutar comandos configurados',
   "run.error.lifecycleNotOneshot":

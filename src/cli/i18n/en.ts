@@ -1499,6 +1499,8 @@ Read these files before working:
     "Waiting to run {intent}; active intent {activeIntent} holds a conflicting lock (timeout: {seconds}s)",
   "run.error.missingIntent": "Missing command name",
   "run.error.unknownIntent": "Unknown command: {intent}",
+  "run.error.delegatedIntentSuggestion": "Use the delegated repository scope: {command}",
+  "run.error.delegatedIntentChoices": "The command exists in multiple delegated repositories. Choose one explicitly:\n{commands}",
   "run.error.statusNotConfigured":
     'Command "{intent}" is {status}; only configured commands can be run',
   "run.error.lifecycleNotOneshot":
