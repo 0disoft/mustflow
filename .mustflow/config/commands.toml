@@ -6143,3 +6143,52 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.workspace_routing_stage_scoped_trust]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed delegated workspace scoped-trust implementation and regression tests."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "src/cli/commands/run/execution.ts", "src/cli/lib/run-root-trust.ts", "tests/cli/run-execution.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.workspace_routing_staged_diff]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged paths for the current workspace routing hardening commit."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.workspace_routing_commit_scoped_trust]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed delegated workspace scoped-trust implementation."
+argv = ["git", "commit", "-m", "🐛 fix(workspace): isolate delegated command trust", "-m", "Validate delegated runs against the root instructions, workspace mapping, and selected repository contract without coupling them to unrelated root command edits.\n\nValidation: mf run build; mf run test_run_execution_v2_127_0"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

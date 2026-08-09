@@ -22,15 +22,20 @@ export interface RunRootTrustAssessment {
 
 export interface RunRootTrustOptions {
 	readonly requiredPaths?: readonly string[];
+	readonly includeRootCommandContract?: boolean;
 }
 
 export function assessRunRootTrust(
 	projectRoot: string,
 	options: RunRootTrustOptions = {},
 ): RunRootTrustAssessment {
-	const scopedRequiredPaths = options.requiredPaths
-		? [...new Set([...REQUIRED_RUN_TRUST_LOCK_PATHS, ...options.requiredPaths])]
-		: undefined;
+	let scopedRequiredPaths: readonly string[] | undefined;
+	if (options.requiredPaths) {
+		const rootCommandPaths = options.includeRootCommandContract === false
+			? ['AGENTS.md']
+			: [...REQUIRED_RUN_TRUST_LOCK_PATHS, ...readCommandContractIncludePaths(projectRoot)];
+		scopedRequiredPaths = [...new Set([...rootCommandPaths, ...options.requiredPaths])];
+	}
 	const inspection = scopedRequiredPaths
 		? inspectManifestLockPaths(projectRoot, scopedRequiredPaths)
 		: inspectManifestLock(projectRoot);

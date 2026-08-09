@@ -369,6 +369,50 @@ test('ignores manifest drift in an inactive delegated workspace contract', () =>
 	}
 });
 
+test('runs a delegated workspace contract while the unrelated root command contract is being edited', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		const rootContractPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(rootContractPath, `${readFileSync(rootContractPath, 'utf8')}\n# concurrent root edit\n`);
+
+		const result = runCli(projectPath, ['run', 'test', '--repo', 'projects/alpha', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.match(receipt.stdout.tail, /alpha scoped command/);
+		assert.equal(receipt.workspace_scope.repository, 'projects/alpha');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('keeps delegated workspace execution fail closed when its selected trust files drift', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		writeFileSync(path.join(projectPath, 'AGENTS.md'), 'Concurrent unreviewed instruction edit.\n');
+
+		const agentsDrift = runCli(projectPath, ['run', 'test', '--repo', 'projects/alpha', '--json']);
+		assert.equal(agentsDrift.status, 1);
+		assert.match(agentsDrift.stderr, /Lock hash mismatch: AGENTS\.md/u);
+
+		trackManifestLockFile(projectPath, 'AGENTS.md');
+		const selectedContractPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'alpha.toml');
+		writeFileSync(selectedContractPath, `${readFileSync(selectedContractPath, 'utf8')}\n# concurrent selected edit\n`);
+		const selectedDrift = runCli(projectPath, ['run', 'test', '--repo', 'projects/alpha', '--json']);
+		assert.equal(selectedDrift.status, 1);
+		assert.match(selectedDrift.stderr, /Lock hash mismatch: \.mustflow\/config\/commands\/alpha\.toml/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('treats a selected empty delegated contract as valid but without runnable intents', () => {
 	const projectPath = createTempProject();
 

@@ -274,7 +274,10 @@ export async function executeRunCommand(
 	);
 	const projectRoot = runContext.projectRoot;
 	const rootTrust = profiler.measure('root_trust', () =>
-		assessRunRootTrust(projectRoot, { requiredPaths: runContext.trustPaths }),
+		assessRunRootTrust(projectRoot, {
+			requiredPaths: runContext.trustPaths,
+			includeRootCommandContract: runContext.workspaceScope === null,
+		}),
 	);
 	const jsonLikeOutput = request.outputMode !== 'text';
 
