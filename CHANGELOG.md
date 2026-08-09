@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Isolated delegated workspace execution from unrelated root and sibling command-contract drift,
+  suggested exact `mf run <intent> --repo <repository>` routes for delegated intents, and rejected
+  split authority when the root and a delegated fragment define the same intent.
+- Made manifest-lock acceptance transactional with reviewable hash plans, compare-and-swap drift
+  rejection, live-owner serialization, replay protection, and atomic lock replacement.
 - Allowed bounded Windows process-identity probes up to 15 seconds so cold PowerShell startup on
   hosted runners does not abort Node-only checks, while preserving the 2-second POSIX bound and
   fail-closed process-token validation.

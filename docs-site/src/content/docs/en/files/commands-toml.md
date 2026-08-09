@@ -104,11 +104,13 @@ fragments from `[workspace].contracts` in `mustflow.toml` and set
 `authority_mode = "delegated_scoped"`. In that mode, `mf run` does not merge the include graph. It
 loads only the fragment mapped to the current nested repository, or the repository selected by
 `--repo`. Duplicate intent, resource, and lock names are therefore allowed across different mapped
-fragments.
+fragments. An intent must not be defined both in the root contract and in a delegated fragment;
+strict validation rejects that split authority instead of relying on precedence.
 
-The selected fragment still must be present in the manifest lock and match its hash. Unselected
-fragments are outside that execution's parse and trust closure, so their malformed contents or lock
-drift cannot block the active repository. Locks are namespaced by mapped repository, keeping two
+The selected fragment still must be present in the manifest lock and match its hash. The root
+`AGENTS.md` and workspace mapping also remain trusted inputs, but unrelated root command hashes and
+unselected fragments are outside that execution's parse and trust closure, so their malformed
+contents or lock drift cannot block the active repository. Locks are namespaced by mapped repository, keeping two
 repositories' ordinary names such as `build_output` independent while preserving conflicts between
 concurrent runs for the same repository. Every delegated intent `cwd` and declared effect or write
 path is relative to its mapped repository. For example, use `cwd = "."` and
@@ -116,6 +118,10 @@ path is relative to its mapped repository. For example, use `cwd = "."` and
 values exactly once for execution, locks, and write-drift receipts and rejects any result outside
 the mapped repository. A fragment may omit `[intents]` while that repository has no runnable
 commands. Shared workspace commands belong in the root contract instead of a scoped fragment.
+
+When accepting reviewed manifest-lock changes in a shared workspace, create a plan that snapshots
+the current lock and target hashes, then apply that plan. The apply step rejects changed targets,
+lock drift, live concurrent owners, and replayed plans before atomically replacing the lock.
 
 ## Default Fields
 

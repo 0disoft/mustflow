@@ -5,7 +5,7 @@ description: Runs a finite command intent declared in commands.toml.
 
 `mf run <intent>` executes only finite command intents declared in `.mustflow/config/commands.toml`.
 
-When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves exactly one mapped `.mustflow/config/commands/*.toml` fragment. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`.
+When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves exactly one mapped `.mustflow/config/commands/*.toml` fragment. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`. Run from the nested repository when possible; from the workspace root, always pass `--repo` explicitly.
 
 ## Execution Conditions
 
@@ -33,7 +33,7 @@ manual or older root without spawning a process. To execute from that root anywa
 `--allow-untrusted-root` after reviewing `AGENTS.md` and `.mustflow/config/commands.toml`; this
 does not relax the command-intent requirements above.
 
-For blocked or unknown intents, `mf run` prints a copyable `manual_only` intent snippet. The snippet is a proposal for `.mustflow/config/commands.toml`; it does not grant command authority until a person reviews and enables it. Dry-run and plan-only JSON include the same proposal in `suggested_intent_snippet`.
+For blocked or unknown intents, `mf run` prints a copyable `manual_only` intent snippet. The snippet is a proposal for `.mustflow/config/commands.toml`; it does not grant command authority until a person reviews and enables it. Dry-run and plan-only JSON include the same proposal in `suggested_intent_snippet`. If an unknown root intent exists in one or more delegated fragments, Mustflow instead lists the exact `mf run <intent> --repo <repository>` routes; use that route rather than copying the intent into the root contract.
 
 ## Excluded Lifecycles
 
@@ -59,7 +59,7 @@ npx mf run test --json
 npx mf run test --repo projects/game --json
 ```
 
-`--repo` is accepted only in delegated scoped workspace mode. An unmapped working directory under a configured workspace root is rejected instead of falling back to another repository's contract.
+`--repo` is accepted only in delegated scoped workspace mode. An unmapped working directory under a configured workspace root is rejected instead of falling back to another repository's contract. The selected run trusts `AGENTS.md`, the workspace mapping, and the selected fragment; unrelated root command hashes and sibling fragments cannot block it. Drift in any selected trust input still fails closed.
 
 ## JSON Fields
 
