@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
+import { readScopedCommandContract } from '../../../core/config-loading.js';
 import {
 	validateCommandContractConfig,
 	validateCommandContractStrictDefaults,
@@ -1204,6 +1205,52 @@ function validateStrictCommandDefaults(
 		}
 
 		pushStrictIssue(issues, issue.message);
+	}
+}
+
+function validateStrictWorkspaceIntentAuthority(
+	projectRoot: string,
+	mustflowToml: TomlTable | undefined,
+	commandsToml: TomlTable | undefined,
+	issues: CheckIssue[],
+): void {
+	if (!mustflowToml || !commandsToml || !isRecord(commandsToml.intents)) {
+		return;
+	}
+
+	let authority;
+	try {
+		authority = readWorkspaceCommandAuthorityConfig(mustflowToml);
+	} catch {
+		return;
+	}
+	if (authority.authorityMode !== 'delegated_scoped') {
+		return;
+	}
+
+	const rootIntentNames = new Set(Object.keys(commandsToml.intents));
+	for (const scope of authority.contracts) {
+		let scopedContract;
+		try {
+			scopedContract = readScopedCommandContract(
+				projectRoot,
+				scope.file,
+				`workspace:${scope.repository}`,
+				scope.repository,
+			);
+		} catch {
+			continue;
+		}
+
+		for (const intentName of Object.keys(scopedContract.intents)) {
+			if (!rootIntentNames.has(intentName)) {
+				continue;
+			}
+			pushStrictIssue(
+				issues,
+				`delegated workspace intent "${intentName}" for "${scope.repository}" duplicates root command authority; keep the intent in exactly one authority scope`,
+			);
+		}
 	}
 }
 
@@ -2840,6 +2887,7 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
 	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
 	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
+	validateStrictWorkspaceIntentAuthority(projectRoot, parsed.mustflowToml, parsed.commandsToml, issues);
 	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
 	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
 	validateStrictCandidateContractModelConfigs(projectRoot, issues);

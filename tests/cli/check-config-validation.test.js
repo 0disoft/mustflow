@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createTempProject, initProject, removeTempProject, runCli } from './helpers/cli-harness.js';
@@ -130,6 +130,68 @@ test('fails when delegated workspace command scopes are unsafe or ambiguous', ()
 		const unsafeResult = runCli(projectPath, ['check']);
 		assert.equal(unsafeResult.status, 1);
 		assert.match(unsafeResult.stderr, /contracts\[1\]\.file must be a normalized commands\/\*\.toml path/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict check rejects an intent duplicated between root and delegated command authority', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		writeFileSync(
+			configPath,
+			readText(configPath).replace(
+				/\[workspace\][\s\S]*?(?=\n\[capabilities\])/u,
+				[
+					'[workspace]',
+					'enabled = true',
+					'roots = ["projects"]',
+					'authority_mode = "delegated_scoped"',
+					'contracts = [{ repository = "projects/alpha", file = "commands/alpha.toml" }]',
+					'max_depth = 4',
+					'max_repositories = 50',
+					'follow_symlinks = false',
+					'stop_at_repository_root = true',
+					'',
+				].join('\n'),
+			),
+		);
+		mkdirSync(path.join(projectPath, 'projects', 'alpha'), { recursive: true });
+		const fragmentPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'alpha.toml');
+		mkdirSync(path.dirname(fragmentPath), { recursive: true });
+		writeFileSync(
+			fragmentPath,
+			[
+				'[intents.shared_name]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Delegated definition."',
+				'argv = ["node", "--version"]',
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+			].join('\n'),
+		);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readText(commandsPath)}\n[intents.shared_name]\nstatus = "configured"\nlifecycle = "oneshot"\nrun_policy = "agent_allowed"\ndescription = "Root definition."\nargv = ["node", "--version"]\ncwd = "."\ntimeout_seconds = 10\nstdin = "closed"\nsuccess_exit_codes = [0]\nwrites = []\nnetwork = false\ndestructive = false\n`,
+		);
+
+		const result = runCli(projectPath, ['check', '--strict']);
+		assert.equal(result.status, 1);
+		assert.match(
+			result.stderr,
+			/delegated workspace intent "shared_name" for "projects\/alpha" duplicates root command authority/u,
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

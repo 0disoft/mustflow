@@ -6226,3 +6226,52 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.test_workspace_authority_validation]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run focused workspace authority and structured configuration validation regressions."
+argv = ["node", "--test", "tests/cli/check-config-validation.test.js"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.workspace_routing_stage_authority_collision]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed root and delegated intent authority collision validation."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/manifest.lock.toml", "REPO_FLOW.md", "src/cli/lib/validation/index.ts", "tests/cli/check-config-validation.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.workspace_routing_commit_authority_collision]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed root and delegated intent authority collision validation."
+argv = ["git", "commit", "-m", "🐛 fix(workspace): reject split intent authority", "-m", "Fail strict validation when a delegated repository intent silently duplicates root command authority, while allowing the same intent name across explicitly selected child repositories.\n\nValidation: mf run build; mf run test_workspace_authority_validation; mf run mustflow_check"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
