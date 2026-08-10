@@ -20,6 +20,8 @@ This file applies to the mustflow repository itself. It is not installed into us
   empty consumer projects that do not contain a bundle declaration or canonical skill sources.
 - Kept Windows command locking available when process-start inspection times out by issuing an
   unverified per-process token that cannot be used to reclaim a live owner's lock.
+- Extended the same fail-closed unverified-token fallback to the CLI test runner so a cold Windows
+  process query cannot abort Node-only CI before tests start.
 - Added selective Agent Plugins packaging without migrating Mustflow's canonical repository layout.
   `mf plugin build` now materializes bounded `plugin.json`, skill directories, and optional MCP
   configuration under `dist/agent-plugins/`, validates the generated structure, publishes a stable

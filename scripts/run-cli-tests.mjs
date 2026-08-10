@@ -13,7 +13,11 @@ import {
 } from './lib/test-ordering.mjs';
 import { buildFreshnessReport as readBuildFreshnessReport } from './lib/build-freshness.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
-import { readProcessStartToken } from './lib/process-identity.mjs';
+import {
+	processStartTokensProveMismatch,
+	readCurrentProcessStartToken,
+	readProcessStartToken,
+} from './lib/process-identity.mjs';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const testRunnerLockRoot = path.join(os.tmpdir(), 'mustflow-test-runner-locks');
@@ -160,16 +164,12 @@ function isStaleLock(owner) {
 
 	const recordedStartToken = typeof owner?.process_start_token === 'string' ? owner.process_start_token : undefined;
 	const currentStartToken = recordedStartToken ? readProcessStartToken(pid) : undefined;
-	return currentStartToken !== undefined && currentStartToken !== recordedStartToken;
+	return processStartTokensProveMismatch(recordedStartToken, currentStartToken);
 }
 
 function acquireTestRunnerLock() {
 	const lockDir = testRunnerLockDir();
-	const processStartToken = readProcessStartToken(process.pid);
-	if (!processStartToken) {
-		console.error(`Cannot determine the test runner process start token on ${process.platform}.`);
-		process.exit(2);
-	}
+	const processStartToken = readCurrentProcessStartToken();
 	const owner = {
 		lock_id: randomUUID(),
 		owner_token: randomUUID(),

@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -48,4 +49,24 @@ export function readProcessStartToken(pid) {
 	}
 
 	return undefined;
+}
+
+const UNVERIFIED_PROCESS_START_TOKEN_PREFIX = 'unverified:';
+
+export function processStartTokensProveMismatch(recordedToken, currentToken) {
+	return recordedToken !== undefined &&
+		currentToken !== undefined &&
+		!recordedToken.startsWith(UNVERIFIED_PROCESS_START_TOKEN_PREFIX) &&
+		!currentToken.startsWith(UNVERIFIED_PROCESS_START_TOKEN_PREFIX) &&
+		recordedToken !== currentToken;
+}
+
+let currentProcessStartToken;
+
+export function readCurrentProcessStartToken() {
+	if (currentProcessStartToken === undefined) {
+		currentProcessStartToken = readProcessStartToken(process.pid) ??
+			`${UNVERIFIED_PROCESS_START_TOKEN_PREFIX}${process.platform}:${process.pid}:${randomUUID()}`;
+	}
+	return currentProcessStartToken;
 }

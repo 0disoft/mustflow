@@ -48,6 +48,12 @@ test('Windows process identity probes allow bounded cold startup without weakeni
 		assert.match(source, /WINDOWS_PROCESS_QUERY_TIMEOUT_MS = 15_000/u);
 		assert.match(source, /timeout: WINDOWS_PROCESS_QUERY_TIMEOUT_MS/u);
 	}
+	assert.match(runnerProcessIdentity, /UNVERIFIED_PROCESS_START_TOKEN_PREFIX/u);
+	assert.match(runnerProcessIdentity, /export function readCurrentProcessStartToken/u);
+	assert.match(runnerProcessIdentity, /export function processStartTokensProveMismatch/u);
+	assert.match(cliTestRunner, /readCurrentProcessStartToken\(\)/u);
+	assert.match(cliTestRunner, /processStartTokensProveMismatch/u);
+	assert.doesNotMatch(cliTestRunner, /Cannot determine the test runner process start token/u);
 });
 
 test('native crash fixture workflow validates locked semantics across pinned runner families', () => {
@@ -285,6 +291,34 @@ test('2.128.1 manifest lock concurrency release stays bounded and remotely verif
 	assert.match(publishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
 	assert.match(publishRunsIntent, /headSha/u);
 	assert.match(githubReleaseIntent, /"v2\.128\.1"/u);
+	assert.match(githubReleaseIntent, /targetCommitish/u);
+});
+
+test('2.128.2 Windows test-runner fix stays bounded and remotely verifiable', () => {
+	const releaseIntent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(sourceCommandContract)?.[0] ?? '';
+	const stageIntent = releaseIntent('release_stage_v2_128_2');
+	const commitIntent = releaseIntent('release_commit_v2_128_2');
+	const pushIntent = releaseIntent('release_push_main_v2_128_2');
+	const mainRunsIntent = releaseIntent('release_github_main_runs_v2_128_2');
+	const publishRunsIntent = releaseIntent('release_github_publish_runs_v2_128_2');
+	const githubReleaseIntent = releaseIntent('release_github_release_v2_128_2');
+
+	for (const path of [
+		'scripts/lib/process-identity.mjs',
+		'scripts/run-cli-tests.mjs',
+		'package.json',
+		'templates/default/manifest.toml',
+		'tests/cli/package-command-contracts.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('.', '\\.')}"`, 'u'));
+	}
+	assert.match(commitIntent, /preserve Windows test runner locks/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /publish-npm\.yml/u);
+	assert.match(githubReleaseIntent, /v2\.128\.2/u);
 	assert.match(githubReleaseIntent, /targetCommitish/u);
 });
 
