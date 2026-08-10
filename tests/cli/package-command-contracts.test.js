@@ -264,6 +264,30 @@ test('entry-scoped manifest lock fix commit stays bounded to reviewed implementa
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 });
 
+test('2.128.1 manifest lock concurrency release stays bounded and remotely verifiable', () => {
+	const releaseIntent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(sourceCommandContract)?.[0] ?? '';
+	const stageIntent = releaseIntent('release_stage_v2_128_1_contract');
+	const commitIntent = releaseIntent('release_commit_v2_128_1_contract');
+	const pushIntent = releaseIntent('release_push_main_v2_128_1');
+	const mainRunsIntent = releaseIntent('release_github_main_runs_v2_128_1');
+	const publishRunsIntent = releaseIntent('release_github_publish_runs_v2_128_1');
+	const githubReleaseIntent = releaseIntent('release_github_release_v2_128_1');
+
+	assert.match(stageIntent, /"\.mustflow\/config\/commands\.toml"/u);
+	assert.match(stageIntent, /"tests\/cli\/package-command-contracts\.test\.js"/u);
+	assert.match(stageIntent, /writes = \["\.git\/index"\]/u);
+	assert.match(commitIntent, /add 2\.128\.1 delivery contract/u);
+	assert.match(pushIntent, /argv = \["git", "push", "origin", "main"\]/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(mainRunsIntent, /"--branch", "main"/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"--workflow", "publish-npm\.yml"/u);
+	assert.match(publishRunsIntent, /headSha/u);
+	assert.match(githubReleaseIntent, /"v2\.128\.1"/u);
+	assert.match(githubReleaseIntent, /targetCommitish/u);
+});
+
 test('source repository bounds security skill manifest baseline acceptance to reviewed files', () => {
 	const baselineIntent = /\[intents\.manifest_lock_accept_security_skill_baseline\][\s\S]*?(?=\n\[intents\.)/u.exec(
 		sourceCommandContract,
