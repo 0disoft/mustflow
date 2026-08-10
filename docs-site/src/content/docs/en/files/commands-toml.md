@@ -120,8 +120,11 @@ the mapped repository. A fragment may omit `[intents]` while that repository has
 commands. Shared workspace commands belong in the root contract instead of a scoped fragment.
 
 When accepting reviewed manifest-lock changes in a shared workspace, create a plan that snapshots
-the current lock and target hashes, then apply that plan. The apply step rejects changed targets,
-lock drift, live concurrent owners, and replayed plans before atomically replacing the lock.
+the target hashes and their current lock entries, then apply that plan. The apply step briefly
+serializes the final write, reloads the latest lock, and merges only the reviewed entries. A plan
+remains valid when another session accepts a different command fragment first. Changed targets,
+changes to the same lock entries, and replayed plans still fail closed. A concurrent live owner is
+given a short bounded interval to finish before the waiting apply reports a conflict.
 
 ## Default Fields
 

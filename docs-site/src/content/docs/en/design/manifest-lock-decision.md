@@ -42,6 +42,18 @@ current file hash == bundled template hash
 - If the first comparison is true and the second is false, the file is a template update candidate.
 - If both are true, no update is needed.
 
+## Concurrent Baseline Acceptance
+
+The lock remains one atomic installation snapshot, but reviewed customization plans use
+entry-scoped compare-and-swap checks. A plan records the current lock entry for each target file.
+During apply, mustflow briefly serializes the final write, reloads the latest lock, verifies that
+the target files and their own entries still match the plan, and merges only those entries.
+
+This allows independent repository command fragments to be accepted from concurrent sessions
+without either plan depending on the whole lock-file hash. Two plans for the same entry still
+conflict, and replayed plans are rejected. Plans produced by older mustflow versions remain valid
+and retain their original whole-lock compare-and-swap behavior.
+
 ## Future Expansion
 
 The schema version will be raised and fields added later if mustflow needs:

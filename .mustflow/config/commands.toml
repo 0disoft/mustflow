@@ -6509,3 +6509,52 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.manifest_lock_stage_entry_merge_fix]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed entry-scoped manifest lock merge fix, regression tests, documentation, and patch version metadata."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "docs-site/src/content/docs/en/design/manifest-lock-decision.md",
+  "docs-site/src/content/docs/en/files/commands-toml.md",
+  "docs-site/src/content/docs/en/files/manifest-lock-toml.md",
+  "package.json",
+  "src/cli/lib/manifest-lock.ts",
+  "templates/default/manifest.toml",
+  "tests/cli/manifest-lock-cas.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.manifest_lock_commit_entry_merge_fix]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed entry-scoped manifest lock merge fix."
+argv = ["git", "commit", "-m", "🐛 fix(workspace): merge independent lock entries", "-m", "Keep one atomic manifest lock while allowing independently reviewed fragment plans to merge after bounded owner waiting. Preserve fail-closed conflicts for the same entry, changed targets, legacy plans, and replay.\n\nValidation: mf run build; mf run test_manifest_lock_cas; mf run docs_validate_fast; mf run test_release; mf run mustflow_check"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

@@ -46,6 +46,7 @@ export interface ManifestLockInspection {
 export interface ManifestLockCustomizationPlanFile {
 	readonly relative_path: string;
 	readonly content_hash: string;
+	readonly baseline_lock_entry_hash?: string | null;
 }
 
 export interface ManifestLockCustomizationPlan {
@@ -149,6 +150,10 @@ function isProcessLive(pid: number): boolean {
 	}
 }
 
+function waitSynchronously(milliseconds: number): void {
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
 function parseCasOwner(value: unknown): ManifestLockCasOwner | null {
 	if (!isRecord(value)) {
 		return null;
@@ -179,7 +184,8 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 		owner_token: randomUUID(),
 	};
 
-	for (let attempt = 0; attempt < 2; attempt += 1) {
+	const waitDeadline = Date.now() + 1_000;
+	while (true) {
 		try {
 			const descriptor = openSync(ownerPath, 'wx');
 			try {
@@ -210,15 +216,18 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 			if (!existing) {
 				throw new Error('Manifest lock CAS owner record is invalid; refusing concurrent baseline acceptance');
 			}
-			const currentToken = isProcessLive(existing.pid) ? readProcessStartToken(existing.pid) : null;
-			if (isProcessLive(existing.pid) && !processStartTokensProveMismatch(existing.process_start_token, currentToken)) {
-				throw new Error(`Manifest lock baseline update already owned by live process ${existing.pid}`);
+			const live = isProcessLive(existing.pid);
+			const currentToken = live ? readProcessStartToken(existing.pid) : null;
+			if (live && !processStartTokensProveMismatch(existing.process_start_token, currentToken)) {
+				if (Date.now() >= waitDeadline) {
+					throw new Error(`Manifest lock baseline update already owned by live process ${existing.pid}`);
+				}
+				waitSynchronously(20);
+				continue;
 			}
 			rmSync(ownerPath, { force: true });
 		}
 	}
-
-	throw new Error('Cannot acquire manifest lock CAS ownership');
 }
 
 function writeManifestLockAtomically(projectRoot: string, content: string): void {
@@ -242,9 +251,14 @@ export function parseManifestLockCustomizationPlan(value: unknown): ManifestLock
 		if (!isRecord(entry) || typeof entry.relative_path !== 'string' || typeof entry.content_hash !== 'string') {
 			throw new Error('Invalid manifest lock customization plan file entry');
 		}
+		const hasBaseline = Object.prototype.hasOwnProperty.call(entry, 'baseline_lock_entry_hash');
+		if (hasBaseline && entry.baseline_lock_entry_hash !== null && typeof entry.baseline_lock_entry_hash !== 'string') {
+			throw new Error('Invalid manifest lock customization plan file entry');
+		}
 		return {
 			relative_path: normalizeManifestPlanPath(entry.relative_path),
 			content_hash: entry.content_hash,
+			...(hasBaseline ? { baseline_lock_entry_hash: entry.baseline_lock_entry_hash as string | null } : {}),
 		};
 	});
 	if (files.length === 0 || new Set(files.map((entry) => entry.relative_path)).size !== files.length) {
@@ -257,6 +271,19 @@ export function parseManifestLockCustomizationPlan(value: unknown): ManifestLock
 	};
 }
 
+function fingerprintManifestLockEntry(entry: unknown): string | null {
+	if (entry === undefined) {
+		return null;
+	}
+	if (!isRecord(entry)) {
+		throw new Error('Manifest lock file entry must be a TOML table');
+	}
+	const source = readString(entry, 'source', 'manifest lock file entry source');
+	const lastAction = readString(entry, 'last_action', 'manifest lock file entry last_action');
+	const contentHash = readString(entry, 'content_hash', 'manifest lock file entry content_hash');
+	return sha256Content(JSON.stringify({ source, lastAction, contentHash }));
+}
+
 export function createManifestLockCustomizationPlan(
 	projectRoot: string,
 	relativePaths: readonly string[],
@@ -265,6 +292,12 @@ export function createManifestLockCustomizationPlan(
 		throw new Error(`Cannot plan customization without ${MANIFEST_LOCK_RELATIVE_PATH}`);
 	}
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
+	const lockContent = readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath);
+	const parsed = parseTomlText(lockContent);
+	if (!isRecord(parsed)) {
+		throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);
+	}
+	const filesTable = isRecord(parsed.files) ? parsed.files : {};
 	const files = [...new Set(relativePaths.map(normalizeManifestPlanPath))].map((relativePath) => {
 		const filePath = path.join(projectRoot, relativePath);
 		ensureInside(projectRoot, filePath);
@@ -272,14 +305,18 @@ export function createManifestLockCustomizationPlan(
 		if (!existsSync(filePath)) {
 			throw new Error(`Cannot plan manifest lock customization for missing file: ${relativePath}`);
 		}
-		return { relative_path: relativePath, content_hash: sha256ProjectFile(projectRoot, filePath) };
+		return {
+			relative_path: relativePath,
+			content_hash: sha256ProjectFile(projectRoot, filePath),
+			baseline_lock_entry_hash: fingerprintManifestLockEntry(filesTable[relativePath]),
+		};
 	});
 	if (files.length === 0) {
 		throw new Error('Manifest lock customization plan requires at least one file');
 	}
 	return {
 		schema_version: '1',
-		manifest_lock_hash: sha256Content(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath)),
+		manifest_lock_hash: sha256Content(lockContent),
 		files,
 	};
 }
@@ -293,7 +330,8 @@ export function applyManifestLockCustomizationPlan(
 	try {
 		const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 		const lockContent = readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath);
-		if (sha256Content(lockContent) !== plan.manifest_lock_hash) {
+		const mergeablePlan = plan.files.every((file) => file.baseline_lock_entry_hash !== undefined);
+		if (!mergeablePlan && sha256Content(lockContent) !== plan.manifest_lock_hash) {
 			throw new Error('Manifest lock CAS conflict: manifest.lock.toml changed after the plan was created');
 		}
 		for (const file of plan.files) {
@@ -309,6 +347,12 @@ export function applyManifestLockCustomizationPlan(
 		}
 		const filesTable = isRecord(parsed.files) ? parsed.files : {};
 		for (const file of plan.files) {
+			if (
+				file.baseline_lock_entry_hash !== undefined &&
+				fingerprintManifestLockEntry(filesTable[file.relative_path]) !== file.baseline_lock_entry_hash
+			) {
+				throw new Error(`Manifest lock CAS conflict: ${file.relative_path} lock entry changed after the plan was created`);
+			}
 			const existing = filesTable[file.relative_path];
 			const existingTable = isRecord(existing) ? existing : {};
 			filesTable[file.relative_path] = {
@@ -319,7 +363,7 @@ export function applyManifestLockCustomizationPlan(
 		}
 		parsed.files = filesTable;
 
-		if (sha256Content(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath)) !== plan.manifest_lock_hash) {
+		if (sha256Content(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath)) !== sha256Content(lockContent)) {
 			throw new Error('Manifest lock CAS conflict: manifest.lock.toml changed during baseline acceptance');
 		}
 		for (const file of plan.files) {

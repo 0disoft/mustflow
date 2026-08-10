@@ -248,6 +248,22 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineScript, /applyManifestLockCustomizationPlan/u);
 });
 
+test('entry-scoped manifest lock fix commit stays bounded to reviewed implementation surfaces', () => {
+	const stageIntent = /\[intents\.manifest_lock_stage_entry_merge_fix\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
+	const commitIntent = /\[intents\.manifest_lock_commit_entry_merge_fix\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
+
+	assert.notEqual(stageIntent, '');
+	assert.match(stageIntent, /"src\/cli\/lib\/manifest-lock\.ts"/u);
+	assert.match(stageIntent, /"tests\/cli\/manifest-lock-cas\.test\.js"/u);
+	assert.match(stageIntent, /"docs-site\/src\/content\/docs\/en\/design\/manifest-lock-decision\.md"/u);
+	assert.match(stageIntent, /"package\.json"/u);
+	assert.match(stageIntent, /writes = \["\.git\/index"\]/u);
+	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
+	assert.notEqual(commitIntent, '');
+	assert.match(commitIntent, /merge independent lock entries/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+});
+
 test('source repository bounds security skill manifest baseline acceptance to reviewed files', () => {
 	const baselineIntent = /\[intents\.manifest_lock_accept_security_skill_baseline\][\s\S]*?(?=\n\[intents\.)/u.exec(
 		sourceCommandContract,
