@@ -2,11 +2,11 @@
 mustflow_doc: skill.observability-debuggability-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: observability-debuggability-review
-description: Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, collectors, exporters, telemetry queues, canaries, sampling, redaction, external dependency calls, queues, batch jobs, caches, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, silent telemetry loss, or unsafe telemetry data.
+description: Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, collectors, exporters, telemetry queues, canaries, sampling, redaction, external dependency calls, queues, batch jobs, Valkey or Redis caches and streams, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, silent telemetry loss, or unsafe telemetry data.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -146,36 +146,53 @@ The review question is not "does the code emit telemetry?" It is "when this path
     - Consumers need queue delay or message age, processing duration, inflight count, ack or commit failures, redelivery count, retry count, DLQ count, poison reason, and oldest message age where supported.
     - Batch jobs need last success timestamp, last completion timestamp, duration, processed count, failed count, skipped count, and stale-job alert evidence.
     - Silent pipelines need heartbeat or synthetic item evidence when "no input" can look like success.
-16. Review pools and saturation.
+    - For Valkey or Redis Streams consumer groups, separate undelivered group lag from delivered but
+      unacknowledged pending count. Add oldest pending age, maximum delivery count, consumer inactive
+      time, failure-stream ingress, and trimming rate; each indicates a different recovery action.
+16. Review Valkey or Redis server signals when that dependency is operationally relevant.
+    - Separate application command latency from server execution latency. Slow Log excludes network,
+      connection-pool wait, serialization, and reply consumption, so compare client p50/p95/p99/p999
+      with command latency percentiles and slow-command evidence.
+    - Track main execution saturation, command calls and execution time, rejected and failed calls,
+      large requests and replies where supported, and event-loop duration. For Valkey 9.1 or newer,
+      main-thread active-time deltas can estimate spare capacity more directly than CPU busy time.
+    - Model OOM risk from RSS, allocator fragmentation, non-evictable buffers, client buffers,
+      replication and AOF buffers, copy-on-write peaks, host available memory, and swap—not only
+      `used_memory / maxmemory`.
+    - Observe eviction and expiration as rates, client input/output backpressure, rejected
+      connections, replica offset lag and full resyncs, persistence status and delayed fsyncs, fork
+      duration and COW, and cluster failed or probable-failure slots. Preserve workload-specific
+      cache hit/miss, lock wait/failure/renewal, and queue lag/pending metrics outside server INFO.
+17. Review pools and saturation.
     - CPU can be low while worker, thread, DB connection, HTTP connection, queue, semaphore, or rate-limit pools are saturated.
     - Track active, max, queued, queue wait, acquire duration, timeout count, rejection count, and per-dependency pool names with bounded labels.
     - Missing saturation evidence should downgrade performance and reliability claims.
-17. Review feature, config, release, and migration attribution.
+18. Review feature, config, release, and migration attribution.
     - Logs, traces, and metrics should carry service version, git sha or release id, deployment environment, region, schema or migration version, config version, and relevant feature flag or experiment variant when local policy allows.
     - If a 5 percent feature flag cohort can fail separately, the telemetry must let operators split healthy and broken cohorts.
-18. Check alert and runbook usefulness.
+19. Check alert and runbook usefulness.
     - Every new critical metric should answer what panel, alert, or runbook sentence it supports.
     - Pager alerts should indicate user impact or clear operator action, not only "a counter changed."
     - Logs that page humans should have matching counters or rates so operators can see when the event started and how fast it is happening.
-19. Check telemetry self-observability.
+20. Check telemetry self-observability.
     - Exporters, collectors, custom metric collectors, log sinks, trace queues, and sampling pipelines need dropped, failed, queued, scrape error, and export latency evidence when they can blind operators.
     - If telemetry failure can hide product failure, treat missing self-metrics as an operational risk.
-20. Check signal pipeline loss and read-path visibility.
+21. Check signal pipeline loss and read-path visibility.
     - Compare produced, accepted, exported, stored, and query-visible signal counts when the path depends on logs, metrics, traces, or events for diagnosis.
     - Use canary events or synthetic heartbeats when "no telemetry" could mean no traffic, collector failure, broken parser, dropped queue, retention gap, or dashboard read failure.
     - Track event timestamp versus observed timestamp, queue oldest age, DLQ oldest age, parser or mapping failures by service and version, and duplicate or sequence-gap evidence.
     - Separate telemetry write-path health from read-path health. A sink can store data that dashboards cannot query, and dashboards can be healthy while new signals are not arriving.
     - If collector, sink, dashboard, or production telemetry checks are outside repository commands, report the manual-only boundary.
-21. Check sampling policy.
+22. Check sampling policy.
     - Head sampling can drop rare errors and slow traces.
     - Error, slow, retry-exhausted, high-latency, partial-success, DLQ, and compensation-failure traces often need keep rules, tail sampling, or explicit event evidence.
     - If a rare failure can be sampled out, require fallback event logs for key span boundaries, duration, outcome, reason, tenant or job slice, feature flag, and deployment version.
     - If sampling is outside the repository, report the manual-only evidence boundary instead of assuming critical traces are retained.
-22. Check privacy before telemetry leaves the process.
+23. Check privacy before telemetry leaves the process.
     - Redact or classify tokens, passwords, authorization headers, cookies, raw bodies, emails, phone numbers, payment data, personal identifiers, prompt text, confidential document text, provider payloads, and full SQL before logger, metric, trace, baggage, or exporter entry.
     - Baggage should be small, safe, low-lifetime, and intentional. Do not use it as a general request metadata bag.
     - Report sink-side masking as insufficient when sensitive data can already leave the process unredacted.
-23. Require telemetry tests or contract evidence where feasible.
+24. Require telemetry tests or contract evidence where feasible.
     - Good tests assert stable event names, bounded label values, denominator counters, trace-context propagation, redaction, sampling flags, feature flag attributes, release attributes, and failure-category mapping.
     - Source-level guards can prevent raw URL or user id metric labels when runtime telemetry tests are not available.
     - If dashboards, alerts, production traces, or load evidence are manual-only, complete available checks and report the evidence gap.

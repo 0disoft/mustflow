@@ -2,11 +2,11 @@
 mustflow_doc: skill.queue-processing-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: queue-processing-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and queue, stream, pub/sub, broker, worker, task, job, consumer, producer, webhook handoff, DLQ, retry, redelivery, visibility timeout, offset commit, message ack, nack, reject, delete, publisher confirm, prefetch, rebalance, FIFO group, deduplication, or worker-loss behavior can lose work, duplicate work, hide poison messages, reorder state, exhaust consumers, or falsely claim processing success.
+description: Apply this skill when code is created, changed, reviewed, or reported and queue, stream, Valkey or Redis Streams consumer group, Pub/Sub, broker, worker, task, job, consumer, producer, webhook handoff, DLQ, retry, redelivery, visibility timeout, pending-entry list, XACK, XAUTOCLAIM, offset commit, message ack, nack, reject, delete, publisher confirm, prefetch, rebalance, FIFO group, deduplication, or worker-loss behavior can lose work, duplicate work, hide poison messages, reorder state, exhaust consumers, or falsely claim processing success.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -128,27 +128,43 @@ The core question is not "is the worker running?" It is "when does this code dec
     - Default early acknowledgement can mark a task complete before work runs.
     - Late acknowledgement helps only when tasks are idempotent and worker-loss behavior is configured for the desired redelivery semantics.
     - Broad auto-retry over every exception can turn invalid payloads into poison-message loops.
-12. Review ordering and concurrency.
+12. Review Valkey or Redis Streams consumer groups.
+    - Important work belongs in a durable stream or broker, not Pub/Sub, when disconnected consumers
+      must recover missed messages. Pub/Sub delivery and keyspace notifications are convergence hints,
+      not replayable settlement evidence.
+    - Treat `XREADGROUP` delivery as in-progress, not complete. Avoid `NOACK` for consequential work;
+      durably apply an idempotent side effect before `XACK`.
+    - Expect redelivery after a crash between the durable effect and `XACK`. Exactly-once outcome
+      requires an application idempotency key, inbox record, unique constraint, or conditional state
+      transition; the stream alone does not provide it.
+    - Set reclaim idle time from the task class's processing-time distribution plus margin. A short
+      `XAUTOCLAIM` threshold steals live work; a long one delays recovery. Use unique consumer names,
+      observe oldest pending age and delivery count, and move poison work to an owned failure stream
+      after a bounded retry budget.
+    - Do not trim only by total length when unacknowledged entries still need their payload. Retention
+      must preserve the oldest recoverable pending work, maximum processing and outage duration, and
+      audit window, or keep the durable payload elsewhere and stream only a reference.
+13. Review ordering and concurrency.
     - FIFO groups, Kafka partitions, per-tenant locks, entity keys, and aggregate ordering should match the business ordering requirement.
     - One global group can serialize the whole system; a unique group for every message can destroy per-entity ordering.
     - Parallel consumers need idempotency and conditional state transitions for redelivery and out-of-order completion.
-13. Review side-effect ordering.
+14. Review side-effect ordering.
     - Email, payment, entitlement, stock, file conversion, webhooks, provider calls, and downstream publishes should not be able to run twice without a durable operation key.
     - If side effects happen before completion markers, crash recovery needs idempotency, provider lookup, reconciliation, or compensation.
-14. Review DLQ as a workflow, not a bucket.
+15. Review DLQ as a workflow, not a bucket.
     - DLQ entries need reason, attempt count, original queue, message identity, safe payload summary, replay eligibility, and alerting or ownership.
     - A DLQ consumer or replay tool can repeat the same bug if it lacks idempotency, ordering, and poison classification.
-15. Review backpressure and resource bounds.
+16. Review backpressure and resource bounds.
     - Unlimited `Promise.all`, unbounded goroutines, huge prefetch, large batch size, or worker pools detached from DB and HTTP pool limits can move the bottleneck from broker lag to consumer collapse.
     - Bound concurrency by downstream capacity and message processing cost.
-16. Review shutdown, cancellation, and worker loss.
+17. Review shutdown, cancellation, and worker loss.
     - A worker should stop receiving new work, finish or safely abandon in-progress work, and avoid acknowledging work that did not complete.
     - Cancellation should not be swallowed as success.
-17. Review observability at decision points.
+18. Review observability at decision points.
     - Logs and metrics should record the decision: processed, acknowledged, committed, retried, delayed, dead-lettered, discarded, or unknown.
     - Useful fields include message id, correlation id, attempt, queue delay, processing duration, ack or commit result, retry-after, DLQ reason, and safe business key.
     - "Received message" alone is not incident evidence.
-18. Require replay-path evidence.
+19. Require replay-path evidence.
     - Good tests or integration checks cover duplicate delivery, handler failure before settlement, settlement failure after durable commit, poison payload, delayed redelivery, visibility expiry, rebalance, worker crash, DLQ replay, and producer publish failure.
     - If deterministic broker evidence is not configured, report static risk and missing manual or integration proof instead of approving the path.
 

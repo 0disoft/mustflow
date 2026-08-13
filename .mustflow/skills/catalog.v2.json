@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:8a8c5ef1c60510eecf574afd7bb29a76fa889346555d1ed59c93970a080e85cb",
+  "source_fingerprint": "sha256:d46a63e837978bc2024444b880be0cad5c83bcda3e6313694a9896f9263d7064",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1833,15 +1833,35 @@
         "data_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "cache invalidation",
+        "cache stampede",
+        "client tracking",
+        "deterministic jitter",
+        "eviction policy",
+        "hash field ttl",
+        "hot key",
+        "maxmemory",
+        "stale while revalidate",
+        "valkey",
+        "valkey 메모리",
+        "valkey 캐시",
+        "결정적 ttl 지터",
+        "캐시 무효화",
+        "캐시 스탬피드",
+        "핫 키"
+      ],
+      "negative_signals": [
+        "queue settlement only",
+        "stream consumer only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and cache or client state behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, partial-entity, persisted-storage, hydration, optimistic-update, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Redis fallback, browser storage, service workers, SSR hydration, cache-status ledgers such as hit, miss, bypass, stale, refresh, error, set-failed, evicted, or expired, origin-cost observability, value provenance, value size, eviction policy, TTL-less keys, KEYS/SCAN use, hot keys, Redis Cluster hash tags, replica lag, Redis latency, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and cache or client state behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, partial-entity, persisted-storage, hydration, optimistic-update, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Valkey or Redis data modeling and fallback, browser storage, service workers, SSR hydration, cache-status ledgers such as hit, miss, bypass, stale, refresh, error, set-failed, evicted, or expired, origin-cost observability, value provenance, value size, eviction policy, TTL-less keys, hash-field TTL, KEYS/SCAN use, hot keys, Cluster hash tags, replica lag, latency, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -8027,7 +8047,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, collectors, exporters, telemetry queues, canaries, sampling, redaction, external dependency calls, queues, batch jobs, caches, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, silent telemetry loss, or unsafe telemetry data.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and logs, metrics, traces, spans, events, dashboards, alerts, runbooks, telemetry context, collectors, exporters, telemetry queues, canaries, sampling, redaction, external dependency calls, queues, batch jobs, Valkey or Redis caches and streams, pools, rate limits, feature flags, releases, or partial-success paths need review for whether an operator can narrow an incident quickly without high-cardinality metric explosions, missing denominators, lost trace context, silent telemetry loss, or unsafe telemetry data.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -9199,15 +9219,32 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "consumer group",
+        "pending entry list",
+        "pending 메시지",
+        "redis streams",
+        "stream trimming",
+        "valkey streams",
+        "valkey 작업 큐",
+        "xack",
+        "xautoclaim",
+        "xpending",
+        "xreadgroup",
+        "작업 재회수",
+        "컨슈머 그룹"
+      ],
+      "negative_signals": [
+        "cache only",
+        "pubsub loss acceptable"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and queue, stream, pub/sub, broker, worker, task, job, consumer, producer, webhook handoff, DLQ, retry, redelivery, visibility timeout, offset commit, message ack, nack, reject, delete, publisher confirm, prefetch, rebalance, FIFO group, deduplication, or worker-loss behavior can lose work, duplicate work, hide poison messages, reorder state, exhaust consumers, or falsely claim processing success.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and queue, stream, Valkey or Redis Streams consumer group, Pub/Sub, broker, worker, task, job, consumer, producer, webhook handoff, DLQ, retry, redelivery, visibility timeout, pending-entry list, XACK, XAUTOCLAIM, offset commit, message ack, nack, reject, delete, publisher confirm, prefetch, rebalance, FIFO group, deduplication, or worker-loss behavior can lose work, duplicate work, hide poison messages, reorder state, exhaust consumers, or falsely claim processing success.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

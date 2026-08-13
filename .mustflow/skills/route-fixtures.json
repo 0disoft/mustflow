@@ -1598,6 +1598,43 @@
       "required_candidates": [
         "client-bundle-pruning-review"
       ]
+    },
+    {
+      "id": "valkey-cache-lifecycle-korean",
+      "task": "Valkey 9 캐시의 hash field TTL, maxmemory, eviction, 결정적 jitter, stale-while-revalidate, hot key와 fill lease 안전성을 검토해",
+      "paths": [
+        "src/cache/valkey-store.ts",
+        "tests/cache/valkey-store.test.ts"
+      ],
+      "reasons": [
+        "performance_change",
+        "data_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "cache-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "queue-processing-integrity-review"
+      ]
+    },
+    {
+      "id": "valkey-streams-pending-reclaim-korean",
+      "task": "Valkey Streams 작업 큐에서 XREADGROUP, XACK, XPENDING, XAUTOCLAIM, PEL 재회수와 trimming이 중복 처리나 payload 유실을 만들지 검토해",
+      "paths": [
+        "src/workers/valkey-stream-consumer.ts",
+        "tests/workers/valkey-stream-consumer.test.ts"
+      ],
+      "reasons": [
+        "data_change",
+        "behavior_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "queue-processing-integrity-review"
+      ]
     }
   ]
 }

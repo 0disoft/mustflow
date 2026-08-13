@@ -2,11 +2,11 @@
 mustflow_doc: skill.cache-integrity-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: cache-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and cache or client state behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, partial-entity, persisted-storage, hydration, optimistic-update, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Redis fallback, browser storage, service workers, SSR hydration, cache-status ledgers such as hit, miss, bypass, stale, refresh, error, set-failed, evicted, or expired, origin-cost observability, value provenance, value size, eviction policy, TTL-less keys, KEYS/SCAN use, hot keys, Redis Cluster hash tags, replica lag, Redis latency, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.
+description: Apply this skill when code is created, changed, reviewed, or reported and cache or client state behavior can spread stale, wrong, private, overbroad, tenant-crossing, permission-wrong, version-incompatible, partial-entity, persisted-storage, hydration, optimistic-update, or source-overloading values through cache keys, query normalization, key versions, TTL and jitter, soft and hard TTL, stale-while-revalidate, stampede protection, request coalescing, negative caching, invalidation order, list or page caches, tag invalidation, L1/L2 cache layers, Valkey or Redis data modeling and fallback, browser storage, service workers, SSR hydration, cache-status ledgers such as hit, miss, bypass, stale, refresh, error, set-failed, evicted, or expired, origin-cost observability, value provenance, value size, eviction policy, TTL-less keys, hash-field TTL, KEYS/SCAN use, hot keys, Cluster hash tags, replica lag, latency, HTTP Vary/no-cache/no-store semantics, permission caches, cache warming, or failure-path cache tests.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -243,45 +243,76 @@ and what happens to the source system when the cache misses or fails?"
       rate limits, inventory, idempotency, and dedupe caches are not ordinary performance caches.
     - Compare normal cached traffic with an allowed bypass path or known miss path when evidence is
       available. If bypass is faster, fresher, or more correct, the cache policy itself is suspect.
-18. Check Redis keyspace and memory behavior.
+18. Check Valkey or Redis keyspace and memory behavior.
     - Review value size, key size, key schema, bounded key cardinality, max memory, eviction policy,
       expired keys, evicted keys, and whether TTL-less keys are turning cache into state storage.
     - `noeviction` makes writes fail at memory limit. `volatile-*` policies only evict keys with TTL,
       so TTL-less keys can crowd out real cache behavior.
     - `KEYS *` in application code is a production bomb. Use `SCAN` only from bounded admin or
       maintenance paths with explicit limits.
-19. Check Redis latency, replication, and distribution.
+19. Check Valkey or Redis latency, replication, and distribution.
     - Redis Slow Log does not include client round-trip time, connection wait, serialization,
       application loop overhead, DNS, TLS, or network path time. Do not use it as the only latency
       proof.
     - Review replica lag, failover behavior, cold replica warmup, persistence spikes, memory
       fragmentation, client connection pools, shard imbalance, and command mix when a cache incident
       is operational rather than semantic.
-20. Check hot keys and Redis Cluster distribution.
+20. Check hot keys and Cluster distribution.
     - Sharding does not save one hot key. Use replicas, local L1, request coalescing, prewarm,
       chunking, or workload-specific splitting where semantics allow it.
     - Redis Cluster hash tags are useful for intentional multi-key locality, but overusing the same
       tag can force too many keys into one slot.
-21. Check HTTP cache semantics.
+    - Apply hash tags only to the smallest atomic multi-key boundary. A tenant-wide or service-wide
+      tag defeats sharding, and a leading wildcard in a cluster scan pattern can defeat single-slot
+      scan optimization.
+21. Check Valkey data-lifecycle boundaries when Valkey is selected.
+    - Separate disposable cache, non-evictable coordination or session state, and durable or
+      replayable streams when their eviction, persistence, latency, or recovery contracts differ.
+      Logical databases and key prefixes do not isolate memory pressure or eviction.
+    - Distinguish fresh, stale-servable, and physical-expiry times. Use deterministic key-derived
+      jitter for bulk-filled keys, and reserve sliding expiry for contracts that truly measure idle
+      time. A read that extends TTL is a replicated write and can preserve stale data indefinitely.
+    - Treat hash-field expiration as a storage optimization, not an unlimited-object exemption.
+      Bound fields and bytes per top-level hash, verify whether field overwrite preserves or clears
+      TTL on the deployed version, and remember that eviction still removes the whole key.
+    - Size `maxmemory` below the process or container ceiling after accounting for RSS fragmentation,
+      client, replication and AOF buffers, fork copy-on-write peaks, and lazy-free backlog. Eviction
+      accounting is not a process-memory limit.
+    - Gate version-specific commands behind verified server and client capability. For example,
+      Valkey 9.0 introduced hash-field expiration and atomic compare-and-delete via `DELIFEQ`, while
+      Valkey 9.1 added main-thread active-time metrics. Do not infer support from documentation for a
+      newer server than the deployed fleet.
+22. Check stampede and fill-lease ownership.
+    - Collapse same-process work with singleflight before adding a distributed fill lease. Do not
+      bind shared regeneration to the first caller's cancellation signal.
+    - Acquire a bounded lease atomically with a unique token and expiry; compare the token during
+      release and renewal. A plain read-then-delete can delete a successor's lease after expiry.
+    - A fill lease reduces duplicate origin work; it does not prove exclusive authority for money,
+      inventory, permission, or one-time effects. Use durable versions, conditional writes,
+      idempotency constraints, or fencing tokens at the side-effect owner.
+    - Use bounded randomized backoff, stale serving where permitted, and an origin concurrency cap.
+      Treat cache outage differently from an ordinary miss so fallback traffic cannot collapse the
+      source system.
+23. Check HTTP cache semantics.
     - If responses vary by `Authorization`, `Cookie`, `Accept-Language`, `Accept-Encoding`, content
       negotiation, or user context, verify `Vary` and cache-control behavior.
     - `no-cache` means revalidate before reuse. `no-store` means do not store. Do not use one when
       the other is required.
     - Check freshness, validation, private versus public cacheability, CDN behavior, browser behavior,
       and generated-client or proxy expectations.
-22. Check permission and entitlement caches as security boundaries.
+24. Check permission and entitlement caches as security boundaries.
     - A permission cache, role cache, organization-membership cache, subscription cache, admin cache,
       or entitlement cache must be invalidated by revocation, role change, organization move,
       subscription expiry, ownership change, and emergency access changes.
     - Short TTL alone is not enough for decisions that should fail closed or revoke promptly.
-23. Check cache warming and cold-start behavior.
+25. Check cache warming and cold-start behavior.
     - Deployment, autoscale, failover, and rollback can create synchronized cold caches that push
       traffic to the source.
     - Prewarm only keys with clear ownership and backpressure. Do not build an unbounded warming job
       that becomes the outage.
     - Load-test or smoke the cold, warm, failover, replica-lag, source-slow, and cache-down scenarios
       when the repository has configured evidence. Otherwise report those as manual operational gaps.
-24. Check observability.
+26. Check observability.
     - Hit rate alone lies. Break down hits, misses, bypasses, stale serves, refreshes, negative hits,
       refresh failures, evictions, expirations, fallback serves, Redis errors, and set failures by
       endpoint, key-pattern, tenant, status-code, and cache layer where useful.
@@ -294,14 +325,14 @@ and what happens to the source system when the cache misses or fails?"
     - For developer or support diagnostics, expose safe provenance such as cache key class, fetchedAt,
       staleAt, dataVersion, source, lastInvalidatedAt, lastMutationId, writer, isOptimistic, and
       isHydrated when local UI or tooling patterns allow it.
-25. Check tests beyond the happy path.
+27. Check tests beyond the happy path.
     - "Second call is faster" is not enough.
     - Cover concurrent misses, update during read, delete then recreate, source failure, Redis
       failure, synchronized TTL expiry, old-version cached value, stale response after newer value,
       partial response after detail response, permission change, tenant separation, list invalidation,
       negative-cache classification, optimistic failure, persisted-storage reset, deploy rollback,
       and cache-layer bypass when those risks exist.
-26. Label evidence honestly. If the repository lacks deterministic cache, Redis, CDN, HTTP, browser,
+28. Label evidence honestly. If the repository lacks deterministic cache, Valkey, Redis, CDN, HTTP, browser,
     or load tests, report the missing evidence instead of claiming the cache is safe.
 
 <!-- mustflow-section: postconditions -->

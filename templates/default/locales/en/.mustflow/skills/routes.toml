@@ -909,6 +909,11 @@ priority = 74
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change"]
 
+[routes."cache-integrity-review".contexts]
+positive_terms = ["cache-invalidation", "cache-stampede", "client-tracking", "deterministic-jitter", "eviction-policy", "hash-field-ttl", "hot-key", "maxmemory", "stale-while-revalidate", "valkey"]
+concept_aliases = ["Valkey 캐시", "Valkey 메모리", "캐시 무효화", "캐시 스탬피드", "핫 키", "결정적 TTL 지터"]
+negative_terms = ["queue-settlement-only", "stream-consumer-only"]
+
 [routes."quadratic-scan-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -1171,6 +1176,11 @@ route_type = "adjunct"
 priority = 79
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."queue-processing-integrity-review".contexts]
+positive_terms = ["consumer-group", "pending-entry-list", "redis-streams", "stream-trimming", "valkey-streams", "xack", "xautoclaim", "xpending", "xreadgroup"]
+concept_aliases = ["Valkey Streams", "Valkey 작업 큐", "pending 메시지", "작업 재회수", "컨슈머 그룹"]
+negative_terms = ["cache-only", "pubsub-loss-acceptable"]
 
 [routes."transaction-boundary-integrity-review"]
 category = "general_code"

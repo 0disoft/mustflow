@@ -6,6 +6,10 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Expand the existing cache, queue-processing, and observability procedures with Valkey-specific
+  lifecycle, eviction, memory headroom, fill-lease, Streams PEL/reclaim/retention, and operational
+  saturation evidence, plus Korean and command-level routing fixtures.
+
 - Cut same-repository coordination overhead with risk-priced edit, commit, and release verification
   profiles, safe parallel verification, default bounded lock waiting, per-run output namespaces,
   `commands.d` fragments, typed intent inputs, and reusable plan-driven Git stage/commit intents.
