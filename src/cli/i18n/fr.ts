@@ -1665,7 +1665,8 @@ Lisez ces fichiers avant de travailler :
   "verify.help.option.reproEvidence": "Lit une preuve structurée de reproduction de bogue depuis un résumé JSON local au dépôt",
   "verify.help.option.externalEvidence": "Lit une preuve CI externe de moindre autorité depuis un résumé JSON local au dépôt",
   "verify.help.option.parallel":
-    "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes, plafonné par les limites locales ; valeur par défaut : 1",
+    "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes, plafonné par les limites locales ; valeur par défaut : 4",
+  "verify.help.option.profile": "Choisit la vérification edit, commit ou release ; la valeur par défaut est edit",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":
@@ -1692,6 +1693,7 @@ Lisez ces fichiers avant de travailler :
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence ne peut pas être utilisé avec --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence ne peut pas être utilisé avec --plan-only",
   "verify.error.invalidParallel": "--parallel doit être un entier positif",
+  "verify.error.invalidProfile": "--profile doit être edit, commit ou release",
   "verify.error.invalid_plan_file": "Le rapport de classification doit être un fichier JSON lisible",
   "verify.error.unsupported_plan_source": "L'entrée de vérification doit être un rapport mf classify",
   "verify.error.plan_root_mismatch": "Le rapport de classification doit venir de cette racine mustflow",

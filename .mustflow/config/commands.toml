@@ -1,5 +1,8 @@
 schema_version = "1"
 
+[include]
+files = ["commands.d/release-plan.toml"]
+
 # This file is the command-intent contract that prevents agents from guessing commands.
 # mf run executes only configured + oneshot + agent_allowed + closed stdin + explicit timeout + declared command intents.
 # cwd must stay inside the current mustflow root.

@@ -346,15 +346,6 @@ function validateCommandIntentInputs(intentName: string, intent: TomlTable, issu
 		return;
 	}
 
-	if (intent.status === 'configured') {
-		issues.push(
-			commandContractIssue(
-				`Configured intent ${intentName} must not declare inputs until typed input execution is implemented`,
-				'mustflow.command_contract.inputs_invalid',
-			),
-		);
-	}
-
 	if (intent.mode === 'shell' || hasOwn(intent, 'cmd')) {
 		issues.push(
 			commandContractIssue(

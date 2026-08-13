@@ -36,6 +36,7 @@ import {
 	createVerificationRiskAssessment,
 	type VerificationRiskAssessment,
 } from './risk-priced-evidence.js';
+import { applyVerificationProfile, resolveVerificationProfile, type VerificationProfile } from './verification-profile.js';
 
 export const CHANGE_VERIFICATION_SCHEMA_VERSION = '1';
 
@@ -85,6 +86,7 @@ export interface ChangeVerificationReport {
 	readonly schedule: VerificationSchedule;
 	readonly decision_graph: VerificationDecisionGraph;
 	readonly test_selection: TestSelectionReport;
+	readonly verification_profile: ReturnType<typeof resolveVerificationProfile>;
 }
 
 function uniqueSorted(values: Iterable<string>): string[] {
@@ -554,6 +556,7 @@ export function createChangeVerificationReport(
 	classificationReport: ChangeClassificationReport,
 	commandContract: CommandContract,
 	projectRoot: string,
+	profile: VerificationProfile = 'release',
 ): ChangeVerificationReport {
 	const testSelectionPlan = createProjectTestSelectionPlan(projectRoot, classificationReport, commandContract);
 	const requirements = classificationReport.summary.validationReasons.map((reason) =>
@@ -584,12 +587,17 @@ export function createChangeVerificationReport(
 	});
 	const selectedPlans = plansWithProjectTestSelection.map((plan) => ({
 		...plan,
-		selectedCandidates: uniqueVerificationCandidates([
-			...selectVerificationCandidates(commandContract, projectRoot, plan.candidates),
-			...testSelectionPlan.selectedCandidates
-				.filter((candidate) => candidate.reason === plan.requirement.reason)
-				.map((candidate) => candidate.candidate),
-		]),
+		selectedCandidates: applyVerificationProfile(
+			commandContract,
+			plan.requirement.reason,
+			uniqueVerificationCandidates([
+				...selectVerificationCandidates(commandContract, projectRoot, plan.candidates),
+				...testSelectionPlan.selectedCandidates
+					.filter((candidate) => candidate.reason === plan.requirement.reason)
+					.map((candidate) => candidate.candidate),
+			]),
+			profile,
+		),
 	}));
 	const selectedCandidatePlans = selectedPlans.flatMap((plan) => plan.selectedCandidates);
 	const selectedCandidateKeys = new Set(
@@ -625,5 +633,6 @@ export function createChangeVerificationReport(
 		schedule,
 		decision_graph: createVerificationDecisionGraph(commandContract, requirements, candidates, gaps, schedule),
 		test_selection: testSelectionPlan.report,
+		verification_profile: resolveVerificationProfile(profile),
 	};
 }

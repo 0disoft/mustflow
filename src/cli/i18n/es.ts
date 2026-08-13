@@ -1665,7 +1665,8 @@ Lee estos archivos antes de trabajar:
   "verify.help.option.reproEvidence": "Lee evidencia estructurada de reproducción de errores desde un resumen JSON local del repositorio",
   "verify.help.option.externalEvidence": "Lee evidencia de CI externa de menor autoridad desde un resumen JSON local del repositorio",
   "verify.help.option.parallel":
-    "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos, limitada por topes locales; el valor predeterminado es 1",
+    "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos, limitada por topes locales; el valor predeterminado es 4",
+  "verify.help.option.profile": "Elige verificación edit, commit o release; el valor predeterminado es edit",
   "verify.help.option.planOnly": "Imprime el plan de verificación sin ejecutar comandos; requiere --json",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":
@@ -1692,6 +1693,7 @@ Lee estos archivos antes de trabajar:
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence no se puede usar con --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence no se puede usar con --plan-only",
   "verify.error.invalidParallel": "--parallel debe ser un entero positivo",
+  "verify.error.invalidProfile": "--profile debe ser edit, commit o release",
   "verify.error.invalid_plan_file": "El informe de clasificación debe ser un archivo JSON legible",
   "verify.error.unsupported_plan_source": "La entrada de verificación debe ser un informe de mf classify",
   "verify.error.plan_root_mismatch": "El informe de clasificación debe provenir de esta raíz mustflow",

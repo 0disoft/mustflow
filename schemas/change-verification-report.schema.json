@@ -66,9 +66,22 @@
     },
     "test_selection": {
       "$ref": "#/$defs/testSelectionReport"
+    },
+    "verification_profile": {
+      "$ref": "#/$defs/verificationProfile"
     }
   },
   "$defs": {
+    "verificationProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "budgetSeconds", "description"],
+      "properties": {
+        "profile": { "enum": ["edit", "commit", "release"] },
+        "budgetSeconds": { "type": ["integer", "null"], "minimum": 0 },
+        "description": { "type": "string" }
+      }
+    },
     "stringArray": {
       "type": "array",
       "items": {

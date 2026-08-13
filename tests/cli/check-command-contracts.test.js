@@ -265,7 +265,7 @@ files = ["../outside.toml"]
 		assert.ok(
 			check.issues.some((issue) =>
 				issue.includes(
-					'Command include path "../outside.toml" must be a relative commands/*.toml path under .mustflow/config',
+					'Command include path "../outside.toml" must be a relative commands/*.toml or commands.d/*.toml path under .mustflow/config',
 				),
 			),
 		);
@@ -326,7 +326,7 @@ destructive = false
 	}
 });
 
-test('fails configured intents that declare typed inputs before execution support exists', () => {
+test('accepts configured intents with bounded typed inputs', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
 	try {
@@ -357,22 +357,19 @@ allowed_roots = ["tests"]
 allowed_extensions = [".test.js"]
 `,
 		);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
 
 		const result = runCli(projectPath, ['check', '--json']);
 		const check = JSON.parse(result.stdout);
 
-		assert.equal(result.status, 1);
-		assertHasIssueDetail(
-			check,
-			'mustflow.command_contract.inputs_invalid',
-			'Configured intent test_single must not declare inputs until typed input execution is implemented',
-		);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.equal(check.ok, true);
 	} finally {
 		removeTempProject(projectPath);
 	}
 });
 
-test('validates typed intent input declarations without enabling command execution', () => {
+test('validates invalid typed intent input declarations', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 
 	try {

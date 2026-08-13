@@ -75,7 +75,7 @@ export async function runRun(
 		return 1;
 	}
 
-	if (parsedArgs.wait && previewMode) {
+	if (args.includes('--wait') && previewMode) {
 		printUsageError(reporter, t(lang, 'run.error.waitRequiresExecution'), 'mf run --help', getRunHelp(lang), lang);
 		return 1;
 	}
@@ -106,7 +106,7 @@ export async function runRun(
 			},
 			reporter,
 			lang,
-			options,
+			{ ...options, commandInputs: parsedArgs.inputs },
 		);
 		return result.exitCode;
 	}

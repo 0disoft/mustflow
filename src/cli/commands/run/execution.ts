@@ -42,6 +42,7 @@ export interface RunCommandOptions {
 	readonly testTargets?: readonly string[];
 	readonly additionalDeclaredWritePaths?: readonly string[];
 	readonly writeDriftTracking?: 'individual' | 'batch';
+	readonly commandInputs?: Readonly<Record<string, string>>;
 }
 
 export type RunCommandExecutionOutputMode = 'text' | 'json' | 'silent';
@@ -299,6 +300,7 @@ export async function executeRunCommand(
 		addDelegatedIntentGuidance(createRunPlan(projectRoot, contract, request.intentName, {
 			testTargets: options.testTargets,
 			approvedActions: request.allowApprovals,
+			commandInputs: options.commandInputs,
 		}), runContext, lang),
 	);
 
@@ -350,6 +352,8 @@ export async function executeRunCommand(
 			createCommandEnv(projectRoot, { policy: plan.envPolicy, allowlist: plan.envAllowlist }),
 		);
 		env[ACTIVE_RUN_LOCK_ID_ENV] = activeRunLock.handle.record.run_id;
+		env.MUSTFLOW_RUN_NAMESPACE = activeRunLock.handle.record.run_id;
+		env.MUSTFLOW_OUTPUT_DIR = `.mustflow/cache/runs/${activeRunLock.handle.record.run_id}/${request.intentName}`;
 		const writeTracker = options.writeDriftTracking === 'batch'
 			? null
 			: profiler.measure('write_drift_before', () =>

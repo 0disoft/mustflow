@@ -8,10 +8,11 @@ import {
 	type CliOptionSpec,
 	type ParsedCliOptions,
 } from '../../lib/option-parser.js';
+import { VERIFICATION_PROFILES, type VerificationProfile } from '../../../core/verification-profile.js';
 
-export const DEFAULT_VERIFY_PARALLELISM = 1;
+export const DEFAULT_VERIFY_PARALLELISM = 4;
 export const MAX_VERIFY_PARALLELISM = 8;
-export const VERIFY_PARALLEL_EXECUTION_ENABLED = false;
+export const VERIFY_PARALLEL_EXECUTION_ENABLED = true;
 
 const VERIFY_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
@@ -19,6 +20,7 @@ const VERIFY_OPTIONS = [
 	{ name: '--changed', kind: 'boolean' },
 	{ name: '--reason', kind: 'string' },
 	{ name: '--parallel', kind: 'string' },
+	{ name: '--profile', kind: 'string' },
 	{ name: '--from-classification', kind: 'string' },
 	{ name: '--from-plan', kind: 'string' },
 	{ name: '--write-plan', kind: 'string' },
@@ -28,6 +30,7 @@ const VERIFY_OPTIONS = [
 
 const VERIFY_MISSING_VALUE_ERRORS = new Map<string, string>([
 	['--parallel', 'missing_parallel_value'],
+	['--profile', 'missing_profile_value'],
 	['--reason', 'missing_reason_value'],
 	['--from-plan', 'missing_from_plan_value'],
 	['--from-classification', 'missing_from_classification_value'],
@@ -58,6 +61,7 @@ export interface ParsedVerifyArgs {
 	readonly externalEvidence?: string;
 	readonly parallelism?: number;
 	readonly parallelismSpecified?: boolean;
+	readonly profile: VerificationProfile;
 	readonly error?: string;
 }
 
@@ -66,16 +70,21 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 	const base = createParsedVerifyArgsBase(parsed);
 	let parallelism = DEFAULT_VERIFY_PARALLELISM;
 	let parallelismSpecified = false;
+	const rawProfile = getParsedCliStringOption(parsed, '--profile');
+	const profile = rawProfile ?? 'edit';
 
 	if (parsed.error) {
-		return { ...base, parallelism, parallelismSpecified, error: mapVerifyOptionParseError(parsed.error) };
+		return { ...base, parallelism, parallelismSpecified, profile: 'edit', error: mapVerifyOptionParseError(parsed.error) };
+	}
+	if (!VERIFICATION_PROFILES.includes(profile as VerificationProfile)) {
+		return { ...base, parallelism, parallelismSpecified, profile: 'edit', error: 'invalid_profile_value' };
 	}
 
 	const parallelValue = getParsedCliStringOption(parsed, '--parallel');
 	if (parallelValue !== null) {
 		const parsedParallelism = parseVerifyParallelism(parallelValue);
 		if (parsedParallelism === null) {
-			return { ...base, parallelism, parallelismSpecified, error: 'invalid_parallel_value' };
+			return { ...base, parallelism, parallelismSpecified, profile: profile as VerificationProfile, error: 'invalid_parallel_value' };
 		}
 
 		parallelism = parsedParallelism;
@@ -86,10 +95,11 @@ export function parseVerifyArgs(args: readonly string[]): ParsedVerifyArgs {
 		...base,
 		parallelism,
 		parallelismSpecified,
+		profile: profile as VerificationProfile,
 	};
 }
 
-function createParsedVerifyArgsBase(parsed: ParsedCliOptions): Omit<ParsedVerifyArgs, 'parallelism' | 'parallelismSpecified' | 'error'> {
+function createParsedVerifyArgsBase(parsed: ParsedCliOptions): Omit<ParsedVerifyArgs, 'parallelism' | 'parallelismSpecified' | 'profile' | 'error'> {
 	return {
 		json: hasParsedCliOption(parsed, '--json'),
 		planOnly: hasParsedCliOption(parsed, '--plan-only'),
@@ -133,12 +143,12 @@ export function resolveVerifyParallelism(
 	requested: number,
 	cpuAvailable: number | null = readAvailableParallelism(),
 ): VerifyParallelismSettings {
-	const cpuLimit = cpuAvailable === null ? MAX_VERIFY_PARALLELISM : Math.max(DEFAULT_VERIFY_PARALLELISM, cpuAvailable);
+	const cpuLimit = cpuAvailable === null ? MAX_VERIFY_PARALLELISM : Math.max(1, cpuAvailable);
 	const configuredLimit = VERIFY_PARALLEL_EXECUTION_ENABLED ? MAX_VERIFY_PARALLELISM : DEFAULT_VERIFY_PARALLELISM;
-	const effectiveLimit = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(configuredLimit, cpuLimit));
-	const effective = Math.max(DEFAULT_VERIFY_PARALLELISM, Math.min(requested, effectiveLimit));
+	const effectiveLimit = Math.max(1, Math.min(configuredLimit, cpuLimit));
+	const effective = Math.max(1, Math.min(requested, effectiveLimit));
 	const capped = effective !== requested;
-	const mode = effective > DEFAULT_VERIFY_PARALLELISM ? 'parallel_chunks' : 'serial';
+	const mode = effective > 1 ? 'parallel_chunks' : 'serial';
 	const note =
 		!VERIFY_PARALLEL_EXECUTION_ENABLED
 			? 'Parallel verification is temporarily held at serial execution until process, lock, path-scope, and write-drift safety gates are satisfied.'

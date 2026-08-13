@@ -258,6 +258,41 @@ destructive = false
 	}
 });
 
+test('binds declared typed inputs as whole argv tokens', () => {
+	const projectPath = createTempProject();
+	try {
+		initProject(projectPath);
+		appendIntent(projectPath, `
+[intents.typed_echo]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Echo one bounded enum input."
+argv = ["${process.execPath.replace(/\\/gu, '\\\\')}", "-e", "console.log(process.argv[1])", "{mode}"]
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+[intents.typed_echo.inputs.mode]
+type = "enum"
+required = true
+allowed_values = ["fast", "full"]
+`);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
+		const ok = runCli(projectPath, ['run', 'typed_echo', '--input', 'mode=fast']);
+		const rejected = runCli(projectPath, ['run', 'typed_echo', '--input', 'mode=unsafe']);
+		assert.equal(ok.status, 0, ok.stderr || ok.stdout);
+		assert.match(ok.stdout, /fast/u);
+		assert.equal(rejected.status, 1);
+		assert.match(rejected.stderr, /must be one of/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('runs an included command intent from a split command contract', () => {
 	const projectPath = createTempProject();
 
@@ -921,12 +956,12 @@ destructive = false
 		assert.equal(previewJson.active_lock_conflicts.length, 1);
 		assert.equal(previewJson.active_lock_conflicts[0].conflictsWithIntent, 'lock_holder');
 
-		const conflict = runCli(projectPath, ['run', 'lock_conflict']);
+		const conflict = runCli(projectPath, ['run', 'lock_conflict', '--no-wait']);
 		assert.equal(conflict.status, 1);
 		assert.match(conflict.stderr, /active run lock/u);
 		assert.equal(existsSync(conflictMarkerPath), false);
 
-		const localizedConflict = runCli(projectPath, ['--lang', 'ko', 'run', 'lock_conflict']);
+		const localizedConflict = runCli(projectPath, ['--lang', 'ko', 'run', 'lock_conflict', '--no-wait']);
 		assert.equal(localizedConflict.status, 1);
 		assert.match(localizedConflict.stderr, /활성 실행 잠금/u);
 		assert.equal(existsSync(conflictMarkerPath), false);

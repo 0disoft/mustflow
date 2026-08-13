@@ -1665,7 +1665,8 @@ export const hiMessages = {
   "verify.help.option.reproEvidence": "Repository-local JSON summary से structured bug reproduction evidence पढ़ें",
   "verify.help.option.externalEvidence": "Repository-local JSON summary से lower-authority external CI evidence पढ़ें",
   "verify.help.option.parallel":
-    "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं, local limits से capped; default 1 है",
+    "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं, local limits से capped; default 4 है",
+  "verify.help.option.profile": "edit, commit, या release verification चुनें; default edit है",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":
@@ -1692,6 +1693,7 @@ export const hiMessages = {
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence को --plan-only के साथ इस्तेमाल नहीं किया जा सकता",
   "verify.error.invalidParallel": "--parallel positive integer होना चाहिए",
+  "verify.error.invalidProfile": "--profile edit, commit, या release होना चाहिए",
   "verify.error.invalid_plan_file": "Classification report readable JSON file होना चाहिए",
   "verify.error.unsupported_plan_source": "Verification input mf classify report होना चाहिए",
   "verify.error.plan_root_mismatch": "Classification report इसी mustflow root से आना चाहिए",

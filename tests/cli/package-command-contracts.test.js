@@ -178,8 +178,10 @@ test('source repository verification plan prefers cached related tests for ordin
 	assert.equal(related?.selectionState, 'not_selected');
 	assert.deepEqual(
 		report.schedule.entries.map((entry) => entry.intent),
-		['lint', 'quality_gaming_check', 'test_related_cached'],
+		['test_related_cached'],
 	);
+	assert.equal(report.verification_profile.profile, 'edit');
+	assert.equal(report.verification_profile.budgetSeconds, 15);
 	assert.equal(report.candidates.some((candidate) => candidate.intent === 'build'), false);
 	assert.equal(report.candidates.some((candidate) => candidate.intent === 'test'), false);
 });

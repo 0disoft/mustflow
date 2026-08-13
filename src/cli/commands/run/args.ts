@@ -11,16 +11,18 @@ import {
 import { ALLOW_UNTRUSTED_ROOT_OPTION } from '../../lib/run-root-trust.js';
 import { APPROVAL_ACTION_TYPE_SET, APPROVAL_ACTION_TYPES } from '../../../core/approval-actions.js';
 
-const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 300;
+const DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS = 30;
 const RUN_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--dry-run', kind: 'boolean' },
 	{ name: '--plan-only', kind: 'boolean' },
 	{ name: '--wait', kind: 'boolean' },
+	{ name: '--no-wait', kind: 'boolean' },
 	{ name: ALLOW_UNTRUSTED_ROOT_OPTION, kind: 'boolean' },
 	{ name: '--wait-timeout', kind: 'string' },
 	{ name: '--allow-approval', kind: 'string' },
 	{ name: '--repo', kind: 'string' },
+	{ name: '--input', kind: 'string' },
 ] as const satisfies readonly CliOptionSpec[];
 
 export interface ParsedRunArguments {
@@ -32,6 +34,7 @@ export interface ParsedRunArguments {
 	readonly wait: boolean;
 	readonly waitTimeoutSeconds: number;
 	readonly repository: string | null;
+	readonly inputs: Readonly<Record<string, string>>;
 	readonly intentName: string | null;
 	readonly extra: readonly string[];
 	readonly invalidApprovalAction: string | null;
@@ -63,6 +66,12 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 	const parsed = parseCliOptions(args, RUN_OPTIONS, { allowPositionals: true });
 	let waitTimeoutSeconds = DEFAULT_ACTIVE_LOCK_WAIT_TIMEOUT_SECONDS;
 	const allowApprovals = getAllowApprovalValues(parsed);
+	const inputs = Object.fromEntries(parsed.occurrences
+		.flatMap((occurrence) => {
+			if (occurrence.name !== '--input' || typeof occurrence.value !== 'string') return [];
+			const separator = occurrence.value.indexOf('=');
+			return [separator > 0 ? [occurrence.value.slice(0, separator), occurrence.value.slice(separator + 1)] : ['', '']];
+		}));
 
 	if (parsed.error) {
 		const [intentName, ...extra] = parsed.positionals;
@@ -73,9 +82,10 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 			planOnly: hasParsedCliOption(parsed, '--plan-only'),
 			allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
 			allowApprovals,
-			wait: hasParsedCliOption(parsed, '--wait'),
+			wait: !hasParsedCliOption(parsed, '--no-wait'),
 			waitTimeoutSeconds,
 			repository: getParsedCliStringOption(parsed, '--repo'),
+			inputs,
 			intentName: intentName ?? null,
 			extra,
 			invalidApprovalAction: null,
@@ -104,9 +114,10 @@ export function parseRunArguments(args: readonly string[]): ParsedRunArguments {
 		planOnly: hasParsedCliOption(parsed, '--plan-only'),
 		allowUntrustedRoot: hasParsedCliOption(parsed, ALLOW_UNTRUSTED_ROOT_OPTION),
 		allowApprovals,
-		wait: hasParsedCliOption(parsed, '--wait'),
+		wait: !hasParsedCliOption(parsed, '--no-wait'),
 		waitTimeoutSeconds,
 		repository: getParsedCliStringOption(parsed, '--repo'),
+		inputs,
 		intentName: intentName ?? null,
 		extra,
 		invalidApprovalAction,
@@ -124,9 +135,11 @@ export function getRunHelp(lang: CliLang = 'en'): string {
 				{ label: '--plan-only', description: t(lang, 'run.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'run.help.option.json') },
 				{ label: '--wait', description: t(lang, 'run.help.option.wait') },
+				{ label: '--no-wait', description: 'Fail immediately when another live run owns a conflicting resource.' },
 				{ label: '--wait-timeout <seconds>', description: t(lang, 'run.help.option.waitTimeout') },
 				{ label: '--allow-approval <action>', description: t(lang, 'run.help.option.allowApproval') },
 				{ label: '--repo <path>', description: t(lang, 'run.help.option.repository') },
+				{ label: '--input <name=value>', description: 'Bind a declared typed intent input; repeat for multiple inputs.' },
 				{ label: ALLOW_UNTRUSTED_ROOT_OPTION, description: t(lang, 'run.help.option.allowUntrustedRoot') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],

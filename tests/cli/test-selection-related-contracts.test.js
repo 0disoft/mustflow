@@ -389,6 +389,18 @@ test('related selection keeps verification planning changes out of classificatio
 	}
 });
 
+test('related selection maps verification profile policy to focused planning tests', () => {
+	const selected = selectedFor(['src/core/verification-profile.ts']);
+
+	assert.deepEqual([...selected], [
+		'verify.test.js',
+		'verify-changed.test.js',
+		'verify-plan-scheduler.test.js',
+		'explain-verify.test.js',
+		'schema-explain-verify-output.test.js',
+	]);
+});
+
 test('related selection normalizes Windows path separators before rule matching', () => {
 	const report = selectRelated(['src\\core\\line-endings.ts']);
 

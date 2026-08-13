@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import type { ClassifyOutput } from './classify.js';
 import { executeRunCommand } from './run/execution.js';
@@ -33,6 +35,7 @@ import {
 	type VerificationFailureFingerprint,
 } from '../../core/repeated-failure.js';
 import { createVerificationPlanId } from '../../core/verification-plan-id.js';
+import type { VerificationProfile } from '../../core/verification-profile.js';
 import {
 	countReproEvidenceVerdictEffects,
 	createReproEvidenceRisks,
@@ -105,6 +108,38 @@ const VERIFY_SCHEMA_VERSION = '1';
 
 function hashTextSha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
+}
+
+function createVerificationCurrentStateHash(projectRoot: string, report: ChangeVerificationReport, verificationPlanId: string): string | null {
+	if (report.files.length === 0) return null;
+	const hash = createHash('sha256').update(verificationPlanId);
+	for (const relativePath of [...report.files].sort()) {
+		hash.update(`\0${relativePath}\0`);
+		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
+		hash.update(existsSync(absolutePath) ? readFileSync(absolutePath) : Buffer.from('<missing>'));
+	}
+	return `sha256:${hash.digest('hex')}`;
+}
+
+function readReusableVerificationResults(projectRoot: string, verificationPlanId: string, currentStateHash: string | null): ReadonlyMap<string, VerificationResult> {
+	const reusable = new Map<string, VerificationResult>();
+	if (!currentStateHash) return reusable;
+	try {
+		const latest = JSON.parse(readFileSync(resolveLatestVerifyRunReceiptPath(projectRoot), 'utf8')) as Record<string, unknown>;
+		if (latest.verification_plan_id !== verificationPlanId || typeof latest.manifest_path !== 'string') return reusable;
+		const manifest = JSON.parse(readFileSync(path.join(projectRoot, latest.manifest_path), 'utf8')) as { receipts?: Array<Record<string, unknown>> };
+		for (const entry of manifest.receipts ?? []) {
+			if (typeof entry.intent !== 'string' || typeof entry.receipt_path !== 'string' || entry.status !== 'passed') continue;
+			const receipt = JSON.parse(readFileSync(path.join(projectRoot, entry.receipt_path), 'utf8')) as VerificationReceipt;
+			if (receipt.current_state_hash !== currentStateHash || receipt.verification_plan_id !== verificationPlanId) continue;
+			const drift = objectField(receipt.write_drift);
+			if (drift?.has_undeclared_changes === true) continue;
+			reusable.set(entry.intent, { intent: entry.intent, status: 'passed', skipped: false, reason: 'reused_input_hash', detail: null, exit_code: 0, verification_plan_id: verificationPlanId, receipt_path: null, receipt_sha256: null, receipt });
+		}
+	} catch {
+		return reusable;
+	}
+	return reusable;
 }
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
@@ -313,6 +348,7 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				{ label: '--repro-evidence <path>', description: t(lang, 'verify.help.option.reproEvidence') },
 				{ label: '--external-evidence <path>', description: t(lang, 'verify.help.option.externalEvidence') },
 				{ label: '--parallel <count>', description: t(lang, 'verify.help.option.parallel') },
+				{ label: '--profile <edit|commit|release>', description: t(lang, 'verify.help.option.profile') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
@@ -610,6 +646,7 @@ async function runScheduledVerificationIntents(
 	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 	parallelism: number,
+	reusableResults: ReadonlyMap<string, VerificationResult> = new Map(),
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 
@@ -620,23 +657,30 @@ async function runScheduledVerificationIntents(
 			continue;
 		}
 
+		const reused = entries.flatMap((entry) => reusableResults.get(entry.intent) ?? []);
+		const runnableEntries = entries.filter((entry) => !reusableResults.has(entry.intent));
 		let batchResults: VerificationResult[];
-		if (entries.length > 1 && entries.every((entry) => entry.parallelEligible)) {
+		if (runnableEntries.length === 0) {
+			results.push(...reused);
+			continue;
+		}
+		if (runnableEntries.length > 1 && runnableEntries.every((entry) => entry.parallelEligible)) {
 			batchResults =
-				parallelism > DEFAULT_VERIFY_PARALLELISM
+				parallelism > 1
 					? await runVerificationEntriesInParallelChunks(
 							projectRoot,
-							entries,
+							runnableEntries,
 							parallelism,
 							lang,
 							verificationPlanId,
 							correlationId,
 							scheduledTestTargets,
 						)
-					: await runVerificationEntriesSequentially(entries, lang, verificationPlanId, correlationId, scheduledTestTargets);
+					: await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets);
 		} else {
-			batchResults = await runVerificationEntriesSequentially(entries, lang, verificationPlanId, correlationId, scheduledTestTargets);
+			batchResults = await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets);
 		}
+		batchResults = [...reused, ...batchResults];
 
 		results.push(...batchResults);
 		if (!batchResults.some(verificationResultFailed)) {
@@ -1087,6 +1131,7 @@ function writeVerifyRunReceipts(
 	reproEvidence: ReproEvidenceReport | null,
 	externalChecks: readonly ExternalEvidenceCheck[],
 ): VerificationOutput {
+	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, output.verification_plan_id);
 	const statePaths = createVerifyRunStatePaths(projectRoot);
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
 	const results: VerificationResult[] = [];
@@ -1102,6 +1147,7 @@ function writeVerifyRunReceipts(
 			receipt = {
 				...result.receipt,
 				verification_plan_id: output.verification_plan_id,
+				...(currentStateHash ? { current_state_hash: currentStateHash } : {}),
 				receipt_path: receiptPath,
 			};
 			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
@@ -1281,9 +1327,10 @@ async function createVerifyOutput(
 	externalChecks: readonly ExternalEvidenceCheck[] = [],
 	parallelism = DEFAULT_VERIFY_PARALLELISM,
 	parallelismReport: VerificationParallelismReport | null = null,
+	profile: VerificationProfile = 'edit',
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
-	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot, profile);
 	const verificationPlanId = createVerificationPlanId(report, contract);
 	const scheduledIntents = new Set(report.schedule.entries.map((entry) => entry.intent));
 	const scheduledTestTargets = testTargetsByScheduledIntent(report);
@@ -1294,7 +1341,10 @@ async function createVerifyOutput(
 	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
 	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
-	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism);
+	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, verificationPlanId);
+	const mayReuse = profile !== 'release' && !['high', 'critical'].includes(report.risk_assessment.level);
+	const reusableResults = mayReuse ? readReusableVerificationResults(projectRoot, verificationPlanId, currentStateHash) : new Map<string, VerificationResult>();
+	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism, reusableResults);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
@@ -1388,9 +1438,9 @@ async function createVerifyOutput(
 	);
 }
 
-async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string): Promise<PlanOnlyOutput> {
+async function createPlanOnlyOutput(input: VerifyInput, projectRoot: string, profile: VerificationProfile): Promise<PlanOnlyOutput> {
 	const contract = readCommandContract(projectRoot);
-	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot);
+	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot, profile);
 	const verificationPlanId = createVerificationPlanId(report, contract);
 	const localSurfaceReadModels = await readLocalPathSurfaces(projectRoot, report.files);
 	const [firstEntry] = report.schedule.entries;
@@ -1503,6 +1553,10 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 					? t(lang, 'cli.error.missingValue', { option: '--parallel' })
 				: parsed.error === 'invalid_parallel_value'
 					? t(lang, 'verify.error.invalidParallel')
+				: parsed.error === 'missing_profile_value'
+					? t(lang, 'cli.error.missingValue', { option: '--profile' })
+				: parsed.error === 'invalid_profile_value'
+					? t(lang, 'verify.error.invalidProfile')
 				: parsed.error === 'missing_from_classification_value'
 					? t(lang, 'cli.error.missingValue', { option: '--from-classification' })
 				: parsed.error === 'missing_from_plan_value'
@@ -1610,7 +1664,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 	}
 
 	if (parsed.planOnly) {
-		reporter.stdout(JSON.stringify(await createPlanOnlyOutput(input, projectRoot), null, 2));
+		reporter.stdout(JSON.stringify(await createPlanOnlyOutput(input, projectRoot, parsed.profile), null, 2));
 		return 0;
 	}
 
@@ -1625,6 +1679,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		externalChecks,
 		parallelismSettings.effective,
 		parallelismReport,
+		parsed.profile,
 	);
 
 	if (parsed.json) {

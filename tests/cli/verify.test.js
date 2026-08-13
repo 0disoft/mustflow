@@ -372,6 +372,20 @@ test('rejects invalid verification parallelism', async () => {
 	}
 });
 
+test('rejects unknown verification profiles', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		const result = await runCli(projectPath, ['verify', '--reason', 'custom_verify', '--profile', 'turbo']);
+
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /--profile must be edit, commit, or release/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('rejects unsupported verify option forms through shared option parsing', async () => {
 	const projectPath = createTempProject();
 
@@ -422,12 +436,12 @@ required_after = ["custom_verify"]
 		const report = JSON.parse(result.stdout);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(report.parallelism.requested, requested);
-		assert.equal(report.parallelism.effective, 1);
-		assert.equal(report.parallelism.repository_max, 1);
+		assert.equal(report.parallelism.effective, Math.min(8, availableParallelism()));
+		assert.equal(report.parallelism.repository_max, 8);
 		assert.equal(report.parallelism.cpu_available, availableParallelism());
 		assert.equal(report.parallelism.capped, true);
-		assert.equal(report.parallelism.mode, 'serial');
-		assert.match(report.parallelism.note, /temporarily held at serial execution/);
+		assert.equal(report.parallelism.mode, report.parallelism.effective > 1 ? 'parallel_chunks' : 'serial');
+		assert.match(report.parallelism.note, /bounded optimization|runs serially/);
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -1660,7 +1660,8 @@ Read these files before working:
   "verify.help.option.reproEvidence": "Read structured bug-fix reproduction evidence from a repository-local JSON summary",
   "verify.help.option.externalEvidence": "Read lower-authority external CI evidence from a repository-local JSON summary",
   "verify.help.option.parallel":
-    "Run safe non-conflicting schedule batches with up to this many commands, capped by local limits; default is 1",
+    "Run safe non-conflicting schedule batches with up to this many commands, capped by local limits; default is 4",
+  "verify.help.option.profile": "Choose edit (fast), commit (bounded), or release (full) verification; default is edit",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
@@ -1687,6 +1688,7 @@ Read these files before working:
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence cannot be used with --plan-only",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence cannot be used with --plan-only",
   "verify.error.invalidParallel": "--parallel must be a positive integer",
+  "verify.error.invalidProfile": "--profile must be edit, commit, or release",
   "verify.error.invalid_plan_file": "Classification report must be a readable JSON file",
   "verify.error.unsupported_plan_source": "Verification input must be an mf classify report",
   "verify.error.plan_root_mismatch": "Classification report must come from this mustflow root",

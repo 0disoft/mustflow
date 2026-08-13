@@ -1657,7 +1657,8 @@ export const koMessages = {
   "verify.help.option.reproEvidence": "저장소 안의 JSON 요약에서 구조화된 버그 재현 증거를 읽습니다",
   "verify.help.option.externalEvidence": "저장소 안의 JSON 요약에서 낮은 권한의 외부 CI 증거를 읽습니다",
   "verify.help.option.parallel":
-    "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행하되, 로컬 상한을 적용합니다. 기본값은 1입니다",
+    "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행하되, 로컬 상한을 적용합니다. 기본값은 4입니다",
+  "verify.help.option.profile": "edit(빠른 반복), commit(제한된 확신), release(전체) 검증을 선택합니다. 기본값은 edit입니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":
@@ -1684,6 +1685,7 @@ export const koMessages = {
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence는 --plan-only와 함께 사용할 수 없습니다",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence는 --plan-only와 함께 사용할 수 없습니다",
   "verify.error.invalidParallel": "--parallel 값은 양의 정수여야 합니다",
+  "verify.error.invalidProfile": "--profile은 edit, commit, release 중 하나여야 합니다",
   "verify.error.invalid_plan_file": "분류 보고서는 읽을 수 있는 JSON 파일이어야 합니다",
   "verify.error.unsupported_plan_source": "검증 입력은 mf classify 보고서여야 합니다",
   "verify.error.plan_root_mismatch": "분류 보고서는 현재 mustflow 루트에서 나온 것이어야 합니다",

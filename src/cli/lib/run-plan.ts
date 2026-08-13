@@ -57,6 +57,63 @@ export interface ResolvedArgvCommand {
 export interface RunPlanOptions {
 	readonly testTargets?: readonly string[];
 	readonly approvedActions?: readonly string[];
+	readonly commandInputs?: Readonly<Record<string, string>>;
+}
+
+type ResolvedCommandInputs =
+	| { readonly ok: true; readonly values: Readonly<Record<string, string>> }
+	| { readonly ok: false; readonly detail: string };
+
+function resolveCommandInputs(intent: TomlTable, provided: Readonly<Record<string, string>>): ResolvedCommandInputs {
+	const declarations = isRecord(intent.inputs) ? intent.inputs : {};
+	for (const name of Object.keys(provided)) {
+		if (!name || !isRecord(declarations[name])) {
+			return { ok: false, detail: `Input ${name || '(invalid)'} is not declared by this intent.` };
+		}
+	}
+
+	const values: Record<string, string> = {};
+	for (const [name, rawDeclaration] of Object.entries(declarations)) {
+		if (!isRecord(rawDeclaration)) continue;
+		const type = rawDeclaration.type;
+		if (type === 'literal') {
+			values[name] = String(rawDeclaration.value);
+			continue;
+		}
+		const value = provided[name];
+		if (value === undefined) {
+			if (rawDeclaration.required === false) continue;
+			return { ok: false, detail: `Missing required input ${name}; pass --input ${name}=<value>.` };
+		}
+		if (type === 'enum' && Array.isArray(rawDeclaration.allowed_values) && !rawDeclaration.allowed_values.includes(value)) {
+			return { ok: false, detail: `Input ${name} must be one of: ${rawDeclaration.allowed_values.join(', ')}.` };
+		}
+		if (type === 'boolean' && value !== 'true' && value !== 'false') {
+			return { ok: false, detail: `Input ${name} must be true or false.` };
+		}
+		if (type === 'integer') {
+			const integer = Number(value);
+			if (!Number.isSafeInteger(integer) || (Number.isInteger(rawDeclaration.min) && integer < Number(rawDeclaration.min)) || (Number.isInteger(rawDeclaration.max) && integer > Number(rawDeclaration.max))) {
+				return { ok: false, detail: `Input ${name} must be an integer within its declared bounds.` };
+			}
+		}
+		if (type === 'path') {
+			const normalized = value.replace(/\\/gu, '/');
+			if (normalized.startsWith('/') || path.win32.isAbsolute(value) || normalized.split('/').some((segment) => segment === '..' || segment === '.')) {
+				return { ok: false, detail: `Input ${name} must be a safe repository-relative path.` };
+			}
+			const roots = Array.isArray(rawDeclaration.allowed_roots) ? rawDeclaration.allowed_roots.filter((root): root is string => typeof root === 'string') : [];
+			if (!roots.some((root) => normalized === root || normalized.startsWith(`${root.replace(/\/$/u, '')}/`))) {
+				return { ok: false, detail: `Input ${name} is outside its declared allowed_roots.` };
+			}
+			const extensions = Array.isArray(rawDeclaration.allowed_extensions) ? rawDeclaration.allowed_extensions : [];
+			if (extensions.length > 0 && !extensions.some((extension) => typeof extension === 'string' && normalized.endsWith(extension))) {
+				return { ok: false, detail: `Input ${name} does not use an allowed extension.` };
+			}
+		}
+		values[name] = value;
+	}
+	return { ok: true, values };
 }
 
 export type RunPreviewMode = 'dry-run' | 'plan-only';
@@ -68,6 +125,7 @@ export type RunPlanReasonCode =
 	| 'approval_policy_unreadable'
 	| 'cwd_outside_project'
 	| 'invalid_test_target'
+	| 'invalid_command_input'
 	| 'max_output_bytes_exceeds_limit';
 
 interface RunIntentMetadata {
@@ -501,7 +559,15 @@ export function createRunPlan(
 	}
 
 	const testTargets = normalizedTestTargets.values;
-	const commandArgv = metadata.commandArgv && testTargets.length > 0 ? [...metadata.commandArgv, ...testTargets] : metadata.commandArgv;
+	const resolvedInputs = resolveCommandInputs(rawIntent, options.commandInputs ?? {});
+	if (!resolvedInputs.ok) {
+		return createBlockedRunPlan(contract, intentName, rawIntent, eligibility, 'invalid_command_input', resolvedInputs.detail, preconditions);
+	}
+	const baseCommandArgv = metadata.commandArgv?.map((token) => {
+		const match = /^\{([a-z][a-z0-9_]*)\}$/u.exec(token);
+		return match ? resolvedInputs.values[match[1]] ?? token : token;
+	});
+	const commandArgv = baseCommandArgv && testTargets.length > 0 ? [...baseCommandArgv, ...testTargets] : baseCommandArgv;
 
 	if (!metadata.timeoutSeconds || !metadata.mode) {
 		return createBlockedRunPlan(

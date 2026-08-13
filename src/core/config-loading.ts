@@ -14,7 +14,7 @@ export const COMMANDS_CONFIG_RELATIVE_PATH = '.mustflow/config/commands.toml';
 export const COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH = '.mustflow/config';
 export const MUSTFLOW_CONFIG_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 
-const COMMAND_INCLUDE_DIRECTORY = 'commands';
+const COMMAND_INCLUDE_DIRECTORIES = ['commands', 'commands.d'] as const;
 const COMMAND_INCLUDE_ALLOWED_TOP_LEVEL_KEYS = new Set(['intents', 'resources']);
 const WINDOWS_RESERVED_PATH_SEGMENTS = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/iu;
 
@@ -59,7 +59,7 @@ function commandIncludePathIsUnsafe(rawPath: string): boolean {
 		path.win32.isAbsolute(rawPath) ||
 		path.posix.isAbsolute(normalized) ||
 		segments.some((segment) => segment === '.' || segment === '..' || WINDOWS_RESERVED_PATH_SEGMENTS.test(segment)) ||
-		!normalized.startsWith(`${COMMAND_INCLUDE_DIRECTORY}/`) ||
+		!COMMAND_INCLUDE_DIRECTORIES.some((directory) => normalized.startsWith(`${directory}/`)) ||
 		!normalized.endsWith('.toml')
 	);
 }
@@ -84,7 +84,7 @@ function readCommandIncludePathsFromParsed(root: TomlTable): readonly string[] {
 		const normalized = normalizeCommandIncludePath(file);
 		if (commandIncludePathIsUnsafe(file)) {
 			throw new Error(
-				`Command include path "${file}" must be a relative ${COMMAND_INCLUDE_DIRECTORY}/*.toml path under ${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}`,
+				`Command include path "${file}" must be a relative commands/*.toml or commands.d/*.toml path under ${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}`,
 			);
 		}
 
@@ -137,7 +137,7 @@ function readCommandIncludeTable(projectRoot: string, includePath: string): Toml
 	const normalized = normalizeCommandIncludePath(includePath);
 	if (commandIncludePathIsUnsafe(includePath)) {
 		throw new Error(
-			`Command include path "${includePath}" must be a relative ${COMMAND_INCLUDE_DIRECTORY}/*.toml path under ${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}`,
+			`Command include path "${includePath}" must be a relative commands/*.toml or commands.d/*.toml path under ${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}`,
 		);
 	}
 

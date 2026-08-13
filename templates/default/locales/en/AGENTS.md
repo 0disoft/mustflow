@@ -79,7 +79,9 @@ mustflow-managed details are under `.mustflow/`.
   router is insufficient, the task edits skill routing, detailed route metadata is needed, or route
   confidence is ambiguous. Read `.mustflow/skills/INDEX.md` only when full route metadata is
   insufficient, the task edits the expanded route table, or human-readable trigger evidence is
-  needed. This skill-selection gate is mandatory even for small or seemingly obvious tasks.
+  needed. For ordinary low-risk edits this is an advisory routing pass: do not block progress when
+  no plausible skill matches. It remains mandatory for security, privacy, release, migration,
+  destructive, cross-repository, and other high-risk scopes.
 - `mf doctor`, `mf check`, and other health checks do not satisfy the skill-selection gate. They
   confirm repository health; they do not determine which task procedure applies.
 - If a matching skill applies, read the matching `SKILL.md` before editing that scope. After

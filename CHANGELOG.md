@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Cut same-repository coordination overhead with risk-priced edit, commit, and release verification
+  profiles, safe parallel verification, default bounded lock waiting, per-run output namespaces,
+  `commands.d` fragments, typed intent inputs, and reusable plan-driven Git stage/commit intents.
+- Keep skill routing advisory for ordinary low-risk edits while retaining mandatory procedures for
+  security, privacy, releases, migrations, destructive work, and cross-repository changes.
+
 - Add an SVG vector asset production skill that separates visual ideation from constrained SVG
   reconstruction, treats generated XML as untrusted input, budgets editable geometry, preserves
   consumer-specific semantics, gates optimization with multi-size render comparisons, and keeps

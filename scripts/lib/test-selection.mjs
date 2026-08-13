@@ -401,6 +401,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/doc-review-triage\.ts$/u, tests: ['docs.test.js', ...dashboardTests, ...schemaSmokeTests] },
 		{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/change-verification\.ts$/u, tests: verificationPlanningTests },
+		{ match: /^src\/core\/verification-profile\.ts$/u, tests: verificationPlanningTests },
 		{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/agent-plugin-bundle\.ts$/u, tests: ['agent-plugin-bundles.test.js', ...schemaSmokeTests] },
 		{ match: /^src\/core\/contract-models\.ts$/u, tests: ['check-command-contracts.test.js', ...schemaSmokeTests] },

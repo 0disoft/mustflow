@@ -1655,7 +1655,8 @@ export const zhMessages = {
   "verify.help.option.reproEvidence": "从仓库本地 JSON 摘要读取结构化的 bug 复现证据",
   "verify.help.option.externalEvidence": "从仓库本地 JSON 摘要读取低权限外部 CI 证据",
   "verify.help.option.parallel":
-    "最多并行执行这个数量的安全、无冲突计划批次命令，并受本地上限限制；默认值为 1",
+    "最多并行执行这个数量的安全、无冲突计划批次命令，并受本地上限限制；默认值为 4",
+  "verify.help.option.profile": "选择 edit、commit 或 release 验证；默认为 edit",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":
@@ -1682,6 +1683,7 @@ export const zhMessages = {
   "verify.error.reproEvidenceRequiresRun": "--repro-evidence 不能与 --plan-only 一起使用",
   "verify.error.externalEvidenceRequiresRun": "--external-evidence 不能与 --plan-only 一起使用",
   "verify.error.invalidParallel": "--parallel 必须是正整数",
+  "verify.error.invalidProfile": "--profile 必须是 edit、commit 或 release",
   "verify.error.invalid_plan_file": "分类报告必须是可读取的 JSON 文件",
   "verify.error.unsupported_plan_source": "验证输入必须是 mf classify 报告",
   "verify.error.plan_root_mismatch": "分类报告必须来自当前 mustflow 根目录",

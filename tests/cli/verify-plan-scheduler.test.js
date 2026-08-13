@@ -613,6 +613,64 @@ expected_seconds = 60
 	}
 });
 
+test('verification profiles bound ordinary checks but preserve high-risk verification', async () => {
+	const projectPath = createSchedulerProject();
+
+	try {
+		appendIntent(projectPath, `
+[intents.fast_profile_check]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fast profile check."
+argv = ['${process.execPath}', '-e', 'console.log("fast")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["profile_verify", "security_change"]
+
+[intents.fast_profile_check.cost]
+expected_seconds = 5
+
+[intents.slow_profile_check]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Slow profile check."
+argv = ['${process.execPath}', '-e', 'console.log("slow")']
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["profile_verify", "security_change"]
+
+[intents.slow_profile_check.cost]
+expected_seconds = 90
+`);
+
+		const edit = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'profile_verify', '--profile', 'edit', '--plan-only', '--json'])).stdout);
+		const commit = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'profile_verify', '--profile', 'commit', '--plan-only', '--json'])).stdout);
+		const release = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'profile_verify', '--profile', 'release', '--plan-only', '--json'])).stdout);
+		const security = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'security_change', '--profile', 'edit', '--plan-only', '--json'])).stdout);
+
+		assert.deepEqual(edit.schedule.entries.map((entry) => entry.intent), ['fast_profile_check']);
+		assert.deepEqual(commit.schedule.entries.map((entry) => entry.intent), ['fast_profile_check']);
+		assert.deepEqual(release.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
+		assert.deepEqual(security.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
+		assert.equal(edit.verification_profile.budgetSeconds, 15);
+		assert.equal(release.verification_profile.budgetSeconds, null);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('does not select a lower-cost equivalent intent when artifact freshness is stale', async () => {
 	const projectPath = createSchedulerProject();
 
@@ -1120,12 +1178,12 @@ required_after = ["custom_verify"]
 	}
 });
 
-test('holds non-conflicting explicit-effect verification batches at serial execution while the safety gate is active', async () => {
+test('runs non-conflicting explicit-effect verification batches in parallel', async () => {
 	const projectPath = createSchedulerProject();
 	const startAPath = path.join(projectPath, 'parallel-a-start.txt');
 	const startBPath = path.join(projectPath, 'parallel-b-start.txt');
 	const parallelWorkDelayMs = 3000;
-	const parallelStartToleranceMs = 2000;
+	const parallelStartToleranceMs = 5000;
 
 	try {
 		appendIntent(
@@ -1185,7 +1243,7 @@ required_after = ["parallel_verify"]
 		writeRunTrustManifestLock(projectPath);
 
 		const planResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--plan-only', '--json']);
-		const runResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel=2'], {
+		const runResult = await runCli(projectPath, ['verify', '--reason', 'parallel_verify', '--json', '--parallel', '2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const planReport = JSON.parse(planResult.stdout);
@@ -1201,11 +1259,11 @@ required_after = ["parallel_verify"]
 			planReport.schedule.entries.map((entry) => entry.parallelEligible),
 			[true, true],
 		);
-		assert.equal(runReport.parallelism.effective, 1);
-		assert.equal(runReport.parallelism.mode, 'serial');
+		assert.equal(runReport.parallelism.effective, 2);
+		assert.equal(runReport.parallelism.mode, 'parallel_chunks');
 		assert.ok(
-			startDifference >= parallelStartToleranceMs,
-			`expected safety-held serial start times at least ${parallelStartToleranceMs}ms apart, got ${startDifference}ms`,
+			startDifference < parallelStartToleranceMs,
+			`expected parallel start times less than ${parallelStartToleranceMs}ms apart, got ${startDifference}ms`,
 		);
 		assert.deepEqual(ranResults.map((result) => result.intent), scheduledIntents);
 		for (const result of ranResults) {
@@ -1226,7 +1284,7 @@ required_after = ["parallel_verify"]
 	}
 });
 
-test('attributes undeclared write drift per serial intent while the parallel safety gate is active', async () => {
+test('attributes undeclared write drift per parallel intent', async () => {
 	const projectPath = createSchedulerProject();
 
 	try {
@@ -1272,7 +1330,7 @@ required_after = ["parallel_drift"]
 		);
 		writeRunTrustManifestLock(projectPath);
 
-		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel=2'], {
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_drift', '--json', '--parallel', '1'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const report = JSON.parse(result.stdout);
@@ -1336,7 +1394,7 @@ required_after = ["parallel_state"]
 		);
 		writeRunTrustManifestLock(projectPath);
 
-		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel=2'], {
+		const result = await runCli(projectPath, ['verify', '--reason', 'parallel_state', '--json', '--parallel', '2'], {
 			env: { ...process.env, MUSTFLOW_WRITE_DRIFT_SNAPSHOT: '1' },
 		});
 		const report = JSON.parse(result.stdout);
