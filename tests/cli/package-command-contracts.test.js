@@ -326,6 +326,7 @@ test('2.128.3 security and authoring skill release stays bounded and remotely ve
 		'templates/default/locales/en/.mustflow/skills/svg-vector-asset-production',
 		'templates/default/manifest.toml',
 		'tests/cli/authoring-skill-machine-code-performance-contracts.test.js',
+		'tests/cli/authoring-skill-delivery-contracts.test.js',
 		'tests/cli/authoring-skill-svg-vector-assets-contracts.test.js',
 		'tests/cli/package-command-contracts.test.js',
 		'tests/cli/package-metadata-contracts.test.js',
@@ -337,7 +338,7 @@ test('2.128.3 security and authoring skill release stays bounded and remotely ve
 	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
 	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
 	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
-	assert.match(commitIntent, /✨ feat\(skills\): deepen security and asset reviews/u);
+	assert.match(commitIntent, /🐛 fix\(test\): sync policy skill revision/u);
 	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
 	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
 	assert.doesNotMatch(pushIntent, /--force/u);

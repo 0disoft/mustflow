@@ -563,6 +563,7 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		},
 		{
 			name: 'policy-decision-integrity-review',
+			revision: 3,
 			category: 'security_privacy',
 			routeType: 'adjunct',
 			priority: 82,

@@ -6897,6 +6897,7 @@ argv = [
   "tests/cli/authoring-skill-contracts.test.js",
   "tests/cli/authoring-skill-crash-consistency-contracts.test.js",
   "tests/cli/authoring-skill-docs-workflow-contracts.test.js",
+  "tests/cli/authoring-skill-delivery-contracts.test.js",
   "tests/cli/authoring-skill-machine-code-performance-contracts.test.js",
   "tests/cli/authoring-skill-operations-contracts.test.js",
   "tests/cli/authoring-skill-reader-content-contracts.test.js",
@@ -6938,13 +6939,8 @@ env_policy = "minimal"
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Commit the reviewed 2.128.3 security and authoring skill suite after focused, related, release, and strict verification."
-argv = [
-  "git", "commit",
-  "-m", "✨ feat(skills): deepen security and asset reviews",
-  "-m", "Strengthen security review procedures and add dedicated SVG vector and machine-code performance workflows, with evidence-centered README guidance, synchronized routes, templates, and regression contracts.",
-  "-m", "Validation: mf run test_skill_contracts; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
-]
+description = "Commit the reviewed 2.128.3 full-suite policy skill revision sync after the initial release commit."
+argv = ["git", "commit", "-m", "🐛 fix(test): sync policy skill revision", "-m", "Update the full delivery-contract suite to expect the policy decision integrity skill revision shipped by 2.128.3.\n\nValidation: mf run test; mf run test_release; mf run mustflow_check"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
