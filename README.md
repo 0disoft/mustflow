@@ -124,6 +124,10 @@ mustflow installs and validates an agent workflow for user projects.
 - Classifies changed files, public surfaces, and validation reasons with `mf classify`.
 - Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
 - Prints execution-free verification plans with `mf verify --plan-only --json`, including a risk-priced evidence assessment, machine-readable verification decision graph, and read-only local-index lock explanations when available.
+- Runs verification with an explicit `edit`, `commit`, or `release` profile. The default `edit`
+  profile targets fast feedback, `commit` allows a wider bounded check set, and `release` keeps all
+  applicable checks. Security, privacy, data, migration, package, and release reasons retain full
+  verification even when a faster profile was requested.
 - Reports a read-only complexity budget in `mf api diff-risk --changed --json`, `mf verify`
   evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
   config/schema churn, and broad structural changes before treating added complexity as free.
@@ -324,7 +328,8 @@ mf run mustflow_update_apply
 | `mf script-pack run core/text-budget check package.json --json-pointer /description --max <count> --json` | Check a JSON string field and print the stable report schema. |
 | `mf run <intent>` | Run an allowed one-shot command. |
 | `mf run <intent> --repo <path>` | Run one delegated scoped workspace contract from the workspace root. |
-| `mf run <intent> --wait` | Wait for conflicting active run locks before executing the command. |
+| `mf run <intent> --no-wait` | Fail immediately instead of using the default bounded wait for a conflicting active run lock. |
+| `mf run <intent> --input <name=value>` | Bind one declared typed intent input as a whole argument; repeat for multiple inputs. |
 | `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
 | `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
 | `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
@@ -341,6 +346,9 @@ mf run mustflow_update_apply
 | `mf impact --changed` | Report whether changed paths require a package or template version decision. |
 | `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
 | `mf verify --reason <event> --plan-only --json` | Print the required verification plan without running commands. |
+| `mf verify --changed --profile edit` | Run the smallest sufficient configured checks for fast feedback. This is the default profile. |
+| `mf verify --changed --profile commit` | Run a wider bounded related-check set before committing. |
+| `mf verify --changed --profile release` | Run all applicable release and high-risk verification without receipt reuse. |
 | `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
 | `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, output contract, and selection evidence for one skill route. |
 | `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
@@ -372,6 +380,11 @@ New projects start with Bun-backed `test`, `test_related`, and `test_fast` inten
 basic verification immediately after `mf init`. Replace those defaults with narrower project-specific
 commands when a repository uses another runner or has a faster related-test entrypoint.
 
+For one repository with many independently edited command groups, the root contract may include
+`.mustflow/config/commands.d/*.toml` fragments. Use `.mustflow/config/commands/*.toml` for delegated
+nested-repository authority and `commands.d/*.toml` for same-repository ownership slices; intent and
+resource names must remain unique across the effective contract.
+
 `mf run` executes only commands that meet all these conditions:
 
 - `status = "configured"`
@@ -387,6 +400,14 @@ Development servers, watch modes, browser UIs, interactive commands, and backgro
 Command environments remove the project-local `node_modules/.bin` path from `PATH` by default. If an intent needs a project dependency binary such as `eslint`, `tsc`, or `vitest`, declare it through the package manager, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that appears under the project-local `.bin` directory, except for names listed in `defaults.allow_project_local_bin_bare_executables`. `mf run` may resolve those allowed names directly from the local `.bin` directory without exposing every local binary through `PATH`. The installed template allows `mf` and `mustflow` by default. Intent-level `allow_env_inheritance_risks = true` is available when a command intentionally uses `env_policy = "inherit"`.
 
 Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, risk-priced evidence requirements, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
+
+`mf verify` defaults to `--profile edit` and safe parallelism up to 4 commands, further capped by
+local CPU limits. Only explicit-effect, non-conflicting entries from the same scheduled batch may
+overlap. Use `--parallel 1` for serial execution. Successful receipts may be reused only when the
+plan and current-state hash match, the profile is not `release`, and risk is below high.
+
+`mf run` waits up to 300 seconds for a conflicting active resource lock by default. Use
+`--wait-timeout <seconds>` to change that bound or `--no-wait` to fail immediately.
 
 Each executed command run writes a run record under `.mustflow/state/runs/run-*`, atomically updates `.mustflow/state/runs/latest.json`, and rebuilds `.mustflow/state/runs/latest.index.json` from retained `run-*` and `verify-*` directories. The record includes the intent name, working directory, timeout, exit code, timeout status, and the tail of stdout and stderr. `latest.json` is a root-scoped convenience pointer, not session-scoped proof; in multi-agent or multi-terminal workflows, use the per-run `receipt_path`, the retained index, or `mf run <intent> --json` output as the evidence for a specific run.
 

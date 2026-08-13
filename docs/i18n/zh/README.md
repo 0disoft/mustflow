@@ -216,7 +216,7 @@ mf run mustflow_update_apply
 | `mf map --stdout` | 将当前 mustflow 根目录地图输出到标准输出。 |
 | `mf map --write` | 创建或更新 `REPO_MAP.md`。 |
 | `mf run <intent>` | 运行允许的一次性命令。 |
-| `mf run <intent> --wait` | 执行命令前等待冲突的活动运行锁释放。 |
+| `mf run <intent> --no-wait` | 遇到冲突的活动运行锁时立即失败，而不使用默认的有限等待。 |
 | `mf index` | 为 mustflow 文档和命令规则构建 SQLite 索引。 |
 | `mf search <query>` | 在 SQLite 索引中搜索文档、技能和命令规则。 |
 | `mf status` | 检查安装状态及已更改或缺失的文件。 |

@@ -5,6 +5,14 @@ description: Runs a finite command intent declared in commands.toml.
 
 `mf run <intent>` executes only finite command intents declared in `.mustflow/config/commands.toml`.
 
+Conflicting resource locks use a bounded wait by default: up to 300 seconds unless
+`--wait-timeout <seconds>` changes it. Pass `--no-wait` to fail immediately. The older explicit
+`--wait` spelling remains accepted but is no longer needed for the default behavior.
+
+Configured intents may expose typed whole-argument placeholders. Bind them with repeatable
+`--input <name=value>` options. Undeclared names, missing required inputs, invalid enum, boolean, or
+integer values, unsafe paths, and mixed-token interpolation fail before a process starts.
+
 When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves exactly one mapped `.mustflow/config/commands/*.toml` fragment. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`. Run from the nested repository when possible; from the workspace root, always pass `--repo` explicitly.
 
 ## Execution Conditions
@@ -57,6 +65,8 @@ npx mf run lint
 npx mf run mustflow_check
 npx mf run test --json
 npx mf run test --repo projects/game --json
+npx mf run release_plan_show --input plan=.mustflow/state/release-plans/v1.json
+npx mf run test --no-wait
 ```
 
 `--repo` is accepted only in delegated scoped workspace mode. An unmapped working directory under a configured workspace root is rejected instead of falling back to another repository's contract. The selected run trusts `AGENTS.md`, the workspace mapping, and the selected fragment; unrelated root command hashes and sibling fragments cannot block it. Drift in any selected trust input still fails closed.

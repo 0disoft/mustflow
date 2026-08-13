@@ -214,7 +214,7 @@ mf run mustflow_update_apply
 | `mf map --stdout`           | Imprime el mapa de la raíz mustflow actual en la salida estándar.                            |
 | `mf map --write`            | Crea o actualiza `REPO_MAP.md`.                                                             |
 | `mf run <intent>`           | Ejecuta un comando puntual permitido.                                                       |
-| `mf run <intent> --wait`    | Espera bloqueos activos en conflicto antes de ejecutar el comando.                          |
+| `mf run <intent> --no-wait` | Falla de inmediato ante un bloqueo activo en conflicto en vez de usar la espera limitada predeterminada. |
 | `mf index`                  | Crea un índice SQLite para documentación y reglas de comandos de mustflow.                   |
 | `mf search <query>`         | Busca documentación, habilidades y reglas de comandos en el índice SQLite.                   |
 | `mf status`                 | Inspecciona el estado instalado y archivos modificados o ausentes.                          |

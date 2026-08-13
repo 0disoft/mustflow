@@ -238,7 +238,7 @@ mf run mustflow_update_apply
 | `mf map --stdout`         | वर्तमान mustflow रूट मैप को मानक आउटपुट पर प्रिंट करता है।                              |
 | `mf map --write`          | `REPO_MAP.md` फ़ाइल बनाता या अपडेट करता है।                                            |
 | `mf run <intent>`         | अनुमत एक-बार चलने वाले कमांड को चलाता है।                                               |
-| `mf run <intent> --wait`  | command चलाने से पहले conflicting active run locks के लिए wait करता है।                 |
+| `mf run <intent> --no-wait` | default bounded wait की जगह conflicting active run lock होने पर तुरंत fail करता है। |
 | `mf index`                | mustflow दस्तावेज़ों और कमांड नियमों के लिए SQLite सूचकांक बनाता है।                    |
 | `mf search <query>`       | SQLite सूचकांक में दस्तावेज़, कौशल और कमांड नियम खोजता है।                            |
 | `mf status`               | इंस्टॉल स्थिति और बदली या अनुपस्थित फ़ाइलों की जांच करता है।                           |

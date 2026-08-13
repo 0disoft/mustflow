@@ -4,8 +4,9 @@ This specification defines when a command intent is runnable through `mf run`.
 
 ## Scope
 
-The source of truth for project commands is  
-[.mustflow/config/commands.toml](../../.mustflow/config/commands.toml). Agents  
+The source of truth for project commands is the effective contract rooted at
+[.mustflow/config/commands.toml](../../.mustflow/config/commands.toml), including reviewed
+`commands/*.toml` and `commands.d/*.toml` fragments named by its `[include]` table. Agents
 and automation must not infer runnable commands from `package.json`, `Makefile`,  
 `justfile`, `Taskfile.yml`, source files, or naming conventions.
 
@@ -63,6 +64,8 @@ values, shell transcripts, or absolute personal paths. If a later run finds a
 lock whose owning process is no longer live, it may reclaim that stale record
 before acquiring its own lock.
 
+`mf run` waits for conflicting active locks by default, bounded by `--wait-timeout`
+(300 seconds by default). `--no-wait` requests immediate failure instead.
 This scheduling metadata does not enable broad parallel execution in `mf run`.
 Non-conflicting explicit locks may overlap when a higher-level verifier chooses
 parallel execution, but commands without explicit effects remain conservative.
@@ -93,9 +96,10 @@ program and argument list.
 
 ## Typed Intent Inputs
 
-The command contract may declare validation-only typed input metadata under an
-intent's `inputs` table. This metadata is a design surface for future
-parameterized execution; it does not make an intent runnable.
+The command contract may declare typed input metadata under an intent's
+`inputs` table. A caller binds non-literal inputs with repeatable
+`mf run <intent> --input <name=value>` options. Input metadata does not make an
+otherwise ineligible intent runnable.
 
 Supported input types are:
 
@@ -114,10 +118,12 @@ Path inputs must declare one or more normalized repository-relative
 `allowed_roots`. Absolute paths, traversal segments, empty roots, and Windows
 reserved device-name segments are rejected. `allowed_extensions` entries must
 start with a dot.
-
-Until typed execution is implemented together with dry-run output, receipts,
-declared effect expansion, and redaction rules, any `configured` intent that
-declares `inputs` is rejected.
+Enum inputs must match `allowed_values`; boolean inputs accept only `true` or
+`false`; integer inputs must be safe integers within declared `min` and `max`
+bounds when present. Literal inputs take their declaration's fixed `value` and
+need no CLI binding. Missing required inputs, undeclared input names, invalid
+values, and unsafe paths fail before process execution. Dry-run output shows the
+resolved whole-token `argv` without changing the declared effect boundary.
 
 ## Precondition Planning
 
@@ -167,9 +173,10 @@ mustflow verification.
 - `mf run build` fails when `cwd` escapes the current mustflow root.
 - `mf run mustflow_check` does not require an externally discoverable `mf`  
   executable when the intent is a mustflow built-in.
-- `mf check` accepts validation-only typed input metadata on non-runnable
-  intents and rejects unsafe paths, undeclared placeholders, shell strings, and
-  configured intents that declare inputs.
+- `mf check` validates typed input metadata and rejects unsafe paths,
+  undeclared placeholders, shell strings, and mixed-token interpolation.
+- `mf run release_plan_show --input plan=.mustflow/state/release-plans/v1.json`
+  binds the declared path as one `argv` token and rejects undeclared or unsafe inputs.
 - `mf run <intent> --dry-run --json`, `mf verify --plan-only --json`, and
   `mf explain command <intent> --json` surface declared precondition status
   without running `satisfy_intent`.

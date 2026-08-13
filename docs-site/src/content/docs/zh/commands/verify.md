@@ -11,7 +11,9 @@ description: 运行由 required_after 元数据选出的已配置验证意图。
 
 `mf verify --plan-only --json` 只打印验证计划，不执行命令。输出包含稳定的 `verification_plan_id` 和 `decision_graph`，用于连接变更表面、分类原因、命令候选、可运行性检查、效果和剩余缺口。存在最新本地索引时，每个计划条目可以包含从 `.mustflow/cache/mustflow.sqlite` 读取的 `effectGraph`，用于说明写入锁和锁冲突。要求项也可以包含 `surfaceReadModels` 元数据，用于说明哪些索引路径-表面规则匹配了变更文件。索引缺失或过期时只显示重建提示，不改变命令选择或执行权限。
 
-`mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，并默认通过 `mf run` 收据串行执行 `schedule.entries`。如果 `--parallel <count>` 大于 `1`，只有同一个显式效果、无冲突计划批次中的条目才能同时执行，收据仍按计划顺序写入。verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
+`mf verify` 实际执行命令时，会使用与 plan-only 输出相同的计划模型，默认安全并行数为 4，并受本地 CPU 和硬上限 8 的约束。只有同一个具有显式效果且无冲突的计划批次中的条目才能并行；效果元数据不足的命令仍按保守方式处理。使用 `--parallel 1` 可强制串行执行。收据仍按计划顺序写入，verify 输出、验证包清单、latest 指针和各意图收据共享同一个 `verification_plan_id`。
+
+`--profile edit|commit|release` 按工作阶段控制验证成本。默认的 `edit` 在声明的 15 秒成本预算内选择足够的最小检查，`commit` 将预算扩大到 60 秒，`release` 保留所有适用检查。安全、隐私、数据、迁移、包元数据、打包和发布原因始终保留完整验证。只有当验证计划和当前状态哈希一致、配置不是 `release` 且风险低于 high 时，才会复用之前成功的收据。
 
 JSON 中的 `execution_status` 是命令执行的汇总状态。为了兼容旧消费者，`status` 保留为同一执行汇总状态的旧别名。需要判断请求的工作是否已完整验证的自动化，应读取 `completion_verdict.status`；只有 `verified` 表示完整验证。
 

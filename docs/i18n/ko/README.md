@@ -214,7 +214,7 @@ mf run mustflow_update_apply
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |
 | `mf map --write` | `REPO_MAP.md`를 생성하거나 갱신합니다. |
 | `mf run <intent>` | 허용된 일회성 명령을 실행합니다. |
-| `mf run <intent> --wait` | 충돌하는 활성 실행 잠금이 풀릴 때까지 기다린 뒤 명령을 실행합니다. |
+| `mf run <intent> --no-wait` | 기본 제한 대기 대신 충돌하는 활성 실행 잠금이 있으면 즉시 실패합니다. |
 | `mf index` | mustflow 문서와 명령 규칙을 SQLite 색인으로 만듭니다. |
 | `mf search <query>` | SQLite 색인에서 문서, 스킬, 명령 규칙을 검색합니다. |
 | `mf status` | 설치 상태와 변경/누락 파일을 확인합니다. |

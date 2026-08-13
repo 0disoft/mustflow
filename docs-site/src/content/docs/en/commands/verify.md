@@ -11,7 +11,9 @@ description: Runs configured verification intents selected by required_after met
 
 `mf verify --plan-only --json` prints the verification plan without running commands. The output includes a stable `verification_plan_id` plus a `decision_graph` that links changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When a fresh local index exists, each scheduled entry can include `effectGraph` details from `.mustflow/cache/mustflow.sqlite`, including write locks and lock conflicts. Each `effectGraph` is marked `authority: "explanation_only"` and `grantsCommandAuthority: false`. Requirements can also include `surfaceReadModels` metadata that explains which indexed path-surface rule matched the changed files. Missing or stale indexes show a refresh hint and never change command selection or execution authority.
 
-When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and executes `schedule.entries` serially through `mf run` receipts by default. If `--parallel <count>` is greater than `1`, only entries from the same explicit-effect, non-conflicting schedule batch can run at the same time, and receipts are still written in schedule order. The verify output, verify bundle manifest, latest pointer, and per-intent receipts share the same `verification_plan_id`.
+When `mf verify` actually runs commands, it uses the same schedule model as plan-only output and defaults to safe parallelism of 4, capped by local CPU and the hard limit of 8. Only entries from the same explicit-effect, non-conflicting schedule batch can run together; commands without sufficient effect metadata remain conservative. Use `--parallel 1` for serial execution. Receipts are written in schedule order, and the verify output, verify bundle manifest, latest pointer, and per-intent receipts share the same `verification_plan_id`.
+
+`--profile edit|commit|release` prices verification by workflow stage. `edit` is the default and targets the smallest sufficient configured checks within a 15-second declared-cost budget. `commit` widens that budget to 60 seconds. `release` retains all applicable checks. Security, privacy, data, migration, package metadata, packaging, and release reasons always retain full verification. A successful earlier receipt may be reused only when its verification plan and current-state hash match, the selected profile is not `release`, and risk is below high.
 
 The JSON `execution_status` field is the aggregate command execution result. The legacy `status` field is kept as the same execution aggregate for existing consumers. Automation that needs to decide whether the requested work is fully verified should read `completion_verdict.status`; only `verified` represents a complete verification claim.
 
@@ -36,6 +38,9 @@ Before writing the latest pointer, `mf verify` compares the previous verify summ
 npx mf verify --reason code_change
 npx mf verify --reason docs_change --json
 npx mf verify --changed --plan-only --json
+npx mf verify --changed --profile edit
+npx mf verify --changed --profile commit
+npx mf verify --changed --profile release --parallel 4
 npx mf classify --changed --write .mustflow/state/change-classification.json
 npx mf verify --from-classification .mustflow/state/change-classification.json --json
 npx mf verify --reason bug_fix --repro-evidence repro-evidence.json --json
@@ -57,6 +62,7 @@ Machine-readable output uses these fields:
 - `reasons` (`string[]`): Verification reasons used to select command intents.
 - `plan_source` (`string | null`): JSON classification path when `--from-classification` or `--from-plan` was used, `changed` when `--changed` was used, or `null` for `--reason`.
 - `verification_plan_id` (`string`): Stable SHA-256 identifier for the verification plan that selected the run.
+- `verification_profile` (`object`): Selected `edit`, `commit`, or `release` profile, its declared-cost budget in seconds or `null` for full release verification, and a human-readable description.
 - `execution_status` (`string`): Aggregate command execution status: `passed`, `partial`, `failed`, or `blocked`.
 - `status` (`string`): Legacy alias for `execution_status`, kept for compatibility.
 - `completion_verdict` (`object`): Evidence-based completion verdict. It grades the inspected

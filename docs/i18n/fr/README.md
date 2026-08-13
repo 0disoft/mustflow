@@ -214,7 +214,7 @@ mf run mustflow_update_apply
 | `mf map --stdout`           | Affiche la carte de la racine mustflow courante sur la sortie standard.                  |
 | `mf map --write`            | Crée ou met à jour `REPO_MAP.md`.                                                       |
 | `mf run <intent>`           | Exécute une commande ponctuelle autorisée.                                              |
-| `mf run <intent> --wait`    | Attend les verrous actifs en conflit avant d'exécuter la commande.                      |
+| `mf run <intent> --no-wait` | Échoue immédiatement en cas de verrou actif en conflit au lieu de l'attente bornée par défaut. |
 | `mf index`                  | Construit un index SQLite pour les documents et règles de commandes mustflow.            |
 | `mf search <query>`         | Recherche des documents, compétences et règles de commandes dans l’index SQLite.         |
 | `mf status`                 | Inspecte l’état installé et les fichiers modifiés ou manquants.                          |

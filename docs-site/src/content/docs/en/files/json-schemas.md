@@ -64,7 +64,9 @@ building automation around `--json` output.
   the same execution aggregate, completion verdict, evidence model, and coverage matrix as the verify report
 - `change-verification-report.schema.json`: `mf verify --reason <event> --plan-only --json`
   and `mf verify --from-classification <path> --plan-only --json`; command-effect graph fields are
-  explanation-only and point back to `.mustflow/config/commands.toml` for runnable authority
+  explanation-only and point back to `.mustflow/config/commands.toml` for runnable authority. The
+  report also records the selected `edit`, `commit`, or `release` verification profile and its
+  declared-cost budget.
 - `run-receipt.schema.json`: `mf run <intent> --json` and `.mustflow/state/runs/latest.json`
 - `commands.schema.json`: parsed `.mustflow/config/commands.toml`
 - `test-selection.schema.json`: parsed optional `.mustflow/config/test-selection.toml`

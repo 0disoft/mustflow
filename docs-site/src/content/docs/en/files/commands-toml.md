@@ -47,12 +47,14 @@ required_after = ["code_change", "behavior_change"]
 ## Splitting Large Contracts
 
 Large workspace roots can keep child repositories clean by leaving mustflow installed only at the
-workspace root and splitting root command contracts under `.mustflow/config/commands/`.
+workspace root and splitting delegated repository contracts under `.mustflow/config/commands/`.
+One repository can instead use `.mustflow/config/commands.d/` for independently owned fragments
+that reduce merge conflicts without creating delegated authority.
 
 ```text
 .mustflow/config/commands.toml
 .mustflow/config/commands/workduck.toml
-.mustflow/config/commands/akraz.toml
+.mustflow/config/commands.d/release-plan.toml
 ```
 
 Declare included files from the root contract:
@@ -61,14 +63,19 @@ Declare included files from the root contract:
 [include]
 files = [
   "commands/workduck.toml",
-  "commands/akraz.toml",
+  "commands.d/release-plan.toml",
 ]
 ```
 
-Include paths are relative to `.mustflow/config/`, must stay under `commands/`, and must end in
+Include paths are relative to `.mustflow/config/`, must stay under `commands/` or `commands.d/`, and must end in
 `.toml`. They cannot be absolute paths, parent traversals, device names, or symlinks outside the
 mustflow root. Included files are contract fragments, not independent authority roots: they may
 define only `[intents]` and `[resources]`.
+
+Use `commands/*.toml` for fragments mapped to nested repositories in delegated scoped mode. Use
+`commands.d/*.toml` for same-repository ownership slices such as release, documentation, or package
+maintenance commands. In repository-local mode both directories merge into one effective contract,
+so duplicate intent and resource names are rejected instead of resolved by file order.
 
 ```toml
 # .mustflow/config/commands/workduck.toml
@@ -189,6 +196,14 @@ Agents may only run intents with `status = "configured"`, and status alone is no
 - `effects`: Optional per-intent side-effect declarations used to explain resource locks and safe verification order. When absent, `writes` is treated as a conservative exclusive write lock.
 - `network`: Whether the command uses the network.
 - `destructive`: Whether the command may be destructive.
+- `inputs`: Optional typed argument declarations. Callers bind non-literal values with repeatable
+  `mf run <intent> --input <name=value>` options. Placeholders such as `{plan}` must occupy an
+  entire `argv` token; shell strings and mixed interpolation are rejected.
+
+Supported input types are `path`, `enum`, `boolean`, `integer`, and `literal`. Path inputs require
+repository-relative `allowed_roots` and may restrict `allowed_extensions`; enum inputs require
+`allowed_values`; integer inputs may declare `min` and `max`; literals supply a fixed `value`.
+Missing required inputs, undeclared names, invalid values, and unsafe paths fail before execution.
 
 ## Executable Intents
 
