@@ -6,9 +6,21 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.129.2 - 2026-08-13
+
+- Localized the new `mf run --no-wait` and repeatable typed `--input <name=value>` help text in
+  every supported CLI language.
+- Aligned README, command-contract, schema, and six-language command documentation with the
+  verification profiles, default safe parallelism of 4, bounded lock waiting, typed intent inputs,
+  receipt reuse rules, and the ownership split between `commands/` and `commands.d/` fragments.
+
+## 2.129.1 - 2026-08-13
+
 - Expand the existing cache, queue-processing, and observability procedures with Valkey-specific
   lifecycle, eviction, memory headroom, fill-lease, Streams PEL/reclaim/retention, and operational
   saturation evidence, plus Korean and command-level routing fixtures.
+
+## 2.129.0 - 2026-08-13
 
 - Cut same-repository coordination overhead with risk-priced edit, commit, and release verification
   profiles, safe parallel verification, default bounded lock waiting, per-run output namespaces,
