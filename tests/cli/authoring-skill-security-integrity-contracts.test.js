@@ -215,6 +215,10 @@ test('admin control plane safety review treats backoffice tools as production co
 	assert.match(localSkill, /Govern imports/u);
 	assert.match(localSkill, /Review admin search and filters/u);
 	assert.match(localSkill, /Protect production from environment confusion/u);
+	assert.match(localSkill, /success receipt may reference only audit and role or permission events/u);
+	assert.match(localSkill, /Do not certify a pre-existing privileged grant/u);
+	assert.match(localSkill, /workflow environment, runner\s+label, command name containing `staging`/u);
+	assert.match(localSkill, /deny production explicitly for staging-only tools/u);
 	assert.match(localSkill, /Use `auth-permission-change` first/u);
 	assert.match(localSkill, /Use `api-access-control-review` for the API proof/u);
 	assert.match(localSkill, /Remaining admin-control-plane risk/u);
@@ -243,7 +247,7 @@ test('admin control plane safety review treats backoffice tools as production co
 		assert.match(profileMatch[1], /"admin-control-plane-safety-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 2/u);
 });
 
 test('credit ledger integrity review keeps balance changes atomic and reconcilable', () => {
@@ -699,6 +703,10 @@ test('security flow review traces source-to-sink security boundaries', () => {
 	assert.match(localSkill, /queued work/u);
 	assert.match(localSkill, /race conditions/u);
 	assert.ok(localSkill.includes('supply-chain and CI/CD'));
+	assert.match(localSkill, /Compare routing scope with enforcement scope/u);
+	assert.match(localSkill, /forwarded-minus-protected set/u);
+	assert.match(localSkill, /terminal catch-all after a host-wide forwarding rule/u);
+	assert.match(localSkill, /disabled\s+DNS flag lowers current reachability/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/security-flow-review\/SKILL\.md/u);
 	assert.match(skillIndex, /security-flow triage/u);
 	assert.match(skillIndex, /IDOR or BOLA risk/u);
@@ -721,5 +729,5 @@ test('security flow review traces source-to-sink security boundaries', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/security-flow-review\/SKILL\.md"/u);
 	assert.match(manifest, /"security-flow-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.security-flow-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.security-flow-review"\][\s\S]*?revision = 3/u);
 });

@@ -1900,6 +1900,21 @@ priority = 79
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."machine-code-performance-review"]
+category = "general_code"
+route_type = "primary"
+priority = 85
+selection_axis = "task"
+applies_to_reasons = ["performance_change", "code_change", "behavior_change", "test_change", "package_metadata_change"]
+
+[routes."machine-code-performance-review".dependencies]
+suggests_adjuncts = ["performance-measurement-integrity-review", "compiler-engineering-review"]
+
+[routes."machine-code-performance-review".contexts]
+positive_terms = ["alias-analysis", "assembly-hot-loop", "branch-mispredict", "cache-layout", "compiler-optimization-remark", "disassembly-performance", "instruction-throughput", "llvm-mca", "machine-code-performance", "native-hot-path", "pgo", "register-spill", "vectorization"]
+concept_aliases = ["머신 코드 성능", "어셈블리 성능", "핫 루프 최적화", "컴파일러 벡터화", "분기 예측 최적화", "캐시 친화적 데이터 배치", "포인터 별칭 최적화"]
+negative_terms = ["compiler-implementation-only", "managed-runtime-only", "measurement-schema-only"]
+
 [routes."vertical-slice-tdd"]
 category = "tests"
 route_type = "primary"
@@ -2551,6 +2566,23 @@ route_type = "adjunct"
 priority = 65
 selection_axis = "task"
 applies_to_reasons = ["image_asset_change", "web_asset_change"]
+
+[routes."web-asset-optimization".contexts]
+positive_terms = ["avif", "gif", "image-compression", "jpeg", "jpg", "png", "raster-asset", "responsive-image", "webp"]
+concept_aliases = ["래스터 이미지 최적화", "웹 이미지 압축", "PNG 변환", "WebP 변환"]
+negative_terms = ["svg-only", "vector-only", "vector-source"]
+
+[routes."svg-vector-asset-production"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["image_asset_change", "web_asset_change", "ui_change", "code_change", "test_change"]
+
+[routes."svg-vector-asset-production".contexts]
+positive_terms = ["editable-svg", "render-diff", "svg-generation", "svg-optimization", "svg-structure", "svgo", "vector-asset", "vector-style-manifest", "viewbox"]
+concept_aliases = ["편집 가능한 SVG", "SVG 생성", "SVG 구조 최적화", "벡터 에셋", "벡터 아이콘", "벡터 일러스트", "진짜 벡터"]
+negative_terms = ["game-raster-only", "no-svg-or-vector-source", "raster-only-task", "web-raster-only"]
 
 [routes."docs-update"]
 category = "docs_release"

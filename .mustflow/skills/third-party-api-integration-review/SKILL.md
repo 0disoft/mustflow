@@ -2,7 +2,7 @@
 mustflow_doc: skill.third-party-api-integration-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: third-party-api-integration-review
@@ -60,6 +60,10 @@ Developers usually suffer when provider complexity is pushed into the consuming 
 - Operation ledger: reads, writes, mutating operations, money or entitlement effects, external side effects, pagination model, idempotency support, rate limits, retryability, unknown-outcome recovery, and rollback or reconciliation path.
 - Webhook ledger when inbound events exist: signature verification, raw-body requirement, event id, duplicate policy, ordering assumptions, retry behavior, ack timing, async processing, replay tooling, and retention.
 - Error and observability ledger: provider error codes, HTTP statuses, request id, retry-after or reset headers, local error taxonomy, redaction policy, logs, metrics, traces, alerts, and support diagnostics.
+- Response-resource ledger: header and decoded body limits, streaming or buffered read mode, timeout
+  phases, decompression expansion, pagination and aggregate caps, cancellation behavior, parser
+  depth or collection limits, connection reuse after abort, and which public or repeated action can
+  trigger the upstream read.
 - Existing tests, fakes, sandbox credentials policy, fixtures, runbooks, and command-intent entries for verification.
 
 <!-- mustflow-section: preconditions -->
@@ -110,6 +114,17 @@ Developers usually suffer when provider complexity is pushed into the consuming 
    - Use exponential backoff with jitter for transient failures.
    - Bound concurrency when provider capacity can starve local work.
    - Use documented pagination cursors, iterators, or link headers; do not invent next-page URLs or assume stable offset pagination unless the provider promises it.
+   - Enforce response limits while bytes are read, before full buffering, decompression, JSON or XML
+     parsing, signature-independent business validation, or object materialization. Calling a full
+     body helper and checking length afterward limits accepted data, not memory or bandwidth use.
+   - Use `Content-Length` only as an early rejection hint because it may be absent, incorrect, or
+     describe compressed rather than expanded bytes. Count actual streamed bytes, bound decoded
+     size and parser structure where relevant, cancel or drain according to runtime connection-reuse
+     semantics, and combine size limits with header, idle, per-attempt, total, pagination, and
+     concurrency budgets.
+   - Apply the same defensive boundary to private service bindings, internal gateways, signed
+     provider responses, and mutually authenticated peers. Network trust or response authenticity
+     does not bound a malformed, compromised, or faulting peer's resource consumption.
 7. Implement provider error mapping.
    - Map provider status, code, message, field errors, request id, retryability, and endpoint into local typed errors.
    - Preserve enough detail for support without logging secrets, full customer payloads, raw tokens, or payment data.
@@ -135,6 +150,11 @@ Developers usually suffer when provider complexity is pushed into the consuming 
     - Cover auth failure, scope failure, validation failure, timeout, transient 5xx, rate limit, retry exhaustion, idempotent duplicate request, pagination continuation, SDK error mapping, webhook invalid signature, webhook duplicate event, webhook out-of-order event when relevant, and version-upgrade fixture compatibility.
     - Prefer fakes or sandbox tests unless the repository has explicit live-provider test authority.
     - Do not mark the integration complete when only the happy path is tested.
+    - For response limits, use a chunked or streaming fake that exceeds the threshold and assert
+      rejection and cancellation near the boundary without reading to EOF. Cover missing or false
+      length headers, compressed expansion, one-byte-over-limit, slow streams, oversized error
+      bodies, pagination accumulation, and repeated public triggers when applicable. A final
+      `body.length` assertion after full buffering is not a resource-safety regression test.
 12. Report provider ambiguity honestly. Name undocumented behavior, doc/SDK mismatch, skipped live checks, missing sandbox evidence, manual console steps, missing idempotency support, missing webhook replay tooling, and remaining operational risk.
 
 <!-- mustflow-section: postconditions -->

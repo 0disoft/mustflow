@@ -2,7 +2,7 @@
 mustflow_doc: skill.admin-control-plane-safety-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: admin-control-plane-safety-review
@@ -107,6 +107,11 @@ An admin page is not just a place where staff edits rows faster. It is where one
    - Log actor, target, tenant, action, result, reason or ticket when useful, source IP or safe session id, request id, correlation id, before and after values when safe, and denial reason for rejected attempts.
    - Audit reads of sensitive PII, exports, impersonation start and stop, role changes, approval decisions, failed dangerous confirmations, and bulk jobs.
    - Do not log secrets, tokens, full payment data, raw private documents, or excessive PII just to make the audit feel complete.
+   - A success receipt may reference only audit and role or permission events that were inserted or
+     verified in the same authoritative transaction. An `already_active`, idempotent, adoption, or
+     reconciliation branch must prove the promised evidence exists and matches actor, subject,
+     scope, reason, source operation, and outcome; a deterministic future audit ID is not evidence.
+     Do not certify a pre-existing privileged grant merely because its current status is active.
 8. Keep audit logs durable and tamper-resistant enough for the product risk.
    - Append-only storage, restricted delete access, retention policy, clock source, hash chaining, WORM storage, SIEM export, or reviewer workflow may be needed for high-impact products.
    - If the log can be edited by the same operator whose actions it records, report audit-integrity risk.
@@ -136,7 +141,13 @@ An admin page is not just a place where staff edits rows faster. It is where one
     - Audit sensitive lookups such as email, phone, account id, payment id, VIP user, security event, or cross-tenant search when product risk requires it.
 16. Protect production from environment confusion.
     - Display the environment, tenant, and target resource clearly.
-    - Require stronger confirmation for production than staging, block production-only dangerous actions from preview environments, and avoid shared cookies or staff sessions across environments when risk justifies it.
+   - Require stronger confirmation for production than staging, block production-only dangerous actions from preview environments, and avoid shared cookies or staff sessions across environments when risk justifies it.
+   - Enforce target restrictions inside the executable before opening a database or provider
+     connection and again at the authoritative effect boundary. A workflow environment, runner
+     label, command name containing `staging`, runbook statement, serialized
+     `production_authorized: false`, or approval digest derived from public plan data is not target
+     authorization. Bind the command to an independently trusted environment and resource identity,
+     deny production explicitly for staging-only tools, and test a production-looking target.
 17. Review observability and incident reconstruction.
     - Admin jobs need progress, result, failure reason, retry state, initiator, target count, affected item ids or safe references, and correlation ids.
     - Security-relevant admin events should be alertable: role grant, break-glass access, export, mass deletion, impersonation, MFA reset, ownership transfer, and repeated denied attempts.

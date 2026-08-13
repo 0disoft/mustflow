@@ -6826,3 +6826,195 @@ network = true
 destructive = false
 env_policy = "allowlist"
 env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_branch_state_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the current branch, upstream relation, and bounded 2.128.3 skill-suite worktree before staging."
+argv = ["git", "status", "--short", "--branch"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_stage_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.128.3 security, SVG, README, machine-code performance, routing, template, version, and regression changes."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/admin-control-plane-safety-review/SKILL.md",
+  ".mustflow/skills/auth-permission-change/SKILL.md",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/cross-platform-filesystem-safety/SKILL.md",
+  ".mustflow/skills/deployment-rollout-safety-review/SKILL.md",
+  ".mustflow/skills/hetzner-cloud-change/SKILL.md",
+  ".mustflow/skills/machine-code-performance-review",
+  ".mustflow/skills/policy-decision-integrity-review/SKILL.md",
+  ".mustflow/skills/rate-limit-integrity-review/SKILL.md",
+  ".mustflow/skills/readme-authoring/SKILL.md",
+  ".mustflow/skills/readme-evidence-gate/SKILL.md",
+  ".mustflow/skills/release-publish-change/SKILL.md",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  ".mustflow/skills/security-flow-review/SKILL.md",
+  ".mustflow/skills/structured-config-change/SKILL.md",
+  ".mustflow/skills/svg-vector-asset-production",
+  ".mustflow/skills/third-party-api-integration-review/SKILL.md",
+  "CHANGELOG.md",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "package.json",
+  "templates/default/i18n.toml",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/admin-control-plane-safety-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/auth-permission-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/deployment-rollout-safety-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/hetzner-cloud-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/machine-code-performance-review",
+  "templates/default/locales/en/.mustflow/skills/policy-decision-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/readme-authoring/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/readme-evidence-gate/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/release-publish-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/locales/en/.mustflow/skills/security-flow-review/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/structured-config-change/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/svg-vector-asset-production",
+  "templates/default/locales/en/.mustflow/skills/third-party-api-integration-review/SKILL.md",
+  "templates/default/manifest.toml",
+  "tests/cli/authoring-skill-contracts.test.js",
+  "tests/cli/authoring-skill-crash-consistency-contracts.test.js",
+  "tests/cli/authoring-skill-docs-workflow-contracts.test.js",
+  "tests/cli/authoring-skill-machine-code-performance-contracts.test.js",
+  "tests/cli/authoring-skill-operations-contracts.test.js",
+  "tests/cli/authoring-skill-reader-content-contracts.test.js",
+  "tests/cli/authoring-skill-release-support-contracts.test.js",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/authoring-skill-svg-vector-assets-contracts.test.js",
+  "tests/cli/authoring-skill-systems-contracts.test.js",
+  "tests/cli/package-command-contracts.test.js",
+  "tests/cli/package-metadata-contracts.test.js",
+  "tests/cli/skill-route.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_staged_diff_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged paths for the reviewed 2.128.3 skill-suite release."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.release_commit_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.128.3 security and authoring skill suite after focused, related, release, and strict verification."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): deepen security and asset reviews",
+  "-m", "Strengthen security review procedures and add dedicated SVG vector and machine-code performance workflows, with evidence-centered README guidance, synchronized routes, templates, and regression contracts.",
+  "-m", "Validation: mf run test_skill_contracts; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.128.3 skill-suite release from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 180
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+approval_actions = ["git_push"]
+
+[intents.release_github_main_runs_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main workflow runs with commit identities for the 2.128.3 gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "20", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_publish_runs_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs for the 2.128.3 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_128_3]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.128.3 GitHub Release metadata after publication."
+argv = ["gh", "release", "view", "v2.128.3", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]

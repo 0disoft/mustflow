@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 322
+anchor_count: 324
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:410310f4ad8ffb93faa355e3789e522cd8839879243354a5093a755f5824bd4f"
+source_fingerprint: "sha256:c391b406253e1aa8230664a8be29e331ab6af67e3538a116fc7fca6f62c67fb0"
 ---
 
 # REPO_MAP.md
@@ -677,6 +677,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/low-end-device-support-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/machine-code-performance-review/
+
+- `.mustflow/skills/machine-code-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/memory-lifetime-review/
 
 - `.mustflow/skills/memory-lifetime-review/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -1024,6 +1028,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/svelte-code-change/
 
 - `.mustflow/skills/svelte-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/svg-vector-asset-production/
+
+- `.mustflow/skills/svg-vector-asset-production/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/tailwind-code-change/
 

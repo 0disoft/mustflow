@@ -2,7 +2,7 @@
 mustflow_doc: skill.readme-evidence-gate
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: readme-evidence-gate
@@ -106,7 +106,30 @@ Prevent README prose from becoming a contract for features, setup paths, APIs, s
 22. Gate environment variables by code or config. Document only variables found in source lookups, config schemas, runtime manifests, `.env.example`, or maintained configuration docs. If README and `.env.example` disagree, fix the README only when the code evidence supports it, otherwise report the conflict.
 23. Gate API examples by public surface. Library examples must start from public exports, documented CLI entry points, generated API references, or tested examples. Match import paths against `exports`, `main`, `module`, `types`, source entry points, and declaration output. Do not document internal helpers, guessed import paths, guessed argument order, or sync/async behavior without source evidence.
 24. Treat README code blocks as pasteable contracts. Prefer examples under `examples/`, `tests/readme/`, fixtures, generated output snapshots, or CI-exercised README examples when feasible; otherwise qualify conceptual snippets so they cannot be mistaken for runnable setup, API, CLI, or deployment instructions.
-25. Gate README security exposure as if the README is public distribution, even for private repositories. README, `.env.example`, examples, screenshots, and package artifacts can leak through package publication, Docker images, wikis, customer handoffs, and LLM/code scans.
+25. Prove the default quick start as a first-success contract. Separate acquisition from reward;
+    require one supported default path, sample input or complete minimal program, expected output or
+    artifact, and an observable success condition. Record every prerequisite, credential, config
+    edit, invented value, user choice, document round trip, and cleanup step. A short README cannot
+    claim low-friction onboarding when the product path hides those costs.
+26. Audit the first screen as a bounded adoption claim. Require a recognizable use situation,
+    supported removed work or avoided failure, a result-bearing example or visual, material non-goals
+    and adoption constraints, and one primary action. Badges, stars, downloads, logos, screenshots,
+    comparisons, user logos, and roadmap items do not prove the product result by themselves.
+27. Treat demos and visuals as claim evidence. Confirm that media shows the current shipped surface,
+    uses safe and representative data, has a caption naming the observation, remains legible and
+    accessible in its supported themes, and does not hide setup or failure conditions. A cropped
+    success state cannot prove an end-to-end workflow that the capture did not exercise.
+28. Gate competitive comparisons symmetrically. Record compared versions, verification date,
+    hardware and dataset when measured, selection criteria, conditions favoring the alternative,
+    and a reproducible method. Replace feature-count tables or permanent superiority language with
+    current decision criteria, and remove stale differences when evidence no longer supports them.
+29. Separate discovery and conversion evidence. Repository name, About text, topics, social preview,
+    referral source, README visit, demo action, install, first success, star, watch, issue, and
+    contribution measure different transitions. Correlation, aggregate traffic, stars, or a before-
+    and-after period with changed acquisition mix does not establish README causality. Require the
+    target transition, comparable exposure, source segmentation, sample sufficiency, and concurrent
+    change ledger before attributing an effect.
+30. Gate README security exposure as if the README is public distribution, even for private repositories. README, `.env.example`, examples, screenshots, and package artifacts can leak through package publication, Docker images, wikis, customer handoffs, and LLM/code scans.
 26. Use placeholder-shaped secrets only. Do not include real credentials or real-looking fake keys such as `sk_live_...`, `AKIA...`, or `ghp_...`; use placeholders such as `replace-with-your-api-key` and avoid real domains, project IDs, regions, account names, bucket names, tenant IDs, or customer names.
 27. Keep secrets out of URLs and pasteable production commands. Ban API keys in URL query strings; prefer `Authorization` header examples. Do not include pasteable production commands such as production `kubectl`, destructive pod, real backup bucket, production migration, or production deploy commands in README.
 28. Redact internal and production topology. Replace internal URLs, private IPs, admin URLs, staging or production domains, production filesystem paths, deployment user paths, private-key paths, cluster names, database names, and bucket names with `example.com`, `example.test`, or `localhost` placeholders.

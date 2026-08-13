@@ -2,7 +2,7 @@
 mustflow_doc: skill.release-publish-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: release-publish-change
@@ -59,6 +59,10 @@ The release is not done when tests pass locally, a version string changes, or a 
 - Remote check surface: pushed branch, tag, commit SHA, workflow run, required checks, matrix jobs,
   and whether each belongs to publication, branch CI, tag CI, release asset generation, or another
   independent verification path.
+- Publish-authority ledger: workflow and job permissions, OIDC or registry credential scope,
+  environment protection, every executable step sharing that authority, third-party action pins,
+  dependency and lifecycle-script execution, immutable artifact handoff, provenance subject, and
+  whether publication consumes exactly the bytes verified by an unprivileged job.
 - Recovery model: unpublish, yank, deprecate, republish with new version, move channel pointer, revoke asset, restore from backup, or forward fix.
 - Configured command intents for build, package inspection, release verification, docs validation, and user installation or updater smoke test. For post-publish checks, also identify the exact immutable version, intended registry or channel, consumer environment, public entrypoints, and runtime or platform evidence. If no such intent exists, report the missing intent instead of inventing a raw command.
 
@@ -101,6 +105,17 @@ The release is not done when tests pass locally, a version string changes, or a 
    - GitHub Releases depend on Git tags, but release assets, checksums, signatures, and release body are separate evidence surfaces.
    - App updater channels depend on metadata and signature state, not only uploaded installers.
 5. For npm-style package publication, verify package metadata, packed file list, entrypoints, bin links, README, LICENSE, access, provenance or trusted publisher setup, registry target, and exact published version behavior through configured intents.
+   - Treat `id-token: write` as job-scoped publishing authority, not as a credential available only
+     to the textual publish step. Every action, shell command, dependency install, build script,
+     test, hook, and package lifecycle script in that job can potentially request the same identity.
+   - Prefer an unprivileged verification and build job that produces one immutable package artifact,
+     records its digest and provenance inputs, and completes all code-executing checks before a
+     minimal publish-only job receives registry authority. The publish job should download, verify,
+     and publish that exact artifact without rebuilding it or executing repository dependencies.
+   - Pin third-party workflow actions to reviewed immutable commit identifiers and keep checkout
+     credentials disabled unless a step demonstrably needs them. Frozen dependency resolution and
+     post-publish integrity checks reduce drift; they do not revoke authority already exposed to a
+     compromised pre-publish step or repair an immutable version published first.
    - Keep pre-publish packed-artifact checks separate from post-publish registry checks. A local tarball or workspace install does not prove that the immutable registry version users receive is installable.
    - Run the post-publish smoke in a fresh consumer root outside the source checkout. Install the exact immutable name and version from the intended registry without workspace links or local archive fallbacks.
    - Use a fresh or isolated package-manager cache strategy and prefer current registry metadata. A cache-only success is not independent remote-channel evidence.
@@ -136,6 +151,15 @@ The release is not done when tests pass locally, a version string changes, or a 
    - Bad Docker tag: distinguish moved tag from old digest still being referenced.
    - Bad updater metadata: treat as a live channel incident if clients may already have seen it.
 17. Never call a release complete from local tests alone. The completion evidence must name the remote channel, the user installation or update path, and the current relevant check-suite state, or explicitly say which post-publish verification was skipped.
+18. Review the executable trust zone, not only permission syntax.
+   - Moving OIDC or a registry secret from workflow scope to one job is useful only when that job is
+     itself minimal. Job-level permission still reaches every step in the job; most CI systems do
+     not provide a trustworthy step-only OIDC boundary.
+   - Treat artifacts crossing from an unprivileged job into a privileged publish job as hostile
+     until the privileged job verifies expected producer run, commit, artifact identity, digest,
+     package name, version, and channel. Do not accept an arbitrary artifact selected by user input.
+   - A successful provenance attestation proves facts about the published subject under the
+     provider contract; it does not prove that earlier code with the same publish authority was safe.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

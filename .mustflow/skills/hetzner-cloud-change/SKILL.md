@@ -2,7 +2,7 @@
 mustflow_doc: skill.hetzner-cloud-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: hetzner-cloud-change
@@ -84,6 +84,10 @@ of carrying old prices, limits, product availability, or console behavior into a
   and idle-resource costs.
 - Current official Hetzner documentation for every date-sensitive price, limit, availability,
   billing, networking, backup, restore, or product-capability claim used in the decision.
+- IaC input and plan-trust ledger when variables or backend inputs come from outside the repository:
+  source owner, integrity and freshness evidence, schema and semantic constraints, sensitive network
+  and IAM values, rendered plan fields, privilege-expansion rules, approval binding, and whether the
+  reviewer sees the effective values rather than only hashes or create/update/delete counts.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -161,6 +165,14 @@ of carrying old prices, limits, product availability, or console behavior into a
    constraints for VPN, NAT, custom-router, alias-IP, and failover designs. Give each private NIC one
    configuration owner: provider image automation or explicit guest config, not competing DHCP
    clients. Validate routes, DNS, MTU, large transfers, and recovery after a cold boot.
+   Treat repository-external variable files, generated inputs, environment variables, and remote
+   state as untrusted configuration until their effective values pass policy. Path containment,
+   regular-file checks, parsing, checksums, and plan receipts prove identity or syntax, not safety.
+   Inspect rendered Firewall and network changes semantically: world-open IPv4 or IPv6 ranges,
+   widened source sets, removed restrictions, new public addresses, management-port exposure,
+   disabled egress controls, and attachment expansion can increase authority without any delete or
+   replacement action. Bind approval to the exact normalized inputs and rendered plan, surface
+   security-relevant before/after values, and fail closed when the policy cannot classify them.
 
 6. Review Load Balancer and IP transitions.
    Separate liveness from readiness; keep readiness bounded to dependencies required to accept new

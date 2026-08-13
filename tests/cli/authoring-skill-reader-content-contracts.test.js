@@ -69,5 +69,5 @@ test('nearby authoring skills route substantive reader-value work to the owning 
 	assert.match(readme, /outside the repository README/u);
 	assertI18nSkillDocument(i18n, 'writing-elegance', 10);
 	assertI18nSkillDocument(i18n, 'search-ad-content-authoring', 4);
-	assertI18nSkillDocument(i18n, 'readme-authoring', 3);
+	assertI18nSkillDocument(i18n, 'readme-authoring', 4);
 });

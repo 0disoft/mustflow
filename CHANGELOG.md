@@ -6,6 +6,27 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Add an SVG vector asset production skill that separates visual ideation from constrained SVG
+  reconstruction, treats generated XML as untrusted input, budgets editable geometry, preserves
+  consumer-specific semantics, gates optimization with multi-size render comparisons, and keeps
+  vector-family style rules in a versioned manifest.
+- Strengthen README authoring and evidence review around first-screen decisions, user outcomes,
+  observable first success, proof-bearing media, symmetric comparisons, action semantics, and
+  discovery-to-conversion measurement without mistaking traffic correlation for causality.
+- Add a machine-code performance review skill that starts from representative hot addresses,
+  separates frontend, speculation, execution, and memory bottlenecks, makes compiler legality facts
+  explicit, and accepts layout, vectorization, PGO, LTO, or target-specific changes only with
+  correctness and end-result evidence.
+
+- Strengthened security review procedures from validated cross-system failure patterns: newly
+  reachable credential paths now require online-guessing and verifier-cost parity; external IaC
+  inputs require semantic privilege-expansion checks; publish and production credentials require
+  minimal executable trust zones with immutable handoffs; policy-resolution references require
+  full decision-to-effect binding; and external responses require streaming resource limits before
+  buffering or parsing. Extended the same evidence-derived hardening to append-only creation abuse,
+  verifier-to-consumer file-handle continuity, exclusive no-link receipt writes, duplicate and extra
+  configuration fields, tunnel-to-access scope parity, effect-based provisioning authority,
+  executable target enforcement, privileged bootstrap audit proof, and assembled-router guard parity.
 - Isolated delegated workspace execution from unrelated root and sibling command-contract drift,
   suggested exact `mf run <intent> --repo <repository>` routes for delegated intents, and rejected
   split authority when the root and a delegated fragment define the same intent.

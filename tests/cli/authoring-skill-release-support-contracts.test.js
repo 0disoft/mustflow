@@ -32,7 +32,7 @@ test('release publish change requires independent public-entrypoint smoke eviden
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /revision: 4/u);
 	assert.match(localSkill, /local tarball or workspace install does not prove/u);
 	assert.match(localSkill, /fresh consumer root outside the source checkout/u);
 	assert.match(localSkill, /cache-only success is not independent remote-channel evidence/u);
@@ -40,10 +40,43 @@ test('release publish change requires independent public-entrypoint smoke eviden
 	assert.match(localSkill, /Calling an internal module file directly does not prove/u);
 	assert.match(localSkill, /Retry only bounded transient registry conditions/u);
 	assert.match(localSkill, /preserve the primary failure if cleanup also fails/u);
+	assert.match(localSkill, /`id-token: write` as job-scoped publishing authority/u);
+	assert.match(localSkill, /minimal publish-only job/u);
+	assert.match(localSkill, /publish that exact artifact without rebuilding it/u);
+	assert.match(localSkill, /A successful provenance attestation proves facts about the published subject/u);
 	assert.match(skillIndex, /cache-only or internal-entrypoint-only smoke/u);
 	assert.match(skillIndex, /public-entrypoint user-path smoke and environment evidence/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'release-publish-change', 3);
+	assertI18nSkillDocument(i18n, 'release-publish-change', 4);
+});
+
+test('security skill refinements bind policy receipts and bound upstream response resources', () => {
+	const policySkill = readText('.mustflow/skills/policy-decision-integrity-review/SKILL.md');
+	const policyTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/policy-decision-integrity-review/SKILL.md',
+	);
+	const integrationSkill = readText('.mustflow/skills/third-party-api-integration-review/SKILL.md');
+	const integrationTemplate = readText(
+		'templates/default/locales/en/.mustflow/skills/third-party-api-integration-review/SKILL.md',
+	);
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(policySkill, policyTemplate);
+	assert.equal(integrationSkill, integrationTemplate);
+	assert.match(policySkill, /opaque decision, approval, policy-resolution, or consent reference/u);
+	assert.match(policySkill, /bearer capability unless the consumer revalidates its binding/u);
+	assert.match(policySkill, /omitted-versus-default values/u);
+	assert.match(policySkill, /valid lookup and transaction lock prove row consistency, not that the row belongs/u);
+	assert.match(policySkill, /Classify authority by effect, trust boundary, credential use/u);
+	assert.match(policySkill, /Provider readback, secret retrieval, live verification, traffic-gate/u);
+	assert.match(policySkill, /contradictory plans where the overall\s+contract says no execution/u);
+	assert.match(policySkill, /complete effect taxonomy, not only mutation-marked steps/u);
+	assert.match(integrationSkill, /Enforce response limits while bytes are read/u);
+	assert.match(integrationSkill, /limits accepted data, not memory or bandwidth use/u);
+	assert.match(integrationSkill, /private service bindings, internal gateways, signed\s+provider responses/u);
+	assert.match(integrationSkill, /cancellation near the boundary without reading to EOF/u);
+	assertI18nSkillDocument(i18n, 'policy-decision-integrity-review', 3);
+	assertI18nSkillDocument(i18n, 'third-party-api-integration-review', 2);
 });
 
 test('skill authoring requires logically scoped and falsifiable procedure contracts', () => {

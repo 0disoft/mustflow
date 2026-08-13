@@ -59,6 +59,11 @@ test('README evidence gate blocks unsupported README claims before prose polish'
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /evidence ledger before drafting/u);
+	assert.match(localSkill, /first-success contract/u);
+	assert.match(localSkill, /Audit the first screen as a bounded adoption claim/u);
+	assert.match(localSkill, /Treat demos and visuals as claim evidence/u);
+	assert.match(localSkill, /Gate competitive comparisons symmetrically/u);
+	assert.match(localSkill, /Separate discovery and conversion evidence/u);
 	assert.match(localSkill, /folder names as suspicion only/u);
 	assert.match(localSkill, /Gate commands by declared or maintained sources/u);
 	assert.match(localSkill, /README-as-investment-deck overclaim/u);
@@ -178,7 +183,7 @@ test('README evidence gate blocks unsupported README claims before prose polish'
 		);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'readme-evidence-gate', 4);
+	assertI18nSkillDocument(i18n, 'readme-evidence-gate', 5);
 });
 
 test('writing elegance skill stores reusable phrase fragments outside the main procedure', () => {
@@ -348,6 +353,9 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(authSkill, /A 401 does not prove a write never ran/u);
 	assert.match(authSkill, /job-scoped authority/u);
 	assert.match(authSkill, /explicit service takeover/u);
+	assert.match(authSkill, /enumerate every merged route and prove the guard applies/u);
+	assert.match(authSkill, /Per-handler role and session checks do not replace/u);
+	assert.match(authSkill, /different non-success status\s+from handler validation proves the coarse guard was bypassed/u);
 	assert.match(routes, /positive_terms = \["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority"\]/u);
 
 	assert.match(skillIndex, /\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md/u);
@@ -373,7 +381,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
-	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 6/u);
 });
 
 test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {

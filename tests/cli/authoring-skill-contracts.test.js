@@ -34,11 +34,16 @@ test('README and project context authoring routes stay separated', () => {
 	assert.match(readmeSkill, /repository-supported evidence/u);
 	assert.match(readmeSkill, /missing inputs can be reported without guessing/u);
 	assert.match(readmeSkill, /marketing copy/u);
+	assert.match(readmeSkill, /first observable success/u);
+	assert.match(readmeSkill, /one primary next action/u);
+	assert.match(readmeSkill, /Do not describe starring as release notification/u);
+	assert.match(readmeSkill, /distinct discovery or[\s\S]*conversion surfaces/u);
 	assert.match(projectContextSkill, /The task only updates root `README\.md`/u);
 
 	assert.match(skillIndex, /`README\.md` is created, restructured, or substantially rewritten/u);
 	assert.match(skillIndex, /invented project claims/u);
 	assert.match(skillIndex, /loss of human-authored intent/u);
+	assert.match(skillIndex, /first-success contract/u);
 	assert.match(skillIndex, /`\.mustflow\/context\/PROJECT\.md` needs cautious project context/u);
 });
 

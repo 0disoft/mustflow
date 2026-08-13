@@ -292,6 +292,9 @@ test('deployment rollout safety review keeps deploys stoppable and observable', 
 	assert.match(localSkill, /image digest pinning/u);
 	assert.match(localSkill, /environment-scoped secrets/u);
 	assert.match(localSkill, /OIDC or\s+short-lived credentials/u);
+	assert.match(localSkill, /job-level environment variable or OIDC permission is available to actions/u);
+	assert.match(localSkill, /reviewed immutable plan or artifact/u);
+	assert.match(localSkill, /Log masking is not an\s+exfiltration boundary/u);
 	assert.match(localSkill, /startup, liveness, and readiness/u);
 	assert.match(localSkill, /restart loop/u);
 	assert.match(localSkill, /graceful shutdown/u);
@@ -348,7 +351,7 @@ test('deployment rollout safety review keeps deploys stoppable and observable', 
 	assert.match(manifest, /"\.mustflow\/skills\/deployment-rollout-safety-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deployment-rollout-safety-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.deployment-rollout-safety-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.deployment-rollout-safety-review"\][\s\S]*?revision = 4/u);
 });
 
 test('cloud cost guardrail review catches hidden spend channels', () => {
@@ -473,6 +476,10 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(localSkill, /Edge limits are not precise global counters/u);
 	assert.match(localSkill, /fail open or fail closed per policy/u);
 	assert.match(localSkill, /Count failed responses intentionally/u);
+	assert.match(localSkill, /dummy-verification timing equalizer from becoming an unlimited CPU oracle/u);
+	assert.match(localSkill, /Re-audit controls when reachability changes/u);
+	assert.match(localSkill, /operator route,\s+legacy endpoint, mobile flow, or internal API/u);
+	assert.match(localSkill, /Static presence of a limiter elsewhere is\s+not evidence/u);
 	assert.match(localSkill, /concurrency limit/u);
 	assert.match(localSkill, /`Retry-After`/u);
 	assert.match(localSkill, /`RateLimit`/u);
@@ -485,6 +492,9 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(localSkill, /operator lookup and reset/u);
 	assert.match(localSkill, /raw Redis `DEL`/u);
 	assert.match(localSkill, /Burn tokens before enqueueing async work/u);
+	assert.match(localSkill, /append-only database, audit, receipt, policy-resolution, event/u);
+	assert.match(localSkill, /does not authorize\s+unlimited new durable identities/u);
+	assert.match(localSkill, /many distinct idempotency keys from one admitted source/u);
 	assert.match(localSkill, /cached CDN hits/u);
 	assert.match(localSkill, /Rate limit is not authorization/u);
 	assert.match(localSkill, /hard cost-control ceiling/u);
@@ -523,7 +533,7 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(manifest, /"\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"rate-limit-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 5/u);
 });
 
 test('backend log evidence review reconstructs backend request and job paths', () => {
@@ -618,6 +628,9 @@ test('Hetzner Cloud changes preserve provider-specific failure and recovery boun
 	assert.match(localSkill, /A spread Placement Group reduces same-host concentration/u);
 	assert.match(localSkill, /Private does not prove encrypted or filtered/u);
 	assert.match(localSkill, /assigned allowlists combine/u);
+	assert.match(localSkill, /external variable files, generated inputs, environment variables, and remote\s+state as untrusted configuration/u);
+	assert.match(localSkill, /world-open IPv4 or IPv6 ranges/u);
+	assert.match(localSkill, /increase authority without any delete or\s+replacement action/u);
 	assert.match(localSkill, /no outbound rules means allow-all/u);
 	assert.match(localSkill, /rule changes do not terminate connections/u);
 	assert.match(localSkill, /Model the Network as routed L3/u);
@@ -640,5 +653,5 @@ test('Hetzner Cloud changes preserve provider-specific failure and recovery boun
 	assert.match(manifest, /"\.mustflow\/skills\/hetzner-cloud-change\/SKILL\.md"/u);
 	assert.match(manifest, /"hetzner-cloud-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.hetzner-cloud-change"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.hetzner-cloud-change"\][\s\S]*?revision = 3/u);
 });

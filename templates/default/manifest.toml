@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.128.2"
+version = "2.128.3"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -300,6 +300,7 @@ creates = [
   ".mustflow/skills/null-object-pattern/SKILL.md",
   ".mustflow/skills/performance-budget-check/SKILL.md",
   ".mustflow/skills/performance-measurement-integrity-review/SKILL.md",
+  ".mustflow/skills/machine-code-performance-review/SKILL.md",
   ".mustflow/skills/pattern-scout/SKILL.md",
   ".mustflow/skills/process-execution-safety/SKILL.md",
   ".mustflow/skills/public-json-contract-change/SKILL.md",
@@ -342,6 +343,7 @@ creates = [
   ".mustflow/skills/ai-game-asset-production/references/asset-contract-validation.md",
   ".mustflow/skills/ai-game-asset-production/references/raster-alpha-atlas-checklist.md",
   ".mustflow/skills/ai-game-asset-production/references/tile-animation-checklist.md",
+  ".mustflow/skills/svg-vector-asset-production/SKILL.md",
   ".mustflow/skills/web-asset-optimization/SKILL.md",
   ".mustflow/docs/agent-workflow.md",
   ".mustflow/config/mustflow.toml",
@@ -1572,6 +1574,7 @@ product = [
   "ui-quality-gate",
   "visual-review-artifact",
   "ai-game-asset-production",
+  "svg-vector-asset-production",
   "web-asset-optimization",
 ]
 library = [
@@ -1662,6 +1665,7 @@ library = [
   "backend-log-evidence-review",
   "observability-debuggability-review",
   "performance-measurement-integrity-review",
+  "machine-code-performance-review",
   "incident-triage-review",
   "deployment-rollout-safety-review",
   "ubuntu-server-operations-review",

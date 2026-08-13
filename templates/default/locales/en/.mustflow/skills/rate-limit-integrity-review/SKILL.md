@@ -2,7 +2,7 @@
 mustflow_doc: skill.rate-limit-integrity-review
 locale: en
 canonical: true
-revision: 3
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: rate-limit-integrity-review
@@ -49,6 +49,10 @@ contract, observability, and operator escape hatch?"
 - Async jobs, queues, webhooks, batch endpoints, expensive exports, search, login, signup, OTP,
   payment, email, SMS, AI, third-party API, or database-heavy paths can be overloaded by request
   count, request cost, concurrency, retries, cache misses, or one noisy actor.
+- A login, operator session, password verifier, recovery, token issue, or other authentication path
+  becomes newly routed, allowlisted, mounted, feature-enabled, or reachable behind an edge proof,
+  private gateway, host check, VPN, or staging gate. Admission controls reduce exposure but do not
+  replace online-guessing and verifier-cost controls at the authentication boundary.
 - A final report claims an API is rate-limited, protected from abuse, quota-safe, retry-friendly,
   fair by tenant, protected at the edge, globally limited, or safe under load.
 
@@ -102,6 +106,11 @@ contract, observability, and operator escape hatch?"
 - Response and recovery ledger: observe, shape, challenge, delay, feature restrict, step-up auth,
   session or token-family revoke, reward or payout hold, manual review, deny, decay, cooldown,
   operator override, user recovery, appeal, false-positive owner, and irreversible-effect boundary.
+- Authentication-path parity ledger when credentials or sessions are involved: every reachable
+  entrypoint, runtime mode, router or allowlist transition, verifier cost, failed-attempt recording,
+  account and network signal coverage, generic denial behavior, limit or challenge outcome,
+  successful reset behavior, privileged-role amplification, and equivalent control on ordinary,
+  operator, recovery, mobile, legacy, internal, and staging variants.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -207,6 +216,11 @@ contract, observability, and operator escape hatch?"
       target exists through quota differences.
     - Decide by route and failure class: validation, auth denial, not found, provider timeout,
       business conflict, 5xx, and cancelled requests may deserve different counting.
+    - For password and other online credential verification, place admission before the expensive
+      verifier where possible, record the attempted outcome without revealing whether the identity
+      exists, and keep a dummy-verification timing equalizer from becoming an unlimited CPU oracle.
+    - Do not copy a registration limiter into login mechanically. Login, operator login, recovery,
+      and signup have different attacker payoff, legitimate cadence, recovery needs, and fail modes.
 11. Separate rate limits from concurrency limits.
     - Rate limit controls how many operations enter over time.
     - Concurrency limit controls how many operations run at once.
@@ -262,6 +276,15 @@ contract, observability, and operator escape hatch?"
     - Burn request or cost tokens before enqueue for expensive async work, then use concurrency
       limits at execution.
     - Decide whether retries, redeliveries, deduped messages, and cancelled jobs spend quota.
+    - Apply the same rule before append-only database, audit, receipt, policy-resolution, event,
+      object, or evidence creation. A signed edge request, valid schema, existing referenced object,
+      or unique idempotency key proves request integrity or replay identity; it does not authorize
+      unlimited new durable identities or bound storage growth.
+    - For unauthenticated or coarsely authenticated creation paths, define who may create, the
+      per-source and per-binding budget, global emergency ceiling, cardinality bound, retention or
+      compaction owner, cleanup safety, and behavior when identity signals are missing or shared.
+      Test many distinct idempotency keys from one admitted source; same-key replay coverage does
+      not exercise append-only cardinality abuse.
 19. Decide whether cached hits count.
     - CDN-cached hits may not touch the protected origin resource, so origin-protection limits may
       not count them.
@@ -294,7 +317,21 @@ contract, observability, and operator escape hatch?"
    - Correlate independent evidence such as account velocity, impossible state transitions, reused
      token families, repeated instruments, content similarity, reward linkage, and resource cost.
      One weak signal may shape or challenge traffic; irreversible denial needs stronger evidence.
-23. Detect impossible sequences and replay at the state boundary.
+23. Re-audit controls when reachability changes.
+   - Treat a new route mount, proof or gateway allowlist entry, environment-mode switch, private
+     service binding, or staging exposure as a security-boundary change even when the handler and
+     verifier code are otherwise unchanged.
+   - Trace a valid admitted request through the real router, handler, service, verifier, durable
+     session or token issue, and error mapping. Check that every credential-bearing entrypoint has
+     an intentional failed-attempt, cost, challenge, cooldown, recovery, audit, and client-response
+     contract before calling the route protected.
+   - Compare privileged and alternate entrypoints with the primary login path. An operator route,
+     legacy endpoint, mobile flow, or internal API must not silently omit abuse controls merely
+     because it also checks role, host, network, or request proof.
+   - Test repeated valid-format failures through the reachable boundary and assert bounded verifier
+     calls plus the declared challenge or limit outcome. Static presence of a limiter elsewhere is
+     not evidence that the newly reachable path invokes it.
+24. Detect impossible sequences and replay at the state boundary.
    - Missing page navigation is not proof of abuse because native clients, retries, deep links, and
      accessibility flows may legitimately skip browser screens. Prefer server-issued operation
      capabilities, nonce or state transitions, idempotency identity, token-family lineage, and

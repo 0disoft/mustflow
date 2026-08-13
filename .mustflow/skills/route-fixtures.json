@@ -687,6 +687,45 @@
       ]
     },
     {
+      "id": "editable-svg-vector-pipeline-korean",
+      "task": "이미지 모델 초안을 편집 가능한 SVG로 재구성하고 viewBox, 허용 요소, path 명령 예산, 외부 참조 차단, SVGO 프로필과 여러 크기 렌더 차이를 검증해",
+      "paths": [
+        "assets/icons/navigation.svg",
+        "tools/assets/validate-svg.ts"
+      ],
+      "reasons": [
+        "image_asset_change",
+        "code_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "svg-vector-asset-production",
+      "required_candidates": [
+        "svg-vector-asset-production"
+      ],
+      "forbidden_candidates": [
+        "web-asset-optimization"
+      ]
+    },
+    {
+      "id": "web-raster-image-optimization-only",
+      "task": "Web-raster-only optimization: compress a generated PNG hero image and convert it to responsive WebP and AVIF",
+      "paths": [
+        "public/images/hero.png"
+      ],
+      "reasons": [
+        "image_asset_change",
+        "web_asset_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "web-asset-optimization"
+      ],
+      "forbidden_candidates": [
+        "svg-vector-asset-production"
+      ]
+    },
+    {
       "id": "type-contract-korean-typescript",
       "task": "공유 인터페이스의 타입 계약과 타입 영향 범위를 수정해",
       "paths": [
@@ -1525,6 +1564,24 @@
       ],
       "forbidden_candidates": [
         "client-bundle-pruning-review"
+      ]
+    },
+    {
+      "id": "native-machine-code-performance-korean",
+      "task": "네이티브 핫 루프의 머신 코드 성능을 개선해. 실제 워크로드와 PMU로 병목을 분류하고 alias 분석, 캐시 배치, 분기 예측, 벡터화, register spill, PGO 결과를 검증해",
+      "paths": [
+        "src/native/filter.cpp",
+        "bench/native/filter-benchmark.cpp"
+      ],
+      "reasons": [
+        "performance_change",
+        "code_change",
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "machine-code-performance-review",
+      "required_candidates": [
+        "machine-code-performance-review"
       ]
     },
     {

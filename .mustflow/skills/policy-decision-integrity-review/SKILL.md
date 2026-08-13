@@ -2,7 +2,7 @@
 mustflow_doc: skill.policy-decision-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: policy-decision-integrity-review
@@ -67,6 +67,11 @@ permitted from how an already permitted action is implemented.
   fail-closed choice.
 - Snapshot and enforcement ledger: pinned version, approval binding, expiry, recheck rule, and exact
   effect gate.
+- Resolution and receipt ledger when a policy decision is represented by a reference: issuer,
+  intended consumer and purpose, subject or actor, tenant, product, environment, locale or
+  jurisdiction, channel or role qualifiers, normalized input digest, request lineage, policy
+  snapshot, obligations, expiry, replay or single-use rule, consumption transaction, and receipt
+  fields preserved for later audit.
 - Decision-table, boundary, conflict, stale-fact, and version-change tests.
 
 <!-- mustflow-section: preconditions -->
@@ -93,6 +98,10 @@ permitted from how an already permitted action is implemented.
 ## Procedure
 
 1. Write the decision question and enumerate actor, resource, action, context, and requested effect.
+   Classify authority by effect, trust boundary, credential use, and evidence consequence rather
+   than by a `mutation` boolean. Provider readback, secret retrieval, live verification, traffic-gate
+   issuance, approval or receipt creation, signing, publication, and audit certification can expose
+   data or confer authority without mutating the provider resource they inspect.
 2. Normalize trusted facts before policy evaluation. Record provenance and freshness for tenant,
    ownership, membership, risk, budget, time, environment, and approval facts.
 3. Return a structured decision containing outcome, reason code, obligations, policy version,
@@ -116,13 +125,29 @@ permitted from how an already permitted action is implemented.
    consume call and cost limits atomically at the trusted effect boundary.
    Canonicalize normalized parameters before binding or hashing them; define how omitted and default
    arguments compare so equivalent calls do not produce ambiguous decision identities.
+   Treat an opaque decision, approval, policy-resolution, or consent reference returned to a caller
+   as a bearer capability unless the consumer revalidates its binding. Possession plus coarse fields
+   such as product, locale, action, and expiry is insufficient when the resolution depended on
+   jurisdiction, channel, seller or operator role, subject, tenant, request inputs, or other optional
+   selectors. Either carry and compare the full normalized binding at consumption or issue a
+   cryptographically or durably bound one-purpose capability whose issuer, audience, subject,
+   input digest, policy snapshot, expiry, and replay rule are enforced atomically.
 9. After a long approval wait or material fact change, revalidate the binding or recompute under a
    declared version rule before executing. Record why an old approval remains valid or expires.
 10. Enforce obligations such as masking, maximum amount, read-only mode, selected region, extra
     audit, or rate limit at the trusted effect boundary, not only in UI or planning code.
+    Apply top-level execution and provider-disconnected policy to every reachable step, including
+    non-mutating verification and evidence steps. Reject contradictory plans where the overall
+    contract says no execution or manual-only while a child step is ready or agent-authorized.
+    Derive blocked actions from the complete effect taxonomy, not only mutation-marked steps.
 11. Test the full decision table where bounded, plus boundary values, pairwise rule conflicts,
     no-match, default deny, missing and stale facts, changed-after-approval, version migration, and
     decision-to-effect mismatch.
+    Add negative tests that resolve under one optional binding or request lineage and attempt to
+    consume the reference under another, including omitted-versus-default values, locale or tenant
+    changes, expired references, cross-subject reuse, replay, and concurrent double consumption.
+    A valid lookup and transaction lock prove row consistency, not that the row belongs to the
+    current effect.
 12. Persist safe decision metadata and reason codes when audit or replay needs them. Avoid raw PII,
     secrets, model reasoning, or broad request bodies.
 
@@ -133,6 +158,8 @@ permitted from how an already permitted action is implemented.
 - No-match, conflict, stale fact, policy drift, and changed-after-approval paths are deterministic.
 - Evaluation and enforcement use the same actor, resource, action, parameters, policy version, and
   obligations or perform an explicit recheck.
+- Resolution references and receipts preserve or revalidate every material selector and provenance
+  field needed to prove that the consumed policy snapshot belongs to the current effect.
 - Strategy selection, authentication, command authority, lifecycle, and ledger invariants remain in
   their owning procedures.
 

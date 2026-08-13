@@ -294,6 +294,59 @@ test('2.128.1 manifest lock concurrency release stays bounded and remotely verif
 	assert.match(githubReleaseIntent, /targetCommitish/u);
 });
 
+test('2.128.3 security and authoring skill release stays bounded and remotely verifiable', () => {
+	const intent = (name) =>
+		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(
+			sourceCommandContract,
+		)?.[0] ?? '';
+	const branchIntent = intent('release_branch_state_v2_128_3');
+	const stageIntent = intent('release_stage_v2_128_3');
+	const stagedDiffIntent = intent('release_staged_diff_v2_128_3');
+	const commitIntent = intent('release_commit_v2_128_3');
+	const pushIntent = intent('release_push_main_v2_128_3');
+	const mainRunsIntent = intent('release_github_main_runs_v2_128_3');
+	const publishRunsIntent = intent('release_github_publish_runs_v2_128_3');
+	const releaseIntent = intent('release_github_release_v2_128_3');
+
+	for (const path of [
+		'.mustflow/config/commands.toml',
+		'.mustflow/config/manifest.lock.toml',
+		'.mustflow/skills/INDEX.md',
+		'.mustflow/skills/machine-code-performance-review',
+		'.mustflow/skills/svg-vector-asset-production',
+		'.mustflow/skills/catalog.v2.json',
+		'.mustflow/skills/route-fixtures.json',
+		'.mustflow/skills/routes.toml',
+		'CHANGELOG.md',
+		'REPO_FLOW.md',
+		'REPO_MAP.md',
+		'package.json',
+		'templates/default/i18n.toml',
+		'templates/default/locales/en/.mustflow/skills/machine-code-performance-review',
+		'templates/default/locales/en/.mustflow/skills/svg-vector-asset-production',
+		'templates/default/manifest.toml',
+		'tests/cli/authoring-skill-machine-code-performance-contracts.test.js',
+		'tests/cli/authoring-skill-svg-vector-assets-contracts.test.js',
+		'tests/cli/package-command-contracts.test.js',
+		'tests/cli/package-metadata-contracts.test.js',
+		'tests/cli/skill-route.test.js',
+	]) {
+		assert.match(stageIntent, new RegExp(`"${path.replaceAll('/', '\\/')}"`, 'u'));
+	}
+	assert.match(branchIntent, /"git", "status", "--short", "--branch"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"-A"/u);
+	assert.doesNotMatch(stageIntent, /"git",\s*"add",\s*"--",\s*"\.\/?"/u);
+	assert.match(stagedDiffIntent, /"git", "diff", "--cached", "--name-status"/u);
+	assert.match(commitIntent, /✨ feat\(skills\): deepen security and asset reviews/u);
+	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+	assert.match(pushIntent, /"git", "push", "origin", "main"/u);
+	assert.doesNotMatch(pushIntent, /--force/u);
+	assert.match(pushIntent, /approval_actions = \["git_push"\]/u);
+	assert.match(mainRunsIntent, /headSha/u);
+	assert.match(publishRunsIntent, /"publish-npm\.yml"/u);
+	assert.match(releaseIntent, /"v2\.128\.3"/u);
+});
+
 test('2.128.2 Windows test-runner fix stays bounded and remotely verifiable', () => {
 	const releaseIntent = (name) =>
 		new RegExp(`\\[intents\\.${name}\\][\\s\\S]*?(?=\\n\\[intents\\.|$)`, 'u').exec(sourceCommandContract)?.[0] ?? '';

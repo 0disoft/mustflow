@@ -2,7 +2,7 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
@@ -229,6 +229,13 @@ Authentication answers who the requester is. Authorization answers what that pri
       step-up, hold, read-only quarantine, or session revocation according to product risk.
 18. Check dependent surfaces: API routes, controllers, services, DB schema, DB queries, RLS, UI navigation, UI actions, API clients, audit logs, notifications, jobs, webhooks, search, file storage, docs, migrations, monitoring, and tests.
     - For credentialed delivery surfaces, check whether EventSource can supply the intended credentials, whether CORS and cookies match the policy, whether signed URLs expire and scope correctly, and whether caches vary on auth, tenant, and private response dimensions.
+    - When a runtime mode or router group promises a Host, origin, audience, network, gateway, or
+      middleware guard, enumerate every merged route and prove the guard applies to the assembled
+      router, not only to one sibling subrouter. Per-handler role and session checks do not replace
+      the promised deployment-origin boundary.
+    - Add parity tests that send the same wrong Host, origin, audience, or gateway context to each
+      protected route and assert rejection before handler behavior. A different non-success status
+      from handler validation proves the coarse guard was bypassed; it is not equivalent protection.
 19. Require denial-first tests for changed protected actions when the project has a usable test surface. Cover anonymous, expired, revoked, no role, wrong tenant, wrong team, wrong owner, suspended or removed member, stale token, refresh-token reuse and concurrent refresh, stale cache, unknown role, unknown action, wildcard policy, explicit deny, hidden resource, step-up required, policy unavailable, affected-row zero, permission changed during the request or job, shared-link, read-only API key, org admin, team admin, billing admin, global admin, support user, and impersonating admin cases as applicable.
 20. When changing policies, consider shadow evaluation.
     - Compute old and new decisions side by side for representative requests before flipping broad

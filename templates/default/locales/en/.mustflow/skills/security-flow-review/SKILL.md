@@ -2,7 +2,7 @@
 mustflow_doc: skill.security-flow-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: security-flow-review
@@ -225,7 +225,20 @@ changes, and where can data or authority leak?"
       commands. Binding such a server to `0.0.0.0`, a LAN host, a tunnel, a container-published
       port, or a remote workspace turns local convenience APIs into remote authority unless explicit
       read-only, no-write, and no-exec gates are enforced.
-25. Convert the finding into the smallest defensive action.
+25. Compare routing scope with enforcement scope.
+    - For tunnels, reverse proxies, gateways, ingress controllers, service meshes, CDN routes, and
+      private-origin publication, compute the set of host and path combinations forwarded to the
+      origin and compare it with the set covered by Access, authentication, authorization, WAF, or
+      explicit deny policy. A terminal catch-all after a host-wide forwarding rule does not protect
+      paths already matched by that rule.
+    - Require exact path-scoped forwarding, a host-level default-deny enforcement policy, or an
+      origin that independently rejects every undeclared path. Test negative paths such as `/`,
+      sibling admin routes, internal prefixes, encoded variants, and future endpoints. A disabled
+      DNS flag lowers current reachability but does not make an unsafe activation shape acceptable.
+    - Keep declared IaC, generated provider configuration, live DNS or routes, and origin behavior
+      as separate evidence layers. Static validation must model ordered matching and reject a
+      forwarded-minus-protected set instead of checking only that expected rules exist.
+26. Convert the finding into the smallest defensive action.
     - Fix the owner closest to the sink when the boundary is clear.
     - If evidence is incomplete, report the exact unverified source, sink, actor, resource, tenant,
       state, or test gap instead of making a broad security claim.

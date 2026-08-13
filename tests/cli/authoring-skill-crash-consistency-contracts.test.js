@@ -65,6 +65,10 @@ test('neighbor skills keep crash durability, workflow, security, and false-succe
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.match(filesystem, /crash-consistency-recovery-review/u);
+	assert.match(filesystem, /verifier returning invalid does not make later best-effort hashing safe/u);
+	assert.match(filesystem, /Hash the exact bounded bytes accepted by the verifier/u);
+	assert.match(filesystem, /predictable temporary-name symlink/u);
+	assert.match(filesystem, /operator-owned non-shared parent/u);
 	assert.match(uploadSecurity, /crash-consistency-recovery-review/u);
 	assert.match(workflow, /write-ahead intent/u);
 	assert.match(workflow, /reserve,\s+confirm, and release/u);
@@ -73,7 +77,7 @@ test('neighbor skills keep crash durability, workflow, security, and false-succe
 	assert.match(failure, /HTTP 200, exit code 0/u);
 	assert.match(failure, /forbids `SUCCEEDED`\s+without its required result or receipt/u);
 	assert.match(failure, /independently owned verifier or reconciliation/u);
-	assertI18nSkillDocument(i18n, 'cross-platform-filesystem-safety', 10);
+	assertI18nSkillDocument(i18n, 'cross-platform-filesystem-safety', 11);
 	assertI18nSkillDocument(i18n, 'file-upload-security-review', 4);
 	assertI18nSkillDocument(i18n, 'durable-workflow-orchestration', 3);
 	assertI18nSkillDocument(i18n, 'failure-integrity-review', 3);

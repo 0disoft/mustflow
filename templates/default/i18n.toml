@@ -62,7 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 320
+revision = 323
+translations = {}
+
+[documents."skill.machine-code-performance-review"]
+source = "locales/en/.mustflow/skills/machine-code-performance-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.ada-code-change"]
@@ -236,7 +242,7 @@ translations = {}
 [documents."skill.policy-decision-integrity-review"]
 source = "locales/en/.mustflow/skills/policy-decision-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 3
 translations = {}
 
 [documents."skill.structured-concurrency-supervision-review"]
@@ -254,7 +260,7 @@ translations = {}
 [documents."skill.admin-control-plane-safety-review"]
 source = "locales/en/.mustflow/skills/admin-control-plane-safety-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.small-service-platform-architecture-review"]
@@ -272,7 +278,7 @@ translations = {}
 [documents."skill.third-party-api-integration-review"]
 source = "locales/en/.mustflow/skills/third-party-api-integration-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.api-access-control-review"]
@@ -590,7 +596,7 @@ translations = {}
 [documents."skill.deployment-rollout-safety-review"]
 source = "locales/en/.mustflow/skills/deployment-rollout-safety-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.ubuntu-server-operations-review"]
@@ -626,7 +632,7 @@ translations = {}
 [documents."skill.rate-limit-integrity-review"]
 source = "locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 5
 translations = {}
 
 [documents."skill.idempotency-integrity-review"]
@@ -859,13 +865,13 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.security-flow-review"]
 source = "locales/en/.mustflow/skills/security-flow-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.config-env-change"]
@@ -1027,7 +1033,7 @@ translations = {}
 [documents."skill.structured-config-change"]
 source = "locales/en/.mustflow/skills/structured-config-change/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.rust-code-change"]
@@ -1093,7 +1099,7 @@ translations = {}
 [documents."skill.hetzner-cloud-change"]
 source = "locales/en/.mustflow/skills/hetzner-cloud-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.typescript-code-change"]
@@ -1189,7 +1195,7 @@ translations = {}
 [documents."skill.cross-platform-filesystem-safety"]
 source = "locales/en/.mustflow/skills/cross-platform-filesystem-safety/SKILL.md"
 source_locale = "en"
-revision = 10
+revision = 11
 translations = {}
 
 [documents."skill.crash-consistency-recovery-review"]
@@ -1386,13 +1392,13 @@ translations = {}
 [documents."skill.readme-authoring"]
 source = "locales/en/.mustflow/skills/readme-authoring/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.readme-evidence-gate"]
 source = "locales/en/.mustflow/skills/readme-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.release-notes-authoring"]
@@ -1404,7 +1410,7 @@ translations = {}
 [documents."skill.release-publish-change"]
 source = "locales/en/.mustflow/skills/release-publish-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.security-privacy-review"]
@@ -1747,6 +1753,12 @@ translations = {}
 source = "locales/en/.mustflow/skills/web-asset-optimization/SKILL.md"
 source_locale = "en"
 revision = 3
+translations = {}
+
+[documents."skill.svg-vector-asset-production"]
+source = "locales/en/.mustflow/skills/svg-vector-asset-production/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.ai-game-asset-production"]

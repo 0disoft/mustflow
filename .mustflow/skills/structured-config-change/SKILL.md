@@ -2,7 +2,7 @@
 mustflow_doc: skill.structured-config-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: structured-config-change
@@ -93,6 +93,12 @@ Structured config is code outside the type system. A syntactically valid YAML or
 4. For YAML values, quote human-word strings, country codes, identifiers, versions, zip codes, permissions, file modes, strings that begin with special indicators, and values containing `: ` or ` #`. Use `true` and `false` only for booleans.
 5. For YAML absence states, keep missing, `null`, and empty string distinct. If the loader collapses them, verify that the application contract intentionally accepts that collapse.
 6. For YAML mappings, reject duplicate keys and avoid relying on mapping order for semantics. Use sequences when order matters.
+   Apply the same exactly-once rule to JSON and JSON-adjacent inputs before conversion to an ordinary
+   object. `JSON.parse` and many map loaders collapse duplicate member names before `Object.keys`, a
+   schema validator, or exact-key comparison can observe them. When duplicate rejection is a
+   security contract, use a duplicate-aware tokenizer or parser and pass either canonicalized
+   duplicate-free bytes or the validated data model to the downstream consumer; do not validate a
+   collapsed object and then forward the original ambiguous bytes to another parser or provider.
 7. For YAML block scalars, choose literal versus folded style deliberately. Use explicit chomping or indentation indicators when final newlines, pasted text, certificates, SQL, Markdown, shell, regex, or templates can change meaning.
 8. Treat YAML anchors and aliases as authoring conveniences. Do not store runtime meaning in anchor names. Avoid YAML merge key `<<` unless the target parser and provider support it and the behavior is covered by fixtures.
 9. Treat YAML custom tags and unsafe loaders as security and portability risks. External or user-provided YAML should use safe loading and application-level validation.
@@ -113,6 +119,12 @@ Structured config is code outside the type system. A syntactically valid YAML or
 24. Choose JSON Schema dialect deliberately. Keep `$schema`, `$id`, and `$defs` aligned, vendor remote schemas for CI when possible, and separate editor schemas from runtime rejection schemas when their goals differ.
 25. Treat JSON Schema `default` as metadata unless the repository's loader explicitly injects defaults. If defaults are injected, merge defaults first and validate the normalized result again.
 26. Close unknown-key boundaries at the final object boundary. Avoid overusing `additionalProperties: false` inside reusable definitions when composition or extension is expected; use the repository's supported dialect intentionally.
+    For security-sensitive inventory and reference-only records, prefer explicit per-record schemas
+    or key allowlists. Checking required fields and values while preserving arbitrary extra fields
+    permits secrets, live origins, credentials, authority hints, or provider-specific values to hide
+    beside a valid record. Generic forbidden-name regexes are defense in depth, not a substitute for
+    a closed schema; cover provider-native aliases, nested objects, case and separator variants, and
+    require secret references rather than secret values where the contract is reference-only.
 27. Add or update positive and negative fixtures. Negative fixtures should cover duplicate keys, ambiguous scalar typing, unknown keys, invalid types, incompatible dialect syntax, mutually exclusive settings, deprecated aliases, and provider-rejected workflow shapes.
 28. If the product has a config loader, prefer a canonical normalized output or diagnostic path that shows the parsed, defaulted, migrated, redacted config data model.
 29. Keep broad formatter, mass rewrite, and generated-output changes separate from semantic config changes unless the user explicitly requested an integrated migration.

@@ -2,7 +2,7 @@
 mustflow_doc: skill.cross-platform-filesystem-safety
 locale: en
 canonical: true
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: procedure
 name: cross-platform-filesystem-safety
@@ -60,6 +60,10 @@ Keep filesystem behavior safe across Windows and POSIX while preventing path tra
 - A root-capability ledger: trusted root directory descriptor or handle, root owner and permissions, device and inode or volume and file identity where available, mount policy, symlink policy, hard-link policy, reparse-point policy, and the credential or namespace performing lookup.
 - A runtime-capability ledger: operating system, filesystem, runtime and provider version, descriptor-relative or handle-relative API actually returned, supported operations, link and mount guarantees, and any platform where the helper falls back to lexical or check-then-open behavior.
 - An operation ledger for open, create, read, write, scan, transform, rename, publish, delete, cleanup, and queued work. Record atomic flags, same-descriptor or same-handle continuity, path-only reopen points, and object identity carried between stages.
+- A validation-to-consumption ledger for external manifests, receipts, plans, reconciliation files,
+  and evidence directories: which operation opens each file, how it rejects links and special
+  files, size and time bounds, whether hashing or parsing reopens the path, and whether all later
+  consumers reuse the verified bytes or same opened handle.
 - Failure classification expectations for filesystem and platform errors such as Windows path length, POSIX `ENAMETOOLONG`, reserved names, case collisions, Unicode aliases, file locks, permissions, quota, cross-device moves, missing executable bits, line endings, watcher limits, and descriptor limits.
 - Whether atomicity requires best-effort rename, same-directory temporary files on the same volume, file fsync, parent directory fsync, Windows replacement behavior, or reader-safe latest pointers.
 - Relevant command-intent entries for tests, docs, release, and mustflow validation.
@@ -99,6 +103,11 @@ Keep filesystem behavior safe across Windows and POSIX while preventing path tra
 9. On Windows, prefer an opaque single filename below an application-owned directory. Reject drive-relative, root-relative, UNC, device-namespace, alternate-stream, reserved-device, trailing-dot, trailing-space, and mixed-separator aliases before opening. Open a HANDLE with the intended reparse behavior, inspect the opened object's reparse tag, final path, volume identity, and file identity where the API and runtime expose them, and use that same HANDLE for the operation. Do not claim that `GetFullPathName`, a final path string, or ordinary `CreateFile` behavior is a Windows equivalent of `openat2`.
 10. Reject reparse points and junctions by default in attacker-writable trees unless the product has an explicit allow policy and can verify the opened target. For privileged Windows services, check whether process-level reparse traversal mitigations belong at startup; if the code cannot enable and verify them, report the remaining risk.
 11. Open first under the path-resolution policy, inspect the opened object with `fstat` or the corresponding handle metadata, then read, write, scan, transform, or publish through that same descriptor or handle. `exists`, `access`, `lstat`, `realpath`, or metadata-check followed by an unrelated `open` is a time-of-check to time-of-use gap.
+    A verifier returning invalid does not make later best-effort hashing safe. Do not reopen rejected
+    evidence to compute diagnostics, expected digests, reconciliation comparisons, or telemetry.
+    Hash the exact bounded bytes accepted by the verifier, or return an explicit unavailable hash.
+    Otherwise symlinks, oversized files, devices, FIFOs, and other special files can become local
+    read or blocking oracles even when the final verdict remains invalid.
 12. Treat hard links separately from symlinks. No-follow flags do not stop a hard link from naming an existing file. Where the policy forbids shared identities, verify device and inode or volume and file identity, consider link count as one signal, and ensure attackers cannot create links in the storage directory. Do not claim link-count checks alone prove ownership.
 13. Treat mount boundaries separately from path boundaries. Use `RESOLVE_NO_XDEV`, mount identity, volume identity, or an equivalent owned-storage invariant when mount or bind-mount crossings are forbidden. State explicit compatibility exceptions for legitimate mount layouts.
 14. Create new objects through the trusted parent descriptor or handle with one validated final segment and an atomic exclusive-create primitive such as `O_CREAT|O_EXCL` or `CREATE_NEW`. Do not precheck existence and then create.
@@ -114,6 +123,12 @@ Keep filesystem behavior safe across Windows and POSIX while preventing path tra
 24. Check collisions before materializing Git trees, archives, generated files, uploaded names, or dependency trees. Include case-only collisions, Unicode normalization aliases, reserved Windows names with extensions, trailing dot or space aliases, duplicate archive entries, and byte-limit collisions from multibyte names.
 25. Classify filesystem failures before generic network, auth, or unknown failures. Use stable categories such as `path_too_long`, `filename_too_long`, `byte_limit_exceeded`, `invalid_path`, `reserved_name`, `case_collision`, `unicode_collision`, `symlink_escape`, `mount_escape`, `identity_mismatch`, `permission_denied`, `file_locked`, `cross_device_move`, `disk_full_or_quota`, `executable_bit_missing`, `line_ending_mismatch`, `watcher_limit`, and `descriptor_limit`.
 26. For writes, prefer same-directory temporary-file then rename or replace behavior when readers may observe the file. Keep the temporary file on the same volume, use unpredictable names, least-privilege creation permissions, and safe no-follow writes when the project already has that helper. For hostile tree materialization, use a new attacker-nonwritable staging directory with private Unix permissions or a dedicated Windows ACL, then publish only the verified tree.
+    Treat external receipt, plan, ledger, and approval directories as privileged write boundaries.
+    Verify or create an operator-owned non-shared parent with restrictive permissions, create the
+    temporary file exclusively without following links, verify the opened object's type and parent,
+    write through that handle, and publish without replacing an attacker-selected object. File mode
+    on the final receipt and rename atomicity do not prevent a predictable temporary-name symlink
+    from clobbering another operator-writable file.
 27. Treat atomic writes as platform-specific. POSIX rename semantics, Windows replacement behavior, cross-filesystem moves, network filesystems, FUSE or overlay filesystems, fsync availability, and directory fsync support differ; report best-effort guarantees honestly.
 28. When durable writes matter, include the full durability sequence where the platform supports it: write the temporary file, flush the file data, close it, rename or replace it, then flush the parent directory entry. If parent directory fsync is unavailable, downgrade the durability claim.
 29. For copies and updates, keep the source and destination descriptors open through the operation where feasible. Do not report symlink safety if the final write or later consumer can still follow a changed link or reopen a mutable path.

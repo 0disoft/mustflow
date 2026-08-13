@@ -2,7 +2,7 @@
 mustflow_doc: skill.deployment-rollout-safety-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: deployment-rollout-safety-review
@@ -92,7 +92,8 @@ incident.
   and rollback or roll-forward boundary.
 - Secret and approval model: environment-scoped secrets, production approval gate, OIDC or
   short-lived credential path, log masking, rotation or revocation path, external secret store or
-  encryption-at-rest boundary, and least-privilege deploy job permissions.
+  encryption-at-rest boundary, least-privilege deploy job permissions, and every executable step,
+  action, build hook, or dependency process that inherits each credential.
 - Compatibility model: old code with old data, old code with new data, new code with old data, new
   code with new data, N-1 message compatibility, cache key version, and rollback survivability.
 - Runtime control model: startup/liveness/readiness probes, graceful shutdown behavior, load
@@ -201,6 +202,16 @@ incident.
    and preview jobs should not be able to read them. Check secret masking, rotation or revocation
    notes, external secret store or encryption-at-rest boundary, and whether platform-native secrets
    also need RBAC, namespace, and audit controls.
+   Scope production credentials to the smallest job and command boundary supported by the CI
+   platform. A job-level environment variable or OIDC permission is available to actions, toolchain
+   setup, build scripts, tests, artifact uploaders, and shell commands in that job, not only to the
+   intended deploy or migration line. Run validation, dependency installation, compilation, and
+   plan generation without production authority; pass a reviewed immutable plan or artifact into a
+   minimal gated apply job. Pin third-party actions to immutable reviewed commits, verify the handoff
+   digest and producer identity inside the privileged job, and avoid running repository-controlled
+   build hooks after the secret or deploy identity becomes available. Log masking is not an
+   exfiltration boundary, and restricted repository-token permissions do not restrict unrelated
+   secrets already present in the process environment.
 
 10. Separate startup, liveness, and readiness.
    Startup should protect slow boots, liveness should detect stuck processes, and readiness should

@@ -408,6 +408,10 @@ test('structured config change skill keeps YAML, TOML, workflow, and schema cont
 	assert.match(localSkill, /quote human-word strings, country codes, identifiers, versions/u);
 	assert.match(localSkill, /missing, `null`, and empty string distinct/u);
 	assert.match(localSkill, /reject duplicate keys and avoid relying on mapping order/u);
+	assert.match(localSkill, /`JSON\.parse` and many map loaders collapse duplicate member names/u);
+	assert.match(localSkill, /do not validate a\s+collapsed object and then forward the original ambiguous bytes/u);
+	assert.match(localSkill, /security-sensitive inventory and reference-only records/u);
+	assert.match(localSkill, /Generic forbidden-name regexes are defense in depth/u);
 	assert.match(localSkill, /Avoid YAML merge key `<<` unless/u);
 	assert.match(localSkill, /strings need quotes, booleans are lowercase, keys are case-sensitive/u);
 	assert.match(localSkill, /Dotted keys create nested tables/u);
@@ -432,5 +436,5 @@ test('structured config change skill keeps YAML, TOML, workflow, and schema cont
 		assert.ok(profileBlock(profile).includes('"structured-config-change"'), `${profile} profile missing skill`);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.structured-config-change"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.structured-config-change"\][\s\S]*?revision = 2/u);
 });
