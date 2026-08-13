@@ -327,6 +327,13 @@ the child completion claim, and should not be listed as skipped child checks.
 
 Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth. These preferences do not grant command execution permission; they only guide which configured command intents to consider.
 
+`mf verify` exposes three explicit time/risk profiles: `edit` is the default rapid feedback loop,
+`commit` expands the budget before a commit, and `release` preserves every applicable check.
+High-risk reasons always retain the full applicable set even when the caller requests `edit`.
+Independent declared path effects may run concurrently; overlapping paths and shared resource locks
+remain serialized. A run that meets a live conflicting lock waits briefly by default and can opt into
+immediate failure with `--no-wait`.
+
 Verification should be proportional to risk. Prefer `test_related`, `test_fast`, `build`, or docs-specific checks when configured and covering the changed surface. Use broad full-suite tests for cross-cutting behavior, release risk, missing narrower coverage, or when the configured policy explicitly requires them. If a narrow intent would be appropriate but is `unknown`, `manual_only`, or absent, report that gap instead of silently treating the slowest suite as the default.
 
 - `strategy = "risk_based"`: prefer the smallest configured checks covering the changed behavior, public surface, command contract, and risk area.
