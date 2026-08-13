@@ -1489,7 +1489,9 @@ export const hiMessages = {
   "run.help.option.json": "Run record या command plan को JSON के रूप में प्रिंट करें",
   "run.help.option.repository": "repository-relative path से delegated workspace contract चुनें",
   "run.help.option.wait": "चलाने से पहले conflicting active run locks के लिए wait करें",
+  "run.help.option.noWait": "अगर दूसरी active run conflicting resource own करती है तो तुरंत fail करें",
   "run.help.option.waitTimeout": "active run locks के लिए wait करने की maximum seconds. Default: 300",
+  "run.help.option.input": "declared typed intent input bind करें; multiple inputs के लिए option दोहराएँ",
   "run.help.option.allowApproval":
     "इस execution को network_access जैसे approval-gated action को satisfy करने दें",
   "run.help.option.allowUntrustedRoot":

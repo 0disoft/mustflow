@@ -1484,7 +1484,9 @@ Read these files before working:
   "run.help.option.json": "Print the run record or command plan as JSON",
   "run.help.option.repository": "Select a delegated workspace contract by repository-relative path",
   "run.help.option.wait": "Wait for conflicting active run locks before executing",
+  "run.help.option.noWait": "Fail immediately when another live run owns a conflicting resource",
   "run.help.option.waitTimeout": "Maximum seconds to wait for active run locks. Default: 300",
+  "run.help.option.input": "Bind a declared typed intent input; repeat for multiple inputs",
   "run.help.option.allowApproval":
     "Allow this execution to satisfy one approval-gated action such as network_access",
   "run.help.option.allowUntrustedRoot":

@@ -1479,7 +1479,9 @@ export const zhMessages = {
   "run.help.option.json": "将运行记录或命令计划输出为 JSON",
   "run.help.option.repository": "通过仓库相对路径选择委派的工作区契约",
   "run.help.option.wait": "执行前等待冲突的活动运行锁释放",
+  "run.help.option.noWait": "其他活动运行占用冲突资源时立即失败",
   "run.help.option.waitTimeout": "等待活动运行锁的最大秒数。默认值：300",
+  "run.help.option.input": "绑定已声明的类型化意图输入；多个输入可重复使用此选项",
   "run.help.option.allowApproval":
     "允许本次执行满足一个需要审批的动作，例如 network_access",
   "run.help.option.allowUntrustedRoot":

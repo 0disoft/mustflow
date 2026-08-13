@@ -1489,7 +1489,9 @@ Lisez ces fichiers avant de travailler :
   "run.help.option.json": "Imprime l'enregistrement d'exécution ou le plan de commande en JSON",
   "run.help.option.repository": "Sélectionne un contrat workspace délégué par chemin relatif du dépôt",
   "run.help.option.wait": "Attend les verrous actifs en conflit avant d'exécuter",
+  "run.help.option.noWait": "Échoue immédiatement si une autre exécution active détient une ressource en conflit",
   "run.help.option.waitTimeout": "Nombre maximal de secondes d'attente des verrous actifs. Par défaut : 300",
+  "run.help.option.input": "Lie une entrée typée déclarée ; répétez l'option pour plusieurs entrées",
   "run.help.option.allowApproval":
     "Autorise cette exécution à satisfaire une action soumise à approbation comme network_access",
   "run.help.option.allowUntrustedRoot":

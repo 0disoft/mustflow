@@ -31,6 +31,19 @@ import {
 	waitForOutput,
 } from './run-support.js';
 
+test('localizes the no-wait and typed-input run help options', () => {
+	const english = runCli(projectRoot, ['run', '--help']);
+	const korean = runCli(projectRoot, ['--lang', 'ko', 'run', '--help']);
+
+	assert.equal(english.status, 0, english.stderr || english.stdout);
+	assert.match(english.stdout, /--no-wait\s+Fail immediately when another live run owns a conflicting resource/u);
+	assert.match(english.stdout, /--input <name=value>\s+Bind a declared typed intent input/u);
+	assert.equal(korean.status, 0, korean.stderr || korean.stdout);
+	assert.match(korean.stdout, /--no-wait\s+다른 활성 실행이 충돌하는 리소스를 사용 중이면 즉시 실패합니다/u);
+	assert.match(korean.stdout, /--input <name=value>\s+선언된 타입 입력을 바인딩합니다/u);
+	assert.doesNotMatch(korean.stdout, /Fail immediately|Bind a declared/u);
+});
+
 test('previews a runnable command intent without spawning or writing a receipt', () => {
 	const projectPath = createTempProject();
 	const markerPath = path.join(projectPath, 'dry-run-spawned.txt');
