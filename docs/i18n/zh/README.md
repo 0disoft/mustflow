@@ -198,6 +198,7 @@ mf run mustflow_update_apply
 | `mf init --force` | 备份冲突文件后覆盖。 |
 | `mf check` | 验证 mustflow 文件、TOML 配置和技能文档结构。 |
 | `mf check --strict` | 额外执行文档身份、技能元数据、命令边界、保留策略、输出限制、原始日志及类似秘密上下文的安全检查。 |
+| `mf check --strict --repo <path>` | 严格验证一个委派仓库，并将无关的清单漂移作为警告延后处理。 |
 | `mf doctor` | 以只读方式检查当前 mustflow 根目录。 |
 | `mf api workspace-summary --json` | 为编码代理和外部执行框架输出稳定的只读 JSON 摘要。 |
 | `mf api command-catalog --json` | 输出命令 intent 可用性和安全的 `mf run` 入口，不暴露原始命令字符串。 |

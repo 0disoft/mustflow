@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: zh
 canonical: false
-revision: 11
+revision: 12
 lifecycle: user-editable
 authority: binding
 ---
@@ -62,6 +62,7 @@ authority: binding
 - 如果嵌套仓库没有本地 preferences 文件，在继续遵循该仓库 `AGENTS.md` 和 command contract 的同时，使用最近父级 mustflow preferences 作为继承默认值。
 - 当此 mustflow root 被用作嵌套仓库的 workspace 时，应将此 root 下 `.mustflow/skills/` 的 router、routes、index 以及已安装的 `SKILL.md` 文件视为 shared workspace skill registry。除嵌套仓库的本地 routing 文件外，也要检查该共享 registry 来选择任务流程。
 - Shared workspace skills 只提供流程指导，不会覆盖嵌套仓库的 `AGENTS.md`、command contract、编辑范围、安全规则或事实来源。
+- 当一项任务只修改共享 root 中的一个委派仓库及其父级命令片段时，最终父级检查应使用 `mf run mustflow_check_scoped --input repository=<path>`。无关的 manifest 漂移属于延后证据，不授权恢复、接受、暂存或覆盖其他任务的 lock 条目。全局 `mustflow_check` 仅用于聚合 root 变更或明确要求的整库审计。
 - 如果嵌套仓库没有本地 skill index，或使用不同的本地 agent convention，不要因此认定没有适用的 workspace-level skill；在保持子仓库权限本地化的前提下检查 shared workspace registry。
 - 未经明确请求，不得编辑所选子仓库之外的内容。  
 

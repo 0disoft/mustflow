@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: es
 canonical: false
-revision: 11
+revision: 12
 lifecycle: user-editable
 authority: binding
 ---
@@ -61,6 +61,7 @@ Los detalles gestionados por mustflow se encuentran en `.mustflow/`.
 - Si el repositorio anidado no tiene un archivo local de preferences, aplica las preferences del mustflow padre más cercano como valores heredados mientras sigues obedeciendo el `AGENTS.md` y el command contract del repositorio anidado.
 - Cuando este mustflow root se use como workspace para repositorios anidados, trata el router, las routes, el index y los archivos `SKILL.md` instalados bajo `.mustflow/skills/` de este root como un shared workspace skill registry. Revisa ese registro compartido para elegir procedimientos de tarea junto con los archivos locales de routing del repositorio anidado.
 - Las shared workspace skills solo orientan el procedimiento. No reemplazan el `AGENTS.md`, el command contract, el alcance de edición, las reglas de seguridad ni la fuente de verdad del repositorio anidado.
+- Cuando una tarea modifica solo un repositorio delegado y su fragmento de comandos padre en un root compartido, usa `mf run mustflow_check_scoped --input repository=<path>` para la comprobación final. La deriva de manifest no relacionada queda aplazada y no autoriza restaurar, aceptar, preparar ni sobrescribir la entrada lock de otra tarea. Reserva `mustflow_check` global para cambios agregados del root o una auditoría completa solicitada.
 - Si un repositorio anidado no tiene un skill index local o usa una convención local de agentes diferente, no concluyas que no existe ninguna skill de workspace aplicable; consulta el shared workspace registry manteniendo local la autoridad del repositorio hijo.
 - No edites fuera del repositorio hijo seleccionado salvo solicitud explícita.  
 

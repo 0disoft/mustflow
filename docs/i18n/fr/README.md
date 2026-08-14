@@ -196,6 +196,7 @@ mf run mustflow_update_apply
 | `mf init --force`           | Sauvegarde les fichiers en conflit, puis les écrase.                                    |
 | `mf check`                  | Valide les fichiers mustflow, la configuration TOML et la structure des documents skills.|
 | `mf check --strict`         | Effectue des contrôles de sécurité supplémentaires sur l’identité des documents, les métadonnées des skills, les limites de commande, la politique de rétention, les limites de sortie, les journaux bruts et les traces ressemblant à des secrets. |
+| `mf check --strict --repo <path>` | Valide strictement un dépôt délégué et reporte les dérives de manifeste sans rapport sous forme d’avertissements. |
 | `mf doctor`                 | Inspecte la racine mustflow courante sans écrire de fichiers.                            |
 | `mf api workspace-summary --json` | Affiche un résumé JSON stable et en lecture seule pour les agents de code et les harnais externes. |
 | `mf api command-catalog --json` | Affiche la disponibilité des intents et les entrées `mf run` sûres sans exposer les commandes brutes. |

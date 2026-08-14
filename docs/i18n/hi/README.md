@@ -220,6 +220,7 @@ mf run mustflow_update_apply
 | `mf init --force`         | टकराती फ़ाइलों का बैकअप लेकर उन्हें ओवरराइट करता है।                                    |
 | `mf check`                | mustflow फ़ाइलों, TOML कॉन्फ़िगरेशन और कौशल दस्तावेज़ संरचना की जांच करता है।          |
 | `mf check --strict`       | दस्तावेज़ पहचान, कौशल मेटाडेटा, कमांड सीमाएँ, रिटेंशन नीति, आउटपुट सीमाएँ, कच्चे लॉग, और secret-like संदर्भों के लिए अतिरिक्त सुरक्षा जांच करता है। |
+| `mf check --strict --repo <path>` | एक delegated repository की कठोर जाँच करता है और असंबंधित manifest बदलावों को warning के रूप में स्थगित करता है। |
 | `mf doctor`               | फ़ाइल लिखे बिना वर्तमान mustflow रूट का निरीक्षण करता है।                               |
 | `mf api workspace-summary --json` | coding agents और external harnesses के लिए stable, read-only JSON summary दिखाता है। |
 | `mf api command-catalog --json` | raw command strings दिखाए बिना command intent availability और safe `mf run` entrypoints दिखाता है। |

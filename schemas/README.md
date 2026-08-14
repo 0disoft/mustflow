@@ -6,7 +6,7 @@ mustflow files and command output.
 Current schemas:
 
 - `doctor-report.schema.json`: output of `mf doctor --json`
-- `check-report.schema.json`: output of `mf check --json`, containing base or strict validation
+- `check-report.schema.json`: output of `mf check --json`, containing global or delegated-repository-scoped base or strict validation
   issues, warnings, stable issue details, and exit-code aligned `ok` status
 - `status-report.schema.json`: output of `mf status --json`, containing installed-entrypoint
   status, manifest-lock status, changed and missing locked files, issues, and template identity

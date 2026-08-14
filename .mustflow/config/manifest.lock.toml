@@ -9,12 +9,12 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:a15624c47ebecebef5a280d07371a602cddb3c01ae69c16a1a52f0014b220c96"
+content_hash = "sha256:8fcddd1b5653237d951dc81ec700960dbafbd6af2b76d6c9b1c1ff0561daeb85"
 
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:4d4f60f980471194194028b000fb48b0ba11c577457a56700416e7f199165026"
+content_hash = "sha256:aa9f960857363b1d3f44cd53f39e77e986fabbffb20a497da117a55d91ef3fd5"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -24,7 +24,7 @@ content_hash = "sha256:44f23b831b574960f64ec170c19520709ae5c1169853854d3df66175a
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:3360e7365223c1ec29452ed6bdd040825d5f0ddc4f100f3672cab3daab5f45e6"
+content_hash = "sha256:e6573681f253de7abfe27ce29200534554d6a96e338f5c9a2261b39989f46d69"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
@@ -55,3 +55,8 @@ content_hash = "sha256:d5c506d047dbc54c4a822d15028bfef9c7e628960a4b1c8d2fff118e9
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:bac67939faf1546056120b17e2f72e89e35719fe1a9458b2fe854dc1c8bdf5f6"
+
+[files.".mustflow/config/commands.d/scoped-check-v2-130-0.toml"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:048402e9fc8174a7a1aeaab228886ff0eb12ae112becfb6a3f4a420b15967a15"

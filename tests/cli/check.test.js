@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { runCliInProcess } from './helpers/cli-harness.js';
+import { trackManifestLockFile } from './run-support.js';
 
 function createTempProject() {
 	return mkdtempSync(path.join(tmpdir(), 'mustflow-check-'));
@@ -33,6 +34,56 @@ async function initProject(projectPath) {
 	const result = await runCli(projectPath, ['init', '--yes']);
 	assert.equal(result.status, 0);
 	assert.ok(existsSync(path.join(projectPath, 'AGENTS.md')));
+}
+
+function configureDelegatedCheckFixture(projectPath) {
+	const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+	const config = readText(configPath).replace(
+		/\[workspace\][\s\S]*?(?=\n\[capabilities\])/u,
+		[
+			'[workspace]',
+			'enabled = true',
+			'roots = ["projects"]',
+			'authority_mode = "delegated_scoped"',
+			'contracts = [',
+			'  { repository = "projects/alpha", file = "commands/alpha.toml" },',
+			'  { repository = "projects/beta", file = "commands/beta.toml" },',
+			']',
+			'max_depth = 4',
+			'max_repositories = 50',
+			'follow_symlinks = false',
+			'stop_at_repository_root = true',
+			'',
+		].join('\n'),
+	);
+	writeFileSync(configPath, config);
+	const fragmentRoot = path.join(projectPath, '.mustflow', 'config', 'commands');
+	mkdirSync(fragmentRoot, { recursive: true });
+	for (const name of ['alpha', 'beta']) {
+		mkdirSync(path.join(projectPath, 'projects', name), { recursive: true });
+		writeFileSync(
+			path.join(fragmentRoot, `${name}.toml`),
+			[
+			'[intents.test]',
+			'status = "configured"',
+			'lifecycle = "oneshot"',
+			'run_policy = "agent_allowed"',
+			`description = "Run the ${name} test."`,
+			'argv = ["node", "--version"]',
+			'cwd = "."',
+			'timeout_seconds = 30',
+			'stdin = "closed"',
+			'success_exit_codes = [0]',
+			'writes = []',
+			'network = false',
+			'destructive = false',
+			'',
+			].join('\n'),
+		);
+		trackManifestLockFile(projectPath, `.mustflow/config/commands/${name}.toml`);
+	}
+	trackManifestLockFile(projectPath, '.mustflow/config/mustflow.toml');
+	return path.join(fragmentRoot, 'alpha.toml');
 }
 
 function assertHasIssueDetail(check, expectedId, expectedMessage) {
@@ -119,6 +170,53 @@ test('passes strict check for a freshly initialized mustflow project', async () 
 		assert.equal(check.strict, true);
 		assert.deepEqual(check.issues, []);
 		assert.deepEqual(check.issueDetails, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('scoped strict check defers unrelated manifest drift but rejects target drift', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		await initProject(projectPath);
+		const contractPath = configureDelegatedCheckFixture(projectPath);
+		writeFileSync(
+			path.join(projectPath, '.mustflow', 'config', 'commands', 'beta.toml'),
+			'[intents.concurrent_unfinished\n',
+		);
+
+		const scoped = await runCli(projectPath, ['check', '--strict', '--repo', 'projects/alpha', '--json']);
+		const scopedOutput = JSON.parse(scoped.stdout);
+		assert.equal(scoped.status, 0);
+		assert.equal(scopedOutput.ok, true);
+		assert.deepEqual(scopedOutput.scope, {
+			kind: 'workspace_repository',
+			repository: 'projects/alpha',
+			contract: '.mustflow/config/commands/alpha.toml',
+		});
+		assert.ok(
+			scopedOutput.warnings.includes(
+				'Deferred unrelated manifest drift: Lock hash mismatch: .mustflow/config/commands/beta.toml',
+			),
+		);
+
+		const global = await runCli(projectPath, ['check', '--strict', '--json']);
+		assert.equal(global.status, 1);
+		assert.ok(
+			JSON.parse(global.stdout).issues.includes(
+				'Lock hash mismatch: .mustflow/config/commands/beta.toml',
+			),
+		);
+
+		writeFileSync(contractPath, `${readText(contractPath)}# target drift\n`);
+		const targetDrift = await runCli(projectPath, ['check', '--strict', '--repo', 'projects/alpha', '--json']);
+		assert.equal(targetDrift.status, 1);
+		assert.ok(
+			JSON.parse(targetDrift.stdout).issues.includes(
+				'Lock hash mismatch: .mustflow/config/commands/alpha.toml',
+			),
+		);
 	} finally {
 		removeTempProject(projectPath);
 	}

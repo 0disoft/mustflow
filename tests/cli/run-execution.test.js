@@ -464,6 +464,42 @@ test('ignores manifest drift in an inactive delegated workspace contract', () =>
 	}
 });
 
+test('runs the configured scoped root check while an unrelated delegated contract drifts', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			readFileSync(commandsPath, 'utf8').replace(
+				'argv = ["mf", "check", "--strict", "--repo", "{repository}"]',
+				`argv = [${JSON.stringify(process.execPath)}, ${JSON.stringify(cliPath)}, "check", "--strict", "--repo", "{repository}"]`,
+			),
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/commands.toml');
+		const betaPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'beta.toml');
+		writeFileSync(betaPath, `${readFileSync(betaPath, 'utf8')}\n# concurrent beta edit\n`);
+
+		const result = runCli(projectPath, [
+			'run',
+			'mustflow_check_scoped',
+			'--input',
+			'repository=projects/alpha',
+			'--json',
+		]);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.equal(receipt.status, 'passed');
+		assert.match(receipt.stdout.tail, /mustflow scoped strict check passed/u);
+		assert.match(receipt.stderr.tail, /Deferred unrelated manifest drift/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('runs a delegated workspace contract while the unrelated root command contract is being edited', () => {
 	const projectPath = createTempProject();
 

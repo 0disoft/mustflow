@@ -10,7 +10,7 @@ status_values = ["current", "stale", "needs_review", "missing"]
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
-revision = 23
+revision = 24
 translations.ko = { path = "locales/ko/AGENTS.md", source_revision = 22, status = "needs_review" }
 translations.zh = { path = "locales/zh/AGENTS.md", source_revision = 22, status = "needs_review" }
 translations.es = { path = "locales/es/AGENTS.md", source_revision = 22, status = "needs_review" }
@@ -40,7 +40,7 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 30
+revision = 31
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }

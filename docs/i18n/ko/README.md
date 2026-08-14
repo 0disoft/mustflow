@@ -196,6 +196,7 @@ mf run mustflow_update_apply
 | `mf init --force` | 충돌하는 파일을 백업 후 덮어씁니다. |
 | `mf check` | mustflow 파일, TOML 설정, 스킬 문서 형식을 검사합니다. |
 | `mf check --strict` | 문서 정체성, 스킬 메타데이터, 명령 경계, 보존 정책, 실행 출력 제한, 원본 로그, 비밀정보 흔적 등 추가 안전 조건까지 검사합니다. |
+| `mf check --strict --repo <path>` | 위임된 작업공간 저장소 하나와 해당 명령 조각만 엄격히 검사하며, 관련 없는 manifest 변경은 실패 대신 경고로 남깁니다. |
 | `mf doctor` | 현재 mustflow 루트를 읽기 전용으로 진단합니다. |
 | `mf api workspace-summary --json` | 코딩 에이전트와 외부 하네스가 쓰는 안정적인 읽기 전용 JSON 요약을 출력합니다. |
 | `mf api command-catalog --json` | 원본 실행 문자열을 노출하지 않고 command intent 가능 여부와 안전한 `mf run` 진입점을 출력합니다. |

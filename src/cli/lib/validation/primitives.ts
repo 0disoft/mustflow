@@ -45,7 +45,11 @@ export function validateRequiredFiles(projectRoot: string, issues: CheckIssue[])
 	}
 }
 
-export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedConfigFiles {
+export function validateToml(
+	projectRoot: string,
+	issues: CheckIssue[],
+	commandsTomlOverride?: TomlTable,
+): ParsedConfigFiles {
 	const parsedFiles: {
 		mustflowToml?: TomlTable;
 		commandsToml?: TomlTable;
@@ -70,7 +74,7 @@ export function validateToml(projectRoot: string, issues: CheckIssue[]): ParsedC
 		try {
 			const parsed =
 				relativePath === COMMANDS_CONFIG_RELATIVE_PATH
-					? readResolvedCommandContractToml(projectRoot)
+					? commandsTomlOverride ?? readResolvedCommandContractToml(projectRoot)
 					: readMustflowTomlFile(projectRoot, relativePath);
 
 			if (!isRecord(parsed)) {

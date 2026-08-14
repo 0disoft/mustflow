@@ -158,6 +158,13 @@ An intent with `kind = "mustflow_builtin"` and `argv[0]` equal to `mf` or
 external PATH lookup. This ensures that self-hosted commands such as  
 `mf run mustflow_check` remain portable across shell environments.
 
+The installed `mustflow_check_scoped` built-in binds a repository-relative `path` input and runs
+`mf check --strict --repo <path>`. In delegated workspace mode its root execution trust includes the
+root instructions, root command authority, configured root includes, and workspace mapping, but not
+every delegated sibling fragment. The check itself fails on drift in the selected mapping or fragment
+and reports drift in other manifest entries as deferred warnings. A scoped success is not a global
+root success and must not be used to accept or rewrite unrelated lock entries.
+
 ## Output and Receipts
 
 Every `mf run` execution must write a latest run receipt according to  
@@ -173,6 +180,8 @@ mustflow verification.
 - `mf run build` fails when `cwd` escapes the current mustflow root.
 - `mf run mustflow_check` does not require an externally discoverable `mf`  
   executable when the intent is a mustflow built-in.
+- `mf run mustflow_check_scoped --input repository=projects/example` can complete while an unrelated
+  delegated fragment is dirty, but still fails when the selected fragment drifts.
 - `mf check` validates typed input metadata and rejects unsafe paths,
   undeclared placeholders, shell strings, and mixed-token interpolation.
 - `mf run release_plan_show --input plan=.mustflow/state/release-plans/v1.json`

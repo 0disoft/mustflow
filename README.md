@@ -268,6 +268,7 @@ mf run mustflow_update_apply
 | `mf init --force` | Back up conflicting files, then overwrite them. |
 | `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
 | `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
+| `mf check --strict --repo <path>` | Strictly validate one delegated workspace repository and its command fragment; unrelated manifest drift is reported as a warning instead of blocking the task. |
 | `mf adapters status` | Inspect existing host-specific instruction and adapter files without generating adapter files or granting command authority. |
 | `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons. Add `--write <path>` to save the classification report. |
 | `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
@@ -500,12 +501,13 @@ mf run maintainer_check_node
 mf run docs_validate_fast
 mf run docs_validate
 mf run mustflow_check
+mf run mustflow_check_scoped --input repository=projects/example
 mf run release_npm_version_available
 mf run release_npm_publish
 mf run release_npm_published_verify
 ```
 
-The Bun scripts remain available for human maintainers and release packaging. `test_fast` runs the fast CLI regression baseline, `test_related` selects tests from changed files and falls back to the fast baseline, and both use 8 Node test workers by default. Skill-body changes select only their owning authoring shard plus the lightweight install-surface contract, and `test_skill_contracts` exposes that seconds-scale contract path directly. Set `MUSTFLOW_TEST_CONCURRENCY=1`, `2`, or another positive integer to tune those workers on local machines. `test_release` keeps package metadata and packaging checks out of routine local edits. `test_coverage` runs the fast CLI baseline through Node's built-in coverage report with no enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another positive integer to adjust its worker count. `lint` and test-audit are configured as narrow repository-local gates. `docs_validate_fast` checks documentation navigation and localized content links without building the entire static site; `docs_validate` performs the full static documentation build, search index, and sitemap gate for release-sensitive changes.
+The Bun scripts remain available for human maintainers and release packaging. `test_fast` runs the fast CLI regression baseline, `test_related` selects tests from changed files and falls back to the fast baseline, and both use 8 Node test workers by default. Skill-body changes select only their owning authoring shard plus the lightweight install-surface contract, and `test_skill_contracts` exposes that seconds-scale contract path directly. Set `MUSTFLOW_TEST_CONCURRENCY=1`, `2`, or another positive integer to tune those workers on local machines. `test_release` keeps package metadata and packaging checks out of routine local edits. `test_coverage` runs the fast CLI baseline through Node's built-in coverage report with no enforced threshold; set `MUSTFLOW_TEST_COVERAGE_CONCURRENCY=1`, `2`, or another positive integer to adjust its worker count. `lint` and test-audit are configured as narrow repository-local gates. `docs_validate_fast` checks documentation navigation and localized content links without building the entire static site; `docs_validate` performs the full static documentation build, search index, and sitemap gate for release-sensitive changes. In a dirty delegated workspace, use `mustflow_check_scoped` for one repository; global `mustflow_check` remains the aggregate audit and may intentionally fail on another task's unfinished manifest entry.
 
 `dist/` is a generated build output and is not committed. `npm pack` and `npm publish` run `npm run build` via `prepack`, so the npm package contains the built CLI.
 

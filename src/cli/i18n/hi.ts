@@ -75,11 +75,13 @@ export const hiMessages = {
   "check.help.summary":
     "वर्तमान रिपॉज़िटरी में mustflow फ़ाइलों की जाँच करें।",
   "check.help.option.strict": "एजेंट सुरक्षा के लिए अतिरिक्त कठोर जाँच चलाएँ",
+  "check.help.option.repo": "केवल एक प्रत्यायोजित रिपॉज़िटरी जाँचें और असंबंधित manifest बदलाव स्थगित करें",
   "check.help.exit.ok": "सभी आवश्यक mustflow फ़ाइलें और सेटिंग्स मान्य हैं",
   "check.help.exit.fail":
     "सत्यापन विफल हुआ या कमांड को अमान्य इनपुट मिला",
   "check.result.passed": "mustflow check पास हुआ",
   "check.result.strictPassed": "mustflow strict check पास हुआ",
+  "check.result.scopedStrictPassed": "mustflow scoped strict check पास हुआ: {repository}",
   "check.result.failed": "mustflow check फेल हुआ: {count} समस्या मिली।",
 
   "contractLint.help.summary":

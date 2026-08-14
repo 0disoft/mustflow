@@ -75,11 +75,13 @@ export const frMessages = {
   "check.help.summary":
     "Valide les fichiers mustflow du dépôt actuel.",
   "check.help.option.strict": "Exécute des vérifications strictes supplémentaires pour la sécurité des agents",
+  "check.help.option.repo": "Valide un seul dépôt délégué et reporte les dérives de manifeste sans rapport",
   "check.help.exit.ok": "Tous les fichiers et paramètres mustflow requis sont valides",
   "check.help.exit.fail":
     "La validation a échoué ou la commande a reçu une entrée non valide",
   "check.result.passed": "vérification mustflow réussie",
   "check.result.strictPassed": "vérification stricte mustflow réussie",
+  "check.result.scopedStrictPassed": "vérification stricte ciblée réussie : {repository}",
   "check.result.failed": "vérification mustflow échouée : {count} problème(s) trouvé(s).",
 
   "contractLint.help.summary":

@@ -6,6 +6,17 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.130.0 - 2026-08-14
+
+- Added repository-scoped strict checks for delegated workspaces. `mf check --strict --repo <path>`
+  validates the selected mapping, command fragment, and manifest entries while reporting unrelated
+  root drift as non-blocking deferred warnings.
+- Added the typed `mustflow_check_scoped` intent to new installations and updated agent workflow
+  guidance so concurrent tasks do not restore, accept, stage, or overwrite another task's manifest
+  entry merely to make a whole-root check pass.
+- Extended the public check-report schema and six-language CLI help/documentation for explicit
+  scoped results without weakening the existing whole-root `mf check --strict` audit.
+
 ## 2.129.2 - 2026-08-13
 
 - Localized the new `mf run --no-wait` and repeatable typed `--input <name=value>` help text in

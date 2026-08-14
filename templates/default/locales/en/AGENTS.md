@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: en
 canonical: true
-revision: 23
+revision: 24
 lifecycle: user-editable
 authority: binding
 ---
@@ -138,6 +138,11 @@ mustflow-managed details are under `.mustflow/`.
   parent-owned orchestration, or the child result explicitly depends on a parent-owned artifact or
   contract. Unrelated parent worktree changes, locks, or manifest drift do not block a child-only
   completion claim.
+- When one task edits only a delegated repository and its matching parent command fragment in a
+  shared dirty root, use `mf run mustflow_check_scoped --input repository=<path>` for the final
+  parent check. Unrelated manifest drift is deferred evidence, not a failure and not authority to
+  restore, accept, stage, or overwrite another task's lock entry. Keep global `mustflow_check` for
+  aggregate root changes or an explicitly requested whole-root audit.
 - If a nested repository lacks a local skill index or uses a different local agent convention,
   do not treat that absence as meaning no applicable workspace-level skill exists; consult the
   shared workspace registry while keeping child-repository authority local.

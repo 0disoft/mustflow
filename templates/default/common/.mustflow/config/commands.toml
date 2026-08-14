@@ -272,6 +272,27 @@ network = false
 destructive = false
 required_after = ["mustflow_config_change", "mustflow_docs_change"]
 
+[intents.mustflow_check_scoped]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Strictly validate one delegated workspace repository while reporting unrelated manifest drift without blocking it."
+argv = ["mf", "check", "--strict", "--repo", "{repository}"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["delegated_command_contract_change", "child_only_change_in_shared_root", "before_final_report"]
+
+[intents.mustflow_check_scoped.inputs.repository]
+type = "path"
+required = true
+allowed_roots = ["projects"]
+
 [intents.mustflow_update_dry_run]
 status = "configured"
 kind = "mustflow_builtin"

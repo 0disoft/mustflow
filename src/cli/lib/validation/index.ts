@@ -39,7 +39,7 @@ import {
 import { readLocalSourceAnchorCheckWarnings } from '../local-index/index.js';
 import { listFilesRecursive, toPosixPath } from '../filesystem.js';
 import { readGitChangedFiles } from '../git-changes.js';
-import { inspectManifestLock } from '../manifest-lock.js';
+import { inspectManifestLock, inspectManifestLockPaths } from '../manifest-lock.js';
 import { getExpectedRepoFlowSourceFingerprint } from '../repo-flow.js';
 import { getExpectedRepoMapSourceFingerprint } from '../repo-map.js';
 import { parseTomlText, readMustflowTomlFile } from '../toml.js';
@@ -1059,9 +1059,40 @@ function validateContextDocuments(projectRoot: string, issues: CheckIssue[]): vo
 	}
 }
 
-function validateManifestLock(projectRoot: string, issues: CheckIssue[]): void {
-	for (const issue of inspectManifestLock(projectRoot).issues) {
+function validateManifestLock(
+	projectRoot: string,
+	issues: CheckIssue[],
+	requiredPaths?: readonly string[],
+): void {
+	if (!requiredPaths) {
+		for (const issue of inspectManifestLock(projectRoot).issues) {
+			issues.push({ message: issue });
+		}
+		return;
+	}
+
+	const scoped = inspectManifestLockPaths(projectRoot, requiredPaths);
+	for (const issue of scoped.issues) {
 		issues.push({ message: issue });
+	}
+
+	if (scoped.readResult.kind === 'present') {
+		const trackedPaths = new Set(scoped.readResult.lock.files.map((file) => file.relativePath));
+		for (const requiredPath of requiredPaths) {
+			if (!trackedPaths.has(requiredPath)) {
+				issues.push({ message: `Manifest lock must track scoped file: ${requiredPath}` });
+			}
+		}
+	}
+
+	const scopedIssueSet = new Set(scoped.issues);
+	for (const issue of inspectManifestLock(projectRoot).issues) {
+		if (!scopedIssueSet.has(issue)) {
+			issues.push({
+				message: `Deferred unrelated manifest drift: ${issue}`,
+				severity: 'warning',
+			});
+		}
 	}
 }
 
@@ -2907,22 +2938,33 @@ function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: 
 	validateStrictStorage(projectRoot, retentionLimits, issues);
 }
 
+function validateStrictScoped(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
+	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
+	validateStrictTestSelectionConfig(projectRoot, parsed.commandsToml, issues);
+}
+
 function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): CheckIssue[] {
 	const issues: CheckIssue[] = [];
 
 	validateRequiredFiles(projectRoot, issues);
-	const parsed = validateToml(projectRoot, issues);
+	const parsed = validateToml(projectRoot, issues, options.scope?.commandsToml);
 	validateMustflowConfig(parsed.mustflowToml, issues);
 	validatePreferencesConfig(parsed.preferencesToml, issues);
 	validateTechnologyConfig(parsed.technologyToml, issues);
 	validateVersioningConfig(parsed.versioningToml, issues);
 	validateCommandIntents(parsed.commandsToml, issues);
-	validateSkills(projectRoot, issues);
-	validateContextDocuments(projectRoot, issues);
-	validateManifestLock(projectRoot, issues);
+	if (!options.scope) {
+		validateSkills(projectRoot, issues);
+		validateContextDocuments(projectRoot, issues);
+	}
+	validateManifestLock(projectRoot, issues, options.scope?.manifestPaths);
 
 	if (options.strict) {
-		validateStrict(projectRoot, parsed, issues);
+		if (options.scope) {
+			validateStrictScoped(projectRoot, parsed, issues);
+		} else {
+			validateStrict(projectRoot, parsed, issues);
+		}
 	}
 
 	return issues;

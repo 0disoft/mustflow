@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: ko
 canonical: false
-revision: 29
+revision: 30
 lifecycle: user-editable
 authority: binding
 ---
@@ -76,6 +76,7 @@ mustflow가 관리하는 세부 문서와 설정은 `.mustflow/` 폴더 아래�
 - 하위 저장소에 로컬 preferences 파일이 없다면, 하위 저장소의 `AGENTS.md`와 command contract를 계속 따르면서 가장 가까운 상위 mustflow preferences를 상속 기본값으로 적용합니다.
 - 이 mustflow 루트를 하위 저장소 작업 공간으로 사용하는 경우, 이 루트의 `.mustflow/skills/` router, routes, index, 설치된 `SKILL.md` 파일을 공유 workspace skill registry로 취급합니다. 하위 저장소의 로컬 라우팅 파일과 함께 이 공유 registry도 확인해 현재 작업에 맞는 절차를 선택합니다.
 - 공유 workspace skill은 절차 안내일 뿐입니다. 하위 저장소의 `AGENTS.md`, command contract, 수정 범위, 안전 규칙, source of truth를 덮어쓰지 않습니다.
+- 공유 루트에서 한 작업이 위임된 저장소와 그 저장소의 상위 명령 조각만 수정했다면 최종 상위 검사는 `mf run mustflow_check_scoped --input repository=<path>`를 사용합니다. 관련 없는 manifest 변경은 보류된 근거이지 실패가 아니며, 다른 작업의 lock 항목을 복구하거나 승인하거나 stage하거나 덮어쓸 권한도 아닙니다. 전역 `mustflow_check`는 루트 전체 변경이나 명시적인 전체 감사에만 사용합니다.
 - 하위 저장소에 로컬 skill index가 없거나 다른 로컬 agent convention을 사용하더라도, 적용 가능한 workspace-level skill이 없다고 단정하지 않습니다. 하위 저장소의 권한은 로컬에 둔 채 공유 workspace registry를 함께 확인합니다.
 - repository farm에서는 각 하위 저장소가 소유한 명령은 해당 저장소의 command contract를 우선합니다. 상위 루트가 하위 저장소를 의도적으로 orchestration해야 한다면 상위 소유 명령을 `.mustflow/config/commands/` 아래 repo 이름별 fragment로 나누고, `mf workspace command-fragments`로 읽기 전용 안내를 확인합니다.  
 - 명시적 요청 없이 선택한 하위 저장소 밖의 파일은 수정하지 않습니다.

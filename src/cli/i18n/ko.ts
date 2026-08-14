@@ -75,10 +75,12 @@ export const koMessages = {
   "check.help.summary": "현재 저장소의 mustflow 파일을 검사합니다.",
   "check.help.option.strict":
     "에이전트 안전성 엄격 검사를 추가로 실행합니다",
+  "check.help.option.repo": "하나의 위임된 작업공간 저장소만 검사하고 관련 없는 manifest 변경은 보류합니다",
   "check.help.exit.ok": "필수 mustflow 파일과 설정이 모두 유효합니다",
   "check.help.exit.fail": "검증 실패 또는 잘못된 입력이 제공되었습니다",
   "check.result.passed": "mustflow 검사 통과",
   "check.result.strictPassed": "mustflow 엄격 검사 통과",
+  "check.result.scopedStrictPassed": "mustflow 범위 지정 엄격 검사 통과: {repository}",
   "check.result.failed": "mustflow 검사 실패: 문제 {count}개를 찾았습니다.",
 
   "contractLint.help.summary":

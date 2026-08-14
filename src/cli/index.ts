@@ -47,6 +47,7 @@ function getTopLevelHelp(lang: CliLang): string {
 				'mf handoff validate .mustflow/work-items/MF-0001.json',
 				'mf crash-evidence validate crash-evidence.json --json',
 				'mf check --json',
+				'mf check --strict --repo projects/example --json',
 				'mf classify --changed',
 				'mf contract-lint --json',
 				'mf onboard commands --json',

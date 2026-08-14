@@ -75,11 +75,13 @@ export const esMessages = {
   "check.help.summary":
     "Valida los archivos mustflow del repositorio actual.",
   "check.help.option.strict": "Ejecuta comprobaciones estrictas adicionales de seguridad para agentes",
+  "check.help.option.repo": "Valida solo un repositorio delegado y aplaza cambios de manifiesto no relacionados",
   "check.help.exit.ok": "Todos los archivos y ajustes mustflow requeridos son válidos",
   "check.help.exit.fail":
     "La validación falló o el comando recibió una entrada no válida",
   "check.result.passed": "comprobacion mustflow superada",
   "check.result.strictPassed": "comprobacion estricta de mustflow superada",
+  "check.result.scopedStrictPassed": "comprobacion estricta con alcance superada: {repository}",
   "check.result.failed": "comprobacion mustflow fallida: se encontraron {count} problema(s).",
 
   "contractLint.help.summary":

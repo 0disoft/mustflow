@@ -7,17 +7,20 @@ import {
 import { t, type CliLang } from '../lib/i18n.js';
 import {
 	formatCliOptionParseError,
+	getParsedCliStringOption,
 	hasCliOptionToken,
 	hasParsedCliOption,
 	parseCliOptions,
 } from '../lib/option-parser.js';
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
+import { resolveRunCommandContext } from '../lib/run-context.js';
 import { checkMustflowProjectReportWithGeneratedState } from '../lib/validation.js';
 
 const CHECK_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--strict', kind: 'boolean' },
+	{ name: '--repo', kind: 'string' },
 ] as const;
 
 export function getCheckHelp(lang: CliLang = 'en'): string {
@@ -31,9 +34,13 @@ export function getCheckHelp(lang: CliLang = 'en'): string {
 					label: '--strict',
 					description: t(lang, 'check.help.option.strict'),
 				},
+				{
+					label: '--repo <path>',
+					description: t(lang, 'check.help.option.repo'),
+				},
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
-			examples: ['mf check', 'mf check --strict', 'mf check --strict --json'],
+			examples: ['mf check', 'mf check --strict', 'mf check --strict --repo projects/example --json'],
 			exitCodes: [
 				{
 					label: '0',
@@ -62,7 +69,35 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 	}
 
 	const strict = hasParsedCliOption(options, '--strict');
-	const projectRoot = resolveMustflowRoot();
+	const repository = getParsedCliStringOption(options, '--repo');
+	let projectRoot: string;
+	let scope;
+	try {
+		if (repository) {
+			const context = resolveRunCommandContext({ repository });
+			if (!context.workspaceScope || !context.trustPaths) {
+				throw new Error('--repo requires a delegated workspace repository mapping');
+			}
+			projectRoot = context.projectRoot;
+			scope = {
+				kind: 'workspace_repository' as const,
+				repository: context.workspaceScope.repository,
+				contract: context.workspaceScope.contract,
+				manifestPaths: context.trustPaths,
+				commandsToml: {
+					defaults: context.contract.defaults,
+					intents: context.contract.intents,
+					resources: context.contract.resources,
+				},
+			};
+		} else {
+			projectRoot = resolveMustflowRoot();
+		}
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		printUsageError(reporter, message, 'mf check --help', getCheckHelp(lang), lang);
+		return 1;
+	}
 	const activeLock = acquireActiveCommandLock(projectRoot, 'mf check', GENERATED_SURFACE_READ_EFFECTS);
 
 	if (!activeLock.ok) {
@@ -71,7 +106,7 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 	}
 
 	try {
-		const report = await checkMustflowProjectReportWithGeneratedState(projectRoot, { strict });
+		const report = await checkMustflowProjectReportWithGeneratedState(projectRoot, { strict, scope });
 		const issues = report.issues;
 		const warnings = report.warnings;
 		const ok = issues.length === 0;
@@ -82,6 +117,13 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 					{
 						ok,
 						strict,
+						scope: scope
+							? {
+								kind: scope.kind,
+								repository: scope.repository,
+								contract: scope.contract,
+							}
+							: null,
 						issueCount: issues.length,
 						issues,
 						warningCount: warnings.length,
@@ -101,6 +143,10 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 			}
 
 			if (strict) {
+				if (scope) {
+					reporter.stdout(t(lang, 'check.result.scopedStrictPassed', { repository: scope.repository }));
+					return 0;
+				}
 				reporter.stdout(t(lang, 'check.result.strictPassed'));
 				return 0;
 			}

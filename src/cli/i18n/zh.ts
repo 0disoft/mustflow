@@ -75,11 +75,13 @@ export const zhMessages = {
   "check.help.summary":
     "验证当前仓库中的 mustflow 文件。",
   "check.help.option.strict": "运行额外的代理安全严格检查",
+  "check.help.option.repo": "仅验证一个委派工作区仓库，并推迟无关的清单漂移",
   "check.help.exit.ok": "所有必需的 mustflow 文件和设置均有效",
   "check.help.exit.fail":
     "验证失败，或命令收到了无效输入",
   "check.result.passed": "mustflow 检查已通过",
   "check.result.strictPassed": "mustflow 严格检查已通过",
+  "check.result.scopedStrictPassed": "mustflow 范围严格检查已通过：{repository}",
   "check.result.failed": "mustflow 检查失败：发现 {count} 个问题。",
 
   "contractLint.help.summary":

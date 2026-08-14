@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: fr
 canonical: false
-revision: 11
+revision: 12
 lifecycle: user-editable
 authority: binding
 ---
@@ -62,6 +62,7 @@ Les détails gérés par mustflow se trouvent dans `.mustflow/`.
 - Si le dépôt imbriqué n’a pas de fichier preferences local, appliquer les preferences du mustflow parent le plus proche comme valeurs héritées tout en continuant de suivre le `AGENTS.md` et le command contract du dépôt imbriqué.
 - Lorsque ce mustflow root sert de workspace pour des dépôts imbriqués, traiter le router, les routes, l’index et les fichiers `SKILL.md` installés sous `.mustflow/skills/` dans ce root comme un shared workspace skill registry. Consulter ce registre partagé pour les procédures de tâche en plus des fichiers de routing locaux du dépôt imbriqué.
 - Les shared workspace skills ne fournissent qu’un guidage de procédure. Elles ne remplacent pas le `AGENTS.md`, le command contract, le périmètre d’édition, les règles de sécurité ni la source de vérité du dépôt imbriqué.
+- Lorsqu’une tâche ne modifie qu’un dépôt délégué et son fragment de commandes parent dans un root partagé, utiliser `mf run mustflow_check_scoped --input repository=<path>` pour le contrôle final. Les dérives de manifeste sans rapport sont différées et n’autorisent pas à restaurer, accepter, indexer ou écraser l’entrée lock d’une autre tâche. Réserver le `mustflow_check` global aux changements agrégés du root ou à un audit complet demandé.
 - Si un dépôt imbriqué n’a pas d’index de skills local ou utilise une convention d’agent locale différente, ne pas conclure qu’aucune skill de workspace ne s’applique ; consulter le shared workspace registry tout en gardant l’autorité du dépôt enfant locale.
 - Ne pas éditer en dehors du dépôt enfant sélectionné, sauf demande explicite.  
 

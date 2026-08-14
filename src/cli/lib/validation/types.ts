@@ -36,6 +36,15 @@ export interface SkillRouteMetadata {
 
 export interface CheckOptions {
 	readonly strict?: boolean;
+	readonly scope?: CheckScope;
+}
+
+export interface CheckScope {
+	readonly kind: 'workspace_repository';
+	readonly repository: string;
+	readonly contract: string;
+	readonly manifestPaths: readonly string[];
+	readonly commandsToml: TomlTable;
 }
 
 export interface ParsedConfigFiles {

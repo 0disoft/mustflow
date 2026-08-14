@@ -16,6 +16,12 @@
   "properties": {
     "ok": { "type": "boolean" },
     "strict": { "type": "boolean" },
+    "scope": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "#/$defs/workspaceRepositoryScope" }
+      ]
+    },
     "issueCount": { "type": "integer", "minimum": 0 },
     "issues": {
       "type": "array",
@@ -32,6 +38,16 @@
     }
   },
   "$defs": {
+    "workspaceRepositoryScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "repository", "contract"],
+      "properties": {
+        "kind": { "const": "workspace_repository" },
+        "repository": { "type": "string", "minLength": 1 },
+        "contract": { "type": "string", "minLength": 1 }
+      }
+    },
     "issueDetail": {
       "type": "object",
       "additionalProperties": false,

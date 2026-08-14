@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 30
+revision: 31
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -322,6 +322,13 @@ template. Run or report a parent-root check only when parent-owned files or orch
 when a named parent artifact or contract is an explicit dependency of the child result. Unrelated
 parent worktree changes, active locks, stale receipts, or manifest drift are context, not blockers for
 the child completion claim, and should not be listed as skipped child checks.
+
+When the parent change is limited to one delegated repository's command fragment, use the configured
+`mustflow_check_scoped` intent with `repository=<path>`. The scoped check validates the repository
+mapping, root defaults, selected fragment, and their manifest entries. Other manifest mismatches are
+reported as deferred warnings and must not be repaired, accepted, staged, or overwritten by that
+task. Use the global `mustflow_check` only for aggregate root changes or an explicitly requested
+whole-root audit; do not run both by habit.
 
 ## Verification Selection
 

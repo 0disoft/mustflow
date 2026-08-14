@@ -2,7 +2,7 @@
 mustflow_doc: agents.root
 locale: hi
 canonical: false
-revision: 11
+revision: 12
 lifecycle: user-editable
 authority: binding
 ---
@@ -61,6 +61,7 @@ mustflow द्वारा प्रबंधित विवरण `.mustflow/
 - यदि nested repository में local preferences file नहीं है, तो nested repository के `AGENTS.md` और command contract का पालन करते हुए निकटतम parent mustflow preferences को inherited defaults के रूप में लागू करें।
 - जब यह mustflow root nested repositories के लिए workspace के रूप में उपयोग हो, तो इस root के `.mustflow/skills/` router, routes, index, और installed `SKILL.md` files को shared workspace skill registry मानें। nested repository की local routing files के साथ इस shared registry को भी task procedures चुनने के लिए देखें।
 - Shared workspace skills केवल procedure guidance देती हैं। वे nested repository के `AGENTS.md`, command contract, edit scope, safety rules, या source of truth को override नहीं करतीं।
+- Shared root में जब कोई task केवल delegated repository और उसके parent command fragment को बदलती है, final parent check के लिए `mf run mustflow_check_scoped --input repository=<path>` चलाएँ। असंबंधित manifest drift deferred evidence है; यह दूसरी task की lock entry को restore, accept, stage, या overwrite करने की authority नहीं देता। Global `mustflow_check` केवल aggregate root changes या explicitly requested whole-root audit के लिए रखें।
 - यदि किसी nested repository में local skill index नहीं है या वह अलग local agent convention उपयोग करती है, तो यह न मानें कि कोई workspace-level skill लागू नहीं है; child-repository authority को local रखते हुए shared workspace registry देखें।
 - स्पष्ट अनुरोध के बिना चुनी हुई child रिपॉजिटरी के बाहर संपादन न करें।  
 
