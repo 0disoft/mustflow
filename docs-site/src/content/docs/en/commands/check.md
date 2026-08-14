@@ -51,6 +51,18 @@ npx mf check --strict
 
 Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, repository-map generation rules, or repository-flow generation rules.
 
+## Repository-Scoped Checks
+
+```sh
+npx mf check --strict --repo projects/example
+```
+
+`--repo` selects one repository declared by a delegated workspace mapping. The scoped check validates
+the root defaults, workspace mapping, selected command fragment, and their manifest-lock entries.
+Drift in any selected input remains a blocking error. Drift in unrelated manifest entries is reported
+as a deferred warning and does not make the scoped check fail. A scoped success is not a whole-root
+success; use the unscoped strict check only for aggregate root changes or an explicit whole-root audit.
+
 ## Error and Warning Classification
 
 `mf check` treats structural violations as blocking errors. Blocking issues exit with code `1`; warnings are reported separately and do not fail the command.
@@ -126,6 +138,7 @@ Machine-readable output uses these fields:
 
 - `ok` (`boolean`): Whether all checks passed.
 - `strict` (`boolean`): Whether `--strict` checks were enabled.
+- `scope` (`object | null`): The selected delegated repository scope. Scoped results include `kind`, `repository`, and `contract`; global results use `null`.
 - `issueCount` (`number`): Number of issues found.
 - `issues` (`string[]`): Human-readable issue messages.
 - `warningCount` (`number`): Number of non-blocking warnings found.

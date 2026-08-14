@@ -58,6 +58,18 @@ npx mf check --strict
 
 Le mode strict est facultatif pour que le flux normal reste léger. Il est recommandé après une modification de documents mustflow, de skills, de contrats de commande ou de règles de génération du plan de dépôt.
 
+## Contrôle limité à un dépôt
+
+```sh
+npx mf check --strict --repo projects/example
+```
+
+`--repo` sélectionne un dépôt déclaré par le mappage d’espace de travail délégué. Le contrôle valide
+les valeurs racine, le mappage, le fragment de commandes sélectionné et ses entrées de verrouillage du
+manifeste. Toute dérive dans le périmètre reste bloquante ; une dérive sans rapport est signalée comme
+avertissement différé. Un succès ciblé ne vaut pas succès global. Réservez le contrôle strict global
+aux changements agrégés de la racine ou à un audit complet explicitement demandé.
+
 ## Classification des erreurs et avertissements
 
 `mf check` traite les violations structurelles comme des erreurs bloquantes. Les erreurs bloquantes quittent avec le code `1`; les avertissements sont signalés séparément et ne font pas échouer la commande.
@@ -132,6 +144,7 @@ La sortie lisible par machine utilise ces champs:
 
 - `ok` (`boolean`): indique si toutes les vérifications ont réussi.
 - `strict` (`boolean`): indique si les contrôles `--strict` étaient activés.
+- `scope` (`object | null`): périmètre du dépôt délégué sélectionné. Un résultat ciblé contient `kind`, `repository` et `contract`; un résultat global utilise `null`.
 - `issueCount` (`number`): nombre de problèmes trouvés.
 - `issues` (`string[]`): messages de problème lisibles par une personne.
 - `warningCount` (`number`): nombre d’avertissements non bloquants trouvés.

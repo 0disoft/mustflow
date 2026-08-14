@@ -67,6 +67,11 @@ Si une commande contourne `mf run`, traitez sa sortie comme un contexte de moind
 
 Après modification de documents mustflow, de skills, de contrats de commande ou de règles de génération de carte du dépôt, exécutez `mf check --strict` lorsque c’est possible. Cela ajoute des contrôles pour les blocs de commandes shell brutes dans les documents de skill, les métadonnées volatiles dans `REPO_MAP.md`, les limites de sortie de commande, la politique de rétention, les tailles de fichiers générés, les traces de journaux JSONL bruts et le format du dernier reçu d’exécution.
 
+Dans un espace partagé avec des modifications en cours, une tâche limitée au dépôt enfant doit lancer
+l’intention racine `mustflow_check_scoped` avec `repository=<path>`. Elle valide le mappage et le
+fragment sélectionnés tout en différant les dérives de manifeste sans rapport. Réservez le
+`mustflow_check` global aux changements agrégés ou à un audit complet, sans réécrire le verrou d’une autre tâche.
+
 ## Activation des skills
 
 Les skills sont des procédures de tâche, pas des outils autonomes. Activer une skill signifie lire

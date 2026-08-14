@@ -59,4 +59,4 @@ content_hash = "sha256:bac67939faf1546056120b17e2f72e89e35719fe1a9458b2fe854dc1c
 [files.".mustflow/config/commands.d/scoped-check-v2-130-0.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:048402e9fc8174a7a1aeaab228886ff0eb12ae112becfb6a3f4a420b15967a15"
+content_hash = "sha256:caff04986ccc515013018c85314529f381a9a4d25af69413e8f0f7e2b4ad55a3"

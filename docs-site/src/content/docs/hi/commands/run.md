@@ -46,8 +46,14 @@ development servers, watch mode, browser UI और background processes finite v
 npx mf run test
 npx mf run lint
 npx mf run mustflow_check
+npx mf run mustflow_check_scoped --input repository=projects/game
 npx mf run test --json
 ```
+
+दो repository selectors की भूमिका अलग है। `mf run test --repo projects/game` child repository का
+delegated command contract चुनता है। `mustflow_check_scoped --input repository=projects/game` root
+command authority रखता है और final root validation को उसी repository तक सीमित करता है। Shared root
+में child-only task के बाद इसका उपयोग करें; यह पूरे root को certify नहीं करता।
 
 ## JSON फ़ील्ड
 

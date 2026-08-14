@@ -12,6 +12,13 @@ description: Contrats d’intention de commande pour les tests, le lint, les con
 - Chaque `SKILL.md` référence des noms d’intentions comme `test`, `lint` et `build` au lieu de commandes brutes.
 - Des outils comme `mf check` peuvent lire ce fichier pour valider l’exécutabilité et les champs manquants.
 
+## Contrôle final limité à un dépôt
+
+Le contrat racine par défaut fournit `mustflow_check_scoped`. Il reçoit l’entrée de chemin typée
+`repository` et exécute `mf check --strict --repo <path>`. Le mappage et le fragment sélectionnés sont
+validés strictement, tandis que les dérives de manifeste sans rapport restent des avertissements.
+Les changements agrégés de la racine utilisent toujours le `mustflow_check` global.
+
 ## Structure
 
 ```toml

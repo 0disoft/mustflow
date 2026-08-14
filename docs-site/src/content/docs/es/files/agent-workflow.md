@@ -67,6 +67,11 @@ Si un comando evita `mf run`, trata su salida como contexto de menor confianza, 
 
 Después de cambiar documentos mustflow, skills, contratos de comando o reglas de generación del mapa del repositorio, ejecuta `mf check --strict` cuando sea posible. Esto agrega comprobaciones para bloques de comandos de shell sin procesar en documentos de skill, metadatos volátiles en `REPO_MAP.md`, límites de salida de comandos, política de retención, tamaños de archivos generados, trazas de registro JSONL sin procesar y el formato del último recibo de ejecución.
 
+En un workspace compartido con cambios pendientes, una tarea limitada al repositorio hijo debe usar
+el intent raíz `mustflow_check_scoped` con `repository=<path>`. Valida el mapeo y el fragmento elegidos,
+pero aplaza como advertencias la deriva de manifest no relacionada. Reserva `mustflow_check` global
+para cambios agregados o una auditoría completa, sin reescribir entradas lock de otras tareas.
+
 ## Activación de skills
 
 Las skills son procedimientos de tarea, no herramientas autónomas. Activar una skill significa leer

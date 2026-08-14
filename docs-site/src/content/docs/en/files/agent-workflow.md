@@ -85,6 +85,11 @@ If a command bypasses `mf run`, treat its output as lower-confidence context unl
 
 After modifying mustflow documents, skills, command contracts, or repository-map generation rules, execute `mf check --strict`. This adds checks for skill index and skill body alignment, raw shell command blocks in skill documents, stable `REPO_MAP.md` generated metadata, volatile repository-map values, command output limits, retention policy, generated file sizes, raw JSONL log traces, and the latest run record format.
 
+In a shared dirty workspace, a child-only task should run the root `mustflow_check_scoped` intent
+with `repository=<path>`. It validates the selected mapping and command fragment while deferring
+unrelated manifest drift as warnings. Use the global `mustflow_check` only for aggregate root changes
+or an explicitly requested whole-root audit, and never rewrite another task's lock entry to make it pass.
+
 ## Skill Activation
 
 Skills are task procedures, not autonomous tools. Activating a skill means reading the matching

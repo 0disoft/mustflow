@@ -12,6 +12,13 @@ description: Contratos de intención de comando para pruebas, lint, compilación
 - Cada `SKILL.md` referencia nombres de intención como `test`, `lint` y `build` en lugar de comandos sin procesar.
 - Herramientas como `mf check` pueden leer este archivo para validar ejecutabilidad y campos faltantes.
 
+## Comprobación final con alcance de repositorio
+
+El contrato raíz predeterminado ofrece `mustflow_check_scoped`. Recibe la entrada de ruta tipada
+`repository` y ejecuta `mf check --strict --repo <path>`. Valida estrictamente el mapeo y el fragmento
+seleccionados, pero deja la deriva de manifest no relacionada como advertencia. Los cambios agregados
+de la raíz siguen usando `mustflow_check` global.
+
 ## Forma
 
 ```toml

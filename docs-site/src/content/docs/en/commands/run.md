@@ -63,6 +63,7 @@ Even when an intent declares `lifecycle = "oneshot"`, `mf run` also refuses obvi
 npx mf run test
 npx mf run lint
 npx mf run mustflow_check
+npx mf run mustflow_check_scoped --input repository=projects/game
 npx mf run test --json
 npx mf run test --repo projects/game --json
 npx mf run release_plan_show --input plan=.mustflow/state/release-plans/v1.json
@@ -70,6 +71,11 @@ npx mf run test --no-wait
 ```
 
 `--repo` is accepted only in delegated scoped workspace mode. An unmapped working directory under a configured workspace root is rejected instead of falling back to another repository's contract. The selected run trusts `AGENTS.md`, the workspace mapping, and the selected fragment; unrelated root command hashes and sibling fragments cannot block it. Drift in any selected trust input still fails closed.
+
+These two repository selectors have different roles. `mf run test --repo projects/game` selects the
+child repository's delegated command contract. `mustflow_check_scoped --input repository=projects/game`
+keeps root command authority and limits the final root validation to that mapped repository. Use the
+latter after a child-only task in a shared dirty root; it does not certify the whole root.
 
 ## JSON Fields
 

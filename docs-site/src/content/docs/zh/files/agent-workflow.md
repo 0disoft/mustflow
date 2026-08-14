@@ -66,6 +66,11 @@ receipt 是一次执行的记录；命令定义的事实来源仍然是 `command
 
 修改 mustflow 文档、skill、命令合同或仓库地图生成规则后，应尽可能运行 `mf check --strict`。它会额外检查 skill 文档中的原始 shell 命令块、`REPO_MAP.md` 中的易变元数据、命令输出限制、保留策略、生成文件大小、原始 JSONL 日志轨迹，以及最新运行 receipt 格式。
 
+在共享且有未完成变更的 workspace 中，只修改子仓库的任务应调用根级
+`mustflow_check_scoped`，并传入 `repository=<path>`。它严格验证所选映射和命令片段，
+但把无关 manifest 漂移延后为警告。全局 `mustflow_check` 仅用于聚合根变更或明确要求的
+全根审计，不得为使其通过而改写其他任务的 lock 条目。
+
 ## Skill 激活
 
 skill 是任务流程文档，不是自治工具。激活 skill 表示读取匹配的

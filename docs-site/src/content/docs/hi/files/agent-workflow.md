@@ -66,6 +66,11 @@ Host shell commands चला सकता है, लेकिन project comma
 
 mustflow documents, skills, command contracts, या repository-map बनाने के नियम बदलने के बाद संभव हो तो `mf check --strict` चलाएं। यह skill documents में raw shell command blocks, `REPO_MAP.md` में volatile metadata, command output limits, retention policy, generated file sizes, raw JSONL log traces, और latest run receipt format की अतिरिक्त जांच करता है।
 
+Shared dirty workspace में child-only task को root `mustflow_check_scoped` intent के साथ
+`repository=<path>` देना चाहिए। यह selected mapping और command fragment को validate करता है, जबकि
+unrelated manifest drift warnings के रूप में defer होता है। Global `mustflow_check` केवल aggregate
+root changes या explicit whole-root audit के लिए रखें और दूसरे task की lock entry rewrite न करें।
+
 ## Skill activation
 
 Skills task procedures हैं, autonomous tools नहीं। skill activate करने का अर्थ है matching

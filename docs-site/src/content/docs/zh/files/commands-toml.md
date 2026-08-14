@@ -12,6 +12,12 @@ description: 测试、代码检查、构建和文档检查的命令意图合同�
 - 每个 `SKILL.md` 引用 `test`、`lint`、`build` 等意图名称，而不是原始命令。
 - `mf check` 等工具可以读取这个文件，验证可执行性和缺失字段。
 
+## 仓库范围最终检查
+
+默认根合同提供 `mustflow_check_scoped` intent。它接收类型化路径输入 `repository`，并运行
+`mf check --strict --repo <path>`。所选 workspace 映射和命令片段会严格验证，无关 manifest
+漂移只作为警告。聚合根变更仍应使用全局 `mustflow_check`。
+
 ## 结构
 
 ```toml

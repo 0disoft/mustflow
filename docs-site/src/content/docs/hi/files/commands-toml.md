@@ -12,6 +12,13 @@ description: tests, linting, builds, और documentation checks के लि�
 - हर `SKILL.md` raw commands के बजाय `test`, `lint`, और `build` जैसे intent names reference करता है।
 - `mf check` जैसे tools इस file को पढ़कर executability और missing fields validate कर सकते हैं।
 
+## Repository-scoped final check
+
+Default root contract `mustflow_check_scoped` intent देता है। यह typed path input `repository` लेकर
+`mf check --strict --repo <path>` चलाता है। Selected workspace mapping और command fragment सख़्ती से
+validate होते हैं, जबकि unrelated manifest drift warning रहता है। Aggregate root changes के लिए
+global `mustflow_check` ही उपयोग करें।
+
 ## रूप
 
 ```toml

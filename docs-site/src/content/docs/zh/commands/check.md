@@ -58,6 +58,17 @@ npx mf check --strict
 
 严格模式是可选的，这样常规工作流可以保持轻量。修改 mustflow 文档、skills、命令合同或仓库地图生成规则后，建议使用严格模式。
 
+## 仓库范围检查
+
+```sh
+npx mf check --strict --repo projects/example
+```
+
+`--repo` 选择 delegated workspace 映射中声明的一个仓库。范围检查会验证根级默认值、workspace
+映射、所选命令片段及其 manifest-lock 条目。所选范围内的漂移仍是阻塞错误；无关 manifest
+条目的漂移仅作为延后警告报告，不会使范围检查失败。范围检查成功不等于整个根目录成功；
+无范围的严格检查只用于聚合根变更或明确要求的全根审计。
+
 ## 错误与警告分类
 
 `mf check` 将结构性违规视为阻塞错误。阻塞错误会以退出码 `1` 结束；警告会单独报告，但不会导致命令失败。
@@ -132,6 +143,7 @@ npx mf check --json
 
 - `ok` (`boolean`)：所有检查是否通过。
 - `strict` (`boolean`)：是否启用了 `--strict` 检查。
+- `scope` (`object | null`)：选择的 delegated repository 范围。范围结果包含 `kind`、`repository` 和 `contract`；全局结果为 `null`。
 - `issueCount` (`number`)：发现的问题数量。
 - `issues` (`string[]`)：面向人的问题消息。
 - `warningCount` (`number`)：发现的非阻塞警告数量。

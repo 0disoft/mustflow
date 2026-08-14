@@ -97,6 +97,20 @@ function assertHasIssueDetail(check, expectedId, expectedMessage) {
 	);
 }
 
+test('check help documents repository-scoped validation', async () => {
+	const projectPath = createTempProject();
+
+	try {
+		const result = await runCli(projectPath, ['check', '--help']);
+
+		assert.equal(result.status, 0);
+		assert.match(result.stdout, /--repo <path>/u);
+		assert.match(result.stdout, /mf check --strict --repo projects\/example --json/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('passes a freshly initialized mustflow project', async () => {
 	const projectPath = createTempProject();
 

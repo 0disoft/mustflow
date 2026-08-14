@@ -12,6 +12,12 @@ description: 테스트, 규칙 검사, 빌드, 문서 검증 명령을 의도별
 - 각 `SKILL.md`는 실제 명령 대신 `test`, `lint`, `build` 같은 명령 의도 이름만 참조합니다.
 - `mf check` 같은 검증 도구는 이 파일을 읽어 실행 가능 여부와 누락된 필드를 확인할 수 있습니다.
 
+## 저장소 범위 지정 최종 검사
+
+기본 루트 계약은 `mustflow_check_scoped` 의도를 제공합니다. `repository`라는 형식 지정 경로 입력을
+받아 `mf check --strict --repo <path>`를 실행합니다. 선택된 작업공간 매핑과 명령 조각은 엄격히
+검사하지만 관련 없는 manifest 변경은 경고로 남깁니다. 루트 전체 변경에는 전역 `mustflow_check`를 사용합니다.
+
 ## 기본 형태
 
 ```toml

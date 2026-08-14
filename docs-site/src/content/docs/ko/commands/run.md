@@ -46,8 +46,14 @@ description: commands.toml에 정의된 단발성 명령 의도를 실행하는 
 npx mf run test
 npx mf run lint
 npx mf run mustflow_check
+npx mf run mustflow_check_scoped --input repository=projects/game
 npx mf run test --json
 ```
+
+두 저장소 선택 방식의 역할은 다릅니다. `mf run test --repo projects/game`은 자식 저장소의 위임된
+명령 계약을 선택합니다. `mustflow_check_scoped --input repository=projects/game`은 루트 명령 권한을
+유지하면서 최종 루트 검사를 해당 저장소로 제한합니다. 공유 루트의 자식 전용 작업에는 후자를
+사용하며, 그 성공을 루트 전체 성공으로 해석하면 안 됩니다.
 
 ## JSON 필드 상세
 

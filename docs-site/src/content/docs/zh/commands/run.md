@@ -45,8 +45,13 @@ description: 运行 commands.toml 中声明的有限 command intent。
 npx mf run test
 npx mf run lint
 npx mf run mustflow_check
+npx mf run mustflow_check_scoped --input repository=projects/game
 npx mf run test --json
 ```
+
+两种 repository 选择方式的作用不同。`mf run test --repo projects/game` 选择子仓库的 delegated
+命令合同。`mustflow_check_scoped --input repository=projects/game` 保留根命令权限，但把最终根检查
+限制到该仓库。共享根中的子仓库任务应使用后者；其成功不代表整个根目录成功。
 
 ## JSON 字段
 

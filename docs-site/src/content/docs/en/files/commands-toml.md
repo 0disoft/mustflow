@@ -133,6 +133,11 @@ remains valid when another session accepts a different command fragment first. C
 changes to the same lock entries, and replayed plans still fail closed. A concurrent live owner is
 given a short bounded interval to finish before the waiting apply reports a conflict.
 
+The default root contract also provides `mustflow_check_scoped`. It accepts the typed path input
+`repository` and runs `mf check --strict --repo <path>`. This keeps final validation scoped to the
+selected mapping and fragment while unrelated manifest drift remains a warning. It does not replace
+the global `mustflow_check` for aggregate root changes.
+
 ## Default Fields
 
 - `schema_version`: Version of this file format.

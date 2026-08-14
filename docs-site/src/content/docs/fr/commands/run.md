@@ -46,8 +46,14 @@ Même si une intention déclare `lifecycle = "oneshot"`, `mf run` refuse aussi l
 npx mf run test
 npx mf run lint
 npx mf run mustflow_check
+npx mf run mustflow_check_scoped --input repository=projects/game
 npx mf run test --json
 ```
+
+Les deux sélecteurs de dépôt ont des rôles différents. `mf run test --repo projects/game` choisit le
+contrat délégué du dépôt enfant. `mustflow_check_scoped --input repository=projects/game` conserve
+l’autorité de la racine et limite la validation finale à ce dépôt. Utilisez ce dernier après une tâche
+limitée à l’enfant dans une racine partagée ; il ne certifie pas toute la racine.
 
 ## Champs JSON
 

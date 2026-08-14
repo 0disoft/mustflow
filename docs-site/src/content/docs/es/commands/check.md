@@ -42,6 +42,18 @@ npx mf check --strict
 
 El modo estricto es opcional para que el flujo normal siga siendo ligero. Se recomienda después de modificar documentos mustflow, skills, contratos de comando o reglas de generación del mapa del repositorio.
 
+## Comprobación con alcance de repositorio
+
+```sh
+npx mf check --strict --repo projects/example
+```
+
+`--repo` selecciona un repositorio declarado en el mapeo de workspace delegado. La comprobación valida
+los valores raíz, el mapeo, el fragmento de comandos seleccionado y sus entradas de manifest lock.
+La deriva dentro del alcance sigue siendo un error bloqueante; la deriva de entradas no relacionadas se
+informa como advertencia aplazada. Un éxito con alcance no equivale al éxito de toda la raíz. Usa la
+comprobación estricta global solo para cambios agregados o una auditoría completa solicitada.
+
 ## Clasificacion de errores y advertencias
 
 `mf check` trata las infracciones estructurales como errores bloqueantes. Los errores bloqueantes terminan con código `1`; las advertencias se informan por separado y no hacen fallar el comando.
@@ -116,6 +128,7 @@ La salida legible por máquinas usa estos campos:
 
 - `ok` (`boolean`): si todas las comprobaciones pasaron.
 - `strict` (`boolean`): si las comprobaciones `--strict` estaban habilitadas.
+- `scope` (`object | null`): alcance del repositorio delegado seleccionado. Los resultados con alcance incluyen `kind`, `repository` y `contract`; los globales usan `null`.
 - `issueCount` (`number`): número de problemas encontrados.
 - `issues` (`string[]`): mensajes de problema legibles para personas.
 - `warningCount` (`number`): número de advertencias no bloqueantes encontradas.

@@ -100,6 +100,185 @@ destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
 
+[intents.docs_followup_stage_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed 2.130.0 six-locale scoped-check documentation and help regression follow-up."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.d/scoped-check-v2-130-0.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "docs-site/src/content/docs/en/commands/check.md",
+  "docs-site/src/content/docs/en/commands/run.md",
+  "docs-site/src/content/docs/en/files/agent-workflow.md",
+  "docs-site/src/content/docs/en/files/commands-toml.md",
+  "docs-site/src/content/docs/es/commands/check.md",
+  "docs-site/src/content/docs/es/commands/run.md",
+  "docs-site/src/content/docs/es/files/agent-workflow.md",
+  "docs-site/src/content/docs/es/files/commands-toml.md",
+  "docs-site/src/content/docs/fr/commands/check.md",
+  "docs-site/src/content/docs/fr/commands/run.md",
+  "docs-site/src/content/docs/fr/files/agent-workflow.md",
+  "docs-site/src/content/docs/fr/files/commands-toml.md",
+  "docs-site/src/content/docs/hi/commands/check.md",
+  "docs-site/src/content/docs/hi/commands/run.md",
+  "docs-site/src/content/docs/hi/files/agent-workflow.md",
+  "docs-site/src/content/docs/hi/files/commands-toml.md",
+  "docs-site/src/content/docs/ko/commands/check.md",
+  "docs-site/src/content/docs/ko/commands/run.md",
+  "docs-site/src/content/docs/ko/files/agent-workflow.md",
+  "docs-site/src/content/docs/ko/files/commands-toml.md",
+  "docs-site/src/content/docs/zh/commands/check.md",
+  "docs-site/src/content/docs/zh/commands/run.md",
+  "docs-site/src/content/docs/zh/files/agent-workflow.md",
+  "docs-site/src/content/docs/zh/files/commands-toml.md",
+  "tests/cli/check.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.docs_followup_staged_diff_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the staged 2.130.0 scoped-check documentation follow-up."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.docs_followup_commit_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed 2.130.0 scoped-check documentation follow-up."
+argv = ["git", "commit", "-m", "📚 docs: document scoped workspace checks", "-m", "Explain scoped check semantics, JSON scope output, and root-versus-child command selection across all six documentation locales, with direct help regression coverage.\n\nValidation: mf run test_scoped_check_v2_130_0; mf run test_related; mf run docs_validate; mf run lint; mf run test_release; mf run mustflow_check"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.release_push_main_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Push the reviewed 2.130.0 scoped workspace release from local main to origin main without force."
+argv = ["git", "push", "origin", "main"]
+cwd = "."
+timeout_seconds = 180
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_push"]
+
+[intents.release_github_auth_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify GitHub CLI authentication before the 2.130.0 remote release flow."
+argv = ["gh", "auth", "status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_main_runs_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent origin main workflow runs with commit identities for the 2.130.0 gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--branch", "main", "--limit", "20", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_run_view_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect one exact GitHub Actions run for the 2.130.0 gate."
+argv = ["gh", "run", "view", "{run_id}", "--repo", "0disoft/mustflow", "--json", "attempt,conclusion,event,headBranch,headSha,jobs,name,startedAt,status,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_run_view_v2_130_0.inputs.run_id]
+type = "integer"
+required = true
+min = 1
+
+[intents.release_github_publish_runs_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "List recent publish-npm workflow runs for the 2.130.0 release gate."
+argv = ["gh", "run", "list", "--repo", "0disoft/mustflow", "--workflow", "publish-npm.yml", "--limit", "10", "--json", "databaseId,displayTitle,event,headBranch,headSha,status,conclusion,createdAt,updatedAt,url,workflowName"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
+[intents.release_github_release_v2_130_0]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify the immutable v2.130.0 GitHub Release metadata after publication."
+argv = ["gh", "release", "view", "v2.130.0", "--repo", "0disoft/mustflow", "--json", "tagName,name,isDraft,isPrerelease,publishedAt,url,targetCommitish"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "allowlist"
+env_allowlist = ["APPDATA", "GH_CONFIG_DIR"]
+
 [intents.release_staged_diff_v2_130_0]
 status = "configured"
 lifecycle = "oneshot"
