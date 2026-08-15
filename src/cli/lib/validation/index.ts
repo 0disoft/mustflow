@@ -1265,7 +1265,7 @@ function validateStrictWorkspaceIntentAuthority(
 		try {
 			scopedContract = readScopedCommandContract(
 				projectRoot,
-				scope.file,
+				scope.files,
 				`workspace:${scope.repository}`,
 				scope.repository,
 			);

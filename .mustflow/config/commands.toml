@@ -1,7 +1,7 @@
 schema_version = "1"
 
 [include]
-files = ["commands.d/release-plan.toml", "commands.d/scoped-check-v2-130-0.toml"]
+files = ["commands.d/release-plan.toml", "commands.d/scoped-check-v2-130-0.toml", "commands.d/command-contract-scaling-v2-131-0.toml"]
 
 # This file is the command-intent contract that prevents agents from guessing commands.
 # mf run executes only configured + oneshot + agent_allowed + closed stdin + explicit timeout + declared command intents.

@@ -1,0 +1,82 @@
+[intents.manifest_lock_plan_command_contract_scaling]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot the reviewed command-contract scaling authority files before manifest baseline acceptance."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "plan", ".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json", ".mustflow/config/commands.toml", ".mustflow/config/commands.d/command-contract-scaling-v2-131-0.toml"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json"]
+effects = [{ type = "write", mode = "write", path = ".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json", lock = "manifest_lock_plan_cache", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.manifest_lock_apply_command_contract_scaling]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept the reviewed command-contract scaling authority files only when the plan still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json"]
+effects = [
+  { type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" },
+  { type = "write", mode = "delete_recreate", path = ".mustflow/cache/manifest-lock-plans/command-contract-scaling-v2-131-0.json", lock = "manifest_lock_plan_cache", concurrency = "exclusive" },
+]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.command_contract_scaling_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed command-contract scaling implementation, tests, docs, version metadata, and authority files."
+argv = ["git", "add", "--", ".mustflow/config/commands.toml", ".mustflow/config/commands.d/command-contract-scaling-v2-131-0.toml", ".mustflow/config/manifest.lock.toml", "CHANGELOG.md", "docs-site/src/content/docs/en/commands/run.md", "docs-site/src/content/docs/en/files/commands-toml.md", "docs-site/src/content/docs/en/files/mustflow-toml.md", "package.json", "scripts/accept-manifest-lock-baseline.mjs", "src/cli/commands/workspace.ts", "src/cli/lib/run-context.ts", "src/cli/lib/validation/index.ts", "src/cli/lib/validation/primitives.ts", "src/core/config-loading.ts", "src/core/workspace-command-authority.ts", "templates/default/manifest.toml", "tests/cli/check-command-contracts.test.js", "tests/cli/package-metadata-contracts.test.js", "tests/cli/run-execution.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.command_contract_scaling_staged_diff]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the exact staged path set for command-contract scaling."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.command_contract_scaling_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed command-contract scaling change after verification."
+argv = ["git", "commit", "-m", "✨ feat(workspace): scale command contracts safely", "-m", "Warn before command contracts become oversized, reserve a command-specific recovery ceiling, and allow one delegated repository to merge multiple trusted fragments.\n\nValidation: mf run build; mf run test_related; mf run docs_validate_fast; mf run test_release; mf run mustflow_check"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

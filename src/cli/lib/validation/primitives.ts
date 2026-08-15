@@ -5,6 +5,7 @@ import { isRecord, type TomlTable } from '../command-contract.js';
 import { readMustflowTomlFile } from '../toml.js';
 import {
 	COMMANDS_CONFIG_RELATIVE_PATH,
+	inspectCommandContractFileBudgets,
 	readResolvedCommandContractToml,
 } from '../../../core/config-loading.js';
 import {
@@ -88,6 +89,19 @@ export function validateToml(
 
 			if (relativePath.endsWith('commands.toml')) {
 				parsedFiles.commandsToml = parsed;
+				if (commandsTomlOverride === undefined) {
+					for (const budget of inspectCommandContractFileBudgets(projectRoot)) {
+						if (!budget.exceedsSoftMax) {
+							continue;
+						}
+						issues.push({
+							message:
+								`${budget.path} is ${budget.bytes} bytes, above the ${budget.softMaxBytes}-byte command-contract budget. ` +
+								`Move intents into smaller commands/*.toml or commands.d/*.toml fragments before it reaches the ${budget.hardMaxBytes}-byte hard limit.`,
+							severity: 'warning',
+						});
+					}
+				}
 			}
 
 			if (relativePath.endsWith('preferences.toml')) {

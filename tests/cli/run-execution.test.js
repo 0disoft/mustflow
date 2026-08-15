@@ -380,6 +380,53 @@ test('runs an explicit delegated workspace contract from the workspace root', ()
 	}
 });
 
+test('merges multiple delegated command fragments for one repository', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		configureDelegatedWorkspace(projectPath);
+		writeDelegatedWorkspaceContracts(projectPath);
+		const configPath = path.join(projectPath, '.mustflow', 'config', 'mustflow.toml');
+		writeFileSync(
+			configPath,
+			readFileSync(configPath, 'utf8').replace(
+				'{ repository = "projects/alpha", file = "commands/alpha.toml" }',
+				'{ repository = "projects/alpha", files = ["commands/alpha.toml", "commands/alpha-extra.toml"] }',
+			),
+		);
+		const extraPath = path.join(projectPath, '.mustflow', 'config', 'commands', 'alpha-extra.toml');
+		writeFileSync(
+			extraPath,
+			[
+				'[intents.alpha_extra]',
+				'status = "configured"',
+				'lifecycle = "oneshot"',
+				'run_policy = "agent_allowed"',
+				'description = "Run an intent from the second delegated fragment."',
+				`argv = [${JSON.stringify(process.execPath)}, "-e", "console.log('alpha extra fragment')"]`,
+				'cwd = "."',
+				'timeout_seconds = 10',
+				'stdin = "closed"',
+				'success_exit_codes = [0]',
+				'writes = []',
+				'network = false',
+				'destructive = false',
+			].join('\n'),
+		);
+		trackManifestLockFile(projectPath, '.mustflow/config/mustflow.toml');
+		trackManifestLockFile(projectPath, '.mustflow/config/commands/alpha-extra.toml');
+
+		const result = runCli(projectPath, ['run', 'alpha_extra', '--repo', 'projects/alpha', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const receipt = JSON.parse(result.stdout);
+		assert.match(receipt.stdout.tail, /alpha extra fragment/);
+		assert.equal(receipt.workspace_scope.repository, 'projects/alpha');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('suggests the exact delegated repository when a root command is missing', () => {
 	const projectPath = createTempProject();
 

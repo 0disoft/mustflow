@@ -326,6 +326,50 @@ destructive = false
 	}
 });
 
+test('warns before a command contract reaches its dedicated hard limit', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(commandsPath, `${readText(commandsPath)}\n# ${'x'.repeat(200 * 1024)}\n`);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(
+			check.warnings.some((warning) =>
+				warning.includes('above the 196608-byte command-contract budget'),
+			),
+		);
+		assert.ok(check.warnings.some((warning) => warning.includes('1048576-byte hard limit')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reports actionable sharding guidance at the command contract hard limit', () => {
+	const projectPath = createTempProject('mustflow-check-command-contracts-');
+
+	try {
+		initProject(projectPath);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(commandsPath, `${readText(commandsPath)}\n# ${'x'.repeat(1024 * 1024)}\n`);
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+
+		const result = runCli(projectPath, ['check', '--json']);
+		const check = JSON.parse(result.stdout);
+
+		assert.equal(result.status, 1);
+		assert.ok(check.issues.some((issue) => issue.includes('exceeds the 1048576-byte command-contract limit')));
+		assert.ok(check.issues.some((issue) => issue.includes('Move intents into smaller .mustflow/config/commands/*.toml')));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('accepts configured intents with bounded typed inputs', () => {
 	const projectPath = createTempProject('mustflow-check-command-contracts-');
 

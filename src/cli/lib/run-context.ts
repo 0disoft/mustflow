@@ -150,7 +150,8 @@ function createScopedContext(
 ): RunCommandContext {
 	assertScopeRepositoryExists(projectRoot, scope);
 	const contractPath = `.mustflow/config/${scope.file}`;
-	const contract = readScopedCommandContract(projectRoot, scope.file, `workspace:${scope.repository}`, scope.repository);
+	const contractPaths = scope.files.map((file) => `.mustflow/config/${file}`);
+	const contract = readScopedCommandContract(projectRoot, scope.files, `workspace:${scope.repository}`, scope.repository);
 	assertScopedCommandIntentIsolation(projectRoot, scope, contract, intentName);
 	return {
 		projectRoot,
@@ -160,7 +161,7 @@ function createScopedContext(
 			repository: scope.repository,
 			contract: contractPath,
 		},
-		trustPaths: [MUSTFLOW_CONFIG_RELATIVE_PATH, contractPath],
+		trustPaths: [MUSTFLOW_CONFIG_RELATIVE_PATH, ...contractPaths],
 		delegatedIntentCandidates: [],
 	};
 }
@@ -179,7 +180,7 @@ function findDelegatedIntentCandidates(
 		try {
 			const contract = readScopedCommandContract(
 				projectRoot,
-				scope.file,
+				scope.files,
 				`workspace:${scope.repository}`,
 				scope.repository,
 			);

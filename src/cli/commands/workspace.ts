@@ -562,10 +562,12 @@ function summarizeDelegatedCommand(
 	scope: WorkspaceCommandContractScope,
 ): WorkspaceCommandSummary {
 	const contractPath = `.mustflow/config/${scope.file}`;
-	const contractExists = existsSync(path.resolve(projectRoot, '.mustflow', 'config', ...scope.file.split('/')));
+	const contractExists = scope.files.every((file) =>
+		existsSync(path.resolve(projectRoot, '.mustflow', 'config', ...file.split('/'))),
+	);
 
 	try {
-		const contract = readScopedCommandContract(projectRoot, scope.file, `workspace:${scope.repository}`, scope.repository);
+		const contract = readScopedCommandContract(projectRoot, scope.files, `workspace:${scope.repository}`, scope.repository);
 		const intentNames = getIntentNames(contract.intents);
 		const runnableIntents = intentNames.filter((intentName) =>
 			delegatedIntentIsRunnable(projectRoot, contract, scope, intentName),

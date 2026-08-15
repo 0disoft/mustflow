@@ -13,6 +13,8 @@ export const COMMAND_RUN_POLICIES = new Set(['agent_allowed', 'requires_explicit
 export const COMMANDS_CONFIG_RELATIVE_PATH = '.mustflow/config/commands.toml';
 export const COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH = '.mustflow/config';
 export const MUSTFLOW_CONFIG_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
+export const COMMAND_CONTRACT_SOFT_MAX_BYTES = 192 * 1024;
+export const COMMAND_CONTRACT_HARD_MAX_BYTES = 1024 * 1024;
 
 const COMMAND_INCLUDE_DIRECTORIES = ['commands', 'commands.d'] as const;
 const COMMAND_INCLUDE_ALLOWED_TOP_LEVEL_KEYS = new Set(['intents', 'resources']);
@@ -22,6 +24,14 @@ export interface CommandContract {
 	readonly defaults: TomlTable;
 	readonly intents: TomlTable;
 	readonly resources: TomlTable;
+}
+
+export interface CommandContractFileBudget {
+	readonly path: string;
+	readonly bytes: number;
+	readonly softMaxBytes: number;
+	readonly hardMaxBytes: number;
+	readonly exceedsSoftMax: boolean;
 }
 
 export function isRecord(value: unknown): value is TomlTable {
@@ -42,6 +52,25 @@ export function readMustflowOwnedTomlFile(projectRoot: string, relativePath: str
 			maxBytes: 256 * 1024,
 		}),
 	);
+}
+
+function readCommandContractTomlFile(projectRoot: string, relativePath: string): unknown {
+	try {
+		return parseTomlText(
+			readUtf8FileInsideWithoutSymlinks(projectRoot, resolveMustflowConfigPath(projectRoot, relativePath), {
+				maxBytes: COMMAND_CONTRACT_HARD_MAX_BYTES,
+			}),
+		);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (message.includes('exceeds maximum size')) {
+			throw new Error(
+				`${relativePath} exceeds the ${COMMAND_CONTRACT_HARD_MAX_BYTES}-byte command-contract limit. ` +
+				`Move intents into smaller .mustflow/config/commands/*.toml or commands.d/*.toml fragments.`,
+			);
+		}
+		throw error;
+	}
 }
 
 function normalizeCommandIncludePath(rawPath: string): string {
@@ -108,7 +137,7 @@ export function readCommandContractIncludePaths(projectRoot: string): readonly s
 }
 
 function readRootCommandContractToml(projectRoot: string): TomlTable {
-	const parsed = readMustflowOwnedTomlFile(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH);
+	const parsed = readCommandContractTomlFile(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH);
 
 	if (!isRecord(parsed)) {
 		throw new Error(`${COMMANDS_CONFIG_RELATIVE_PATH} must contain a TOML table`);
@@ -143,7 +172,7 @@ function readCommandIncludeTable(projectRoot: string, includePath: string): Toml
 
 	return assertCommandIncludeTable(
 		normalized,
-		readMustflowOwnedTomlFile(projectRoot, `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${normalized}`),
+		readCommandContractTomlFile(projectRoot, `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${normalized}`),
 	);
 }
 
@@ -199,7 +228,7 @@ export function readResolvedCommandContractToml(projectRoot: string): TomlTable 
 		const includeRelativePath = `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${includePath}`;
 		const includeTable = assertCommandIncludeTable(
 			includePath,
-			readMustflowOwnedTomlFile(projectRoot, includeRelativePath),
+			readCommandContractTomlFile(projectRoot, includeRelativePath),
 		);
 
 		sawIntentTable = sawIntentTable || hasOwn(includeTable, 'intents');
@@ -218,6 +247,32 @@ export function readResolvedCommandContractToml(projectRoot: string): TomlTable 
 	}
 
 	return merged;
+}
+
+export function inspectCommandContractFileBudgets(projectRoot: string): readonly CommandContractFileBudget[] {
+	const root = readRootCommandContractToml(projectRoot);
+	const relativePaths = [
+		COMMANDS_CONFIG_RELATIVE_PATH,
+		...readCommandIncludePathsFromParsed(root).map(
+			(includePath) => `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${includePath}`,
+		),
+	];
+
+	return relativePaths.map((relativePath) => {
+		const content = readUtf8FileInsideWithoutSymlinks(
+			projectRoot,
+			resolveMustflowConfigPath(projectRoot, relativePath),
+			{ maxBytes: COMMAND_CONTRACT_HARD_MAX_BYTES },
+		);
+		const bytes = Buffer.byteLength(content, 'utf8');
+		return {
+			path: relativePath,
+			bytes,
+			softMaxBytes: COMMAND_CONTRACT_SOFT_MAX_BYTES,
+			hardMaxBytes: COMMAND_CONTRACT_HARD_MAX_BYTES,
+			exceedsSoftMax: bytes > COMMAND_CONTRACT_SOFT_MAX_BYTES,
+		};
+	});
 }
 
 function commandContractFromParsed(parsed: TomlTable): CommandContract {
@@ -325,17 +380,27 @@ export function readRootCommandContract(projectRoot: string): CommandContract {
 
 export function readScopedCommandContract(
 	projectRoot: string,
-	includePath: string,
+	includePaths: string | readonly string[],
 	lockNamespace: string,
 	repository: string,
 ): CommandContract {
 	const root = readRootCommandContractToml(projectRoot);
-	const fragment = readCommandIncludeTable(projectRoot, includePath);
+	const paths = typeof includePaths === 'string' ? [includePaths] : [...includePaths];
+	const intents: TomlTable = {};
+	const resources: TomlTable = {};
+	const intentSources = new Map<string, string>();
+	const resourceSources = new Map<string, string>();
+	for (const includePath of paths) {
+		const fragment = readCommandIncludeTable(projectRoot, includePath);
+		const sourceLabel = `${COMMANDS_CONFIG_DIRECTORY_RELATIVE_PATH}/${normalizeCommandIncludePath(includePath)}`;
+		mergeCommandSection(resources, fragment.resources, 'resources', sourceLabel, resourceSources);
+		mergeCommandSection(intents, fragment.intents, 'intents', sourceLabel, intentSources);
+	}
 
 	return rebaseScopedCommandContract({
 		defaults: isRecord(root.defaults) ? root.defaults : {},
-		intents: namespaceScopedIntentLocks(fragment.intents, lockNamespace),
-		resources: namespaceScopedResources(fragment.resources, lockNamespace),
+		intents: namespaceScopedIntentLocks(intents, lockNamespace),
+		resources: namespaceScopedResources(resources, lockNamespace),
 	}, repository);
 }
 

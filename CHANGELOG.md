@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+- Added early command-contract size warnings at 192 KiB and a dedicated 1 MiB recovery ceiling, so
+  oversized command files produce actionable sharding guidance instead of failing at the generic
+  Mustflow TOML limit.
+- Allowed one delegated workspace repository to merge several explicitly mapped `commands/*.toml`
+  fragments while keeping all selected files inside the manifest-lock trust closure.
+
 ## 2.130.0 - 2026-08-14
 
 - Added repository-scoped strict checks for delegated workspaces. `mf check --strict --repo <path>`

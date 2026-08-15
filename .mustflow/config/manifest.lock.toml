@@ -14,7 +14,7 @@ content_hash = "sha256:8fcddd1b5653237d951dc81ec700960dbafbd6af2b76d6c9b1c1ff056
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:aa9f960857363b1d3f44cd53f39e77e986fabbffb20a497da117a55d91ef3fd5"
+content_hash = "sha256:bba8755e5503a4f05e5d218927974de6175f9646d8e9f97cbaeb05ea8bd9c81e"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -60,3 +60,8 @@ content_hash = "sha256:bac67939faf1546056120b17e2f72e89e35719fe1a9458b2fe854dc1c
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:caff04986ccc515013018c85314529f381a9a4d25af69413e8f0f7e2b4ad55a3"
+
+[files.".mustflow/config/commands.d/command-contract-scaling-v2-131-0.toml"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:4a44720ec9d20bfe9bb84a06fe109911c64d27ee4a922ef610a925e532482bfd"

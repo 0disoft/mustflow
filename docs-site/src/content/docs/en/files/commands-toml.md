@@ -109,12 +109,14 @@ reviewed execution, just like other manifest-lock failures.
 Large repo farms that cannot install mustflow in every nested repository can map individual command
 fragments from `[workspace].contracts` in `mustflow.toml` and set
 `authority_mode = "delegated_scoped"`. In that mode, `mf run` does not merge the include graph. It
-loads only the fragment mapped to the current nested repository, or the repository selected by
-`--repo`. Duplicate intent, resource, and lock names are therefore allowed across different mapped
-fragments. An intent must not be defined both in the root contract and in a delegated fragment;
+loads only the fragment set mapped to the current nested repository, or the repository selected by
+`--repo`. A mapping may use `file = "commands/repo.toml"` for one fragment or
+`files = ["commands/repo-build.toml", "commands/repo-release.toml"]` for several. Names must be
+unique inside one repository's fragment set, while duplicate intent, resource, and lock names are
+allowed across different repository mappings. An intent must not be defined both in the root contract and in a delegated fragment;
 strict validation rejects that split authority instead of relying on precedence.
 
-The selected fragment still must be present in the manifest lock and match its hash. The root
+Every selected fragment still must be present in the manifest lock and match its hash. The root
 `AGENTS.md` and workspace mapping also remain trusted inputs, but unrelated root command hashes and
 unselected fragments are outside that execution's parse and trust closure, so their malformed
 contents or lock drift cannot block the active repository. Locks are namespaced by mapped repository, keeping two
@@ -137,6 +139,10 @@ The default root contract also provides `mustflow_check_scoped`. It accepts the 
 `repository` and runs `mf check --strict --repo <path>`. This keeps final validation scoped to the
 selected mapping and fragment while unrelated manifest drift remains a warning. It does not replace
 the global `mustflow_check` for aggregate root changes.
+
+`mf check` warns when the root contract or an included fragment exceeds 192 KiB, before execution
+reaches the command-contract-specific 1 MiB hard limit. Split large files under `commands/` or
+`commands.d/`; the larger hard limit is recovery headroom, not a target file size.
 
 ## Default Fields
 

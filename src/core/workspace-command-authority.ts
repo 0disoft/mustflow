@@ -6,6 +6,7 @@ export type WorkspaceCommandAuthorityMode = (typeof WORKSPACE_COMMAND_AUTHORITY_
 export interface WorkspaceCommandContractScope {
 	readonly repository: string;
 	readonly file: string;
+	readonly files: readonly string[];
 }
 
 export interface WorkspaceCommandAuthorityConfig {
@@ -70,23 +71,43 @@ function readContracts(value: unknown): readonly WorkspaceCommandContractScope[]
 			throw new Error(`[workspace].contracts[${index}] must be a table`);
 		}
 		const repository = typeof rawContract.repository === 'string' ? normalizeRelativePath(rawContract.repository) : '';
-		const file = typeof rawContract.file === 'string' ? normalizeRelativePath(rawContract.file) : '';
+		const hasFile = typeof rawContract.file === 'string';
+		const hasFiles = rawContract.files !== undefined;
+		if (hasFile === hasFiles) {
+			throw new Error(`[workspace].contracts[${index}] must define exactly one of file or files`);
+		}
+		const contractFiles = hasFile
+			? [normalizeRelativePath(rawContract.file as string)]
+			: readStringArray(rawContract.files, `[workspace].contracts[${index}].files`);
 		if (relativePathIsUnsafe(repository)) {
 			throw new Error(`[workspace].contracts[${index}].repository must be a normalized repository-relative path`);
 		}
-		if (commandFragmentPathIsUnsafe(file)) {
-			throw new Error(`[workspace].contracts[${index}].file must be a normalized commands/*.toml path`);
+		if (contractFiles.length === 0) {
+			throw new Error(`[workspace].contracts[${index}].files must contain at least one commands/*.toml path`);
+		}
+		if (contractFiles.some((file) => commandFragmentPathIsUnsafe(file))) {
+			throw new Error(
+				hasFile
+					? `[workspace].contracts[${index}].file must be a normalized commands/*.toml path`
+					: `[workspace].contracts[${index}].files entries must be normalized commands/*.toml paths`,
+			);
+		}
+		if (new Set(contractFiles).size !== contractFiles.length) {
+			throw new Error(`[workspace].contracts[${index}] contains duplicate command files`);
 		}
 		if (repositories.has(repository)) {
 			throw new Error(`[workspace].contracts contains duplicate repository "${repository}"`);
 		}
-		if (files.has(file)) {
-			throw new Error(`[workspace].contracts contains duplicate file "${file}"`);
+		const duplicateFile = contractFiles.find((file) => files.has(file));
+		if (duplicateFile) {
+			throw new Error(`[workspace].contracts contains duplicate file "${duplicateFile}"`);
 		}
 
 		repositories.add(repository);
-		files.add(file);
-		contracts.push({ repository, file });
+		for (const file of contractFiles) {
+			files.add(file);
+		}
+		contracts.push({ repository, file: contractFiles[0], files: contractFiles });
 	}
 
 	return contracts;

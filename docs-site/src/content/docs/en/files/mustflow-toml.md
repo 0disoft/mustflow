@@ -262,14 +262,14 @@ enabled = true
 roots = ["projects"]
 authority_mode = "delegated_scoped"
 contracts = [
-  { repository = "projects/web", file = "commands/web.toml" },
+  { repository = "projects/web", files = ["commands/web-checks.toml", "commands/web-delivery.toml"] },
   { repository = "projects/game", file = "commands/game.toml" },
 ]
 ```
 
-Each `repository` is relative to the mustflow root and must stay under a configured workspace root. Each `file` is relative to `.mustflow/config/`, must stay under `commands/`, and must end in `.toml`. Repository and file mappings must be unique.
+Each `repository` is relative to the mustflow root and must stay under a configured workspace root. Define exactly one of `file` or `files` per mapping. Every command file is relative to `.mustflow/config/`, must stay under `commands/`, and must end in `.toml`. Repository and file mappings must be unique, and intent and resource names must be unique across all files mapped to the same repository.
 
-In delegated scoped mode, `mf run` automatically selects the deepest mapped repository containing the current working directory. From the workspace root, use `mf run <intent> --repo <repository>`. Only the selected fragment is parsed and checked against the manifest lock, so a duplicate name, malformed TOML file, or lock drift in another repository fragment does not block the selected repository. Unrelated root command-contract drift is also excluded from delegated execution trust; the root `AGENTS.md`, workspace mapping, and selected fragment remain fail-closed inputs. Run receipts record the selected repository and contract in `workspace_scope`.
+In delegated scoped mode, `mf run` automatically selects the deepest mapped repository containing the current working directory. From the workspace root, use `mf run <intent> --repo <repository>`. Only the selected fragment set is parsed and checked against the manifest lock, so a duplicate name, malformed TOML file, or lock drift in another repository mapping does not block the selected repository. Unrelated root command-contract drift is also excluded from delegated execution trust; the root `AGENTS.md`, workspace mapping, and every selected fragment remain fail-closed inputs. Run receipts record the selected repository and primary contract in `workspace_scope`.
 
 The root `commands.toml` still owns shared defaults and root-scoped commands. A delegated fragment owns its repository's intents and resources; root intents and other fragments are not merged into that scoped execution. Strict validation rejects the same intent name appearing in both the root and any delegated fragment. Fragment `cwd`, write, effect, and resource paths are relative to the mapped repository and are rebased exactly once by Mustflow. Use `cwd = "."` for the repository root and keep workspace-root-prefixed paths out of delegated fragments. An intentionally empty fragment is a valid zero-intent contract. Mustflow rejects any rebased path outside the mapped repository. Keep genuinely shared workspace commands in the root contract.
 
@@ -277,7 +277,7 @@ The root `commands.toml` still owns shared defaults and root-scoped commands. A 
 
 `stop_at_repository_root = true` means that once an independent nested repository is discovered, the parent map should not continue recursively through its internals. The parent `REPO_MAP.md` should show only entrypoints into nested repositories, not describe those repositories.
 
-`mf check` verifies that `roots` and delegated repositories are relative paths inside the current root, delegated repositories stay under configured roots, delegated files stay under `commands/`, mappings are unique, `max_depth` and `max_repositories` are positive integers, and workspace switches are booleans.
+`mf check` verifies that `roots` and delegated repositories are relative paths inside the current root, delegated repositories stay under configured roots, each mapping defines exactly one of `file` or `files`, delegated files stay under `commands/`, mappings are unique, `max_depth` and `max_repositories` are positive integers, and workspace switches are booleans.
 
 ## Agent Control Surface Fields
 

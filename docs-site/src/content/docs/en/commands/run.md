@@ -13,7 +13,7 @@ Configured intents may expose typed whole-argument placeholders. Bind them with 
 `--input <name=value>` options. Undeclared names, missing required inputs, invalid enum, boolean, or
 integer values, unsafe paths, and mixed-token interpolation fail before a process starts.
 
-When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves exactly one mapped `.mustflow/config/commands/*.toml` fragment. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`. Run from the nested repository when possible; from the workspace root, always pass `--repo` explicitly.
+When `[workspace].authority_mode = "delegated_scoped"`, the command instead resolves the mapped `.mustflow/config/commands/*.toml` fragment set for exactly one repository. A mapping may declare one `file` or a `files` array. It selects the mapping from the current working directory or from `--repo <repository-relative-path>`. Run from the nested repository when possible; from the workspace root, always pass `--repo` explicitly.
 
 ## Execution Conditions
 
