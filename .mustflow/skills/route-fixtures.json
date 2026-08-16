@@ -1847,6 +1847,46 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "file-encryption-integrity-review",
+      "task": "Review file encryption, manifest signing, and integrity verification",
+      "paths": [
+        "src/files/crypto.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "file-encryption-integrity-review"
+      ],
+      "required_adjuncts": [
+        "file-encryption-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "media-transform-worker-review",
+      "task": "Review the image and PDF transform worker isolation and codec allowlists",
+      "paths": [
+        "src/media/transform.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "media-transform-worker-review"
+      ],
+      "required_adjuncts": [
+        "media-transform-worker-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

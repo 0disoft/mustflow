@@ -62,7 +62,19 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 333
+revision = 335
+translations = {}
+
+[documents."skill.file-encryption-integrity-review"]
+source = "locales/en/.mustflow/skills/file-encryption-integrity-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.media-transform-worker-review"]
+source = "locales/en/.mustflow/skills/media-transform-worker-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.tenant-key-secret-isolation-review"]
@@ -350,7 +362,7 @@ translations = {}
 [documents."skill.file-upload-security-review"]
 source = "locales/en/.mustflow/skills/file-upload-security-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.error-message-integrity-review"]
@@ -770,7 +782,7 @@ translations = {}
 [documents."skill.deletion-lifecycle-review"]
 source = "locales/en/.mustflow/skills/deletion-lifecycle-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 [documents."skill.database-lock-contention-review"]
 source = "locales/en/.mustflow/skills/database-lock-contention-review/SKILL.md"

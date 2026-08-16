@@ -2197,6 +2197,30 @@ positive_terms = ["aad-binding", "dynamic-credentials", "kek-hierarchy", "secret
 negative_terms = ["general-crypto-only", "trust-boundary-only"]
 concept_aliases = ["동적 자격증명", "비밀 브로커", "워크로드 신원", "키 계층", "테넌트 시크릿", "테넌트 암호화 키"]
 
+[routes."file-encryption-integrity-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 81
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."file-encryption-integrity-review".contexts]
+positive_terms = ["chunked-encryption", "file-encryption", "file-integrity", "file-signing", "manifest-signing", "nonce-management", "secretstream", "wrapped-dek"]
+negative_terms = ["general-crypto-only", "upload-lifecycle-only"]
+concept_aliases = ["매니페스트 서명", "비표 관리", "파일 무결성", "파일 암호화", "파일 서명", "청크 암호화"]
+
+[routes."media-transform-worker-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 82
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."media-transform-worker-review".contexts]
+positive_terms = ["codec-allowlist", "ffmpeg-protocol", "ghostscript", "imagemagick", "media-transform", "pdf-sanitization", "transform-worker", "video-transcode"]
+negative_terms = ["image-processing-feature-only", "upload-lifecycle-only"]
+concept_aliases = ["PDF 무해화", "미디어 변환", "변환 워커", "코덱 허용 목록", "트랜스코딩"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"

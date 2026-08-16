@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 334
+anchor_count: 336
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:80ba29e9b009fc3e5790620e982651d4159e7d6b6368f6807b9dd23fe65b985c"
+source_fingerprint: "sha256:fccacd5458fb8b72a3116ed8271235dd8b5f46175d104d40433b207108e6dfe8"
 ---
 
 # REPO_MAP.md
@@ -509,6 +509,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/feature-surface-completeness-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/file-encryption-integrity-review/
+
+- `.mustflow/skills/file-encryption-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/file-path-cross-platform-change/
 
 - `.mustflow/skills/file-path-cross-platform-change/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -704,6 +708,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/machine-code-performance-review/
 
 - `.mustflow/skills/machine-code-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/media-transform-worker-review/
+
+- `.mustflow/skills/media-transform-worker-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/memory-lifetime-review/
 

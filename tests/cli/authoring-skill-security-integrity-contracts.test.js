@@ -825,6 +825,62 @@ test('tenant key and secret isolation review separates keys, secrets, and creden
 	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review', 1);
 });
 
+test('file encryption and integrity review separates hashing, signing, and authenticated encryption', () => {
+	const localSkill = readText('.mustflow/skills/file-encryption-integrity-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/file-encryption-integrity-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Do not substitute hashing, signing, and encryption for each other/u);
+	assert.match(localSkill, /independent data key under a KEK/u);
+	assert.match(localSkill, /Bind ownership and metadata into the AAD/u);
+	assert.match(localSkill, /Sign a normalized manifest/u);
+	assert.match(localSkill, /Re-verify at every trust boundary/u);
+	assert.match(localSkill, /rotation and key retirement as different operations/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/file-encryption-integrity-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."file-encryption-integrity-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/file-encryption-integrity-review\/SKILL\.md"/u);
+	assert.match(manifest, /"file-encryption-integrity-review"/u);
+	assertI18nSkillDocument(i18n, 'file-encryption-integrity-review', 1);
+});
+
+test('media transform worker review isolates converters as potentially compromised executables', () => {
+	const localSkill = readText('.mustflow/skills/media-transform-worker-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/media-transform-worker-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /potentially compromised executables/u);
+	assert.match(localSkill, /Decide format by actual decoding/u);
+	assert.match(localSkill, /Limit decoded resources/u);
+	assert.match(localSkill, /allowlists for codecs and protocols/u);
+	assert.match(localSkill, /Never treat a re-saved PDF as a safe PDF/u);
+	assert.match(localSkill, /Re-verify outputs as attacker-created files/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/media-transform-worker-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."media-transform-worker-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/media-transform-worker-review\/SKILL\.md"/u);
+	assert.match(manifest, /"media-transform-worker-review"/u);
+	assertI18nSkillDocument(i18n, 'media-transform-worker-review', 1);
+});
+
 test('file upload security review follows uploaded files through storage and serving', () => {
 	const localSkill = readText('.mustflow/skills/file-upload-security-review/SKILL.md');
 	const templateSkill = readText('templates/default/locales/en/.mustflow/skills/file-upload-security-review/SKILL.md');
@@ -928,7 +984,7 @@ test('file upload security review follows uploaded files through storage and ser
 	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/references\/file-upload-parser-ssrf-resource-checklist\.md"/u);
 	assert.match(manifest, /"file-upload-security-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 5/u);
 });
 
 test('security flow review traces source-to-sink security boundaries', () => {

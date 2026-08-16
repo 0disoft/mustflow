@@ -242,7 +242,7 @@ test('deletion lifecycle review keeps delete, restore, purge, and retention sema
 	assert.match(manifest, /"\.mustflow\/skills\/deletion-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deletion-lifecycle-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.deletion-lifecycle-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.deletion-lifecycle-review"\][\s\S]*?revision = 3/u);
 });
 
 test('database lock contention review catches hot rows and blocking paths', () => {

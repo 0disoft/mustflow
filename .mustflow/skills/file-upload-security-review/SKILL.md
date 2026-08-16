@@ -2,7 +2,7 @@
 mustflow_doc: skill.file-upload-security-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: file-upload-security-review
@@ -334,6 +334,47 @@ file reach after it enters the system?"
         bytes or operation cannot reach a published, privileged, or cross-tenant path. Partial
         hardening of the same vulnerable control is not containment.
       - Use defense-in-depth only after the required lifecycle invariants are already proven.
+31. Define upload profiles as per-purpose business contracts.
+    - Do not accept `image/*` or `application/pdf` broadly at one generic `/upload` endpoint. Give
+      each upload purpose its own profile: allowed extensions, actual format, maximum bytes, maximum
+      pixels, maximum frames and pages, compression allowance, visibility, retention, and downstream
+      transforms.
+32. Bind upload intent at start and verify it at completion.
+    - Beyond a signed upload URL, create an `upload_intent` binding user, tenant, purpose, allowed
+      profile, maximum size, expiry, and final target object. On completion re-check the actual
+      storage key, byte count, hash, owner, and tenant so another user's or tenant's object key
+      cannot be attached to one's profile or post.
+33. Separate scanner CLEAN from completed scans.
+    - Enumerate `CLEAN`, `INFECTED`, `UNSUPPORTED`, `LIMIT_EXCEEDED`, `TIMEOUT`, and `ERROR` instead
+      of collapsing the rest into `CLEAN`; ClamAV skips files over `max-filesize` and reports them
+      clean. Verify the bytes actually scanned, limit-exceeded flags, and engine and signature
+      versions.
+34. Decide file type with a four-value combination table.
+    - Keep normalized extension, client-declared MIME, byte-detection result, and
+      parser-confirmed format separate. Normalize MIME aliases and container relations first, then
+      reject combinations not present in the allowed table.
+    - Give the final verdict only to full-structure parser validation: chunk structure for PNG,
+      decodability and pixel and frame counts for images, page and object structure for PDF, and
+      container and stream composition for video, including truncated, corrupt, unsupported, and
+      trailing or embedded content.
+35. Treat presigned URLs as leakable bearer credentials.
+    - After authorization, issue short-lived URLs bound to the exact key and version, GET only, and
+      1 to 5 minutes. Never leave them in analytics, error logs, chat, or Referer, and apply
+      `Referrer-Policy: no-referrer`.
+    - For immediate revocation or one-time downloads, issue a download ticket exchanged at a
+      gateway, consuming the ticket only on the actual GET and not on link-checker or prefetch HEAD
+      requests.
+36. Keep CDN and Range requests from bypassing authorization.
+    - Authorize before a cache lookup, use immutable versioned object keys as cache keys, and avoid
+      shared caches for sensitive files.
+    - Limit Range to a single range or bound count and size, and cap per-user concurrent downloads
+      and bandwidth against download-amplification denial of service.
+37. Isolate per-tenant file stores and prevent dedup existence leaks.
+    - Move regulated or high-value tenants to separate buckets, accounts, or volumes with per-tenant
+      keys, binding `tenant_id` and `file_id` into the encryption context.
+    - Never use global SHA-256 object keys or cross-tenant deduplication for sensitive files; use
+      per-tenant HMAC or random keys so existence and processing time cannot be inferred, and scope
+      cache keys, temporary paths, deletion, and quota by tenant.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

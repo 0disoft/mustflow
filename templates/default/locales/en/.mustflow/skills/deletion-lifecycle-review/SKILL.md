@@ -2,7 +2,7 @@
 mustflow_doc: skill.deletion-lifecycle-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: deletion-lifecycle-review
@@ -161,6 +161,24 @@ The review question is: "Which kind of deletion is this, who can reverse it, wha
     - Run periodic canary users whose data is written to every path and then deleted. Deletion
       audit records carry request id, policy version, target systems, and results, never copies of
       the original email or phone number.
+15. Handle versioned object stores and trash explicitly.
+    - With versioning enabled, a normal delete may only add a delete marker while previous versions
+      remain. Configure current-version expiry, permanent deletion of noncurrent versions, and
+      removal of expired delete markers, and include snapshots, trash, replication buckets, and
+      cross-region replication as separate deletion targets.
+16. Encrypt temporary files per job and retire keys first.
+    - Create a random directory per job with owner-only permissions and no email, username, or
+      original filename in names. Store sensitive large files on a per-job DEK-encrypted volume and
+      destroy the DEK before removing files and directories; on SSD and cloud storage, key
+      destruction is more realistic than overwriting.
+17. Run cleanup as a durable job and keep deletion receipts.
+    - Record work directories and expiry in the database before creating files, commit an explicit
+      deletion state on normal exit, and run a sweeper for expired, orphaned, and uncleaned outputs;
+      keep sweeps idempotent and track failure counts and last errors so silently accumulating
+      residue surfaces.
+    - Emit a deletion receipt per request listing originals, derived files, cache, search index,
+      versioned objects, replicas, backup expiry, and key-destruction state, distinguishing
+      immediate removal from deferred backup retirement with exact final dates.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:0bbb002ced7ef1d6c7c3bc09e3c4e716c725a98d90e10a5c3915e7c5636a6957",
+  "source_fingerprint": "sha256:a545eaef8305f69d8b11d8ca61003dcba8f4126d93bd620a96a6b46dd7ef0095",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -5341,6 +5341,67 @@
       ]
     },
     {
+      "skill": "file-encryption-integrity-review",
+      "skill_path": ".mustflow/skills/file-encryption-integrity-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 81,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "chunked encryption",
+        "file encryption",
+        "file integrity",
+        "file signing",
+        "manifest signing",
+        "nonce management",
+        "secretstream",
+        "wrapped dek",
+        "매니페스트 서명",
+        "비표 관리",
+        "청크 암호화",
+        "파일 무결성",
+        "파일 서명",
+        "파일 암호화"
+      ],
+      "negative_signals": [
+        "general crypto only",
+        "upload lifecycle only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when file-level encryption, signing, or integrity verification needs review, including per-file data encryption keys, envelope encryption, wrapped DEKs, file ownership and metadata binding in AAD, chunked authenticated encryption, nonce management, secretstream, normalized manifest signing, canonical JSON or CBOR, signature and encryption key separation, re-verification at trust boundaries, key rotation versus key retirement, or cryptographic erasure of files.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
       "skill": "file-path-cross-platform-change",
       "skill_path": ".mustflow/skills/file-path-cross-platform-change/SKILL.md",
       "category": "data_external",
@@ -7669,6 +7730,66 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "media-transform-worker-review",
+      "skill_path": ".mustflow/skills/media-transform-worker-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 82,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "codec allowlist",
+        "ffmpeg protocol",
+        "ghostscript",
+        "imagemagick",
+        "media transform",
+        "pdf sanitization",
+        "pdf 무해화",
+        "transform worker",
+        "video transcode",
+        "미디어 변환",
+        "변환 워커",
+        "코덱 허용 목록",
+        "트랜스코딩"
+      ],
+      "negative_signals": [
+        "image processing feature only",
+        "upload lifecycle only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when image, video, PDF, or document conversion and transformation need security review, including one-shot transform workers, ImageMagick, FFmpeg, Ghostscript, LibreOffice, codec and protocol allowlists, format allowlists, decoded resource limits, PDF sanitization, output re-verification, transform state machines, worker isolation, or transformation reproduction records.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
