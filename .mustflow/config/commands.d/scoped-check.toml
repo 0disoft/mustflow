@@ -1,0 +1,23 @@
+[intents.manifest_lock_accept_scoped_check]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept only the reviewed root workflow and scoped-check command authority baselines."
+argv = [
+  "node",
+  "scripts/accept-manifest-lock-baseline.mjs",
+  "AGENTS.md",
+  ".mustflow/docs/agent-workflow.md",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/commands.d/scoped-check.toml",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["reviewed_scoped_check_workflow_change", "before_mustflow_check"]
