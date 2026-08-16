@@ -62,7 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 337
+revision = 338
+translations = {}
+
+[documents."skill.agent-facing-interface-review"]
+source = "locales/en/.mustflow/skills/agent-facing-interface-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.infrastructure-access-review"]

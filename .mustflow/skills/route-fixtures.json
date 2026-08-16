@@ -1927,6 +1927,27 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "agent-facing-interface-review",
+      "task": "Add a capabilities endpoint so AI agents can discover features, check support, and track jobs without reading human help",
+      "paths": [
+        "src/cli/capabilities.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-facing-interface-review"
+      ],
+      "required_adjuncts": [
+        "agent-facing-interface-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

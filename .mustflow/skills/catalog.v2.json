@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:e895495c38f42fe9fbc692fddcb0ababca5bf3bee012f9e8f714cf12b0aac7b1",
+  "source_fingerprint": "sha256:14e896bd22ce6e4f59775d637c9cf75841d9d3c0b241a625fddc88610151aa0a",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -301,6 +301,75 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "agent-facing-interface-review",
+      "skill_path": ".mustflow/skills/agent-facing-interface-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 72,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "performance_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "agent output mode",
+        "capability check",
+        "capability endpoint",
+        "discovery entrypoint",
+        "feature id",
+        "machine readable help",
+        "next command suggestion",
+        "self describing api",
+        "side effect metadata",
+        "single source generation",
+        "task oriented index",
+        "unified command grammar",
+        "기능 id",
+        "기능 발견 진입점",
+        "다음 명령 제안",
+        "단일 원본 생성",
+        "에이전트 출력 모드",
+        "자기 설명 api",
+        "작업 중심 명령 색인"
+      ],
+      "negative_signals": [
+        "human help only",
+        "json output only",
+        "option parsing only",
+        "schema compat only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when a CLI, REST or HTTP API, SDK, or command surface must be discoverable, invocable, and monitorable by AI agents, coding agents, or automation, and review is needed for capability or discovery endpoints, machine-readable self-description, stable feature ids, input and output contract schemas, side-effect metadata, executable examples, capability checks, task-oriented command indexes, unified command grammar, structured argument constraints, single-source documentation generation, agent output modes, next-command error suggestions, or acceptance-path latency budgets for jobs that agents submit, track, and inspect.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

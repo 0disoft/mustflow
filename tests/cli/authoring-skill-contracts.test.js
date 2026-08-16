@@ -887,3 +887,45 @@ test('test design guard maps changed decisions to regression-sensitive evidence'
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 3);
 });
+
+test('agent-facing interface review keeps CLI and API surfaces self-describing for agents', () => {
+	const skillName = 'agent-facing-interface-review';
+	const localSkill = readText('.mustflow/skills/agent-facing-interface-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-facing-interface-review/SKILL.md',
+	);
+	const index = readText('.mustflow/skills/INDEX.md');
+	const templateIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(index, templateIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Provide one discovery entrypoint/u);
+	assert.match(localSkill, /`report\.generate\.v1`/u);
+	assert.match(localSkill, /Split the feature list from the feature detail/u);
+	assert.match(localSkill, /delimiter` being allowed only when/u);
+	assert.match(localSkill, /`read_only`, `side_effect`, `destructive`, `reversible`, `requires_confirmation`, and/u);
+	assert.match(localSkill, /`app capabilities check <feature-id> --json`/u);
+	assert.match(localSkill, /task-oriented command index/u);
+	assert.match(localSkill, /`app help deploy\.create --json`/u);
+	assert.match(localSkill, /`conflicts_with`, `requires`, and `one_of`/u);
+	assert.match(localSkill, /Generate docs and implementation from the same source/u);
+	assert.match(localSkill, /Provide a dedicated agent output mode/u);
+	assert.match(localSkill, /acceptance-path latency, not completion time/u);
+	assert.match(localSkill, /transactional outbox/u);
+	assert.match(localSkill, /p95 and p99, not averages/u);
+	assert.match(index, /agent-facing-interface-review/u);
+	assert.match(
+		routes,
+		/\[routes\."agent-facing-interface-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u,
+	);
+	assert.match(routes, /"self-describing-api", "side-effect-metadata", "single-source-generation"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-facing-interface-review\/SKILL\.md"/u);
+	assert.match(manifest, /"agent-facing-interface-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, skillName, 1);
+});

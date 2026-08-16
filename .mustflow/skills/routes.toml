@@ -1581,6 +1581,18 @@ unlocks_on = [
 positive_terms = ["approval", "autonomy", "capability", "compensation", "executor", "guardrail", "handoff", "idempotency", "interrupt", "irreversible", "planner", "resume", "rollback", "side-effect", "tool-call"]
 negative_terms = ["agent-bundle", "benchmark", "canary", "ephemeral-sandbox", "eval", "grader", "judge", "model-router", "multi-worker-runtime", "persistent-memory", "replan", "rolling-plan", "score", "shadow-rollout", "trajectory"]
 
+[routes."agent-facing-interface-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 72
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."agent-facing-interface-review".contexts]
+positive_terms = ["agent-output-mode", "capability-check", "capability-endpoint", "discovery-entrypoint", "feature-id", "machine-readable-help", "next-command-suggestion", "self-describing-api", "side-effect-metadata", "single-source-generation", "task-oriented-index", "unified-command-grammar"]
+negative_terms = ["human-help-only", "json-output-only", "option-parsing-only", "schema-compat-only"]
+concept_aliases = ["기능 발견 진입점", "기능 ID", "다음 명령 제안", "단일 원본 생성", "자기 설명 API", "작업 중심 명령 색인", "에이전트 출력 모드"]
+
 [routes."agent-planning-recovery-review"]
 category = "general_code"
 route_type = "primary"
