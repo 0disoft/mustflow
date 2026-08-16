@@ -2,7 +2,7 @@
 mustflow_doc: skill.multi-tenant-isolation-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: multi-tenant-isolation-review
@@ -151,6 +151,20 @@ exposure?"
      results, and log or metric rows, not only response bodies.
    - Security logs should record the request tenant, the actor, the actual tenant of the target
      resource, and the action, and alert when they differ.
+8. Make tenantless queries hard to express.
+   - Do not require developers to remember `where: { id, tenantId }`; someone will drop the tenant
+     condition. Route tenant tables through a `TenantRepository` with scope-fixed finders such as
+     `findCurrentTenantById` or `updateCurrentTenant`, keep raw database clients out of general
+     service code, and statically block bare `findUnique({ id })` calls on tenant tables.
+   - Cross-tenant analytics use a separate permissioned repository, not a `skipTenantFilter` option
+     on the normal repository.
+9. Verify tenant scope at every storage and delivery surface.
+   - Sign file or download URLs only after validating tenant and user scope, keep them short, and
+     re-check ownership at delivery when the risk justifies it.
+   - Queue consumers must not trust the tenant id in the message; re-check the actor and the target
+     resource's ownership before the effect. Include fixtures where different tenants use the same
+     resource id so id-only lookup bugs and missing composite keys surface immediately.
+   - Log the request tenant and the resource tenant together and alert or fail when they differ.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

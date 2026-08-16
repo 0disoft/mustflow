@@ -2,7 +2,7 @@
 mustflow_doc: skill.authentication-design-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: authentication-design-review
@@ -168,6 +168,46 @@ does every recovery path stay at least as strong as login?"
    - Never auto-merge accounts because two providers returned the same email. Link accounts only
      after reauthenticating the existing account and verifying a fresh login from the new provider,
      and never substitute an ID Token for an API access token.
+8. Do not let a weaker method equal passkey.
+   - If passkey users get identical authority from password or email-recovery login, the passkey
+     adds no security; attackers simply attack the weaker path. Allow password or social login for
+     ordinary reads, but require passkey reauthentication for email change, authenticator addition,
+     payment change, API-key issuance, and personal-data export.
+   - A session's security level never exceeds its initial authentication.
+9. Protect authenticator addition and removal more strictly than login.
+   - A stolen session used to add the attacker's passkey, social account, or recovery email outlives
+     any later password change. Require the highest available authentication level to add a method,
+     notify through an independent channel, and never allow removing the last authenticator or
+     recovery method until a replacement is registered.
+10. Bind reset tokens and grants to purpose and state.
+    - Reset tokens need cryptographic randomness, hashed storage, and binding to user id, purpose,
+      expiry, used-at, and security version; validate and consume them in one transaction so
+      concurrent use cannot double-spend. Keep tokens purpose-typed so an email-verification token
+      cannot reset a password.
+    - Build reset URLs from server-configured trusted domains, never the request `Host`, and block
+      Referrer leakage from the reset page.
+11. Keep password reset from becoming a login or a privilege expansion.
+    - A reset token grants changing one password, not a session or the right to change email, remove
+      passkeys, or disable MFA. After verification, issue a password-change-only `reset_grant`,
+      block other APIs, revoke existing sessions, and send the user to a fresh login. Never
+      auto-login after reset.
+12. Treat email change as a verified multi-step flow.
+    - Email is a login identifier and recovery channel, not a profile field. Store the new address
+      as `pending_email`, require reauthentication with the current method, verify the new address,
+      notify the old address with a report link, keep the old address usable for login and recovery
+      until completion, and revoke old email tokens afterwards.
+    - MFA-enabled accounts notify the old address; MFA-less accounts verify both addresses.
+13. Handle account preemption and takeover responses as one flow.
+    - Never auto-merge accounts by email and never treat an unverified email as ownership proof.
+      When an existing account is found, require its login or an explicit recovery path.
+    - On confirmed takeover, bump `session_epoch` and cascade-revoke sessions, refresh families,
+      remember-me cookies, unused magic links, reset tokens, app passwords, and personal access
+      tokens. Show a timeline of authenticators, providers, emails, and recovery methods added
+      since the last trusted authentication with a batch revert, and hold new authenticator
+      addition, payment change, and export until recovery completes.
+    - Bind OAuth callbacks to the starting browser session and provider via PKCE, state, nonce, and
+      expected issuer, and keep login and account-linking callbacks on separate paths with separate
+      purposes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -2,7 +2,7 @@
 mustflow_doc: skill.api-access-control-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: api-access-control-review
@@ -277,6 +277,25 @@ perform this action on this object, this field, and this tenant context?"
     - Unify external responses to hide existence (for example a uniform 404) while internal logs
       keep the precise reason, and verify horizontal, vertical, and tenant authorization with an
       automated permission matrix.
+37. Validate parent-child relationships, not just the top-level id.
+    - For a request such as `/organizations/A/projects/B/documents/C`, checking only access to
+      organization A is not enough. Verify that project B belongs to A, document C belongs to B, and
+      the user may perform the action on C. Attackers mix accessible parent ids with inaccessible
+      child ids and vice versa.
+    - Sub-objects such as comments, attachments, invites, payments, and audit-log entries that are
+      not independently exposed are safest authorized by their parent relationship.
+38. Authorize fields and state transitions, not only object access.
+    - After object access, merging the request body into the ORM entity lets attackers set
+      `ownerId`, `tenantId`, `role`, `approved`, `blocked`, or `price`. Separate per-action input
+      DTOs, copy only allowed fields, and reject unknown fields instead of ignoring them.
+    - State transitions such as `draft -> submitted -> approved -> paid` must re-check the current
+      state and the requester's permission in the same transaction so races and skipped steps fail.
+39. Regression-swap object ids across two users and two tenants.
+    - Let a same-role user B and a different-tenant user C attempt read, update, delete, search,
+      batch, and export of A's objects; add demoted admins, removed members, expired shares, cached
+      responses, replica reads, batch APIs, and signed URLs to the matrix.
+    - When object existence is sensitive, keep unauthorized and nonexistent responses
+      indistinguishable.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

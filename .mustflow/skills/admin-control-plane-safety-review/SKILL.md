@@ -2,7 +2,7 @@
 mustflow_doc: skill.admin-control-plane-safety-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: admin-control-plane-safety-review
@@ -156,6 +156,40 @@ An admin page is not just a place where staff edits rows faster. It is where one
 19. Add hostile-path tests when the project has a usable test surface.
     - Cover direct API calls with hidden buttons bypassed, wrong tenant, wrong admin scope, denied field update, role assignment by low privilege actor, impersonation prohibited action, export field masking, export expiry, audit event creation, bulk dry-run versus execution consistency, partial failures, reauthorization at execution time, and production guardrails where relevant.
 20. Report every admin surface that remains only "trusted because staff will be careful" as a risk.
+21. Remove standing privileges with just-in-time escalation.
+    - Operators should not hold permanent production rights. Grant scoped, time-limited access on
+      request with exact permissions, target scope, reason, ticket, and expiry, and auto-revoke when
+      the time ends. An operator investigating one organization's billing issue gets a short,
+      read-only billing grant for that organization, not global customer data.
+    - Never issue long-lived admin API keys or shared admin passwords as a substitute for
+      just-in-time grants.
+22. Separate normal and admin accounts, sessions, and domains.
+    - Do not let a personal or normal-work account carry admin rights; one phishing click then
+      reaches production. Use a separate admin account, admin application, and admin cookie or
+      token, require phishing-resistant MFA and managed devices, and keep admin cookies out of the
+      customer application's domain scope.
+    - Prefer a separate escalation context over adding an admin role to a normal session.
+23. Require two-person approval for high-impact actions.
+    - Not every admin action needs approval. Target high-blast-radius or irreversible actions: bulk
+      customer export, organization-wide deletion, admin grant, forced MFA reset, large refunds,
+      key rotation, audit-log configuration change, and tenant-isolation override.
+    - The requester cannot approve their own request, and the approver must see the actual change,
+      target scope, before and after values, expected impact, expiry, and reason. An "approval"
+      label without that detail is decoration.
+24. Enforce hard ceilings that no role can exceed.
+    - Above role grants, keep system-level permission boundaries and explicit denies for
+      self-escalation, disabling audit, deleting other operators' records, unbounded refunds,
+      clearing tenant filters globally, reading raw encryption keys, and minting arbitrary customer
+      sessions.
+    - Run emergency actions through a separate break-glass account and flow with immediate alerting
+      and post-review, and discard the pattern where `isAdmin` voids every deny rule.
+25. Audit the privilege acquisition chain and recertify.
+    - Link original staff identity, elevated role, request reason, ticket, approver, target tenant,
+      target user and resource, before and after values, hashed session id, device, IP, request
+      time, and grant expiry as one event.
+    - Alert on mass lookups, rapid multi-tenant hops, off-hours customer-data access, self-role
+      changes, and repeated denied approvals. Keep the log in an operator-immutable store, and
+      automatically remove unused or long-unused grants with periodic reapproval.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

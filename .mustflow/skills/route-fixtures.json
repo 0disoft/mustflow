@@ -1763,6 +1763,28 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "authorization-model-review",
+      "task": "Choose the authorization model for a document sharing product, RBAC or ReBAC",
+      "paths": [
+        "src/authz/model.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "authorization-model-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "authorization-model-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

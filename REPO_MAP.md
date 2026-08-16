@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 330
+anchor_count: 331
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:9242fbd0645344fe02030600940e2e4b03a6db1ae9e7e61a3ccd685cb1b15140"
+source_fingerprint: "sha256:62d140327b411a5978cebbd27025320eacd814da7aa6a20909497ab887260424"
 ---
 
 # REPO_MAP.md
@@ -172,6 +172,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/authentication-design-review/
 
 - `.mustflow/skills/authentication-design-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/authorization-model-review/
+
+- `.mustflow/skills/authorization-model-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/automation-investment-case-review/
 

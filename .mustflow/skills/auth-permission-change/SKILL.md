@@ -2,7 +2,7 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
@@ -297,6 +297,30 @@ Authentication answers who the requester is. Authorization answers what that pri
     - Shadow-evaluate new policies against real traffic before flipping: run old and new decisions
       side by side, and alert first on requests the new policy would newly allow. Detect endpoints
       without decision logs and server nodes using different policy versions.
+30. Make routes fail to start without a declared policy.
+    - Require every route registration to declare `public`, `authenticated`, `permission`, or
+      `resourceAction`, and fail the build or server start on any undeclared route. `public` is an
+      explicit policy, not an omission default; anything undeclared denies by default.
+31. Require a verified AuthContext in business functions.
+    - Controller-only checks are bypassed when queue jobs, internal APIs, admin scripts, or test
+      tools call service functions directly. Business functions must take actor, tenant, session,
+      and capabilities from a validated `AuthContext`; anonymous work is an explicit
+      `AnonymousActor` and server work an explicit `ServicePrincipal`, never a null user or
+      unlimited authority. Fail fast when the context is absent so non-HTTP call paths enforce the
+      same rules.
+32. Manage the permission matrix as an executable SSOT.
+    - Record actor, resource, action, allowed condition, denied roles, other-organization users,
+      anonymous users, and expected response in a machine-readable matrix, and generate allow and
+      denial tests from it. Fail CI when a new OpenAPI operation has no matrix entry.
+    - Include same-role other users, other-organization users, suspended members, removed members,
+      and expired sessions in the generated cases, not only normal and admin users.
+33. Apply the same model to every non-HTTP execution path.
+    - GraphQL resolvers, WebSocket subscriptions, file downloads, batch APIs, webhooks, scheduled
+      jobs, queue consumers, retries, and internal admin CLIs must use the same permission model.
+      Queue payloads carry subject, tenant, allowed action, permission version, and trace id, and
+      consumers re-check current account state and tenant ownership at execution time.
+    - Internal callers are explicit service principals with their own authorization, not shortcuts
+      that skip checks because they are "internal".
 
 ## Boundary Rules
 

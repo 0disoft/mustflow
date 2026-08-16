@@ -62,7 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 329
+revision = 330
+translations = {}
+
+[documents."skill.authorization-model-review"]
+source = "locales/en/.mustflow/skills/authorization-model-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.session-management-review"]
@@ -80,13 +86,13 @@ translations = {}
 [documents."skill.authentication-design-review"]
 source = "locales/en/.mustflow/skills/authentication-design-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.multi-tenant-isolation-review"]
 source = "locales/en/.mustflow/skills/multi-tenant-isolation-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.credential-token-lifecycle-review"]
@@ -296,7 +302,7 @@ translations = {}
 [documents."skill.admin-control-plane-safety-review"]
 source = "locales/en/.mustflow/skills/admin-control-plane-safety-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.small-service-platform-architecture-review"]
@@ -320,7 +326,7 @@ translations = {}
 [documents."skill.api-access-control-review"]
 source = "locales/en/.mustflow/skills/api-access-control-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.file-upload-security-review"]
@@ -901,7 +907,7 @@ translations = {}
 [documents."skill.auth-permission-change"]
 source = "locales/en/.mustflow/skills/auth-permission-change/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.security-flow-review"]

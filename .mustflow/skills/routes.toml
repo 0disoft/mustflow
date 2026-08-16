@@ -2149,6 +2149,18 @@ positive_terms = ["account-linking", "account-recovery", "authenticator-lifecycl
 negative_terms = ["authorization-only", "token-mechanics-only"]
 concept_aliases = ["계정 복구", "비밀번호 정책", "소셜 로그인", "인증 설계", "패스키 인증"]
 
+[routes."authorization-model-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 75
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "release_risk"]
+
+[routes."authorization-model-review".contexts]
+positive_terms = ["abac", "attribute-based-access-control", "authorization-model", "rbac", "rebac", "relationship-based-access-control", "role-based-access-control", "role-explosion", "zanzibar"]
+negative_terms = ["api-authorization-only", "permission-implementation-only"]
+concept_aliases = ["ABAC", "RBAC", "ReBAC", "권한 모델 선택", "역할 폭발"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"

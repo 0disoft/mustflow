@@ -381,7 +381,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
-	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 8/u);
 });
 
 test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {

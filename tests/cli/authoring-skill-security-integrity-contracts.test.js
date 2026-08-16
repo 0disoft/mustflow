@@ -247,7 +247,7 @@ test('admin control plane safety review treats backoffice tools as production co
 		assert.match(profileMatch[1], /"admin-control-plane-safety-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 3/u);
 });
 
 test('credit ledger integrity review keeps balance changes atomic and reconcilable', () => {
@@ -554,7 +554,7 @@ test('api access control review keeps API authorization object scoped', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/api-access-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-access-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 5/u);
 });
 
 test('multi-tenant isolation review binds tenant context from request to database, cache, queue, and storage', () => {
@@ -581,7 +581,7 @@ test('multi-tenant isolation review binds tenant context from request to databas
 	assert.match(routes, /\[routes\."multi-tenant-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-tenant-isolation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-tenant-isolation-review"/u);
-	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 1);
+	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 2);
 });
 
 test('credential token lifecycle review covers issuance, storage, rotation, revocation, and binding', () => {
@@ -714,7 +714,33 @@ test('authentication design review separates accounts, identifiers, authenticato
 	assert.match(routes, /\[routes\."authentication-design-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/authentication-design-review\/SKILL\.md"/u);
 	assert.match(manifest, /"authentication-design-review"/u);
-	assertI18nSkillDocument(i18n, 'authentication-design-review', 1);
+	assertI18nSkillDocument(i18n, 'authentication-design-review', 2);
+});
+
+test('authorization model review grounds RBAC, ABAC, and ReBAC selection in the granting basis', () => {
+	const localSkill = readText('.mustflow/skills/authorization-model-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/authorization-model-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Find what grants permission before choosing a model name/u);
+	assert.match(localSkill, /role names become condition strings/u);
+	assert.match(localSkill, /who owns the permission data/u);
+	assert.match(localSkill, /Zanzibar-style systems/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/authorization-model-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."authorization-model-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/authorization-model-review\/SKILL\.md"/u);
+	assert.match(manifest, /"authorization-model-review"/u);
+	assertI18nSkillDocument(i18n, 'authorization-model-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

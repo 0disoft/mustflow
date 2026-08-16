@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:9b14137093812cc2c867874a383dcb6ac1812356bb2140f25a657b2d108837a7",
+  "source_fingerprint": "sha256:f7cbd7a1c0da3004b5881bc350457eb03fec1238ca52afa854c7539fb93b49d6",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1494,6 +1494,62 @@
         "unlocks_on": []
       },
       "trigger": "Apply this skill when code is created, changed, reviewed, or reported and authentication system design needs review for account versus login-identifier versus authenticator separation, account state machines, authenticator lifecycles, authentication strength per session, auth time and AAL and AMR, step-up requirements, account recovery protection, recovery-code handling, password policy, Argon2id hashing, breached-password blocking, login throttling and account enumeration hiding, or social login and OAuth OIDC account linking.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "authorization-model-review",
+      "skill_path": ".mustflow/skills/authorization-model-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 75,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "abac",
+        "attribute based access control",
+        "authorization model",
+        "rbac",
+        "rebac",
+        "relationship based access control",
+        "role based access control",
+        "role explosion",
+        "zanzibar",
+        "권한 모델 선택",
+        "역할 폭발"
+      ],
+      "negative_signals": [
+        "api authorization only",
+        "permission implementation only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when authorization model selection or design needs review for RBAC, ABAC, ReBAC, relationship-based access control, Zanzibar-style relation graphs, role explosion, role hierarchies, mutually exclusive roles, attribute sources of truth, request-time conditions, hybrid authorization models, permission-data ownership, or choosing what actually grants a permission.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
