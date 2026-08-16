@@ -2,7 +2,7 @@
 mustflow_doc: skill.admin-control-plane-safety-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: admin-control-plane-safety-review
@@ -190,6 +190,22 @@ An admin page is not just a place where staff edits rows faster. It is where one
     - Alert on mass lookups, rapid multi-tenant hops, off-hours customer-data access, self-role
       changes, and repeated denied approvals. Keep the log in an operator-immutable store, and
       automatically remove unused or long-unused grants with periodic reapproval.
+26. Keep staff access tenant-scoped per request.
+    - Do not write policies shaped like `tenant_id = current OR is_admin()`; one mis-set admin
+      claim opens every customer's data. Staff pick exactly one target tenant per request, and
+      cross-tenant work is a separate batch or emergency procedure, not a role flag.
+27. Preserve the real actor through impersonation at every layer.
+    - Keep `actor_id`, `subject_tenant_id`, and `impersonated_user_id` separate. Database policies
+      receive the target tenant while audit logs record the real staff member, target customer,
+      ticket, reason, commands, and affected-row counts.
+    - Impersonation is display and permission context, never an identity swap that rewrites audit
+      history as if the customer ran the actions.
+28. Separate the admin control plane from customer data with short-lived grants.
+    - Admin screens may show tenant metadata, plan, failure state, and last login without customer
+      content; orders, documents, messages, and uploads stay behind tenant-scoped short-lived
+      grants carrying target tenant, allowed actions, expiry, and ticket.
+    - Remove direct SQL rights from admin browsers and support servers; the customer-data API
+      enforces the existing tenant boundary against the issued grant.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

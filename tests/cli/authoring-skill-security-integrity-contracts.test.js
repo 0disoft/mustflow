@@ -247,7 +247,7 @@ test('admin control plane safety review treats backoffice tools as production co
 		assert.match(profileMatch[1], /"admin-control-plane-safety-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 4/u);
 });
 
 test('credit ledger integrity review keeps balance changes atomic and reconcilable', () => {
@@ -581,7 +581,7 @@ test('multi-tenant isolation review binds tenant context from request to databas
 	assert.match(routes, /\[routes\."multi-tenant-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-tenant-isolation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-tenant-isolation-review"/u);
-	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 2);
+	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 3);
 });
 
 test('credential token lifecycle review covers issuance, storage, rotation, revocation, and binding', () => {
@@ -796,6 +796,33 @@ test('cryptographic storage review separates at-rest, transport, and field encry
 	assert.match(manifest, /"\.mustflow\/skills\/cryptographic-storage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cryptographic-storage-review"/u);
 	assertI18nSkillDocument(i18n, 'cryptographic-storage-review', 1);
+});
+
+test('tenant key and secret isolation review separates keys, secrets, and credentials per tenant', () => {
+	const localSkill = readText('.mustflow/skills/tenant-key-secret-isolation-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/tenant-key-secret-isolation-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Do not call a single global key per-tenant encryption/u);
+	assert.match(localSkill, /AAD alone is not authorization/u);
+	assert.match(localSkill, /Split secret storage boundaries per tenant/u);
+	assert.match(localSkill, /Separate key-management rights from key-use rights/u);
+	assert.match(localSkill, /Prefer dynamic credentials over stored long-lived ones/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/tenant-key-secret-isolation-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."tenant-key-secret-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/tenant-key-secret-isolation-review\/SKILL\.md"/u);
+	assert.match(manifest, /"tenant-key-secret-isolation-review"/u);
+	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

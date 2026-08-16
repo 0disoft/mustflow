@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.131.5"
+version = "2.131.6"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -66,6 +66,7 @@ creates = [
   ".mustflow/skills/authorization-model-review/SKILL.md",
   ".mustflow/skills/trust-boundary-review/SKILL.md",
   ".mustflow/skills/cryptographic-storage-review/SKILL.md",
+  ".mustflow/skills/tenant-key-secret-isolation-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md",
   ".mustflow/skills/error-message-integrity-review/SKILL.md",
@@ -426,6 +427,7 @@ minimal = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -653,6 +655,7 @@ patterns = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -891,6 +894,7 @@ oss = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1151,6 +1155,7 @@ team = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1410,6 +1415,7 @@ product = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1678,6 +1684,7 @@ library = [
   "authorization-model-review",
   "trust-boundary-review",
   "cryptographic-storage-review",
+  "tenant-key-secret-isolation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",

@@ -2185,6 +2185,18 @@ positive_terms = ["aead", "at-rest-encryption", "cryptographic-storage", "deks",
 negative_terms = ["password-hashing-only", "tls-config-only"]
 concept_aliases = ["봉투 암호화", "암호화 저장", "전송 암호화", "키 관리", "필드 암호화"]
 
+[routes."tenant-key-secret-isolation-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 80
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."tenant-key-secret-isolation-review".contexts]
+positive_terms = ["aad-binding", "dynamic-credentials", "kek-hierarchy", "secret-broker", "tenant-encryption-key", "tenant-key", "tenant-secret", "workload-identity"]
+negative_terms = ["general-crypto-only", "trust-boundary-only"]
+concept_aliases = ["동적 자격증명", "비밀 브로커", "워크로드 신원", "키 계층", "테넌트 시크릿", "테넌트 암호화 키"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"

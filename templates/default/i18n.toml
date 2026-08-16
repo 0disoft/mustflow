@@ -62,7 +62,13 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 332
+revision = 333
+translations = {}
+
+[documents."skill.tenant-key-secret-isolation-review"]
+source = "locales/en/.mustflow/skills/tenant-key-secret-isolation-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.trust-boundary-review"]
@@ -104,7 +110,7 @@ translations = {}
 [documents."skill.multi-tenant-isolation-review"]
 source = "locales/en/.mustflow/skills/multi-tenant-isolation-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.credential-token-lifecycle-review"]
@@ -314,7 +320,7 @@ translations = {}
 [documents."skill.admin-control-plane-safety-review"]
 source = "locales/en/.mustflow/skills/admin-control-plane-safety-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.small-service-platform-architecture-review"]
@@ -781,7 +787,7 @@ translations = {}
 [documents."skill.postgresql-code-change"]
 source = "locales/en/.mustflow/skills/postgresql-code-change/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.postgresql-code-change.postgresql-18-operations-checklist"]

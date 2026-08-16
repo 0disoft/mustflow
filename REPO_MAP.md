@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 333
+anchor_count: 334
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:dcdf96e234ed1a7e6890f1c15b9161f2bbc5694c239d9b990b02783cd411d9e7"
+source_fingerprint: "sha256:80ba29e9b009fc3e5790620e982651d4159e7d6b6368f6807b9dd23fe65b985c"
 ---
 
 # REPO_MAP.md
@@ -1084,6 +1084,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/template-install-surface-sync/
 
 - `.mustflow/skills/template-install-surface-sync/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/tenant-key-secret-isolation-review/
+
+- `.mustflow/skills/tenant-key-secret-isolation-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/test-design-guard/
 

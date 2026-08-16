@@ -321,7 +321,7 @@ test('postgresql code change carries the PostgreSQL 18 operations contract', () 
 	assert.match(localReference, /authority: reference/u);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 3/u);
+	assert.match(localSkill, /revision: 4/u);
 	assert.match(localSkill, /PostgreSQL 18 Operations Checklist/u);
 	assert.match(localReference, /snapshot verified on 2026-08-02 was PostgreSQL 18\.4/u);
 	assert.match(localReference, /Do not preserve `18\.4` as an undated permanent latest-version claim/u);
@@ -370,7 +370,7 @@ test('postgresql code change carries the PostgreSQL 18 operations contract', () 
 		/"\.mustflow\/skills\/postgresql-code-change\/references\/postgresql-18-operations-checklist\.md"/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'postgresql-code-change', 3);
+	assertI18nSkillDocument(i18n, 'postgresql-code-change', 4);
 	assert.match(
 		i18n,
 		/\[documents\."skill\.postgresql-code-change\.postgresql-18-operations-checklist"\][\s\S]*?revision = 1/u,

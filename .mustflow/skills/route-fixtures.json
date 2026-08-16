@@ -1825,6 +1825,28 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "tenant-key-secret-isolation-review",
+      "task": "Review authorization, per-tenant encryption keys, and secret storage isolation",
+      "paths": [
+        "src/crypto/tenant-keys.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "tenant-key-secret-isolation-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "tenant-key-secret-isolation-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

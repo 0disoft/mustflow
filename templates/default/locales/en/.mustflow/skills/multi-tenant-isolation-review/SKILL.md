@@ -2,7 +2,7 @@
 mustflow_doc: skill.multi-tenant-isolation-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: multi-tenant-isolation-review
@@ -165,6 +165,41 @@ exposure?"
      resource's ownership before the effect. Include fixtures where different tenants use the same
      resource id so id-only lookup bugs and missing composite keys surface immediately.
    - Log the request tenant and the resource tenant together and alert or fail when they differ.
+10. Do not force one isolation model on every customer.
+    - Ordinary tenants use shared tables with RLS; regulated or large tenants get dedicated schemas,
+      databases, or encryption keys. Choose the level by data sensitivity and incident blast radius,
+      not by pricing plan, and be explicit that shared-root key hierarchies are logical isolation
+      within a shared trust boundary.
+11. Enforce tenant scope with CI schema and SQL checks.
+    - Per migration, check that tenant-owned tables have `tenant_id NOT NULL`, RLS enabled,
+      `FORCE ROW LEVEL SECURITY`, and policies present. Analyze application SQL with an AST or
+      linter to block unscoped `SELECT`, `UPDATE`, and `DELETE` on tenant tables, and confine raw
+      SQL to narrow reviewed modules.
+12. Verify isolation under failure and in production continuously.
+    - Stop or delay the policy engine, cache, read replica, and message broker and assert that no
+      stale tenant context is reused, no queue redelivery runs under another tenant's context, and
+      no pooled connection keeps the previous tenant's session variable.
+    - Deploy synthetic tenants and canary markers, probe cross-tenant reads from other synthetic
+      credentials, and treat a marker found in another tenant's response, log, or analytics data as
+      an incident. Record user, request tenant, target tenant, resource, action, policy version,
+      and result in authorization logs.
+13. Treat cache, queue, and idempotency keys as tenant-scoped identifiers.
+    - Cache keys are composed server-side from tenant UUID, resource type, resource id, permission
+      version, and schema version; invalidation tags are tenant-scoped too, and database changes
+      connect to cache invalidation through outbox events carrying the tenant id.
+    - Valkey numbered databases and key prefixes are not security isolation; restrict ACL key
+      patterns and commands per workload and use a separate instance for high-sensitivity data.
+    - Job messages are full tenant envelopes: tenant id, actor, request user, resource id, action,
+      permission version, idempotency key, and trace id. Consumers look up by `(tenant_id,
+      resource_id)`, keep per-message contexts, and store dedupe records with
+      `UNIQUE (tenant_id, idempotency_key)`. Retries and the DLQ re-check current tenant state and
+      permissions at each execution and preserve the original tenant id and trace.
+14. Bind object keys and presigned URLs to the tenant server-side.
+    - Generate keys such as `tenants/{tenant_uuid}/objects/{object_uuid}`; the original filename is
+      metadata only. Look up `(tenant_id, object_id, object_key)` before signing.
+    - Presigned URLs are bearer grants bound to bucket, object key, GET or PUT, short expiry, and
+      required Content-Type; CORS is not authorization. Use scoped temporary credentials for
+      multi-object work and keep background transformation results under the same tenant path.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

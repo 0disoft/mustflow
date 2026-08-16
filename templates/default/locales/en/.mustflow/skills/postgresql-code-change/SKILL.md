@@ -2,7 +2,7 @@
 mustflow_doc: skill.postgresql-code-change
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: postgresql-code-change
@@ -138,6 +138,51 @@ PostgreSQL is not just "SQL with more features." Most production damage comes fr
       the expected policy; restrict connections to the workload network with short-lived
       credentials or client certificates, and keep emergency admin accounts out of application
       config behind separate approval and audit.
+29. Close RLS bypasses from ownership and session variables.
+    - Table owners, superusers, and `BYPASSRLS` roles bypass RLS. Make a `NOLOGIN` migration owner
+      own objects while the runtime role holds no ownership or membership, apply `ENABLE` and
+      `FORCE ROW LEVEL SECURITY` on every tenant table, and check `relrowsecurity` and
+      `relforcerowsecurity` in CI.
+    - A session variable set with plain `SET` survives the transaction and leaks through pooled
+      connections; use `set_config(..., true)` or `SET LOCAL` inside the transaction and error when
+      the value is missing. If a shared database role can execute arbitrary SQL, it can change the
+      GUC itself, so SQL injection bypasses RLS; add role switching, proxy-forced context,
+      per-tenant roles, or separate pools as the real enforcement.
+30. Get write isolation right with WITH CHECK and restrictive policies.
+    - `USING` selects existing rows; `WITH CHECK` validates inserted and updated rows. An `UPDATE`
+      policy needs both, and `INSERT` needs `WITH CHECK`, or rows can move to another tenant or be
+      created under another tenant. Fill `tenant_id` from database context, not client input, and
+      remember that `BEFORE ROW` triggers run before `WITH CHECK`.
+    - Multiple permissive policies combine with OR, so one support policy can open every row. Make
+      the tenant-match condition a restrictive policy applied to every runtime role, with role or
+      feature conditions as permissive additions.
+31. Compensate for constraints and policy subqueries that bypass or race RLS.
+    - `UNIQUE`, primary key, and foreign key checks ignore RLS, so a uniqueness error can reveal
+      another tenant's existing email or slug, and a parent-only foreign key lets tenant A rows
+      reference tenant B parents. Use `UNIQUE (tenant_id, slug)` and composite foreign keys such as
+      `(tenant_id, parent_id)` referencing `(tenant_id, id)`, and generalize constraint errors.
+    - RLS expressions that subquery permission or membership tables can evaluate protected rows and
+      permission rows under different snapshots in READ COMMITTED; prefer a simple `tenant_id`
+      versus context comparison, and if dynamic checks are unavoidable use reference row locks,
+      ordering control, or short validated functions.
+32. Cover partitions, views, and role inheritance.
+    - Parent-table policies do not apply when children or partitions are addressed directly, and
+      views default to the owner's rights and RLS state, which can bypass RLS. Grant no direct
+      partition access to runtime roles, apply RLS per partition when unavoidable, use
+      `security_invoker` views, and check new tables, partitions, and views in CI.
+    - PostgreSQL roles inherit by default. Make human login roles `NOINHERIT`, apply `INHERIT
+      FALSE` and `SET FALSE` to risky memberships, keep owning roles `NOLOGIN`, and audit
+      `pg_auth_members` in CI.
+33. Remove rights outside RLS and isolate emergency access.
+    - RLS does not cover `TRUNCATE` or `REFERENCES`; do not give support roles `ALL PRIVILEGES`
+      and rely on RLS. Remove DDL, `TRUNCATE`, `REFERENCES`, `CREATE`, risky `SET ROLE`, server
+      file, and extension-install rights, and prevent object creation in trusted schemas that could
+      hijack functions or operators.
+    - Keep `SECURITY DEFINER` functions narrow: schema-qualified names, writable schemas out of
+      `search_path`, no dynamic user table names, and `PUBLIC` execute removed; prefer `SECURITY
+      INVOKER`. Keep global access on a separate `NOLOGIN` emergency role with short expiry,
+      multi-approval, command logging, and post-review, never deploy those credentials to
+      application servers, and never merge backup and support roles.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
