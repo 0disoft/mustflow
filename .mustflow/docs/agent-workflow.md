@@ -274,7 +274,13 @@ A command intent is eligible for agent use only when all of these are true:
 
 Prefer `mf run <intent>` so the project receives a concise run record in `.mustflow/state/runs/latest.json` and a retained run index in `.mustflow/state/runs/latest.index.json`.
 
-Run `mf run` command intents serially. Do not start a second `mf run` while another configured intent is still running. Intents that declare non-empty `writes` are exclusive verification phases; wait for them to finish before running any other `mf run`. This is especially important when an intent rewrites package output such as `dist/`, because the local `mf` executable may load from that output.
+Run `mf run` command intents by effect, not globally serially. Read-only intents with no
+overlapping `writes`, `effects`, or shared locks may run concurrently with each other. Intents that
+declare non-empty `writes` are exclusive verification phases: wait for them to finish before running
+any other `mf run`, especially when an intent rewrites package output such as `dist/`, because the
+local `mf` executable may load from that output. The test runner keeps a repository-level lock for
+write-bearing runs; read-only verification that declares no conflicting path or resource effect may
+proceed without waiting on that lock.
 
 For installed mustflow workflow updates, use configured update intents instead of running raw `mf update` directly. Run `mustflow_update_dry_run` first. Run `mustflow_update_apply` only when the dry-run plan has no blocking or manual-review items and the task calls for applying template updates. The apply intent still relies on `mf update` safety policy: it writes only template manifest paths, backups, and manifest-lock entries, and refuses local changes.
 

@@ -580,7 +580,12 @@ if (mode === 'coverage') {
 	nodeTestArgs.push('--experimental-test-coverage');
 }
 
-const releaseTestRunnerLock = !listOnly || buildRunner ? acquireTestRunnerLock() : undefined;
+const releaseTestRunnerLock =
+	!listOnly || buildRunner
+		? process.env.MUSTFLOW_TEST_NO_LOCK === '1' && buildPolicy !== 'always'
+			? undefined
+			: acquireTestRunnerLock()
+		: undefined;
 if (releaseTestRunnerLock) {
 	registerTestRunnerLockRelease(releaseTestRunnerLock);
 }
