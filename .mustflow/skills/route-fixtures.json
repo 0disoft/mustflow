@@ -1948,6 +1948,27 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "agent-job-control-review",
+      "task": "Add a job control API so agents can submit, cancel, pause, resume, and retry long-running jobs with allowed actions and event cursors",
+      "paths": [
+        "src/jobs/control.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-job-control-review"
+      ],
+      "required_adjuncts": [
+        "agent-job-control-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

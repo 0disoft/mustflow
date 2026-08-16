@@ -2,7 +2,7 @@
 mustflow_doc: skill.cli-output-contract-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: cli-output-contract-review
@@ -28,6 +28,8 @@ metadata:
 
 Preserve the contract between CLI behavior and its human, JSON, schema, documentation, and automation consumers.
 
+The review question is not "does the output look nice?" It is "does a human terminal, a shell script, and an AI agent that parses machine output each receive the same typed result, rendered from one result object into the format they asked for, on the stream they expect, without ambient decoration or lossy human formatting?"
+
 <!-- mustflow-section: use-when -->
 ## Use When
 
@@ -35,6 +37,7 @@ Preserve the contract between CLI behavior and its human, JSON, schema, document
 - A command adds, removes, renames, aliases, or changes an option, argument, default, validation rule, or output mode.
 - A schema-backed report, package test, public docs example, README snippet, or fixture depends on CLI output.
 - A change claims that automation can treat a command result as success, failure, partial success, blocked, skipped, deprecated, or unavailable.
+- A change adds a typed result object, an explicit `--format human|json|jsonl|tsv` selector, a fixed top-level envelope, JSONL record framing, human-versus-machine value rendering, or an exit-code-versus-result split.
 
 <!-- mustflow-section: do-not-use-when -->
 ## Do Not Use When
@@ -97,6 +100,12 @@ Preserve the contract between CLI behavior and its human, JSON, schema, document
 22. Use semantic schema diff tooling only when the repository already has a configured tool or intent for it. Do not introduce a new CLI test framework, schema-diff dependency, or snapshot update workflow just because a review checklist mentions one.
 23. Synchronize schemas, fixtures, package tests, docs, and localized or template examples that depend on the output.
 24. Verify with related tests first, then release or docs checks when schemas, package output, docs, or templates changed.
+25. Separate the typed result from every renderer. Command logic should return a typed result object such as `{ items, total, nextCursor, warnings }`; human and structured renderers must both consume that same object instead of one producing text that the other re-parses. Never build a human string and convert it back to JSON, or force JSON into a table.
+26. Make the output format an explicit choice, never a TTY surprise. Support `--format human`, `--format json`, `--format jsonl`, `--format tsv`, or the repository's equivalent, and keep the byte structure identical for the same format regardless of terminal or pipe. Use TTY detection only for color, progress, and column width, never to change the data structure; in automation `--format json` must always emit the same shape.
+27. Use a fixed top-level envelope for structured output. Share `schemaVersion`, `command`, `requestId`, `data`, `warnings`, and `page` (with `nextCursor`) positions across commands so agents can apply common control logic without per-command exception code.
+28. Frame JSONL records for large or realtime output. Prefer one complete object per line with a `type` and `sequence` field, and emit a final `summary` record carrying emitted, failed, and next-cursor counts so a truncated stream is distinguishable from a clean end. Do not wrap thousands of items in one JSON array that cannot be read until completion.
+29. Do not force human and machine values to share one representation. Humans read `1.4 GB`, `3 minutes ago`, `success`, and truncated paths; programs need `1503238553`, ISO 8601 timestamps, fixed enums, and full absolute paths. Human rendering may convert, color, align, and alias; structured output must carry the original and normalized values. Never put ANSI codes or `about 3 minutes` phrasing inside JSON.
+30. Design exit codes and processing results as separate axes. One exit code cannot express full success, partial success, input error, transient failure, and internal error at once; keep the exit code for execution control and put the detailed result in structured output. A bulk delete of 100 items with 97 successes must report `partialSuccess`, `succeededCount`, `failedCount`, and `failures` rather than hiding failures behind exit 0 or hiding successes behind exit 1.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

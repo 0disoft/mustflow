@@ -385,6 +385,13 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(localSkill, /Represent partial failure honestly/u);
 	assert.match(localSkill, /Test error contracts/u);
 	assert.match(localSkill, /Ask the 30-second action question/u);
+	assert.match(localSkill, /Classify error codes by recovery action, not exception class/u);
+	assert.match(localSkill, /Make retryability explicit instead of guessable/u);
+	assert.match(localSkill, /side-effect state of a failed request/u);
+	assert.match(localSkill, /structured next-action candidates instead of prose/u);
+	assert.match(localSkill, /cause chain and the reasoning behind the top error/u);
+	assert.match(localSkill, /state snapshot at failure time/u);
+	assert.match(localSkill, /recovery identifiers for resume and duplicate prevention/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md/u);
 	assert.match(skillIndex, /error-message-integrity triage/u);
 	assert.match(skillIndex, /call-site-specific taxonomy drift/u);
@@ -404,7 +411,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 5/u);
 });
 
 test('api misuse resistance review keeps caller contracts hard to misuse', () => {
@@ -458,6 +465,13 @@ test('api misuse resistance review keeps caller contracts hard to misuse', () =>
 	assert.match(localSkill, /Test through the caller contract/u);
 	assert.match(localSkill, /Check SDK ergonomics/u);
 	assert.match(localSkill, /Finish with the first-time caller question/u);
+	assert.match(localSkill, /summary view, not full detail/u);
+	assert.match(localSkill, /field selection as a validated schema/u);
+	assert.match(localSkill, /Never auto-expand related objects/u);
+	assert.match(localSkill, /indexable filters, not free-form query syntax/u);
+	assert.match(localSkill, /signed stable cursors instead of offset pagination/u);
+	assert.match(localSkill, /change-sync instead of full re-list/u);
+	assert.match(localSkill, /response budget in the API contract/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md/u);
 	assert.match(skillIndex, /api-misuse-resistance triage/u);
 	assert.match(skillIndex, /first-time caller trap/u);
@@ -479,7 +493,7 @@ test('api misuse resistance review keeps caller contracts hard to misuse', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-misuse-resistance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-misuse-resistance-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.api-misuse-resistance-review"\][\s\S]*?revision = 2/u);
 });
 
 test('api access control review keeps API authorization object scoped', () => {

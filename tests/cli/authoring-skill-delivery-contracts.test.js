@@ -562,6 +562,21 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			phrases: ['append-only execution ledger', 'effect receipt', 'monotonic sequence', 'replay'],
 		},
 		{
+			name: 'agent-job-control-review',
+			category: 'general_code',
+			routeType: 'adjunct',
+			priority: 73,
+			phrases: [
+				'job table as the source of truth',
+				'Never treat the job id as the idempotency key',
+				'`cancel_requested` first',
+				'Trust a reconciler over worker discipline',
+				'`allowed_actions`',
+				'event-cursor based',
+				'Separate jobs from attempts',
+			],
+		},
+		{
 			name: 'policy-decision-integrity-review',
 			revision: 3,
 			category: 'security_privacy',

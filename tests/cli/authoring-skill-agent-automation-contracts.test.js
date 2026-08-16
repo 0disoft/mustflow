@@ -619,6 +619,12 @@ test('execution contract skills stay template-synced and authority-bounded', () 
 	assert.match(cliOutputSkill, /command tree, router or help metadata/u);
 	assert.match(cliOutputSkill, /global flags/u);
 	assert.match(cliOutputSkill, /JSONL/u);
+	assert.match(cliOutputSkill, /typed result object/u);
+	assert.match(cliOutputSkill, /explicit choice, never a TTY surprise/u);
+	assert.match(cliOutputSkill, /fixed top-level envelope/u);
+	assert.match(cliOutputSkill, /`type` and `sequence` field/u);
+	assert.match(cliOutputSkill, /Do not force human and machine values to share one representation/u);
+	assert.match(cliOutputSkill, /exit codes and processing results as separate axes/u);
 	assert.match(cliOutputSkill, /Prompts must be avoidable/u);
 	assert.match(cliOutputSkill, /repository-declared exit-code map/u);
 	assert.match(cliOutputSkill, /0 to 255 range/u);

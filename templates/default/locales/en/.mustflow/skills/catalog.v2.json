@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:14e896bd22ce6e4f59775d637c9cf75841d9d3c0b241a625fddc88610151aa0a",
+  "source_fingerprint": "sha256:c8ce622b8374fe1e889af5fda2ef4b91452b1ebae78be4218ca8ba511a10f0b9",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -361,7 +361,78 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when a CLI, REST or HTTP API, SDK, or command surface must be discoverable, invocable, and monitorable by AI agents, coding agents, or automation, and review is needed for capability or discovery endpoints, machine-readable self-description, stable feature ids, input and output contract schemas, side-effect metadata, executable examples, capability checks, task-oriented command indexes, unified command grammar, structured argument constraints, single-source documentation generation, agent output modes, next-command error suggestions, or acceptance-path latency budgets for jobs that agents submit, track, and inspect.",
+      "trigger": "Apply this skill when a CLI, REST or HTTP API, SDK, or command surface must be discoverable, invocable, and monitorable by AI agents, coding agents, or automation, and review is needed for capability or discovery endpoints, machine-readable self-description, stable feature ids, input and output contract schemas, side-effect metadata, executable examples, capability checks, task-oriented command indexes, unified command grammar, structured argument constraints, single-source documentation generation, agent output modes, next-command error suggestions, confirmation tokens and plan-bound mutations for risky work, or acceptance-path latency budgets for jobs that agents submit, track, and inspect.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "agent-job-control-review",
+      "skill_path": ".mustflow/skills/agent-job-control-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 73,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "performance_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "allowed actions",
+        "cancel requested",
+        "command id",
+        "event cursor",
+        "execution epoch",
+        "fencing token",
+        "idempotency key",
+        "job attempt separation",
+        "job command",
+        "job state machine",
+        "lease expiry",
+        "pause requested",
+        "reconciler",
+        "resume from checkpoint",
+        "이벤트 커서",
+        "작업 명령 api",
+        "작업 상태 머신",
+        "작업 시도 분리",
+        "재개 체크포인트",
+        "페닝 토큰",
+        "허용 행동 응답"
+      ],
+      "negative_signals": [
+        "agent runtime loop",
+        "generic crud api",
+        "queue mechanics only",
+        "workflow orchestration only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and an AI-agent-facing job or task system needs review for durable job tables as the source of truth, job ids versus idempotency keys, explicit job state machines, leases and fencing tokens, persistent checkpoints, cancel-request and cancel-complete separation, reconcilers, command-submission control APIs, allowed actions and blocked reasons, command ids with expected state versions, event-cursor status queries, pause and resume semantics, job and attempt separation, or read-versus-control permission separation for agents that submit, inspect, cancel, pause, resume, and retry long-running work.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -978,7 +1049,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and an API, SDK, function boundary, service method, endpoint, command method, DTO, request shape, response shape, pagination contract, idempotency behavior, async job boundary, versioning policy, deprecation path, rate-limit rule, retry rule, observability surface, or caller-facing contract needs review for caller ergonomics, misuse resistance, hidden state machines, ambiguous parameters, internal model leakage, and operation-centered design.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and an API, SDK, function boundary, service method, endpoint, command method, DTO, request shape, response shape, pagination contract, summary-versus-detail view, field selection, expand limits, indexable filters, change-sync or ETag behavior, response budgets, idempotency behavior, async job boundary, versioning policy, deprecation path, rate-limit rule, retry rule, observability surface, or caller-facing contract needs review for caller ergonomics, misuse resistance, hidden state machines, ambiguous parameters, internal model leakage, and operation-centered design.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -5046,7 +5117,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and error messages, error codes, validation errors, parse errors, API or CLI error envelopes, public user-facing errors, logs, structured diagnostics, exception wrapping, provider errors, retryability, idempotency errors, queue or batch failures, partial failures, permission errors, conflict errors, impossible-state errors, security redaction, support-facing IDs, monitoring fields, or troubleshooting text need review for actionability, recoverability, observability, stable contracts, and safe disclosure.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and error messages, error codes, validation errors, parse errors, API or CLI error envelopes, public user-facing errors, logs, structured diagnostics, exception wrapping, provider errors, retryability, side-effect state, next-action candidates, recovery identifiers, idempotency errors, queue or batch failures, partial failures, permission errors, conflict errors, impossible-state errors, security redaction, support-facing IDs, monitoring fields, or troubleshooting text need review for actionability, recoverability, observability, stable contracts, and safe disclosure.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

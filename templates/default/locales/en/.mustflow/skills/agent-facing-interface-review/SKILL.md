@@ -2,11 +2,11 @@
 mustflow_doc: skill.agent-facing-interface-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: agent-facing-interface-review
-description: Apply this skill when a CLI, REST or HTTP API, SDK, or command surface must be discoverable, invocable, and monitorable by AI agents, coding agents, or automation, and review is needed for capability or discovery endpoints, machine-readable self-description, stable feature ids, input and output contract schemas, side-effect metadata, executable examples, capability checks, task-oriented command indexes, unified command grammar, structured argument constraints, single-source documentation generation, agent output modes, next-command error suggestions, or acceptance-path latency budgets for jobs that agents submit, track, and inspect.
+description: Apply this skill when a CLI, REST or HTTP API, SDK, or command surface must be discoverable, invocable, and monitorable by AI agents, coding agents, or automation, and review is needed for capability or discovery endpoints, machine-readable self-description, stable feature ids, input and output contract schemas, side-effect metadata, executable examples, capability checks, task-oriented command indexes, unified command grammar, structured argument constraints, single-source documentation generation, agent output modes, next-command error suggestions, confirmation tokens and plan-bound mutations for risky work, or acceptance-path latency budgets for jobs that agents submit, track, and inspect.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -227,6 +227,17 @@ started — all through stable machine-readable interfaces and bounded acceptanc
       measure p50, p95, and p99 separately. Record DNS lookup, first TLS handshake, cold start, lock
       contention, and queue backpressure separately, and show which stage exceeded its budget instead
       of reporting only slowness.
+22. Replace interactive confirmation with explicit confirmation tokens for risky work.
+    - Agents cannot answer `continue?` mid-run. Every question must be pre-answerable through an
+      argument, environment variable, input file, or stdin. For destructive work, do not accept a
+      bare `yes`; require a confirmation token that names the target and expected change, for
+      example the hash of a previously reviewed delete plan, so a stale confirmation cannot be
+      replayed against a different resource.
+23. Bind mutation to stable resource ids and reviewed plans.
+    - Humans use names such as `production` or `recent project`; agent automation must not guess
+      among duplicates or context. Require a stable resource id for mutations and allow name search
+      only during discovery, freezing the resolved id before the change. For plan-and-apply flows,
+      make apply require the plan id or plan hash so what was reviewed is exactly what executes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -237,8 +248,8 @@ started — all through stable machine-readable interfaces and bounded acceptanc
   single-source generation, agent output mode, and acceptance-path latency budgets are explicit.
 - Help-text-only discovery, name-only contracts, prose-only constraints, unbounded discovery cost,
   human formatting in agent output, non-durable `accepted`, per-invocation runtimes, joined status
-  lookups, non-streamed first response, uncached auth or routing, and average-only latency claims
-  are fixed or reported.
+  lookups, non-streamed first response, uncached auth or routing, average-only latency claims,
+  bare-`yes` confirmation, and name-bound mutations are fixed or reported.
 - Agent-facing interface claims are backed by configured tests, contract evidence, or labeled as
   manual-only or missing.
 

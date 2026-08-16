@@ -2,11 +2,11 @@
 mustflow_doc: skill.api-misuse-resistance-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: api-misuse-resistance-review
-description: Apply this skill when code is created, changed, reviewed, or reported and an API, SDK, function boundary, service method, endpoint, command method, DTO, request shape, response shape, pagination contract, idempotency behavior, async job boundary, versioning policy, deprecation path, rate-limit rule, retry rule, observability surface, or caller-facing contract needs review for caller ergonomics, misuse resistance, hidden state machines, ambiguous parameters, internal model leakage, and operation-centered design.
+description: Apply this skill when code is created, changed, reviewed, or reported and an API, SDK, function boundary, service method, endpoint, command method, DTO, request shape, response shape, pagination contract, summary-versus-detail view, field selection, expand limits, indexable filters, change-sync or ETag behavior, response budgets, idempotency behavior, async job boundary, versioning policy, deprecation path, rate-limit rule, retry rule, observability surface, or caller-facing contract needs review for caller ergonomics, misuse resistance, hidden state machines, ambiguous parameters, internal model leakage, and operation-centered design.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -238,6 +238,46 @@ or Slack-thread failure semantics?"
     - What will a new caller misunderstand?
     - If the likely mistake costs money, permissions, data, duplicate work, broken pagination, stale
       cache, or unretryable failure, fix the API shape instead of adding prose warnings.
+31. Make the default response a summary view, not full detail.
+    - An agent checking job status does not need the input payload, logs, checkpoints, and result
+      metadata. Keep the default response to identity, state, current stage, progress, last change
+      time, and available next actions, and return detail only when explicitly requested via
+      `view=detail` or an equivalent. Do not force admin screens and agent APIs to share one
+      fat default.
+32. Offer field selection as a validated schema, not string truncation.
+    - Accept `fields=job_id,state,progress.percent,error.code` style selection, validate against an
+      allowed field list and nesting depth, and reject unknown fields instead of silently ignoring
+      them. Always include fields required to interpret the response such as `job_id`,
+      `schema_version`, and `state_version` regardless of selection, and normalize field order so
+      identical requests can hit caches.
+33. Never auto-expand related objects.
+    - One job lookup must not pull in the attempt list, full logs, input data, result files, and
+      user info. Require explicit `expand=latest_attempt,error`, cap allowed expansion depth and
+      counts, and keep logs and result data behind separate endpoints with their own pagination.
+      Forbid recursive nested expansion.
+34. Allow only indexable filters, not free-form query syntax.
+    - Generic JSONPath or arbitrary SQL filters add implementation cost and security risk. Permit
+      only fields that have real indexes such as `state`, `updated_after`, `created_before`,
+      `owner_id`, `job_type`, and `retryable`. Let repeated complex conditions be saved server-side
+      as a `filter_id`, and echo the normalized applied filter in the response so agents cannot
+      misunderstand their own condition.
+35. Use signed stable cursors instead of offset pagination.
+    - `page=17` or `offset=1600` duplicates and drops rows as data changes. Encode the sort key,
+      unique id, and query-time boundary into an opaque server-signed cursor, sort by a tie-breaker
+      such as `updated_at` plus `job_id` rather than one timestamp, and expose only `next_cursor` to
+      agents instead of the internal structure.
+36. Provide change-sync instead of full re-list.
+    - Agents should not re-fetch jobs they have already seen. Offer a `changes?after={cursor}`
+      feed, attach `ETag` to individual resources and honor `If-None-Match` with `304 Not Modified`
+      when nothing changed, and support batch lookup by job id array plus an event feed when
+      watching many jobs. This alone cuts call volume sharply.
+37. Include a response budget in the API contract.
+    - Let callers set `max_items`, `max_bytes`, `max_log_lines`, `include_total`, and `verbosity`.
+      When a budget is exceeded, stop at a record boundary — never mid-string — and return
+      `truncated`, `next_cursor`, and `omitted_fields`. For aggregate questions such as failed-job
+      counts, return the number and representative samples from an aggregate endpoint instead of
+      one thousand job rows; dumping raw data and making agents summarize is the most expensive
+      shape of all.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -245,6 +285,8 @@ or Slack-thread failure semantics?"
 - The API expresses caller intent rather than internal implementation sequence.
 - Ordering requirements, lifecycle states, side effects, retries, idempotency, async completion,
   permission modes, cacheability, pagination, filtering, sorting, and deprecation rules are explicit.
+- Summary-versus-detail views, validated field selection, bounded expansion, indexable filters,
+  change-sync and ETag behavior, and response budgets resist caller and agent token waste.
 - Parameter shapes, option objects, null semantics, DTO boundaries, time values, money values, enums,
   errors, bulk results, and job states resist common caller mistakes.
 - Internal and external API needs are separated or intentionally aligned with compatibility evidence.

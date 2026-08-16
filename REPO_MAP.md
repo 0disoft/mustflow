@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 339
+anchor_count: 340
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:88a1ba39ee860d084f85b519967f255bdb544a58fcc876ef284fda6e753ec9e8"
+source_fingerprint: "sha256:2422c3f582417fc6b176ef0de83b32bfa1a3b1657548d13bc589459386f9ace8"
 ---
 
 # REPO_MAP.md
@@ -80,6 +80,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/agent-facing-interface-review/
 
 - `.mustflow/skills/agent-facing-interface-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/agent-job-control-review/
+
+- `.mustflow/skills/agent-job-control-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/agent-memory-context-governance-review/
 

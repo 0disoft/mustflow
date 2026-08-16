@@ -62,13 +62,19 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 338
+revision = 339
+translations = {}
+
+[documents."skill.agent-job-control-review"]
+source = "locales/en/.mustflow/skills/agent-job-control-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.agent-facing-interface-review"]
 source = "locales/en/.mustflow/skills/agent-facing-interface-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.infrastructure-access-review"]
@@ -362,7 +368,7 @@ translations = {}
 [documents."skill.api-misuse-resistance-review"]
 source = "locales/en/.mustflow/skills/api-misuse-resistance-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.third-party-api-integration-review"]
@@ -386,7 +392,7 @@ translations = {}
 [documents."skill.error-message-integrity-review"]
 source = "locales/en/.mustflow/skills/error-message-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.memory-lifetime-review"]
@@ -1225,7 +1231,7 @@ translations = {}
 [documents."skill.cli-output-contract-review"]
 source = "locales/en/.mustflow/skills/cli-output-contract-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.completion-evidence-gate"]

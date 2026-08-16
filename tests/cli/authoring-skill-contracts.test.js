@@ -918,6 +918,8 @@ test('agent-facing interface review keeps CLI and API surfaces self-describing f
 	assert.match(localSkill, /acceptance-path latency, not completion time/u);
 	assert.match(localSkill, /transactional outbox/u);
 	assert.match(localSkill, /p95 and p99, not averages/u);
+	assert.match(localSkill, /confirmation token that names the target/u);
+	assert.match(localSkill, /freezing the resolved id before the change/u);
 	assert.match(index, /agent-facing-interface-review/u);
 	assert.match(
 		routes,
@@ -927,5 +929,5 @@ test('agent-facing interface review keeps CLI and API surfaces self-describing f
 	assert.match(manifest, /"\.mustflow\/skills\/agent-facing-interface-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-facing-interface-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName, 2);
 });

@@ -1593,6 +1593,18 @@ positive_terms = ["agent-output-mode", "capability-check", "capability-endpoint"
 negative_terms = ["human-help-only", "json-output-only", "option-parsing-only", "schema-compat-only"]
 concept_aliases = ["기능 발견 진입점", "기능 ID", "다음 명령 제안", "단일 원본 생성", "자기 설명 API", "작업 중심 명령 색인", "에이전트 출력 모드"]
 
+[routes."agent-job-control-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 73
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."agent-job-control-review".contexts]
+positive_terms = ["allowed-actions", "cancel-requested", "command-id", "event-cursor", "execution-epoch", "fencing-token", "idempotency-key", "job-attempt-separation", "job-command", "job-state-machine", "lease-expiry", "pause-requested", "reconciler", "resume-from-checkpoint"]
+negative_terms = ["agent-runtime-loop", "generic-crud-api", "queue-mechanics-only", "workflow-orchestration-only"]
+concept_aliases = ["작업 명령 API", "작업 상태 머신", "작업-시도 분리", "이벤트 커서", "재개 체크포인트", "페닝 토큰", "허용 행동 응답"]
+
 [routes."agent-planning-recovery-review"]
 category = "general_code"
 route_type = "primary"

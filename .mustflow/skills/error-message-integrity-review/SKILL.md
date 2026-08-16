@@ -2,11 +2,11 @@
 mustflow_doc: skill.error-message-integrity-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: error-message-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and error messages, error codes, validation errors, parse errors, API or CLI error envelopes, public user-facing errors, logs, structured diagnostics, exception wrapping, provider errors, retryability, idempotency errors, queue or batch failures, partial failures, permission errors, conflict errors, impossible-state errors, security redaction, support-facing IDs, monitoring fields, or troubleshooting text need review for actionability, recoverability, observability, stable contracts, and safe disclosure.
+description: Apply this skill when code is created, changed, reviewed, or reported and error messages, error codes, validation errors, parse errors, API or CLI error envelopes, public user-facing errors, logs, structured diagnostics, exception wrapping, provider errors, retryability, side-effect state, next-action candidates, recovery identifiers, idempotency errors, queue or batch failures, partial failures, permission errors, conflict errors, impossible-state errors, security redaction, support-facing IDs, monitoring fields, or troubleshooting text need review for actionability, recoverability, observability, stable contracts, and safe disclosure.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -325,6 +325,43 @@ must not be leaked?"
     - Collect host process logs, network flows, DNS queries, IdP authentication, cloud API calls,
       and storage access from separate administrative domains as independent witnesses, and plant
       decoy accounts, secrets, and files that alert on any use.
+47. Classify error codes by recovery action, not exception class.
+    - `NullPointerException`, `DatabaseError`, and `InternalError` do not tell a caller or agent
+      what to do next. Use codes that bind cause to action such as `AUTH_EXPIRED`,
+      `PERMISSION_DENIED`, `RATE_LIMITED`, `RESOURCE_CONFLICT`, `INPUT_INVALID`,
+      `DEPENDENCY_UNAVAILABLE`, and `JOB_ALREADY_RUNNING`. Keep internal exceptions in server logs
+      and return the stable code on the external contract.
+48. Make retryability explicit instead of guessable.
+    - Do not make agents infer retry from prose. Return a machine retry policy: `retryable`,
+      `retryAfterMs`, `maxRecommendedAttempts`, `backoff`, and `retryScope` such as `same_request`,
+      `new_authentication`, or `switch_to_lookup`. Distinguish resending the same request from
+      re-authenticating or switching to a status query.
+49. Report the side-effect state of a failed request.
+    - The hardest case for an agent is not that a request failed but whether any change was applied.
+      For payment, file move, deploy, and account creation, return `notApplied`, `fullyApplied`,
+      `partiallyApplied`, or `commitUnknown`, plus the applied resource ids and failed stage. On
+      `commitUnknown`, direct the next action to a lookup command or idempotency-key reuse, never to
+      blind resend that can duplicate payment or creation.
+50. Provide structured next-action candidates instead of prose.
+    - `try again later` cannot drive agent control. Return structured candidates such as
+      `nextActions` with `action`, `priority`, `requiresConfirmation`, `afterMs`, and
+      `reuseIdempotencyKey` so the agent can select by priority and condition, and only risky
+      actions such as delete or payment ask for user confirmation.
+51. Include a cause chain and the reasoning behind the top error.
+    - One top-level error forces agents to search logs for the real cause. Provide a `causes`
+      array ordered from the failed stage, dependency service, observed state, and related resource
+      down to the root, each with a stable code and short description, stripped of stack traces,
+      tokens, raw SQL, and internal addresses.
+52. Return the state snapshot at failure time.
+    - Agents need current state, not only the cause, to choose the next action. Include
+      `resourceId`, `resourceVersion`, `currentState`, `quotaRemaining`, and `failedStage` when
+      relevant, so an already-rolling-back deploy is not rolled back again and a stale version does
+      not overwrite a changed resource.
+53. Provide recovery identifiers for resume and duplicate prevention.
+    - Long-running work must not restart from scratch after a mid-run failure. Include
+      `operationId`, `jobId`, `idempotencyKey`, `checkpoint`, and `resumeToken` in error responses
+      so the agent can decide between `job status`, `job resume`, and `job retry`. An error without
+      recovery identifiers effectively disables automatic recovery.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -339,6 +376,8 @@ must not be leaked?"
   are checked so disclosure boundaries survive beyond the handler.
 - Causes, retryability, idempotency, provider details, parse location, range bounds, time basis,
   conflict facts, attempts, and partial failure state are preserved where relevant.
+- Side-effect state, structured next-action candidates, failure-time state snapshots, and recovery
+  identifiers let an agent or caller choose the next safe action without guessing.
 
 <!-- mustflow-section: verification -->
 ## Verification
