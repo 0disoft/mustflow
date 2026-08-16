@@ -9,7 +9,7 @@ locale = "en"
 [files."AGENTS.md"]
 source = "template_locale"
 last_action = "customized"
-content_hash = "sha256:8fcddd1b5653237d951dc81ec700960dbafbd6af2b76d6c9b1c1ff0561daeb85"
+content_hash = "sha256:1539181eb11508079944e908972f91c5b3c103a537177f32eb6956293eb0e461"
 
 [files.".mustflow/config/commands.toml"]
 source = "repository"
@@ -29,7 +29,7 @@ content_hash = "sha256:e6573681f253de7abfe27ce29200534554d6a96e338f5c9a2261b3998
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:2c1a634c6ecc32319be19e51b0f2d6ed5489537b6d06e101ced575bfc46c6fe3"
+content_hash = "sha256:f325a1fc9ab43bb9a41b3326a417168c36067074799bfa65591bce4c8851f40d"
 
 [files.".mustflow/context/PROJECT.md"]
 source = "template_common"

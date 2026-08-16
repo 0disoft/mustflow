@@ -158,10 +158,11 @@ When the effective rule is unclear, stop and report the conflict instead of gues
 
 ## Instruction Refresh Checkpoints
 
-- In long sessions, reread mustflow instructions before the first edit, before command execution
-  when the current command intent does not already have a fresh command refresh, after context
-  compaction, after changing `AGENTS.md` or `.mustflow/**`, after switching project roots, and
-  before writing the final report.
+- Refresh mustflow instructions only when the instruction surface actually changed or context was
+  compacted: after a change to `AGENTS.md` or `.mustflow/**`, after switching project roots, or
+  after compaction. The first edit and command execution of a task start from the instructions
+  already loaded at task start; do not re-read the full instruction set before every edit, command,
+  or final report.
 - Use the `[refresh]` policy in `.mustflow/config/mustflow.toml` to decide whether a light, a
   command, a skill, or a full refresh is needed.
 - Do not store conversation turn counts or session activity in project files. Session refresh state

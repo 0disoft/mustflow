@@ -206,7 +206,6 @@ required_at = [
   "after_instruction_file_change",
   "root_change",
   "after_compaction",
-  "before_final_report",
 ]
 turn_threshold = 8
 tool_call_threshold = 16
@@ -217,7 +216,6 @@ state_store = "cache"
 method = "hash_check"
 read = [
   "AGENTS.md",
-  ".mustflow/docs/agent-workflow.md",
 ]
 
 [refresh.levels.command]
@@ -232,7 +230,6 @@ method = "reread_if_changed"
 read = [
   "AGENTS.md",
   ".mustflow/config/mustflow.toml",
-  ".mustflow/docs/agent-workflow.md",
 ]
 
 [refresh.levels.report]

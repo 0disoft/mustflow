@@ -93,7 +93,11 @@ source = "git.commit_message"
 [release.versioning]
 impact_check = true
 suggest_bump = true
-auto_bump = true
+# This repository bumps versions once per release, not per change: keep
+# impact_check and suggest_bump on so `mf impact` still reports the pending
+# release delta, but do not auto-apply a patch bump on every code change.
+# The generic typed release plan (release_plan_*) owns the release-time bump.
+auto_bump = false
 require_user_confirmation = false
 sync_template_version = true
 sync_docs_examples = true
