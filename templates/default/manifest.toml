@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.131.4"
+version = "2.131.5"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -64,6 +64,8 @@ creates = [
   ".mustflow/skills/auth-state-resilience-review/SKILL.md",
   ".mustflow/skills/authentication-design-review/SKILL.md",
   ".mustflow/skills/authorization-model-review/SKILL.md",
+  ".mustflow/skills/trust-boundary-review/SKILL.md",
+  ".mustflow/skills/cryptographic-storage-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md",
   ".mustflow/skills/error-message-integrity-review/SKILL.md",
@@ -422,6 +424,8 @@ minimal = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -647,6 +651,8 @@ patterns = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -883,6 +889,8 @@ oss = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1141,6 +1149,8 @@ team = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1398,6 +1408,8 @@ product = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1664,6 +1676,8 @@ library = [
   "auth-state-resilience-review",
   "authentication-design-review",
   "authorization-model-review",
+  "trust-boundary-review",
+  "cryptographic-storage-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",

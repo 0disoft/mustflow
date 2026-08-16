@@ -62,7 +62,19 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 330
+revision = 332
+translations = {}
+
+[documents."skill.trust-boundary-review"]
+source = "locales/en/.mustflow/skills/trust-boundary-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.cryptographic-storage-review"]
+source = "locales/en/.mustflow/skills/cryptographic-storage-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.authorization-model-review"]
@@ -338,7 +350,7 @@ translations = {}
 [documents."skill.error-message-integrity-review"]
 source = "locales/en/.mustflow/skills/error-message-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.memory-lifetime-review"]
@@ -680,7 +692,7 @@ translations = {}
 [documents."skill.idempotency-integrity-review"]
 source = "locales/en/.mustflow/skills/idempotency-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 4
+revision = 5
 translations = {}
 
 [documents."skill.retry-policy-integrity-review"]
@@ -752,7 +764,7 @@ translations = {}
 [documents."skill.deletion-lifecycle-review"]
 source = "locales/en/.mustflow/skills/deletion-lifecycle-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 [documents."skill.database-lock-contention-review"]
 source = "locales/en/.mustflow/skills/database-lock-contention-review/SKILL.md"
@@ -769,7 +781,7 @@ translations = {}
 [documents."skill.postgresql-code-change"]
 source = "locales/en/.mustflow/skills/postgresql-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.postgresql-code-change.postgresql-18-operations-checklist"]

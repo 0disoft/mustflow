@@ -2,7 +2,7 @@
 mustflow_doc: skill.postgresql-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: postgresql-code-change
@@ -106,6 +106,38 @@ PostgreSQL is not just "SQL with more features." Most production damage comes fr
 21. Check backup and restore. A useful restore includes roles, owners, privileges, extensions, schemas, sequences, RLS policies, data, jobs, and application smoke behavior. Do not treat app-level exports or ad hoc selects as a PostgreSQL backup.
 22. Check replication and read replicas. Reads from replicas may be stale. Failover can break session state, advisory locks, prepared statements, and connection pools. Name freshness and failover assumptions when reads or jobs use replicas.
 23. Select verification from the command contract. Use configured test, build, docs, release, and mustflow intents only; report missing PostgreSQL-specific verification instead of inventing raw database commands.
+24. Split accounts by execution principal, not only by service.
+    - One service may run an API server, async workers, settlement batches, admin tools, and
+      analytics jobs with different rights. A billing-api and billing-exporter sharing one account
+      lets a read-only analytics job modify payment data.
+    - Create a login role per deployment unit and grant only the actual tables, columns, and
+      operations each principal needs, keeping reads and writes separate.
+25. Account for privilege accumulation and default privileges.
+    - PostgreSQL effective privileges are the union of direct grants, inherited role grants, and
+      `PUBLIC` grants; one `REVOKE` does not override another grant path. Audit role membership,
+      schema privileges, and function execution rights, not only table grants.
+    - `ALTER DEFAULT PRIVILEGES` applies per creating role and is not retroactive, so a changed
+      migration role can suddenly expose new tables broadly.
+26. Harden RLS against bypasses and policy combination.
+    - Never give the runtime role `BYPASSRLS`; apply `FORCE ROW LEVEL SECURITY` where needed.
+      `USING` alone leaves inserts and updates open to other tenants' values, so add `WITH CHECK`.
+    - Multiple permissive policies combine with OR, so one temporary support policy can void the
+      others; use restrictive policies for hard caps, revoke `TRUNCATE` from the runtime role, and
+      inject tenant values with `SET LOCAL` per transaction in pools, denying when absent.
+27. Refuse direct cross-service table access and harden SECURITY DEFINER.
+    - Services share through APIs, events, or service-owned read models. When legacy SQL access is
+      unavoidable, expose projected views instead of granting source tables.
+    - When a function must elevate privileges, use a dedicated least-privilege owner and remove
+      writable schemas from its `search_path` so attackers cannot substitute same-named functions
+      or operators under the owner's authority.
+28. Automate denial tests and catalog audits.
+    - After deploy, verify each service account can read its own tables and fails on other
+      services' tables, schemas, functions, and sequences.
+    - Periodically collect `PUBLIC` grants, role inheritance, table owners, `BYPASSRLS`,
+      `SECURITY DEFINER`, and default-privilege changes from system catalogs and compare against
+      the expected policy; restrict connections to the workload network with short-lived
+      credentials or client certificates, and keep emergency admin accounts out of application
+      config behind separate approval and audit.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

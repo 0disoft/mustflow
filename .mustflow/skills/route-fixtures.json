@@ -1785,6 +1785,46 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "trust-boundary-review",
+      "task": "Review trust boundaries and data minimization for the internal service architecture",
+      "paths": [
+        "src/arch/trust.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "trust-boundary-review"
+      ],
+      "required_adjuncts": [
+        "trust-boundary-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "cryptographic-storage-review",
+      "task": "Review field encryption, envelope encryption, and key management for sensitive data",
+      "paths": [
+        "src/crypto/store.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cryptographic-storage-review"
+      ],
+      "required_adjuncts": [
+        "cryptographic-storage-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

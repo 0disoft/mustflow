@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:f7cbd7a1c0da3004b5881bc350457eb03fec1238ca52afa854c7539fb93b49d6",
+  "source_fingerprint": "sha256:f73103cdbf9d685ecad06cb923f94849203a2e45bcab3389727a2de125bf0508",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -3688,6 +3688,67 @@
         "changes_status",
         "changes_diff_summary",
         "test_related",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "cryptographic-storage-review",
+      "skill_path": ".mustflow/skills/cryptographic-storage-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 79,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "docs_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "aead",
+        "at rest encryption",
+        "cryptographic storage",
+        "deks",
+        "envelope encryption",
+        "field encryption",
+        "kek",
+        "key management",
+        "tde",
+        "transport encryption",
+        "봉투 암호화",
+        "암호화 저장",
+        "전송 암호화",
+        "키 관리",
+        "필드 암호화"
+      ],
+      "negative_signals": [
+        "password hashing only",
+        "tls config only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when storage protection needs review for encryption at rest, transport encryption, field-level encryption, envelope encryption, DEK and KEK separation, key management and rotation, KMS or HSM custody, AEAD and authenticated encryption, AAD binding, password hashing versus reversible encryption, TOTP secret encryption, payment card data handling, HMAC lookup indexes, deterministic encryption, lazy re-encryption, or encryption key backup and recovery.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -12317,6 +12378,68 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "trust-boundary-review",
+      "skill_path": ".mustflow/skills/trust-boundary-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 78,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "blast radius",
+        "breach scope",
+        "control plane",
+        "data minimization",
+        "data plane",
+        "service account separation",
+        "trust boundary",
+        "workload identity",
+        "zero trust",
+        "신뢰 경계",
+        "워크로드 신원",
+        "제로 트러스트",
+        "제어 플레인",
+        "침해 범위 최소화"
+      ],
+      "negative_signals": [
+        "api authorization only",
+        "network firewall only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when security design needs trust boundaries defined or reviewed across users and APIs, internal services and queue consumers, tenants, control and data planes, personal, authentication, and payment data domains, originals and logs, backups, caches, queues, or ciphertext and keys, including zero-trust architecture, workload identity, per-service credentials, data minimization, breach blast-radius minimization, short-lived credentials, mass query and export controls, or egress allowlists.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

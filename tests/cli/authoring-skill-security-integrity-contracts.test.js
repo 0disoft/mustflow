@@ -404,7 +404,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 3/u);
 });
 
 test('api misuse resistance review keeps caller contracts hard to misuse', () => {
@@ -741,6 +741,61 @@ test('authorization model review grounds RBAC, ABAC, and ReBAC selection in the 
 	assert.match(manifest, /"\.mustflow\/skills\/authorization-model-review\/SKILL\.md"/u);
 	assert.match(manifest, /"authorization-model-review"/u);
 	assertI18nSkillDocument(i18n, 'authorization-model-review', 1);
+});
+
+test('trust boundary review cuts implicit trust at identity, permission, and key changes', () => {
+	const localSkill = readText('.mustflow/skills/trust-boundary-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/trust-boundary-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Define trust boundaries by what changes, not by network topology/u);
+	assert.match(localSkill, /workload identity/u);
+	assert.match(localSkill, /data plane from the control plane/u);
+	assert.match(localSkill, /Minimize breach scope by not collecting/u);
+	assert.match(localSkill, /keys as breach-scope boundaries/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/trust-boundary-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."trust-boundary-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/trust-boundary-review\/SKILL\.md"/u);
+	assert.match(manifest, /"trust-boundary-review"/u);
+	assertI18nSkillDocument(i18n, 'trust-boundary-review', 1);
+});
+
+test('cryptographic storage review separates at-rest, transport, and field encryption', () => {
+	const localSkill = readText('.mustflow/skills/cryptographic-storage-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/cryptographic-storage-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Name the attacker each layer stops before choosing algorithms/u);
+	assert.match(localSkill, /Locate where plaintext appears/u);
+	assert.match(localSkill, /envelope encryption/u);
+	assert.match(localSkill, /keyed-HMAC lookup index/u);
+	assert.match(localSkill, /AEAD mode such as AES-GCM/u);
+	assert.match(localSkill, /[Nn]ever fall back to plaintext storage when KMS is unavailable/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/cryptographic-storage-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."cryptographic-storage-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/cryptographic-storage-review\/SKILL\.md"/u);
+	assert.match(manifest, /"cryptographic-storage-review"/u);
+	assertI18nSkillDocument(i18n, 'cryptographic-storage-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

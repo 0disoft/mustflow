@@ -2,7 +2,7 @@
 mustflow_doc: skill.deletion-lifecycle-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: deletion-lifecycle-review
@@ -129,6 +129,38 @@ The review question is: "Which kind of deletion is this, who can reverse it, wha
    - Keep deletion audit append-only and separate from rows that may be purged.
    - Log decisions, actor, request id, result, and reason codes without copying full personal data into audit logs.
    - Redact or hash sensitive identifiers when audit evidence does not require raw values.
+10. Fence writes before deleting.
+    - While deletion runs, login refresh, payment webhooks, recommendation batches, and email sync
+      can recreate data. On request approval, move the account to `deletion_pending`, revoke
+      sessions and tokens, and block new writes and event publication.
+    - Async consumers discard messages whose version is older than the deletion tombstone, so a
+      stale queue message cannot resurrect the account after the deletion job reports success.
+11. Run deletion as a state machine with receipts, not one distributed transaction.
+    - Do not try to delete every database and external provider in one HTTP request. Issue a
+      `deletion_request_id` and deliver idempotent deletion commands through the outbox; each target
+      returns a receipt with system, data kind, deletion or separated-retention method, time,
+      deleted count, and error.
+    - When some targets fail, retry only the failed targets, and emit completion only after every
+      target's receipt has arrived.
+12. Distinguish physical replicas from derived stores.
+    - Physical read replicas follow the primary's deletion, but replication lag must block that
+      user's reads meanwhile. CDC-derived search indexes, warehouses, feature and embedding stores,
+      export files, and analytics Parquet are independent copies needing their own deletion
+      consumers; caches need tag or inverse-index batch invalidation, not only exact key deletes.
+    - Notify external processors and other controllers and collect their deletion results.
+13. Isolate backups from use and reapply the deletion ledger on restore.
+    - Do not rewrite immutable backup files per request; keep backup copies fully out of normal
+      query and analytics paths and overwrite or destroy them at the end of the retention period.
+    - On restore, reapply every deletion ledger entry and tombstone created after the backup before
+      opening services. For high-risk data, use per-user or per-tenant data encryption keys and
+      destroy the key (cryptographic erase) so the ciphertext cannot be recovered.
+14. Judge deletion by rediscovery failure, not command success.
+    - After every system returns 200 OK, re-query the primary, read replicas, search, cache, object
+      storage, queues, DLQ, analytics stores, and external processors by the same identifier, and
+      make restore drills prove deleted users do not come back.
+    - Run periodic canary users whose data is written to every path and then deleted. Deletion
+      audit records carry request id, policy version, target systems, and results, never copies of
+      the original email or phone number.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

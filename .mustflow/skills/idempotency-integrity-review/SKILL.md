@@ -2,7 +2,7 @@
 mustflow_doc: skill.idempotency-integrity-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: idempotency-integrity-review
@@ -187,6 +187,33 @@ deduplicates the operation or rejects the stale result?"
 25. Require duplicate, ordering, and stale-write evidence.
     - Good tests include same request twice, concurrent duplicate requests, duplicate key with changed payload, later aggregate version before an earlier version, a missing-version gap, two attempts reading one authority, stale completion after a new generation or owner, first response lost, external success followed by DB failure, DB success followed by response failure, webhook replay, consumer commit followed by ack failure, batch rerun, and processing-stuck recovery.
     - If deterministic proof is not configured, report static risk and missing manual or integration evidence instead of approving the path.
+26. Enforce business invariants in the database, not only in service code.
+    - Validation in service code is bypassed once admin tools, batch jobs, migrations, or message
+      consumers write through other paths. Use `NOT NULL`, `CHECK`, `UNIQUE`, and `FOREIGN KEY` so
+      wrong data is rejected at storage time.
+    - On tenant tables, include the tenant in composite constraints such as
+      `UNIQUE (tenant_id, external_order_id)` and `FOREIGN KEY (tenant_id, order_id)`. Remember
+      nullable `UNIQUE` columns allow multiple NULLs by default; choose `NULLS NOT DISTINCT` or a
+      partial unique index when duplicates must be blocked.
+27. Decide when multi-store results become visible.
+    - When writing to a database, object storage, and a search index, do not expect all three to
+      succeed at once. Store large or composite results as immutable versions, then atomically swap
+      a manifest or current-version pointer in the database once every component is ready, so
+      readers only see committed generations.
+    - For independent service databases, use an explicit state machine with compensation and make
+      failed steps safe to re-run.
+28. Make consistency checking a product feature.
+    - Continuously compare ledger sums with current balances, business tables with outbox, publish
+      records with consumer inbox, and originals with search indexes at tenant or partition
+      granularity; compare totals, last sequences, and normalized hashes, not only row counts.
+    - On mismatch, isolate the partition and replay from the ledger or a verified source instead of
+      auto-overwriting, and give the repair itself an idempotency key and audit record.
+29. Preserve important values as change ledgers with keys outside the store.
+    - Credit, balance, stock, and permission-escalation history need append-only ledgers with
+      change amount, cause, actor, target, previous version, and sequence; current values are
+      derived or verified materialized state.
+    - An HMAC or signing key stored in the same database can be replayed by an attacker who rewrites
+      both; keep it outside the store and pin periodic digests in a separate read-only store.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

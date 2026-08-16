@@ -32,7 +32,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 4$/mu);
+	assert.match(localSkill, /^revision: 5$/mu);
 	assert.match(localSkill, /operation identity plus state-validity integrity/u);
 	assert.match(localSkill, /Operation identity ledger/u);
 	assert.match(localSkill, /Workflow identity ledger/u);
@@ -109,7 +109,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 4/u);
+	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 5/u);
 });
 
 test('queue processing integrity review catches message settlement traps', () => {

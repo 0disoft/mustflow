@@ -2,7 +2,7 @@
 mustflow_doc: skill.error-message-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: error-message-integrity-review
@@ -268,6 +268,32 @@ must not be leaked?"
       methods, upstream timeouts, and database failures through the real path, and assert that
       responses and headers contain no stack traces, internal paths, SQL, hostnames, versions, or
       debug information.
+38. Treat URLs, headers, and exception objects as separate leak paths.
+    - Reset tokens or invite codes in query strings survive application-log masking in CDN, load
+      balancer, web server, and APM logs. Mask `Authorization`, `Cookie`, `Set-Cookie`, and
+      `X-API-Key` by default, and never serialize the full request object or SQL bindings in
+      exception handlers.
+    - Do not log raw external API error responses; the upstream may include personal data or
+      credentials.
+39. Use keyed correlation identifiers in logs, not recoverable hashes.
+    - Email, phone, and session tokens in logs force rewriting every index and archive when a
+      deletion request arrives. Plain `SHA-256` of a predictable user id is not anonymization.
+    - Use a purpose-specific keyed HMAC or a separate short-lived correlation id, and keep the key
+      and mapping table separate from the log system.
+40. Treat backups as more locked than production data.
+    - Backups contain pre-deletion records, old permissions, past credentials, and temporary tables.
+      Store them under a separate account and vault with a separate KMS key, a restore-only role,
+      access audit, and immutable retention.
+    - Set retention per data class before locking, because an eternal WORM lock can block deletion
+      obligations.
+41. Treat cache, queue, and DLQ copies as data at risk.
+    - Redis can persist to RDB or AOF and propagate to replicas and backups, so cached sessions,
+      OTPs, and personal data become durable data. Namespace keys per workload, restrict ACL users
+      by key prefix, and keep authentication data on a separate instance.
+    - Event payloads should carry subject id, kind, and version rather than the full user object.
+      Failed messages linger longer in the DLQ where operators read them, and reprocessing can push
+      deleted data back; consumers must check deletion tombstones before applying old messages, and
+      queue and DLQ retention is capped by the shorter of processing need and privacy policy.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

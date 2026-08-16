@@ -2161,6 +2161,30 @@ positive_terms = ["abac", "attribute-based-access-control", "authorization-model
 negative_terms = ["api-authorization-only", "permission-implementation-only"]
 concept_aliases = ["ABAC", "RBAC", "ReBAC", "권한 모델 선택", "역할 폭발"]
 
+[routes."trust-boundary-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 78
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."trust-boundary-review".contexts]
+positive_terms = ["blast-radius", "breach-scope", "control-plane", "data-minimization", "data-plane", "service-account-separation", "trust-boundary", "workload-identity", "zero-trust"]
+negative_terms = ["api-authorization-only", "network-firewall-only"]
+concept_aliases = ["제로 트러스트", "제어 플레인", "침해 범위 최소화", "신뢰 경계", "워크로드 신원"]
+
+[routes."cryptographic-storage-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 79
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "release_risk"]
+
+[routes."cryptographic-storage-review".contexts]
+positive_terms = ["aead", "at-rest-encryption", "cryptographic-storage", "deks", "envelope-encryption", "field-encryption", "kek", "key-management", "tde", "transport-encryption"]
+negative_terms = ["password-hashing-only", "tls-config-only"]
+concept_aliases = ["봉투 암호화", "암호화 저장", "전송 암호화", "키 관리", "필드 암호화"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"

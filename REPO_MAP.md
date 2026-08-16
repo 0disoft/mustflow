@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 331
+anchor_count: 333
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:62d140327b411a5978cebbd27025320eacd814da7aa6a20909497ab887260424"
+source_fingerprint: "sha256:dcdf96e234ed1a7e6890f1c15b9161f2bbc5694c239d9b990b02783cd411d9e7"
 ---
 
 # REPO_MAP.md
@@ -352,6 +352,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/cross-platform-filesystem-safety/
 
 - `.mustflow/skills/cross-platform-filesystem-safety/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cryptographic-storage-review/
+
+- `.mustflow/skills/cryptographic-storage-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/css-code-change/
 
@@ -1112,6 +1116,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/transaction-boundary-integrity-review/
 
 - `.mustflow/skills/transaction-boundary-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/trust-boundary-review/
+
+- `.mustflow/skills/trust-boundary-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/two-phase-transition-integrity-review/
 
