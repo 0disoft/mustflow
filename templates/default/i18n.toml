@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 339
+revision = 340
 translations = {}
 
 [documents."skill.agent-job-control-review"]
@@ -1659,10 +1659,16 @@ source_locale = "en"
 revision = 3
 translations = {}
 
+[documents."skill.cache-friendly-context-design-review"]
+source = "locales/en/.mustflow/skills/cache-friendly-context-design-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skill.llm-token-cost-control-review"]
 source = "locales/en/.mustflow/skills/llm-token-cost-control-review/SKILL.md"
 source_locale = "en"
-revision = 7
+revision = 8
 translations = {}
 
 [documents."skill.llm-model-routing-integrity-review"]

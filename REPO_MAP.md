@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 340
+anchor_count: 341
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:2422c3f582417fc6b176ef0de83b32bfa1a3b1657548d13bc589459386f9ace8"
+source_fingerprint: "sha256:008d72c5cea48e3daa34a5e2f5548a1ff333e4c1b7770099e39382b7e3790aa3"
 ---
 
 # REPO_MAP.md
@@ -232,6 +232,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/c-code-change/
 
 - `.mustflow/skills/c-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/cache-friendly-context-design-review/
+
+- `.mustflow/skills/cache-friendly-context-design-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/cache-integrity-review/
 

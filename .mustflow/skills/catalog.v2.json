@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:c8ce622b8374fe1e889af5fda2ef4b91452b1ebae78be4218ca8ba511a10f0b9",
+  "source_fingerprint": "sha256:110ac8da6213be4430fa1107b649467503ec936321487abf3582eb2d2803c045",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2216,6 +2216,73 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "cache-friendly-context-design-review",
+      "skill_path": ".mustflow/skills/cache-friendly-context-design-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 67,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "docs_change",
+        "public_api_change",
+        "data_change",
+        "performance_change",
+        "security_change",
+        "privacy_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "agents md bootloader",
+        "change half life",
+        "context manifest",
+        "context pack",
+        "decision current file",
+        "document index",
+        "git blob summary cache",
+        "prefix manifest",
+        "repo map json",
+        "ssot catalog",
+        "ssot 카탈로그",
+        "stable prefix",
+        "volatile state file",
+        "문서 인덱스",
+        "변경 반감기",
+        "안정 접두부",
+        "에이전트 탐색 경로",
+        "컨텍스트 매니페스트"
+      ],
+      "negative_signals": [
+        "llm request payload only",
+        "provider cache key only",
+        "search product index only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when repository documents, AGENTS.md files, README, design documents, code comments, SSOT catalogs, document indexes, summaries, context manifests, runtime state files, context-pack generators, or agent exploration paths are created, changed, reviewed, or reported and the risk is LLM prompt-cache invalidation, repeated input-token spend, or agents re-reading the whole repository on every task instead of loading a stable prefix plus a small dynamic tail.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -7822,7 +7889,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when LLM API calls, prompt assembly, chat history, RAG context, document metadata, chunk summaries, prompt packing, tool schemas, structured output schemas, model routing, reasoning settings, token budgets, provider prompt caching, app-level response caching, retries, batch or flex processing, predicted outputs, image or file inputs, or LLM cost metrics are created, changed, reviewed, or reported and the risk is token spend or cost-per-success drifting out of control.",
+      "trigger": "Apply this skill when LLM API calls, prompt assembly, chat history, RAG context, document metadata, chunk summaries, prompt packing, tool schemas, structured output schemas, model routing, reasoning settings, token budgets, provider prompt caching, prefix-cache layout, cache families and keys, cache reuse ratios, app-level response caching, retries, batch or flex processing, predicted outputs, image or file inputs, or LLM cost metrics are created, changed, reviewed, or reported and the risk is token spend or cost-per-success drifting out of control.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

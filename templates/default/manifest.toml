@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.133.0"
+version = "2.134.0"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -269,6 +269,7 @@ creates = [
   ".mustflow/skills/prompt-contract-quality-review/SKILL.md",
   ".mustflow/skills/llm-hallucination-control-review/SKILL.md",
   ".mustflow/skills/llm-token-cost-control-review/SKILL.md",
+  ".mustflow/skills/cache-friendly-context-design-review/SKILL.md",
   ".mustflow/skills/llm-response-latency-review/SKILL.md",
   ".mustflow/skills/llm-model-routing-integrity-review/SKILL.md",
   ".mustflow/skills/agent-execution-control-review/SKILL.md",
@@ -577,6 +578,7 @@ minimal = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",
@@ -814,6 +816,7 @@ patterns = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",
@@ -1068,6 +1071,7 @@ oss = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",
@@ -1330,6 +1334,7 @@ team = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",
@@ -1592,6 +1597,7 @@ product = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",
@@ -1876,6 +1882,7 @@ library = [
   "prompt-contract-quality-review",
   "llm-hallucination-control-review",
   "llm-token-cost-control-review",
+  "cache-friendly-context-design-review",
   "llm-response-latency-review",
   "llm-model-routing-integrity-review",
   "agent-execution-control-review",

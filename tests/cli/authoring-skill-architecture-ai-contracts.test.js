@@ -368,6 +368,17 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(localSkill, /agent-execution-control-review/u);
 	assert.match(localSkill, /prompt_cache_audit/u);
 	assert.match(localSkill, /static layout evidence rather than provider billing proof/u);
+	assert.match(localSkill, /prefix cache, not a document cache/u);
+	assert.match(localSkill, /deterministic build step, not ad hoc string joins/u);
+	assert.match(localSkill, /Order blocks by change frequency, low-change first/u);
+	assert.match(localSkill, /Canonicalize serialization byte-for-byte/u);
+	assert.match(localSkill, /Freeze tool definitions and structured-output schemas per release/u);
+	assert.match(localSkill, /stable context packs, not single files/u);
+	assert.match(localSkill, /cache families per work lineage/u);
+	assert.match(localSkill, /Measure reuse ratio and rewrite cost, not just hit-or-miss/u);
+	assert.match(localSkill, /conversation history append-only and compress only at explicit epochs/u);
+	assert.match(localSkill, /Stabilize hot tools and defer rare ones/u);
+	assert.match(localSkill, /cache key as a cohort vector/u);
 	assert.match(localSkill, /input tokens, cached tokens, output tokens, reasoning tokens/u);
 	assert.match(localSkill, /corpus version, index version, source hash/u);
 	assert.match(localSkill, /answer exactness, citation recall, numeric accuracy/u);
@@ -386,7 +397,63 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 7/u);
+	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 8/u);
+});
+
+test('cache friendly context design review keeps repository docs and exploration cheap for agents', () => {
+	const localSkill = readText('.mustflow/skills/cache-friendly-context-design-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/cache-friendly-context-design-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /stable prompt prefix with a\s+small dynamic tail/u);
+	assert.match(localSkill, /Classify every piece of context by change half-life/u);
+	assert.match(localSkill, /Separate tiers physically, not just by heading/u);
+	assert.match(localSkill, /bootloader, not an encyclopedia/u);
+	assert.match(localSkill, /nested `AGENTS\.md` files as deltas, not copies/u);
+	assert.match(localSkill, /Do not use `README\.md` as a live status board/u);
+	assert.match(localSkill, /Split design documents by purpose/u);
+	assert.match(localSkill, /Fix document titles and section order/u);
+	assert.match(localSkill, /context-loading contract/u);
+	assert.match(localSkill, /Serialize every generated document deterministically/u);
+	assert.match(localSkill, /Split documents by the questions agents ask, not by table of contents/u);
+	assert.match(localSkill, /index, cards, and source in three stages/u);
+	assert.match(localSkill, /co-read frequency, not by length/u);
+	assert.match(localSkill, /filenames and document ids as permanent identifiers/u);
+	assert.match(localSkill, /Do not copy common explanations into every file/u);
+	assert.match(localSkill, /Separate current documents from historical material in default search scope/u);
+	assert.match(localSkill, /structured facts over narrative Markdown/u);
+	assert.match(localSkill, /`INDEX\.jsonl` the agent search routing table/u);
+	assert.match(localSkill, /hierarchical summaries from repository to subsystem/u);
+	assert.match(localSkill, /volatile file/u);
+	assert.match(localSkill, /context-pack generator as a first-class repository tool/u);
+	assert.match(localSkill, /source hash, not by date/u);
+	assert.match(localSkill, /comments for repeated LLM reads/u);
+	assert.match(localSkill, /repository map from the build graph, not by hand/u);
+	assert.match(localSkill, /file summaries by Git blob hash, not by path/u);
+	assert.match(localSkill, /Compile the user request into a context manifest before exploring/u);
+	assert.match(localSkill, /Start from the diff and expand one hop at a time/u);
+	assert.match(localSkill, /facts a source and invalidation condition/u);
+	assert.match(localSkill, /symbol-level results, not whole files/u);
+	assert.match(skillIndex, /cache-friendly-context-design-review/u);
+	assert.match(
+		routes,
+		/\[routes\."cache-friendly-context-design-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u,
+	);
+	assert.match(routes, /"agents-md-bootloader", "change-half-life", "context-manifest"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/cache-friendly-context-design-review\/SKILL\.md"/u);
+	assert.match(manifest, /"cache-friendly-context-design-review"/u);
+	assertSkillsIndexRevision(i18n);
+	assertI18nSkillDocument(i18n, 'cache-friendly-context-design-review', 1);
 });
 
 test('LLM model routing review prices accepted outcomes and fails safe on unsupported cases', () => {

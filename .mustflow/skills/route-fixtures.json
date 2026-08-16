@@ -1969,6 +1969,26 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "cache-friendly-context-design-review",
+      "task": "Restructure AGENTS.md and docs so agents load a stable prefix plus a small dynamic tail instead of re-reading the whole repository",
+      "paths": [
+        ".agent/context-pack.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cache-friendly-context-design-review"
+      ],
+      "required_adjuncts": [
+        "cache-friendly-context-design-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

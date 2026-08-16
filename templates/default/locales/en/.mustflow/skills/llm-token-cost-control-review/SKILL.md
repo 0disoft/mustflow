@@ -2,11 +2,11 @@
 mustflow_doc: skill.llm-token-cost-control-review
 locale: en
 canonical: true
-revision: 7
+revision: 8
 lifecycle: mustflow-owned
 authority: procedure
 name: llm-token-cost-control-review
-description: Apply this skill when LLM API calls, prompt assembly, chat history, RAG context, document metadata, chunk summaries, prompt packing, tool schemas, structured output schemas, model routing, reasoning settings, token budgets, provider prompt caching, app-level response caching, retries, batch or flex processing, predicted outputs, image or file inputs, or LLM cost metrics are created, changed, reviewed, or reported and the risk is token spend or cost-per-success drifting out of control.
+description: Apply this skill when LLM API calls, prompt assembly, chat history, RAG context, document metadata, chunk summaries, prompt packing, tool schemas, structured output schemas, model routing, reasoning settings, token budgets, provider prompt caching, prefix-cache layout, cache families and keys, cache reuse ratios, app-level response caching, retries, batch or flex processing, predicted outputs, image or file inputs, or LLM cost metrics are created, changed, reviewed, or reported and the risk is token spend or cost-per-success drifting out of control.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -156,7 +156,63 @@ Review LLM cost as a product and systems contract, not as prompt brevity. A cost
     answer exactness, citation recall, numeric accuracy, constraint violations, and correct refusals.
 27. Instrument cost per success. Track endpoint, model, prompt version, tool version, schema version, corpus version, index version, source hash, input tokens, cached tokens, output tokens, reasoning tokens, retry count, validation failure rate, cache hit rate, and successful-task denominator.
 28. When prompt-cache layout changes, run the configured prompt-cache audit intent if available and treat byte or token estimates as static layout evidence rather than provider billing proof.
-29. Verify with the narrowest configured tests, fixtures, docs validation, release checks, and mustflow validation that cover request assembly, cache keys, budget guards, routing, retry repair, telemetry, and installed skill surfaces.
+29. Treat provider prompt caching as a prefix cache, not a document cache.
+    - Similar content does not help; identical leading tokens do. The optimization target is the
+      position of the first differing token, not the total document length. Providers reuse an
+      exactly matching prefix or an explicit prefix block, so keep large common content in the front
+      of the request and move everything request-specific behind the first change point. Remember
+      that cached tokens still occupy the context window: raise hit rate and reduce read tokens
+      together instead of only shortening the prompt.
+30. Assemble the prefix through a deterministic build step, not ad hoc string joins.
+    - Route tool definitions, global policy, repository rules, relevant design docs, changed files,
+      and the user task through one `buildContext()`-style assembler with a fixed order owned by an
+      explicit manifest such as `context.manifest.json`. Directory traversal and search results must
+      not change the prefix with OS, file creation time, or score ordering.
+31. Order blocks by change frequency, low-change first.
+    - Put org-wide rules, coding principles, security boundaries, tool schemas, and architecture
+      invariants first; put branch, commit SHA, date, user id, task id, diff, test errors, and the
+      user request last. Log-only request ids and times belong in API metadata, not the prompt.
+32. Canonicalize serialization byte-for-byte.
+    - Use LF line endings, UTF-8, one Unicode normalization form, stable sorting of JSON keys and
+      file paths, and fixed trailing-newline and whitespace handling. Sort file search results, tool
+      lists, schema properties, and reference lists. Remove generated tables of contents, run times,
+      and file counts from the stable prefix.
+33. Freeze tool definitions and structured-output schemas per release.
+    - A changed tool description sentence, parameter order, or JSON Schema key order breaks the cache
+      on every request. Keep the shared tool registry at a fixed order and version, and express
+      per-request tool limits as a separate allowlist instead of rewriting the tool array. On
+      providers where tool changes invalidate the system and message caches, treat the whole tool
+      surface as prefix-critical.
+34. Design cache units as stable context packs, not single files.
+    - Bundle root rules, security boundaries, architecture contracts, and common examples into one
+      stable prefix such as `core context v3` that clears the provider's minimum cacheable length
+      (roughly 512 to 4096 tokens depending on provider and model). Do not pad with filler
+      sentences; bundle documents that are actually repeated and cross the threshold.
+35. Use cache families per work lineage instead of one repository-wide cache.
+    - Key a family by repository, work type, tool-set version, and policy version. Implementation,
+      security review, documentation, and database migration need different tools and docs, so keep
+      them in separate families. A cache key never makes different prompts equal; the prefix and the
+      key must both be stable.
+36. Measure reuse ratio and rewrite cost, not just hit-or-miss.
+    - Record `stable_prefix_tokens`, `cached_tokens`, `cache_write_tokens`, `prefix_hash`,
+      `cache_family`, `model`, and `first_changed_block`, and track `cached_tokens /
+      stable_prefix_tokens`. Cache writes are typically more expensive than reads (roughly 1.25x
+      input price versus 0.1x for reads on current OpenAI and Anthropic schemes), so a prefix that
+      is not actually reused should not be cached at all.
+37. Keep conversation history append-only and compress only at explicit epochs.
+    - Do not regenerate a summary every turn or edit past messages; that changes the prefix. Append
+      new messages and start an explicit compression epoch only when the window is full, accepting
+      one cache miss to rebuild a normalized stable prefix that is reused many times.
+38. Stabilize hot tools and defer rare ones.
+    - Keep always-used search, read, and patch tools in the fixed prefix. Load deploy, refund,
+      image-generation, and admin tools later in the request or hand them to a subagent only when the
+      task actually needs them, so their definitions do not invalidate the shared prefix.
+39. Version the cache key as a cohort vector.
+    - Combine stable component versions such as `coding-agent:v4|tools:v12|repo-rules:v8|schema:v3`
+      into one cohort key, adding a session or user scope when long-term memory is in the prefix. A
+      random per-request key loses routing benefits and one global key makes different prefixes
+      compete in one cache group.
+40. Verify with the narrowest configured tests, fixtures, docs validation, release checks, and mustflow validation that cover request assembly, cache keys, budget guards, routing, retry repair, telemetry, and installed skill surfaces.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

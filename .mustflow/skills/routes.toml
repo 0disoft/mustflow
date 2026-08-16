@@ -1542,6 +1542,18 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 positive_terms = ["prompt-cache", "token-budget", "tool-schema", "volatile-context", "provider-cache", "cost-per-success"]
 negative_terms = ["non-llm-cache", "ui-latency-only"]
 
+[routes."cache-friendly-context-design-review"]
+category = "general_code"
+route_type = "adjunct"
+priority = 67
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "public_api_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."cache-friendly-context-design-review".contexts]
+positive_terms = ["agents-md-bootloader", "change-half-life", "context-manifest", "context-pack", "decision-current-file", "document-index", "git-blob-summary-cache", "prefix-manifest", "repo-map-json", "ssot-catalog", "stable-prefix", "volatile-state-file"]
+negative_terms = ["llm-request-payload-only", "provider-cache-key-only", "search-product-index-only"]
+concept_aliases = ["변경 반감기", "문서 인덱스", "안정 접두부", "에이전트 탐색 경로", "컨텍스트 매니페스트", "SSOT 카탈로그"]
+
 [routes."llm-response-latency-review"]
 category = "general_code"
 route_type = "primary"
