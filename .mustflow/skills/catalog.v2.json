@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:d46a63e837978bc2024444b880be0cad5c83bcda3e6313694a9896f9263d7064",
+  "source_fingerprint": "sha256:b47aa1ea3273446184336012f63508dc2fee2efe006fdc986b9a1813bbd0c985",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -755,8 +755,23 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "authorization cache versioning",
+        "jku",
+        "pdp",
+        "pep",
+        "permission matrix",
+        "policy enforcement point",
+        "x5u",
+        "권한 캐시 버전",
+        "권한 행렬 검증",
+        "정책 결정 중앙화",
+        "정책 집행 지점"
+      ],
+      "negative_signals": [
+        "role matrix only",
+        "route guard only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -944,6 +959,67 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "api-version-deprecation-review",
+      "skill_path": ".mustflow/skills/api-version-deprecation-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 76,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "api inventory",
+        "api registry",
+        "api versioning",
+        "api 버전 관리",
+        "deprecated endpoint",
+        "deprecation header",
+        "legacy client",
+        "sunset header",
+        "version negotiation",
+        "구형 클라이언트",
+        "버전 협상",
+        "선셋 헤더",
+        "폐기 예정 엔드포인트"
+      ],
+      "negative_signals": [
+        "dependency version only",
+        "sdk version only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and API versioning or deprecation needs review for API version registries, endpoint inventory, version negotiation, missing or unknown version fallback, per-version security differences, deprecated endpoints, Deprecation or Sunset headers, deprecation state machines, legacy client support, client version tracking, authenticated caller capability tracking, or sunset shutdown of routes, DNS, keys, scopes, or SDKs.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -3190,6 +3266,69 @@
       ]
     },
     {
+      "skill": "credential-token-lifecycle-review",
+      "skill_path": ".mustflow/skills/credential-token-lifecycle-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 79,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "api key hashing",
+        "api key storage",
+        "api 키 저장",
+        "bff",
+        "credential lifecycle",
+        "dpop",
+        "http only cookie",
+        "jwt revocation",
+        "jwt validation",
+        "refresh token family",
+        "refresh token rotation",
+        "step up authentication",
+        "token revocation",
+        "리프레시 토큰 회전",
+        "자격증명 수명",
+        "토큰 수명",
+        "토큰 폐기"
+      ],
+      "negative_signals": [
+        "access control only",
+        "password hashing only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and credential or token lifecycle needs review for API key issuance, key id and secret splitting, API key or refresh-token storage, HMAC or hashed secret persistence, session token design, opaque sessions, JWT issuance and validation rules, token type separation, short access tokens, refresh token rotation and family reuse detection, token revocation, sign-out, denylist or introspection, key rotation, step-up authentication, BFF or HttpOnly cookie storage, DPoP, mTLS or certificate binding, or credential entropy or leakage review.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
       "skill": "credit-ledger-integrity-review",
       "skill_path": ".mustflow/skills/credit-ledger-integrity-review/SKILL.md",
       "category": "general_code",
@@ -4497,8 +4636,27 @@
         "package_metadata_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "apm leak",
+        "debug mode leak",
+        "error envelope",
+        "existence oracle",
+        "information disclosure",
+        "log allowlist",
+        "log injection",
+        "problem json",
+        "rfc 9457",
+        "tracing leak",
+        "디버그 모드 유출",
+        "로그 인젝션",
+        "문제 상세 응답",
+        "정보 유출",
+        "추적 유출"
+      ],
+      "negative_signals": [
+        "log retention only",
+        "prose polish only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -6331,8 +6489,24 @@
         "performance_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "consumer side revalidation",
+        "consumer side validation",
+        "partner response validation",
+        "queue payload schema",
+        "queue payload validation",
+        "stored json revalidation",
+        "webhook payload revalidation",
+        "소비자측 재검증",
+        "웹훅 페이로드 재검증",
+        "저장 json 재검증",
+        "큐 페이로드 검증",
+        "파트너 응답 검증"
+      ],
+      "negative_signals": [
+        "authorization only",
+        "gateway only validation"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -7636,6 +7810,66 @@
         "changes_diff_summary",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "multi-tenant-isolation-review",
+      "skill_path": ".mustflow/skills/multi-tenant-isolation-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 78,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "connection pool tenant leak",
+        "cross tenant attack matrix",
+        "multi tenant isolation",
+        "rls backup",
+        "rls 백업 방어",
+        "tenant context",
+        "tenant namespace",
+        "tenant scoped query",
+        "멀티테넌트 격리",
+        "테넌트 간 공격 행렬",
+        "테넌트 네임스페이스",
+        "테넌트 컨텍스트"
+      ],
+      "negative_signals": [
+        "authz only",
+        "single tenant"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and multi-tenant isolation needs review for tenant context derivation, request-supplied tenant identifiers, organization or workspace membership, composite tenant resource keys, tenant-scoped queries, unique constraints and foreign keys, PostgreSQL RLS, connection-pool tenant leakage, tenant namespaces on cache, session, idempotency, lock, rate-limit, queue, search, storage, temp-file, log, or metric surfaces, async worker or export tenant revalidation, webhook or email tenant mapping, admin or cross-tenant tooling, or cross-tenant denial tests.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -9391,8 +9625,10 @@
         "abuse defense",
         "account creation abuse",
         "api enumeration",
+        "atomic cost reservation",
         "bot traffic",
         "card testing",
+        "cost reservation",
         "credential stuffing",
         "device velocity",
         "distributed low rate abuse",
@@ -9401,8 +9637,11 @@
         "identity graph",
         "impossible request sequence",
         "otp pumping",
+        "quota pre reservation",
+        "quota reservation",
         "rate limit",
         "referral farming",
+        "reserve confirm refund",
         "scraping defense",
         "session replay",
         "sms pumping",
@@ -9412,8 +9651,11 @@
         "계정 생성 어뷰징",
         "다중 신호 차단",
         "분산 저속 어뷰징",
+        "비용 선예약",
         "비정상 트래픽",
         "어뷰징 방어",
+        "원자적 비용 예약",
+        "쿼터 예약",
         "트래픽 남용",
         "트래픽 어뷰징"
       ],
@@ -9429,7 +9671,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.",
+      "trigger": "Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, atomic cost reservation, quota pre-reservation or reserve-confirm-refund accounting, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
@@ -11694,8 +11936,24 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
-      "negative_signals": [],
+      "positive_signals": [
+        "callback ssrf",
+        "content digest",
+        "http message signature",
+        "replay protection",
+        "rfc 9421",
+        "webhook replay",
+        "webhook secret rotation",
+        "webhook signing",
+        "메시지 서명",
+        "웹훅 서명",
+        "웹훅 재전송",
+        "콜백 ssrf"
+      ],
+      "negative_signals": [
+        "rest call only",
+        "sdk call only"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],

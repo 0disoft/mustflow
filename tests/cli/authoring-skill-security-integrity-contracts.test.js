@@ -404,7 +404,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 2/u);
 });
 
 test('api misuse resistance review keeps caller contracts hard to misuse', () => {
@@ -554,7 +554,86 @@ test('api access control review keeps API authorization object scoped', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/api-access-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-access-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 4/u);
+});
+
+test('multi-tenant isolation review binds tenant context from request to database, cache, queue, and storage', () => {
+	const localSkill = readText('.mustflow/skills/multi-tenant-isolation-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/multi-tenant-isolation-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Derive the tenant context from authentication, not from request values/u);
+	assert.match(localSkill, /composite unique constraints and foreign keys/u);
+	assert.match(localSkill, /FORCE ROW LEVEL/u);
+	assert.match(localSkill, /transaction-scoped `set_config`/u);
+	assert.match(localSkill, /cross-tenant attack matrix/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/multi-tenant-isolation-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."multi-tenant-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/multi-tenant-isolation-review\/SKILL\.md"/u);
+	assert.match(manifest, /"multi-tenant-isolation-review"/u);
+	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 1);
+});
+
+test('credential token lifecycle review covers issuance, storage, rotation, revocation, and binding', () => {
+	const localSkill = readText('.mustflow/skills/credential-token-lifecycle-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/credential-token-lifecycle-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Split the public identifier from the secret/u);
+	assert.match(localSkill, /HMAC_SHA256/u);
+	assert.match(localSkill, /localStorage/u);
+	assert.match(localSkill, /revoke the whole\s+token\s+family/u);
+	assert.match(localSkill, /DPoP or\s+mTLS/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."credential-token-lifecycle-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md"/u);
+	assert.match(manifest, /"credential-token-lifecycle-review"/u);
+	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 1);
+});
+
+test('api version deprecation review treats versions as an attack-surface lifecycle', () => {
+	const localSkill = readText('.mustflow/skills/api-version-deprecation-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/api-version-deprecation-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Treat the API list as a deployable asset/u);
+	assert.match(localSkill, /`Sunset` header/u);
+	assert.match(localSkill, /Delete the attack surface at sunset/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/api-version-deprecation-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."api-version-deprecation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/api-version-deprecation-review\/SKILL\.md"/u);
+	assert.match(manifest, /"api-version-deprecation-review"/u);
+	assertI18nSkillDocument(i18n, 'api-version-deprecation-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

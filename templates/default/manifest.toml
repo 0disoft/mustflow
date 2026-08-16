@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.131.0"
+version = "2.131.2"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -57,6 +57,9 @@ creates = [
   ".mustflow/skills/api-misuse-resistance-review/SKILL.md",
   ".mustflow/skills/third-party-api-integration-review/SKILL.md",
   ".mustflow/skills/api-access-control-review/SKILL.md",
+  ".mustflow/skills/multi-tenant-isolation-review/SKILL.md",
+  ".mustflow/skills/credential-token-lifecycle-review/SKILL.md",
+  ".mustflow/skills/api-version-deprecation-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md",
   ".mustflow/skills/error-message-integrity-review/SKILL.md",
@@ -408,6 +411,9 @@ minimal = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -626,6 +632,9 @@ patterns = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -855,6 +864,9 @@ oss = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1106,6 +1118,9 @@ team = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1356,6 +1371,9 @@ product = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1615,6 +1633,9 @@ library = [
   "api-misuse-resistance-review",
   "third-party-api-integration-review",
   "api-access-control-review",
+  "multi-tenant-isolation-review",
+  "credential-token-lifecycle-review",
+  "api-version-deprecation-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",

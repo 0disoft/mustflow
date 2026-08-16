@@ -380,10 +380,10 @@ function readPositiveIntegerEnv(name, fallback) {
 
 function readRelatedConcurrency() {
 	if (process.env.MUSTFLOW_TEST_RELATED_CONCURRENCY) {
-		return readPositiveIntegerEnv('MUSTFLOW_TEST_RELATED_CONCURRENCY', '4');
+		return readPositiveIntegerEnv('MUSTFLOW_TEST_RELATED_CONCURRENCY', '8');
 	}
 
-	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '4');
+	return readPositiveIntegerEnv('MUSTFLOW_TEST_CONCURRENCY', '8');
 }
 
 function readCliConcurrency() {

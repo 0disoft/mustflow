@@ -788,7 +788,7 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '8'\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_RELATED_CONCURRENCY/u);
 	assert.match(cliTestRunner, /function readRelatedConcurrency\(\)/u);
-	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '4'\)/u);
+	assert.match(cliTestRunner, /readPositiveIntegerEnv\('MUSTFLOW_TEST_CONCURRENCY', '8'\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_CLI_CONCURRENCY/u);
 	assert.match(cliTestRunner, /function readCliConcurrency\(\)/u);
 	assert.match(cliTestRunner, /MUSTFLOW_TEST_FULL_CONCURRENCY/u);

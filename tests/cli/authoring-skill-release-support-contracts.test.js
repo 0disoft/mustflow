@@ -76,7 +76,7 @@ test('security skill refinements bind policy receipts and bound upstream respons
 	assert.match(integrationSkill, /private service bindings, internal gateways, signed\s+provider responses/u);
 	assert.match(integrationSkill, /cancellation near the boundary without reading to EOF/u);
 	assertI18nSkillDocument(i18n, 'policy-decision-integrity-review', 3);
-	assertI18nSkillDocument(i18n, 'third-party-api-integration-review', 2);
+	assertI18nSkillDocument(i18n, 'third-party-api-integration-review', 3);
 });
 
 test('skill authoring requires logically scoped and falsifiable procedure contracts', () => {

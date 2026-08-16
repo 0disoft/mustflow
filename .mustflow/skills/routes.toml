@@ -779,6 +779,11 @@ priority = 82
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."third-party-api-integration-review".contexts]
+positive_terms = ["callback-ssrf", "content-digest", "http-message-signature", "replay-protection", "rfc-9421", "webhook-replay", "webhook-secret-rotation", "webhook-signing"]
+negative_terms = ["rest-call-only", "sdk-call-only"]
+concept_aliases = ["메시지 서명", "웹훅 서명", "콜백 SSRF", "웹훅 재전송"]
+
 [routes."http-api-semantics-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -792,6 +797,11 @@ route_type = "adjunct"
 priority = 68
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "docs_change", "package_metadata_change"]
+
+[routes."error-message-integrity-review".contexts]
+positive_terms = ["apm-leak", "debug-mode-leak", "error-envelope", "existence-oracle", "information-disclosure", "log-allowlist", "log-injection", "problem-json", "rfc-9457", "tracing-leak"]
+negative_terms = ["log-retention-only", "prose-polish-only"]
+concept_aliases = ["디버그 모드 유출", "로그 인젝션", "문제 상세 응답", "정보 유출", "추적 유출"]
 
 [routes."memory-lifetime-review"]
 category = "general_code"
@@ -1141,9 +1151,9 @@ selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."rate-limit-integrity-review".contexts]
-positive_terms = ["abuse-defense", "account-creation-abuse", "api-enumeration", "bot-traffic", "card-testing", "credential-stuffing", "device-velocity", "distributed-low-rate-abuse", "free-credit-farming", "graduated-enforcement", "identity-graph", "impossible-request-sequence", "otp-pumping", "rate-limit", "referral-farming", "scraping-defense", "session-replay", "sms-pumping", "traffic-abuse", "upload-bomb", "websocket-flood"]
+positive_terms = ["abuse-defense", "account-creation-abuse", "api-enumeration", "atomic-cost-reservation", "bot-traffic", "card-testing", "cost-reservation", "credential-stuffing", "device-velocity", "distributed-low-rate-abuse", "free-credit-farming", "graduated-enforcement", "identity-graph", "impossible-request-sequence", "otp-pumping", "quota-pre-reservation", "quota-reservation", "rate-limit", "referral-farming", "reserve-confirm-refund", "scraping-defense", "session-replay", "sms-pumping", "traffic-abuse", "upload-bomb", "websocket-flood"]
 negative_terms = ["authorization-only", "billing-only", "client-retry-only", "volumetric-ddos-only"]
-concept_aliases = ["계정 생성 어뷰징", "다중 신호 차단", "분산 저속 어뷰징", "비정상 트래픽", "어뷰징 방어", "트래픽 남용", "트래픽 어뷰징"]
+concept_aliases = ["계정 생성 어뷰징", "다중 신호 차단", "분산 저속 어뷰징", "비용 선예약", "비정상 트래픽", "어뷰징 방어", "원자적 비용 예약", "쿼터 예약", "트래픽 남용", "트래픽 어뷰징"]
 
 [routes."idempotency-integrity-review"]
 category = "general_code"
@@ -2062,6 +2072,47 @@ priority = 77
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."api-access-control-review".contexts]
+positive_terms = ["authorization-cache-versioning", "jku", "pdp", "pep", "permission-matrix", "policy-enforcement-point", "x5u"]
+negative_terms = ["role-matrix-only", "route-guard-only"]
+concept_aliases = ["권한-캐시-버전", "권한-행렬-검증", "정책-결정-중앙화", "정책-집행-지점"]
+
+[routes."multi-tenant-isolation-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 78
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."multi-tenant-isolation-review".contexts]
+positive_terms = ["connection-pool-tenant-leak", "cross-tenant-attack-matrix", "multi-tenant-isolation", "rls-backup", "tenant-context", "tenant-namespace", "tenant-scoped-query"]
+negative_terms = ["authz-only", "single-tenant"]
+concept_aliases = ["RLS 백업 방어", "멀티테넌트 격리", "테넌트 간 공격 행렬", "테넌트 네임스페이스", "테넌트 컨텍스트"]
+
+[routes."credential-token-lifecycle-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 79
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."credential-token-lifecycle-review".contexts]
+positive_terms = ["api-key-hashing", "api-key-storage", "bff", "credential-lifecycle", "dpop", "http-only-cookie", "jwt-revocation", "jwt-validation", "refresh-token-family", "refresh-token-rotation", "step-up-authentication", "token-revocation"]
+negative_terms = ["access-control-only", "password-hashing-only"]
+concept_aliases = ["API 키 저장", "리프레시 토큰 회전", "자격증명 수명", "토큰 폐기", "토큰 수명"]
+
+[routes."api-version-deprecation-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 76
+selection_axis = "task"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."api-version-deprecation-review".contexts]
+positive_terms = ["api-inventory", "api-registry", "api-versioning", "deprecated-endpoint", "deprecation-header", "legacy-client", "sunset-header", "version-negotiation"]
+negative_terms = ["dependency-version-only", "sdk-version-only"]
+concept_aliases = ["API 버전 관리", "구형 클라이언트", "버전 협상", "선셋 헤더", "폐기 예정 엔드포인트"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"
@@ -2082,6 +2133,11 @@ route_type = "adjunct"
 priority = 83
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "performance_change"]
+
+[routes."input-boundary-validation-review".contexts]
+positive_terms = ["consumer-side-revalidation", "consumer-side-validation", "partner-response-validation", "queue-payload-schema", "queue-payload-validation", "stored-json-revalidation", "webhook-payload-revalidation"]
+negative_terms = ["authorization-only", "gateway-only-validation"]
+concept_aliases = ["소비자측 재검증", "웹훅 페이로드 재검증", "저장 JSON 재검증", "큐 페이로드 검증", "파트너 응답 검증"]
 
 [routes."security-flow-review"]
 category = "security_privacy"

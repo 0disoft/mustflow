@@ -1635,6 +1635,70 @@
       "required_candidates": [
         "queue-processing-integrity-review"
       ]
+    },
+    {
+      "id": "multi-tenant-isolation-review",
+      "task": "Review authorization and tenant isolation for the multi-tenant SaaS API",
+      "paths": [
+        "src/tenants/context.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "multi-tenant-isolation-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "multi-tenant-isolation-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "credential-token-lifecycle-review",
+      "task": "Review authorization, API key storage, refresh token rotation, and token revocation",
+      "paths": [
+        "src/auth/tokens.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "credential-token-lifecycle-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "credential-token-lifecycle-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "api-version-deprecation-review",
+      "task": "Review deprecated API versions, version negotiation fallback, and the sunset removal plan",
+      "paths": [
+        "src/api/versions.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-version-deprecation-review"
+      ],
+      "required_adjuncts": [
+        "api-version-deprecation-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

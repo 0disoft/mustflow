@@ -2,7 +2,7 @@
 mustflow_doc: skill.input-boundary-validation-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: input-boundary-validation-review
@@ -229,7 +229,21 @@ attributes, text-node length, regular-expression work, output bytes, and deadlin
 - Bind the authorized decision to the exact canonical identity, source version, schema version, and
   typed operation executed. Revalidation against a different representation is not equivalent.
 
-### 9. Build a boundary-focused test matrix
+### 9. Re-validate at every consumption boundary
+
+- A validated gateway, entry API, or producer does not make internal data permanently safe. Queue
+  messages, webhook payloads, partner responses, long-stored JSON or document columns, imported
+  files, and responses from other services cross a trust boundary again at each consumer.
+- Have every consumer validate with its own schema and typed model before use: field shapes, enums,
+  required fields, unknown-field policy, nested depth, array length, value ranges, and duplicate
+  handling. Never treat a payload as safe because a producer or gateway validated it once.
+- Apply the same hostile-structure budgets downstream: string length, array item count, page size,
+  file size, decompressed size, image pixel count, regular-expression cost, and request execution
+  time. A formally valid but extremely expensive value is still hostile input.
+- Keep the canonical typed identity consistent across hops. If one layer normalized a value and a
+  consumer re-parses a different representation, revalidate the exact value the consumer executes.
+
+### 10. Build a boundary-focused test matrix
 
 Cover applicable pairs and transitions:
 
@@ -250,14 +264,14 @@ Cover applicable pairs and transitions:
 Assert the stable stage and error class, no side effect, and the exact structured sink shape. Do not
 assert only that a generic 400 or exception occurred.
 
-### 10. Implement the narrowest complete correction
+### 11. Implement the narrowest complete correction
 
 Fix the earliest owning layer that can make every downstream consumer observe the same accepted
 value. Synchronize schemas, typed models, safe adapters, uniqueness rules, tests, docs, templates,
 and error contracts that describe that boundary. Do not patch only the last sink while another
 consumer still receives the ambiguous representation.
 
-### 11. Verify each claim
+### 12. Verify each claim
 
 Use the narrowest configured intents that cover the changed decoder, parser, schema, sink adapter,
 tests, documentation, and installed template. Separate directly executed evidence from code-supported

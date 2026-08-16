@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 324
+anchor_count: 327
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:c391b406253e1aa8230664a8be29e331ab6af67e3538a116fc7fca6f62c67fb0"
+source_fingerprint: "sha256:a7faef1d815a07408c11c5863c90ce9b7b2e18c6b7ae3940ceb446908e28ea04"
 ---
 
 # REPO_MAP.md
@@ -128,6 +128,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/api-request-performance-review/
 
 - `.mustflow/skills/api-request-performance-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/api-version-deprecation-review/
+
+- `.mustflow/skills/api-version-deprecation-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/app-startup-performance-review/
 
@@ -316,6 +320,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/crash-consistency-recovery-review/
 
 - `.mustflow/skills/crash-consistency-recovery-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/credential-token-lifecycle-review/
+
+- `.mustflow/skills/credential-token-lifecycle-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/credit-ledger-integrity-review/
 
@@ -712,6 +720,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/multi-agent-work-coordination/
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/multi-tenant-isolation-review/
+
+- `.mustflow/skills/multi-tenant-isolation-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/name-resolution-integrity-review/
 

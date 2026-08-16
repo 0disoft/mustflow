@@ -2,7 +2,7 @@
 mustflow_doc: skill.third-party-api-integration-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: third-party-api-integration-review
@@ -156,6 +156,49 @@ Developers usually suffer when provider complexity is pushed into the consuming 
       bodies, pagination accumulation, and repeated public triggers when applicable. A final
       `body.length` assertion after full buffering is not a resource-safety regression test.
 12. Report provider ambiguity honestly. Name undocumented behavior, doc/SDK mismatch, skipped live checks, missing sandbox evidence, manual console steps, missing idempotency support, missing webhook replay tooling, and remaining operational risk.
+13. Sign the meaning of the whole HTTP message, not only the body.
+    - A signature over the raw body alone lets an attacker replay a valid body to a different path,
+      method, or operation.
+    - Cover the HTTP method, target path, timestamp, content type, and a body digest; prefer
+      standards such as RFC 9421 HTTP Message Signatures with RFC 9530 `Content-Digest` over ad hoc
+      string concatenation rules.
+    - Verify the signature over the original raw bytes before JSON parsing, and compare with a
+      constant-time comparison function. Frameworks that re-serialize or reorder JSON can break
+      raw-body verification.
+14. Distinguish a valid signature from a replayable request.
+    - A signature proves who sent the event, not when it was sent. Include a creation time and
+      expiry inside the signed scope, bound the allowed clock skew, and record the event id or nonce
+      as a unique key in durable storage.
+    - When the same event arrives again, return the normal success response but do not re-run the
+      business side effects. Keep the dedupe record longer than the sender's maximum retry window.
+15. Treat callback URL registration as SSRF defense.
+    - The moment the product fetches a user-supplied webhook or callback URL, it becomes an SSRF
+      primitive.
+    - Accept HTTPS only, normalize scheme, host, and port, apply an allow policy, and block
+      localhost, private ranges, link-local addresses, and cloud metadata addresses. Check DNS
+      resolution and re-check the final destination at connect time, disable or re-verify redirects
+      at every hop, and constrain the sending service's network with egress firewalls.
+    - A URL-ownership challenge response alone does not solve SSRF.
+16. Issue per-subscription secrets and scope events.
+    - Do not share one global webhook secret across customers and endpoints; one leak then
+      compromises everything.
+    - Issue a secret per subscription or endpoint, send a `key_id` with each delivery, restrict the
+      event types and permissions each key may carry, and verify new and old keys briefly during
+      rotation before forcing the old key out. Never put secrets or API keys in URLs.
+17. Validate before enqueueing and reconcile instead of trusting payloads.
+    - Verify size limits, content type, signature, timestamp, and dedupe BEFORE moving a webhook
+      into a durable queue; otherwise an attacker stuffs unsigned or oversized data into queue and
+      storage.
+    - Acknowledge quickly, process in a worker, and use the event id as the idempotency key, binding
+      the data change and the processed marker in one transaction or outbox pattern.
+    - Treat webhook content as a notification, not final truth. For payment, permission, refund, or
+      subscription state, re-fetch the current state from the provider's authenticated query API and
+      reconcile before applying changes.
+18. Use short-lived, caller-bound credentials for server-to-server calls.
+    - Long-lived API keys shared across services make one leak reusable from everywhere.
+    - Give each service a machine identity, minimal scope, and exact audience with short-lived
+      tokens; use mutual TLS with certificate-bound tokens or DPoP so a stolen token string cannot
+      be replayed from another client. IP allowlists are a secondary aid, not caller authentication.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -163,6 +206,8 @@ Developers usually suffer when provider complexity is pushed into the consuming 
 - The integration has explicit auth, environment, timeout, retry, rate-limit, idempotency, pagination, webhook, error, observability, version, and test decisions.
 - Provider-specific behavior is contained at the integration boundary or explicitly classified as a public contract.
 - Failure paths and recovery states are tested, faked, documented, or reported as missing evidence.
+- Message-signing scope, replay and dedupe retention, callback SSRF defense, per-subscription
+  secret isolation, validate-before-enqueue, and caller-bound server credentials are explicit.
 - Secrets and sensitive provider data are not copied into code, fixtures, logs, docs, or reports.
 
 <!-- mustflow-section: verification -->

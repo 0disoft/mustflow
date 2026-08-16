@@ -62,7 +62,25 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 323
+revision = 326
+translations = {}
+
+[documents."skill.multi-tenant-isolation-review"]
+source = "locales/en/.mustflow/skills/multi-tenant-isolation-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.credential-token-lifecycle-review"]
+source = "locales/en/.mustflow/skills/credential-token-lifecycle-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.api-version-deprecation-review"]
+source = "locales/en/.mustflow/skills/api-version-deprecation-review/SKILL.md"
+source_locale = "en"
+revision = 1
 translations = {}
 
 [documents."skill.machine-code-performance-review"]
@@ -278,13 +296,13 @@ translations = {}
 [documents."skill.third-party-api-integration-review"]
 source = "locales/en/.mustflow/skills/third-party-api-integration-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.api-access-control-review"]
 source = "locales/en/.mustflow/skills/api-access-control-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.file-upload-security-review"]
@@ -296,7 +314,7 @@ translations = {}
 [documents."skill.error-message-integrity-review"]
 source = "locales/en/.mustflow/skills/error-message-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.memory-lifetime-review"]
@@ -632,7 +650,7 @@ translations = {}
 [documents."skill.rate-limit-integrity-review"]
 source = "locales/en/.mustflow/skills/rate-limit-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.idempotency-integrity-review"]
@@ -1512,7 +1530,7 @@ translations = {}
 [documents."skill.input-boundary-validation-review"]
 source = "locales/en/.mustflow/skills/input-boundary-validation-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.test-maintenance"]

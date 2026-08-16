@@ -2,11 +2,11 @@
 mustflow_doc: skill.rate-limit-integrity-review
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: rate-limit-integrity-review
-description: Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.
+description: Apply this skill when code is created, changed, reviewed, or reported and rate limits, throttling, quotas, API usage limits, request costs, token buckets, leaky buckets, fixed windows, sliding windows, GCRA, Redis counters, edge or gateway limits, per-tenant or per-user limits, 429 responses, Retry-After, RateLimit headers, shadow enforcement, operator resets, async enqueue limits, concurrency limits, atomic cost reservation, quota pre-reservation or reserve-confirm-refund accounting, credential stuffing, account creation abuse, OTP or SMS pumping, scraping, enumeration, impossible request sequences, session or token replay, referral or free-credit farming, card testing, upload bombs, WebSocket floods, slow clients, or expensive AI abuse need review for protected-resource fit, signal quality, key and identity-graph design, atomic counting, layered enforcement, graduated response, client contract, and abuse or overload safety.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -241,6 +241,11 @@ contract, observability, and operator escape hatch?"
       sensitive account state in public responses.
     - During active abuse, silent drop, generic denial, or coarser hints can be safer than a perfect
       quota tutorial for the attacker.
+    - Distinguish short-window burst exhaustion from long-window or monthly quota exhaustion in the
+      error code and retry semantics. A caller that can wait seconds or minutes needs `Retry-After`
+      and a retryable class; a caller that has spent the monthly quota or a hard plan ceiling needs a
+      non-retryable, plan-level error with a reset horizon, or the client loops forever on a limit
+      that cannot clear soon.
 13. Add jitter and client backoff guidance.
     - If many clients get the same reset timestamp, they may all retry at once.
     - Add jitter to server-side refill or client guidance where the contract supports it.
@@ -285,6 +290,20 @@ contract, observability, and operator escape hatch?"
       compaction owner, cleanup safety, and behavior when identity signals are missing or shared.
       Test many distinct idempotency keys from one admitted source; same-key replay coverage does
       not exercise append-only cardinality abuse.
+18b. Reserve, confirm, and refund cost atomically.
+    - Do not sequence quota check, execute, and charge as separate steps. Parallel requests can all
+      pass the check and then overspend the resource together; concurrency is a normal execution
+      condition, not only an attack hypothesis.
+    - Reserve the estimated cost atomically before enqueueing, starting the job, or starting the
+      expensive call. Use one atomic primitive such as a Valkey or Redis Lua script or a database
+      transaction with an explicit lock so the check and the debit cannot interleave.
+    - Confirm the reservation with the actual cost on success. Release or refund the unused
+      reservation only on clearly bounded conditions such as internal failure before work, validation
+      rejection, or cancellation before effect. Do not refund on ambiguous external outcomes that may
+      have succeeded.
+    - Link the reservation to the idempotency key or operation id so a retry reuses the same
+      reservation instead of creating a second charge or a second job. Test identical concurrent
+      requests with the same key and with many distinct keys.
 19. Decide whether cached hits count.
     - CDN-cached hits may not touch the protected origin resource, so origin-protection limits may
       not count them.
@@ -385,7 +404,8 @@ contract, observability, and operator escape hatch?"
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
-- Protected resource, cost model, layer placement, key design, algorithm, storage atomicity, TTL,
+- Protected resource, cost model, atomic reserve-confirm-refund accounting, layer placement, key
+  design, algorithm, storage atomicity, TTL,
   time source, local versus global scope, fail-open or fail-closed policy, failed-response counting,
   concurrency limit needs, response contract, jitter, blocked cache, shadow rollout, observability,
   operator lookup and reset, async enqueue quota, cached-hit policy, abuse hypothesis and signal

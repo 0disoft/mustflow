@@ -2,7 +2,7 @@
 mustflow_doc: skill.error-message-integrity-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: error-message-integrity-review
@@ -225,6 +225,49 @@ must not be leaked?"
       redaction, retry policy, docs, monitoring, and tests.
     - If every call site invents messages, add or recommend a shared error boundary instead of
       polishing one string.
+31. Use a stable problem-details envelope for external API errors.
+    - Return RFC 9457 `application/problem+json` (which supersedes RFC 7807) with a stable error
+      code, HTTP status, generalized human detail, and a server-generated request id when the API
+      has a public error envelope.
+    - Never serialize the exception object. Class names, file paths, SQL, internal hostnames,
+      library versions, and stack traces stay in the restricted internal store, not in the response.
+32. Prevent error responses from becoming existence oracles.
+    - Attackers compare not only 404 versus 403 versus 401 but response body length, headers, and
+      processing time to learn whether users, orders, invite codes, or another tenant's objects exist.
+    - Merge not-found, access-denied, and other-tenant ownership into the same public error when the
+      client does not need to distinguish; record `OBJECT_NOT_FOUND`, `TENANT_MISMATCH`, or
+      `POLICY_DENIED` only in internal logs.
+33. Design logs as an allowlist, not a denylist.
+    - Logging everything and then masking tokens with regular expressions fails; define a permitted
+      event schema and pass only those fields to the logger.
+    - Do not log `Authorization`, cookies, session ids, access tokens, passwords, encryption keys,
+      database connection strings, payment data, personal data, or upload bodies by default. Use
+      hashes or internal reference ids when an identifier is needed for investigation.
+34. Treat logged values as attacker input.
+    - Headers, URLs, usernames, and error messages can carry newlines or delimiters that forge log
+      lines or disrupt analysis systems.
+    - Use structured JSON logs, normalize newlines and control characters, cap field lengths, and
+      never pass user input into a log template or string-substitution sink.
+35. Keep debug modes off by default and not request-switchable.
+    - `?debug=true`, `X-Debug`, debug cookies, and admin-IP conditions that return detailed errors
+      must be removed from production.
+    - When debugging is needed, activate it from a restricted control plane, bound its lifetime,
+      audit-log the activation, and send output only to the internal log store. Apply the same rule
+      to GraphQL introspection, Swagger test consoles, framework developer consoles, and verbose
+      error pages.
+36. Extend the same boundary to tracing, APM, and metrics.
+    - Response masking is undone when OpenTelemetry exporters, error-tracking SDKs, proxy access
+      logs, or database traces collect request bodies, SQL parameters, external API responses, or
+      auth headers.
+    - Apply the identical field policy to those surfaces, validate or replace client-supplied
+      request ids and trace baggage, and keep high-cardinality unique values out of metric labels.
+37. Test the full request path for leakage.
+    - The application handler is only one layer; gateways, CDNs, reverse proxies, framework parsers,
+      auth middleware, and upstream services can each return different error shapes.
+    - Send malformed JSON, unsupported content types, oversized requests, expired tokens, wrong HTTP
+      methods, upstream timeouts, and database failures through the real path, and assert that
+      responses and headers contain no stack traces, internal paths, SQL, hostnames, versions, or
+      debug information.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -235,6 +278,8 @@ must not be leaked?"
 - Stable error codes and machine fields exist for consumers that need search, monitoring, support,
   API handling, CLI automation, dashboards, or documentation.
 - Sensitive values are redacted while safe identifiers and correlation fields remain available.
+- External error envelopes, log fields, debug switches, tracing surfaces, and the full request path
+  are checked so disclosure boundaries survive beyond the handler.
 - Causes, retryability, idempotency, provider details, parse location, range bounds, time basis,
   conflict facts, attempts, and partial failure state are preserved where relevant.
 

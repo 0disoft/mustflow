@@ -2,7 +2,7 @@
 mustflow_doc: skill.api-access-control-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: api-access-control-review
@@ -251,6 +251,32 @@ perform this action on this object, this field, and this tenant context?"
     - For each protected resource, cover anonymous, normal user, other owner, same organization
       different role, other tenant, admin wrong tenant, revoked user, suspended member, stale token,
       read-only API key, and service account cases where relevant.
+33. Centralize policy decisions, enforce at the service.
+    - The gateway verifies signature, issuer, audience, and coarse scope, but domain authority such
+      as "may this principal modify THIS document" or "may this service refund THIS payment" must be
+      re-decided by the service and data layer.
+    - Keep decision rules and versions in a central policy module while each service's enforcement
+      point executes the decision. Gateway-only checks leave internal calls, message consumers, cron
+      jobs, and new endpoints as bypass routes.
+34. Version authorization caches.
+    - A cached allow or deny decision must be keyed by subject, tenant, action, resource, policy
+      version, and membership version. A role revoked today is not revoked while yesterday's cache
+      row still allows.
+    - Tie cache invalidation to policy-version and membership-version bumps, and test the revocation
+      window explicitly.
+35. Fix JWT verification inputs.
+    - Do not let the verification library choose the algorithm from the token's `alg` value; pin the
+      allowed algorithms, issuer, audience, token type, and subject or scope shape per server
+      configuration.
+    - Refuse `jku` and `x5u` URLs supplied by the token (SSRF and key-confusion paths), require a
+      trusted `kid` inside the pinned JWKS, and keep different token kinds (access, ID, email,
+      password-reset) on separate `typ`, audience, and validation rules.
+36. Record the authorization audit trail.
+    - Audit logs need the requester, any delegated actor, action, resource, tenant, allow or deny
+      result, deny reason, policy version, and request id.
+    - Unify external responses to hide existence (for example a uniform 404) while internal logs
+      keep the precise reason, and verify horizontal, vertical, and tenant authorization with an
+      automated permission matrix.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -268,6 +294,8 @@ perform this action on this object, this field, and this tenant context?"
 - Token, session, cookie, OAuth/OIDC, reset, reauthentication, account-enumeration, and automation
   defenses are checked when touched.
 - Denial-case tests or missing test gaps are named from the attacker's point of view.
+- Policy-decision centralization, permission-cache versioning, pinned JWT verification inputs, and
+  the authorization audit trail are checked or named as gaps.
 
 <!-- mustflow-section: verification -->
 ## Verification

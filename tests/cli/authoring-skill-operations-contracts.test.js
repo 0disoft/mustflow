@@ -533,7 +533,7 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(manifest, /"\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"rate-limit-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 5/u);
+	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 6/u);
 });
 
 test('backend log evidence review reconstructs backend request and job paths', () => {

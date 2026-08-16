@@ -1174,7 +1174,7 @@ test('input boundary validation keeps representation, identity, parser, sink, an
 	);
 	assert.match(manifest, /"input-boundary-validation-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'input-boundary-validation-review', 1);
+	assertI18nSkillDocument(i18n, 'input-boundary-validation-review', 2);
 });
 
 test('performance measurement integrity keeps event semantics, comparison, and privacy explicit', () => {

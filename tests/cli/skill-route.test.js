@@ -148,7 +148,7 @@ test('does not select a skill without route evidence', () => {
 test('reports aggregate skill route quality metrics from the versioned corpus', () => {
 	const report = evaluateSkillRouteFixtures(projectRoot);
 
-	assert.equal(report.case_count, 94);
+	assert.equal(report.case_count, 97);
 	assert.equal(report.passed_case_count, report.case_count);
 	assert.equal(report.main_accuracy.rate, 1);
 	assert.equal(report.candidate_recall.rate, 1);
