@@ -2,7 +2,7 @@
 mustflow_doc: skill.tenant-key-secret-isolation-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: tenant-key-secret-isolation-review
@@ -150,6 +150,27 @@ credential layer independently refuse — or is a shared key or credential the r
      to general code. Audit every lookup and decrypt with workload, tenant, purpose, resource, and
      key version, and detect mass decryption and tenant mismatch. Remember that KMS encryption
      context appears in plaintext in logs, so never put personal data or secrets in it.
+8. Review IAM delegation and impersonation graphs, not only direct grants.
+   - A user with no direct resource grant can still gain everything through high-privilege roles
+     attached to workloads, service-account impersonation, PassRole or `actAs`, token creator,
+     service-account key creation, or IAM policy change rights. Treat those as separate high-risk
+     permissions and review the full permission graph from user through role, service account, and
+     workload to the final resource.
+   - Retire default and shared service accounts; issue one per workload, environment, and
+     lifecycle, split build from deploy and control from data, block broad default-role grants,
+     and disable before deleting unused accounts.
+9. Set organizational permission ceilings above per-account least privilege.
+   - A project or account admin who is compromised can recreate wildcard permissions, public
+     resource policies, and long-lived keys. Use service control policies, permission boundaries,
+     organization policies, and explicit denies to define the maximum a lower-level admin cannot
+     exceed, and centrally forbid external identity addition, service-account key creation, broad
+     default roles, and public buckets.
+10. Do not treat KMS encryption as a second approval.
+    - Encrypting a secret with KMS still delivers plaintext to every caller with read permission, so
+      default-managed keys with broad read grants contribute little separation. Use customer-managed
+      keys and control the KMS key policy, the secret policy, and the runtime role through different
+      principals, and never combine secret administration, new-version creation, runtime lookup, and
+      KMS administration in one role.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

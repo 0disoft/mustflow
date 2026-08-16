@@ -404,7 +404,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 3/u);
+	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 4/u);
 });
 
 test('api misuse resistance review keeps caller contracts hard to misuse', () => {
@@ -767,7 +767,7 @@ test('trust boundary review cuts implicit trust at identity, permission, and key
 	assert.match(routes, /\[routes\."trust-boundary-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/trust-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"trust-boundary-review"/u);
-	assertI18nSkillDocument(i18n, 'trust-boundary-review', 1);
+	assertI18nSkillDocument(i18n, 'trust-boundary-review', 2);
 });
 
 test('cryptographic storage review separates at-rest, transport, and field encryption', () => {
@@ -822,7 +822,7 @@ test('tenant key and secret isolation review separates keys, secrets, and creden
 	assert.match(routes, /\[routes\."tenant-key-secret-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/tenant-key-secret-isolation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"tenant-key-secret-isolation-review"/u);
-	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review', 1);
+	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review', 2);
 });
 
 test('file encryption and integrity review separates hashing, signing, and authenticated encryption', () => {
@@ -879,6 +879,61 @@ test('media transform worker review isolates converters as potentially compromis
 	assert.match(manifest, /"\.mustflow\/skills\/media-transform-worker-review\/SKILL\.md"/u);
 	assert.match(manifest, /"media-transform-worker-review"/u);
 	assertI18nSkillDocument(i18n, 'media-transform-worker-review', 1);
+});
+
+test('infrastructure access review segments zones and replaces standing admin rights', () => {
+	const localSkill = readText('.mustflow/skills/infrastructure-access-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/infrastructure-access-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Split zones by breach-propagation path/u);
+	assert.match(localSkill, /Tier 0 systems as the first isolation priority/u);
+	assert.match(localSkill, /Default-deny east-west and egress traffic/u);
+	assert.match(localSkill, /short-lived, scoped loans/u);
+	assert.match(localSkill, /blast budget of every credential/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/infrastructure-access-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."infrastructure-access-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/infrastructure-access-review\/SKILL\.md"/u);
+	assert.match(manifest, /"infrastructure-access-review"/u);
+	assertI18nSkillDocument(i18n, 'infrastructure-access-review', 1);
+});
+
+test('container platform security review enforces admission and runtime isolation', () => {
+	const localSkill = readText('.mustflow/skills/container-platform-security-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/container-platform-security-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /registry and build pipeline as the production trust anchor/u);
+	assert.match(localSkill, /Enforce security settings at admission/u);
+	assert.match(localSkill, /container root and Docker control as host root/u);
+	assert.match(localSkill, /Do not treat a Namespace as a strong tenant boundary/u);
+	assert.match(localSkill, /Make NetworkPolicy effective/u);
+	assert.match(localSkill, /workload-creation rights as secret-read rights/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/container-platform-security-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."container-platform-security-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/container-platform-security-review\/SKILL\.md"/u);
+	assert.match(manifest, /"container-platform-security-review"/u);
+	assertI18nSkillDocument(i18n, 'container-platform-security-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

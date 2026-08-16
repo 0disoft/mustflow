@@ -2,7 +2,7 @@
 mustflow_doc: skill.deletion-lifecycle-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: deletion-lifecycle-review
@@ -179,6 +179,36 @@ The review question is: "Which kind of deletion is this, who can reverse it, wha
     - Emit a deletion receipt per request listing originals, derived files, cache, search index,
       versioned objects, replicas, backup expiry, and key-destruction state, distinguishing
       immediate removal from deferred backup retirement with exact final dates.
+18. Run backups as a separate security domain with immutable retention.
+    - If backup storage shares the production SSO, cloud organization, and admin accounts, an
+      operational account compromise deletes the backups too. Operate backups in a separate account
+      or tenant with dedicated admins, phishing-resistant MFA, and separate managed endpoints; give
+      production only the right to add new backups, never to read, modify, or delete recovery
+      points.
+    - File versioning and trash are not immutable backups. Use WORM or object lock that
+      administrators cannot reduce for the retention window, require two approvals to shrink
+      retention or destroy a vault, and keep a recovery account usable when the production IdP is
+      down.
+19. Keep recovery keys outside the backup data authority.
+    - An immutable backup is unrecoverable if the attacker deletes the keys. Keep backup KMS or
+      HSM keys in a different account than the data, forbid operational roles from disabling,
+      scheduling deletion, or changing key policy, apply long waiting periods and dual approval to
+      key deletion, and preserve key identifiers, recovery procedures, and required permissions in
+      offline documentation.
+    - Realtime replication is not a backup: it mirrors encryption and deletion instantly. Keep
+      delayed replication, point-in-time snapshots, immutable backups, and network-isolated copies,
+      and spread copies across at least two failure domains among accounts, regions, and providers.
+20. Recover in a cleanroom and drill for total account loss.
+    - Restoring over the infected environment keeps persistence tools and stolen credentials alive.
+      Restore to a separate account and isolated network, verify file integrity, malware,
+      unauthorized accounts, startup items, scheduled tasks, admin rights, and audit config, pick a
+      clean recovery point, rotate all sessions, service credentials, certificates, and keys, and
+      reconnect services in dependency order after verification.
+    - Recovery drills assume the primary cloud account, IdP, laptops, password managers, and ticket
+      systems are all unusable: use offline contacts and runbooks, restore DNS, network, keys,
+      databases, and applications to a new environment handling real traffic, and measure RTO and
+      RPO together with data integrity, permission restoration accuracy, and payment and queue
+      deduplication.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

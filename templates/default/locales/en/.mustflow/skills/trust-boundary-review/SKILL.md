@@ -2,7 +2,7 @@
 mustflow_doc: skill.trust-boundary-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: trust-boundary-review
@@ -184,6 +184,28 @@ or must the caller be re-authenticated and re-authorized for this specific resou
     - Restrict outbound destinations with an allowlist so a compromised server cannot exfiltrate to
       an arbitrary collector, and make session revocation, short-credential revocation, export
       disablement, and key rotation independently executable during incident response.
+14. Pre-build containment actions as product features.
+    - Do not write firewall rules and permission policies after an incident. Implement host
+      quarantine, service-account revocation, session termination, tenant blocking, deployment
+      stop, queue pause, database read-only switch, and region-link cut ahead of time, with both
+      automatic and manual triggers.
+    - Preserve memory dumps, logs, and disk snapshots while isolating so evidence survives the
+      containment itself.
+15. Separate Tier-0 systems before ordinary services.
+    - IdP, PKI, KMS, Secret Manager, DNS, time sync, CI/CD, audit logs, and backups are more
+      sensitive than application code; an application admin who can modify them is effectively a
+      full infrastructure admin. Give them separate accounts, projects, admin roles, and access
+      paths, and never let low-trust zones write upward into high-trust ones.
+16. Replace servers instead of repairing them.
+    - Manage infrastructure and security policy as code with validated images and declarative
+      deploys; emergency manual changes auto-expire and are forced back to the IaC state, so
+      configuration drift and untracked privileges do not accumulate.
+17. Compute a blast budget per credential.
+    - For each credential class, quantify how many servers, tenants, data sets, regions, and backup
+      generations a single compromise could modify or delete, and walk the attack path as if it
+      were stolen. If one credential can destroy two or more independent security zones, split the
+      structure, and never concentrate production deletion, backup deletion, key deletion, and
+      audit-log deletion in one principal.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -1887,6 +1887,46 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "infrastructure-access-review",
+      "task": "Review network segmentation, bastion access, and just-in-time admin privileges",
+      "paths": [
+        "infra/access.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "infrastructure-access-review"
+      ],
+      "required_adjuncts": [
+        "infrastructure-access-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "container-platform-security-review",
+      "task": "Review Kubernetes admission policy, image signing, and service account tokens",
+      "paths": [
+        "infra/k8s.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "container-platform-security-review"
+      ],
+      "required_adjuncts": [
+        "container-platform-security-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }

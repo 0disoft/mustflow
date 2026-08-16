@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 336
+anchor_count: 338
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:fccacd5458fb8b72a3116ed8271235dd8b5f46175d104d40433b207108e6dfe8"
+source_fingerprint: "sha256:38fdcae613c10ff2927c17b9643b555a0b15e1b3a297a18d071f6b081ac6e11a"
 ---
 
 # REPO_MAP.md
@@ -312,6 +312,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/connection-lifecycle-integrity-review/
 
 - `.mustflow/skills/connection-lifecycle-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/container-platform-security-review/
+
+- `.mustflow/skills/container-platform-security-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/contract-sync-check/
 
@@ -636,6 +640,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/information-visualization-integrity-review/
 
 - `.mustflow/skills/information-visualization-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/infrastructure-access-review/
+
+- `.mustflow/skills/infrastructure-access-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/input-boundary-validation-review/
 

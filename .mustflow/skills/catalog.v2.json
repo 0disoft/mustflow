@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:a545eaef8305f69d8b11d8ca61003dcba8f4126d93bd620a96a6b46dd7ef0095",
+  "source_fingerprint": "sha256:e895495c38f42fe9fbc692fddcb0ababca5bf3bee012f9e8f714cf12b0aac7b1",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -3229,6 +3229,68 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "container-platform-security-review",
+      "skill_path": ".mustflow/skills/container-platform-security-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 84,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "admission policy",
+        "container escape",
+        "docker socket",
+        "image digest",
+        "kubernetes",
+        "networkpolicy",
+        "pod security standards",
+        "service account token",
+        "workload identity",
+        "애드미션 정책",
+        "이미지 서명",
+        "컨테이너 탈출",
+        "쿠버네티스 보안",
+        "파드 보안"
+      ],
+      "negative_signals": [
+        "application authz only",
+        "dockerfile style only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when Docker or Kubernetes platform security needs review for image digests and signing, registry trust, admission policy, Pod Security Standards, container runtime isolation, rootless containers, Docker socket and group access, namespace tenancy, node pools, NetworkPolicy, service account tokens, projected tokens, workload identity, Secret mounting, etcd encryption, or container escape blast radius.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -6778,6 +6840,69 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "infrastructure-access-review",
+      "skill_path": ".mustflow/skills/infrastructure-access-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "adjunct",
+      "selection_axis": "risk",
+      "priority": 83,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change",
+        "security_change",
+        "privacy_change",
+        "data_change",
+        "migration_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "bastion",
+        "east west traffic",
+        "egress policy",
+        "firewall policy",
+        "management plane",
+        "network segmentation",
+        "ssh certificate",
+        "tier 0",
+        "vpn access",
+        "zero trust access",
+        "관리 평면",
+        "네트워크 분리",
+        "방화벽 정책",
+        "베스천",
+        "제로 트러스트 접근"
+      ],
+      "negative_signals": [
+        "application authz only",
+        "webapp firewall only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when infrastructure access and isolation need review for network segmentation, microsegmentation, firewall and security-group policy, east-west and egress traffic, management plane separation, SSH certificates, VPN and Bastion access, Zero Trust admin access, just-in-time infrastructure privileges, server and VM admin rights, workload identity, deployment and data rights separation, cloud control-plane permissions, Linux capabilities, seccomp, AppArmor, SELinux, or emergency access paths.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

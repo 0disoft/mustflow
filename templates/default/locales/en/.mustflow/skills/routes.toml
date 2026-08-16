@@ -2221,6 +2221,30 @@ positive_terms = ["codec-allowlist", "ffmpeg-protocol", "ghostscript", "imagemag
 negative_terms = ["image-processing-feature-only", "upload-lifecycle-only"]
 concept_aliases = ["PDF 무해화", "미디어 변환", "변환 워커", "코덱 허용 목록", "트랜스코딩"]
 
+[routes."infrastructure-access-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 83
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."infrastructure-access-review".contexts]
+positive_terms = ["bastion", "east-west-traffic", "egress-policy", "firewall-policy", "management-plane", "network-segmentation", "ssh-certificate", "tier-0", "vpn-access", "zero-trust-access"]
+negative_terms = ["application-authz-only", "webapp-firewall-only"]
+concept_aliases = ["관리 평면", "네트워크 분리", "방화벽 정책", "베스천", "제로 트러스트 접근", "Tier 0"]
+
+[routes."container-platform-security-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 84
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."container-platform-security-review".contexts]
+positive_terms = ["admission-policy", "container-escape", "docker-socket", "image-digest", "kubernetes", "networkpolicy", "pod-security-standards", "service-account-token", "workload-identity"]
+negative_terms = ["dockerfile-style-only", "application-authz-only"]
+concept_aliases = ["컨테이너 탈출", "쿠버네티스 보안", "파드 보안", "이미지 서명", "애드미션 정책"]
+
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"
 route_type = "adjunct"

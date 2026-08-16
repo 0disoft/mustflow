@@ -2,7 +2,7 @@
 mustflow_doc: skill.error-message-integrity-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: error-message-integrity-review
@@ -294,6 +294,37 @@ must not be leaked?"
       Failed messages linger longer in the DLQ where operators read them, and reprocessing can push
       deleted data back; consumers must check deletion tombstones before applying old messages, and
       queue and DLQ retention is capped by the shorter of processing need and privacy policy.
+42. Keep the log store outside operational accounts.
+    - If servers and the log store share a cloud account and admin rights, an operational account
+      compromise deletes the evidence too. Put logs in a log-only account or security tenant where
+      operators may search but cannot delete, change retention, or stop collection, and forward
+      cloud control-plane and IdP logs directly without passing through production servers.
+43. Treat local logs as temporary buffers and absence as an alert.
+    - A server admin can edit local logs, journald, Event Log, or stop agents; forward important
+      records immediately and keep only a short buffer for network outages, retaining unmodified
+      raw originals alongside parsed data.
+    - Treat a missing heartbeat, sequence gap, volume drop, time skew, parser failure, queue delay,
+      or storage-write failure as a security event, and alert through a channel separate from the
+      operational path when agents, filters, SIEM rules, or retention policies change.
+44. Separate audited roles from audit-log administration.
+    - The operator whose actions are recorded must not administer the recording system. Split log
+      configuration, collection, detection, query, export, retention, and deletion rights across
+      different roles, give analysts read-only access, and require two independent approvals to
+      delete logs or shrink retention.
+45. Prove log continuity with chained signed manifests.
+    - Encryption does not reveal deleted middle records. Chain each batch to the previous hash with
+      a monotonic sequence, collection time, and source count, sign manifests, and pin periodic
+      roots in a separate account or external store so an attacker who rewrites both the log and
+      the chain is detected.
+46. Record at policy enforcement points and use independent sensors.
+    - Application success and failure logs miss bypass APIs, internal tools, direct database
+      access, and console operations. Record at the IdP, API gateway, cloud control plane,
+      Kubernetes audit, database audit, secret access, DNS, egress proxy, CI/CD, and backup console
+      with immutable user ids, delegated subjects, targets, allow or deny results, policy versions,
+      before and after values, and request ids.
+    - Collect host process logs, network flows, DNS queries, IdP authentication, cloud API calls,
+      and storage access from separate administrative domains as independent witnesses, and plant
+      decoy accounts, secrets, and files that alert on any use.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
