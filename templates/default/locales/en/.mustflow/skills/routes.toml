@@ -1151,9 +1151,9 @@ selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."rate-limit-integrity-review".contexts]
-positive_terms = ["abuse-defense", "account-creation-abuse", "api-enumeration", "atomic-cost-reservation", "bot-traffic", "card-testing", "cost-reservation", "credential-stuffing", "device-velocity", "distributed-low-rate-abuse", "free-credit-farming", "graduated-enforcement", "identity-graph", "impossible-request-sequence", "otp-pumping", "quota-pre-reservation", "quota-reservation", "rate-limit", "referral-farming", "reserve-confirm-refund", "scraping-defense", "session-replay", "sms-pumping", "traffic-abuse", "upload-bomb", "websocket-flood"]
+positive_terms = ["abuse-defense", "account-creation-abuse", "account-enumeration", "api-enumeration", "atomic-cost-reservation", "auth-path-parity", "bot-traffic", "breached-password", "card-testing", "cost-reservation", "credential-stuffing", "device-velocity", "distributed-low-rate-abuse", "free-credit-farming", "graduated-enforcement", "identity-graph", "impossible-request-sequence", "otp-pumping", "password-spraying", "quota-pre-reservation", "quota-reservation", "rate-limit", "referral-farming", "reserve-confirm-refund", "scraping-defense", "session-replay", "sms-pumping", "success-conversion-tracking", "traffic-abuse", "upload-bomb", "websocket-flood"]
 negative_terms = ["authorization-only", "billing-only", "client-retry-only", "volumetric-ddos-only"]
-concept_aliases = ["계정 생성 어뷰징", "다중 신호 차단", "분산 저속 어뷰징", "비용 선예약", "비정상 트래픽", "어뷰징 방어", "원자적 비용 예약", "쿼터 예약", "트래픽 남용", "트래픽 어뷰징"]
+concept_aliases = ["계정 생성 어뷰징", "계정 존재 여부 유출", "다중 신호 차단", "분산 저속 어뷰징", "비밀번호 분사", "비용 선예약", "비정상 트래픽", "어뷰징 방어", "원자적 비용 예약", "인증 경로 통합", "쿼터 예약", "트래픽 남용", "트래픽 어뷰징"]
 
 [routes."idempotency-integrity-review"]
 category = "general_code"
@@ -2056,8 +2056,8 @@ selection_axis = "risk"
 applies_to_reasons = ["code_change", "security_change", "privacy_change", "public_api_change"]
 
 [routes."auth-permission-change".contexts]
-positive_terms = ["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority"]
-concept_aliases = ["authorization", "permission", "access control", "인증 권한", "접근 권한", "授权", "权限"]
+positive_terms = ["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority", "capability-based-frontend", "membership-version", "permission-cache-version", "permission-version", "policy-version", "shadow-evaluation", "authz-mutation-testing", "escalation-context"]
+concept_aliases = ["authorization", "permission", "access control", "권한 버전", "권한 무효화", "섀도우 평가", "승격 세션", "인증 권한", "접근 권한", "授权", "权限"]
 negative_terms = ["public-copy-only", "unauthenticated-public-route"]
 
 [routes."auth-permission-change".dependencies]
@@ -2112,6 +2112,42 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 positive_terms = ["api-inventory", "api-registry", "api-versioning", "deprecated-endpoint", "deprecation-header", "legacy-client", "sunset-header", "version-negotiation"]
 negative_terms = ["dependency-version-only", "sdk-version-only"]
 concept_aliases = ["API 버전 관리", "구형 클라이언트", "버전 협상", "선셋 헤더", "폐기 예정 엔드포인트"]
+
+[routes."session-management-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 80
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."session-management-review".contexts]
+positive_terms = ["all-device-logout", "cookie-tossing", "forced-logout", "logout-all-other-devices", "multi-device-session", "remote-logout", "session-entity", "session-fixation", "session-list", "terminate-session"]
+negative_terms = ["authorization-only", "token-issuance-only"]
+concept_aliases = ["강제 로그아웃", "다중 기기 세션", "세션 고정", "세션 목록", "원격 로그아웃"]
+
+[routes."auth-state-resilience-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 77
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "migration_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."auth-state-resilience-review".contexts]
+positive_terms = ["auth-epoch", "auth-state-resilience", "cache-failover", "conditional-rotation", "fail-closed-auth", "outbox", "refresh-generation", "session-resurrection", "version-invalidation"]
+negative_terms = ["cache-performance-only", "database-tuning-only"]
+concept_aliases = ["버전 무효화", "세션 부활", "인증 상태 내성", "장애 대비 인증"]
+
+[routes."authentication-design-review"]
+category = "security_privacy"
+route_type = "adjunct"
+priority = 81
+selection_axis = "risk"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."authentication-design-review".contexts]
+positive_terms = ["account-linking", "account-recovery", "authenticator-lifecycle", "breached-password", "login-identifier", "password-policy", "phishing-resistant", "recovery-code", "social-login", "step-up-authentication"]
+negative_terms = ["authorization-only", "token-mechanics-only"]
+concept_aliases = ["계정 복구", "비밀번호 정책", "소셜 로그인", "인증 설계", "패스키 인증"]
 
 [routes."admin-control-plane-safety-review"]
 category = "security_privacy"

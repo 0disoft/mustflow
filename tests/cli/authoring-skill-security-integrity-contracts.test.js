@@ -608,7 +608,7 @@ test('credential token lifecycle review covers issuance, storage, rotation, revo
 	assert.match(routes, /\[routes\."credential-token-lifecycle-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credential-token-lifecycle-review"/u);
-	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 1);
+	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 2);
 });
 
 test('api version deprecation review treats versions as an attack-surface lifecycle', () => {
@@ -634,6 +634,87 @@ test('api version deprecation review treats versions as an attack-surface lifecy
 	assert.match(manifest, /"\.mustflow\/skills\/api-version-deprecation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-version-deprecation-review"/u);
 	assertI18nSkillDocument(i18n, 'api-version-deprecation-review', 1);
+});
+
+test('session management review covers multi-device sessions, logout operations, cookies, and CSRF', () => {
+	const localSkill = readText('.mustflow/skills/session-management-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/session-management-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /each login as an independent session entity/u);
+	assert.match(localSkill, /ownership-bound query/u);
+	assert.match(localSkill, /Do not misclassify concurrent refresh as theft/u);
+	assert.match(localSkill, /__Host/u);
+	assert.match(localSkill, /SameSite=Lax/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/session-management-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."session-management-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/session-management-review\/SKILL\.md"/u);
+	assert.match(manifest, /"session-management-review"/u);
+	assertI18nSkillDocument(i18n, 'session-management-review', 1);
+});
+
+test('auth state resilience review keeps security state durable across cache and database failure', () => {
+	const localSkill = readText('.mustflow/skills/auth-state-resilience-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/auth-state-resilience-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Make the database the source of truth for security state/u);
+	assert.match(localSkill, /outbox table/u);
+	assert.match(localSkill, /monotonic versions/u);
+	assert.match(localSkill, /conditional atomic operations/u);
+	assert.match(localSkill, /session\s+resurrection/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/auth-state-resilience-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."auth-state-resilience-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/auth-state-resilience-review\/SKILL\.md"/u);
+	assert.match(manifest, /"auth-state-resilience-review"/u);
+	assertI18nSkillDocument(i18n, 'auth-state-resilience-review', 1);
+});
+
+test('authentication design review separates accounts, identifiers, authenticators, and recovery', () => {
+	const localSkill = readText('.mustflow/skills/authentication-design-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/authentication-design-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /Separate the account, login identifiers, and authenticators/u);
+	assert.match(localSkill, /explicit state machines/u);
+	assert.match(localSkill, /Argon2id/u);
+	assert.match(localSkill, /Protect recovery and authenticator addition more strictly than login/u);
+	assert.match(localSkill, /PKCE/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/authentication-design-review\/SKILL\.md/u);
+	assert.match(routes, /\[routes\."authentication-design-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
+	assert.match(manifest, /"\.mustflow\/skills\/authentication-design-review\/SKILL\.md"/u);
+	assert.match(manifest, /"authentication-design-review"/u);
+	assertI18nSkillDocument(i18n, 'authentication-design-review', 1);
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {

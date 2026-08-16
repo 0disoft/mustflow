@@ -356,7 +356,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(authSkill, /enumerate every merged route and prove the guard applies/u);
 	assert.match(authSkill, /Per-handler role and session checks do not replace/u);
 	assert.match(authSkill, /different non-success status\s+from handler validation proves the coarse guard was bypassed/u);
-	assert.match(routes, /positive_terms = \["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority"\]/u);
+	assert.match(routes, /positive_terms = \["session-expired", "resource-hidden", "step-up-required", "policy-unavailable", "permission-obligation", "job-scoped-authority", "capability-based-frontend", "membership-version", "permission-cache-version", "permission-version", "policy-version", "shadow-evaluation", "authz-mutation-testing", "escalation-context"\]/u);
 
 	assert.match(skillIndex, /\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md/u);
 	assert.match(skillIndex, /wrong content decoding, cache poisoning/u);
@@ -381,7 +381,7 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
 	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
-	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 6/u);
+	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 7/u);
 });
 
 test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {

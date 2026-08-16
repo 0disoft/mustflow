@@ -2,7 +2,7 @@
 mustflow_doc: skill.rate-limit-integrity-review
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: rate-limit-integrity-review
@@ -400,6 +400,32 @@ contract, observability, and operator escape hatch?"
       test helpers already present in the project.
     - If load, CDN, WAF, provider, or Redis Cluster evidence is not configured, report that boundary
       as manual-only instead of approving it from local unit tests.
+28. Unify the authentication attack surface.
+    - Limiting only `/login` lets attackers pivot to `/token`, mobile login, GraphQL, MFA verify,
+      password reset, OAuth callback, and legacy API versions. Every password, OTP, and recovery-code
+      verification path must share the same limit policy and account state.
+    - Normalize email and username with one function before database lookup and limit-key creation,
+      and fold every login alias of one account into the same internal `user_id` counter so casing,
+      spacing, and alias changes cannot reset the limit.
+29. Compute multiple axes at once for authentication limits.
+    - Watch account, IP or network range, device or connection signal, tenant, authentication
+      endpoint, and total system volume together. Track one-IP-many-accounts spraying and
+      one-account-many-IPs targeting separately, with separate short burst and long slow windows;
+      distributed credential stuffing keeps per-IP volume low while total volume grows.
+    - Escalate delay, CAPTCHA, and additional verification instead of permanent lockout, and reset
+      counters only after full authentication success. A correct password followed by failed MFA
+      does not clear login failure state.
+    - Require CAPTCHA or fingerprint challenges only when risk signals accumulate — never
+      universally and never in a way that reveals account existence. Device fingerprints are risk
+      inputs, not standalone block reasons.
+30. Measure attack patterns and success conversion, not only blocked counts.
+    - Track sources per account, target accounts per source, ASN failure rates, success-after-many-
+      failures, new-device successes, CAPTCHA solve rates, MFA failure rates, and breached-password
+      rejection counts.
+    - Escalate "hundreds of failures then one success", "success from an unusual country", and "one
+      network trying thousands of accounts once" as security events. On suspected successful
+      compromise, revoke the session and refresh family and notify the user. Never log passwords,
+      OTPs, or raw session tokens.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

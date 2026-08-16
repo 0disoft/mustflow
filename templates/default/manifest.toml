@@ -1,6 +1,6 @@
 id = "default"
 name = "default"
-version = "2.131.2"
+version = "2.131.3"
 description = "Minimal workflow for LLM agents to read, edit, and verify their work in a repository."
 common_root = "common"
 locales_root = "locales"
@@ -60,6 +60,9 @@ creates = [
   ".mustflow/skills/multi-tenant-isolation-review/SKILL.md",
   ".mustflow/skills/credential-token-lifecycle-review/SKILL.md",
   ".mustflow/skills/api-version-deprecation-review/SKILL.md",
+  ".mustflow/skills/session-management-review/SKILL.md",
+  ".mustflow/skills/auth-state-resilience-review/SKILL.md",
+  ".mustflow/skills/authentication-design-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/SKILL.md",
   ".mustflow/skills/file-upload-security-review/references/file-upload-parser-ssrf-resource-checklist.md",
   ".mustflow/skills/error-message-integrity-review/SKILL.md",
@@ -414,6 +417,9 @@ minimal = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -635,6 +641,9 @@ patterns = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -867,6 +876,9 @@ oss = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1121,6 +1133,9 @@ team = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1374,6 +1389,9 @@ product = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",
@@ -1636,6 +1654,9 @@ library = [
   "multi-tenant-isolation-review",
   "credential-token-lifecycle-review",
   "api-version-deprecation-review",
+  "session-management-review",
+  "auth-state-resilience-review",
+  "authentication-design-review",
   "file-upload-security-review",
   "error-message-integrity-review",
   "memory-lifetime-review",

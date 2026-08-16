@@ -2,7 +2,7 @@
 mustflow_doc: skill.credential-token-lifecycle-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: credential-token-lifecycle-review
@@ -144,12 +144,48 @@ stage?"
      fields at the logging layer.
    - For high-risk service accounts and financial or admin APIs, bind tokens to a key with DPoP or
      mTLS so a stolen token string cannot be replayed from another client.
+8. Choose lifetimes from acceptable compromise time, not industry averages.
+   - Start new consumer SaaS at about 10 minutes for access tokens and 5 minutes for admin or
+     payment access tokens. Give refresh tokens an inactivity expiry of about 30 days plus an
+     absolute expiry of about 90 days; extend long-login to 180 days only with rotation and secure
+     device storage. Keep operator refresh tokens under 24 hours, use short-lived workload
+     credentials or Client Credentials for server-to-server calls, and cap clock skew at 30 to 60
+     seconds so a 10-minute token does not become a 15-minute one.
+9. Restrict audience, scope, and tenant before relying on short expiry.
+   - A five-minute omnipotent token is still omnipotent for five minutes. Set `aud` per API server,
+     scope per action, and tenant or approved-resource limits where needed, and have every resource
+     server check `aud`, scope, and the actual object permission on every request.
+   - Never let a refresh widen the originally approved scope or resource; additional authority
+     requires a new consent and authentication transaction.
+10. Enforce inactivity and absolute expiry together; refresh is not reauthentication.
+    - Resetting the refresh expiry to 30 days on every use alone makes an active user's session
+      eternal. Keep the inactivity window resettable on use, but inherit the family's
+      `absolute_expires_at` from first login or grant; a token refreshed on day 89 of a 90-day
+      absolute window must expire the next day. On absolute expiry, require reauthentication and a
+      new token family.
+    - Do not rewrite `auth_time` on refresh; keep the original authentication time and method.
+      Sensitive actions such as payment-method change, recovery-code reissue, API-key display, MFA
+      removal, and personal-data export must check recent `auth_time` and require passkey
+      reauthentication. Express the policy with `max_age`, `auth_time`, `acr`, and `amr` in OIDC.
+11. Define which tokens each security event revokes.
+    - Password reset, account recovery, MFA removal, email or phone change, admin grant, account
+      suspension, suspected login, and all-device logout revoke refresh families immediately;
+      ordinary logout revokes the current session and family; all-device logout revokes every family
+      or bumps the account version.
+    - Self-validating JWTs cannot be recalled: accept the short residual lifetime on general APIs,
+      and add an online session or `auth_version` check on payment, key-exposure, and permission-
+      change APIs. When immediate revocation is required everywhere, use opaque access tokens with
+      introspection instead of self-contained JWTs.
+    - Key rotation is not user revocation; rotating a global signing key to log out one user logs out
+      everyone and breaks key caches. Handle user revocation per session and grant, and rotate keys
+      under separate key-lifetime management.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
 
 - Token kinds, issuance entropy, storage, validation rules, rotation, revocation, client storage,
-  and binding are explicit.
+  binding, lifetime choice, audience and scope limits, inactivity and absolute expiry, and
+  event-to-revocation mapping are explicit.
 - Plaintext secret storage, single-part keys, browser-stored bearer tokens, library-chosen JWT
   algorithms, unrotated or reuse-tolerant refresh tokens, revocation-less JWTs, unbounded lifetimes,
   and bearer leakage are fixed or reported.

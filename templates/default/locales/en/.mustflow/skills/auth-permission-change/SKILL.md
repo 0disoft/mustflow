@@ -2,7 +2,7 @@
 mustflow_doc: skill.auth-permission-change
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-permission-change
@@ -244,6 +244,59 @@ Authentication answers who the requester is. Authorization answers what that pri
       object contents.
 21. Update docs and role matrices when external behavior, status codes, role names, permission names, admin scope, or API errors change.
 22. Report the policy source of truth, effective-permission evidence, decision explanation, server/database enforcement, client UX-only guards, revocation window, account-takeover response, test coverage, skipped checks, and remaining permission risk.
+23. Deliver capabilities, not role names, to the frontend.
+    - Do not let UI code branch on `role === "admin"`; that replicates server policy in the client.
+      Compute capabilities such as `project.edit`, `member.invite`, or `invoice.refund` server-side
+      for the current resource and context, and let the frontend render only those results.
+    - Share identifiers, action names, response schemas, and error codes between client and server;
+      the policy itself stays server-side. When the frontend receives 403, it should refetch
+      capabilities and refresh the UI rather than guessing.
+24. Version permission state monotonically.
+    - Keep `user_session_epoch`, `membership_version`, and `policy_version` and bump the relevant
+      one on every permission change. Record the issued version on sessions, tokens, and cache
+      entries, and reject anything whose recorded version is older than the current value.
+    - Key permission caches by subject, tenant, resource, action, membership version, and policy
+      version so a bump makes stale entries unreachable automatically; treat TTL as a last-resort
+      safety net, not the invalidation mechanism. A cache keyed only by the `admin` role cannot
+      distinguish object relationships or organizational scope.
+25. Publish invalidation transactionally.
+    - Writing a role change to the database and then separately sending cache-deletion messages can
+      apply only one half when the process fails between the two.
+    - Store the permission change and the invalidation event in one database transaction (outbox),
+      and deliver committed events through Valkey Streams or a message queue with idempotent
+      consumers. Do not rely on lossy pub/sub for permission invalidation, or some nodes keep stale
+      permissions for days.
+26. Model privilege escalation as a separate short-lived security context.
+    - Do not mutate a normal session's role to admin for an admin task or refund; the elevated
+      authority outlives the intent.
+    - After MFA or reauthentication, issue a separate escalation session or context with its own id
+      and version, limited to the specific organization and actions, expiring within minutes, and
+      revocable independently.
+27. Re-authorize streaming, queue, and download surfaces at execution time.
+    - A WebSocket that passed at connect time keeps sending commands after a revocation. Close or
+      re-authorize the connection on invalidation events.
+    - Queue consumers must re-check permission and resource state just before the actual effect, not
+      at enqueue time; signed download URLs need short expiry or server-mediated online verification.
+28. Separate decision logs from admin audit logs.
+    - Decision logs carry request id, real actor, delegated subject, organization, resource kind,
+      action, allow or deny, deny reason, policy version, and cache-hit status. Audit logs carry
+      before and after values of role and policy changes, who changed and approved them, the change
+      path, and the application time.
+    - Record identifiers and necessary metadata, not personal data or full request bodies.
+29. Require permission declarations and adversarial authorization tests.
+    - Let every route, resolver, WebSocket command, queue consumer, and admin script declare its
+      resource and action, and make CI fail on new handlers without a declaration so untested
+      endpoints cannot slip through.
+    - Test denials more than allows: other-organization objects, removed members, suspended accounts,
+      resources being deleted, transferred ownership, support accounts, and impersonating admins.
+      Use property-based tests that mutate organization and relationship identifiers and assert
+      permission never grows, and mutation tests that delete a check or flip deny to allow must fail.
+    - Force race conditions at permission-change boundaries: revocation right after the check,
+      another node executing before cache refresh, ownership transfer, org departure, admin demotion,
+      queue execution, and long transactions, to catch TOCTOU between check and use.
+    - Shadow-evaluate new policies against real traffic before flipping: run old and new decisions
+      side by side, and alert first on requests the new policy would newly allow. Detect endpoints
+      without decision logs and server nodes using different policy versions.
 
 ## Boundary Rules
 

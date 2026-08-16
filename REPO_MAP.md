@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 327
+anchor_count: 330
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:a7faef1d815a07408c11c5863c90ce9b7b2e18c6b7ae3940ceb446908e28ea04"
+source_fingerprint: "sha256:9242fbd0645344fe02030600940e2e4b03a6db1ae9e7e61a3ccd685cb1b15140"
 ---
 
 # REPO_MAP.md
@@ -164,6 +164,14 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/auth-permission-change/
 
 - `.mustflow/skills/auth-permission-change/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/auth-state-resilience-review/
+
+- `.mustflow/skills/auth-state-resilience-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/authentication-design-review/
+
+- `.mustflow/skills/authentication-design-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/automation-investment-case-review/
 
@@ -972,6 +980,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/session-handoff-integrity-review/
 
 - `.mustflow/skills/session-handoff-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/session-management-review/
+
+- `.mustflow/skills/session-management-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/shell-code-change/
 

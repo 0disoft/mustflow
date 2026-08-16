@@ -1699,6 +1699,70 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "session-management-review",
+      "task": "Review multi-device sessions, the terminate-session API, and forced logout",
+      "paths": [
+        "src/auth/sessions.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "session-management-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "session-management-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "auth-state-resilience-review",
+      "task": "Review auth state surviving Valkey restarts, database failover, and server crashes",
+      "paths": [
+        "src/auth/store.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-state-resilience-review"
+      ],
+      "required_adjuncts": [
+        "auth-state-resilience-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "authentication-design-review",
+      "task": "Review authentication design, account recovery, and password policy",
+      "paths": [
+        "src/auth/design.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "auth-permission-change",
+      "required_candidates": [
+        "authentication-design-review",
+        "auth-permission-change"
+      ],
+      "required_adjuncts": [
+        "authentication-design-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
     }
   ]
 }
