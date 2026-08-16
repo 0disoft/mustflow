@@ -332,6 +332,13 @@ on_required = "stop_and_request_approval"
 [isolation]
 preferred = "git_worktree"
 required_for_long_running = true
+# A task is "long running" for isolation only when it exceeds the wall-clock
+# budget below, or is destructive, multi-agent, or cross-repository. Ordinary
+# build, lint, and related-test verification on short code changes runs in the
+# current worktree with output and cache directories separated, so a fast edit
+# loop does not pay worktree creation, dependency reinstall, and cold build
+# costs (audit P2-14).
+long_running_minutes = 10
 allow_dirty_main_worktree = false
 
 [retention]

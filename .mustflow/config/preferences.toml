@@ -82,8 +82,11 @@ map = "conventional_default"
 
 [git.commit_message.body]
 # summary_validation keeps suggested bodies concise and evidence-backed.
+# This repository does not require a validation line on every commit body:
+# keep the suggestion concise, and require the full verification receipt only
+# for security, payment, data, release, and failed or partial work (audit P2-15).
 template = "summary_validation"
-require_validation_line = true
+require_validation_line = false
 
 [reporting.commit_suggestion]
 enabled = true

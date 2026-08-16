@@ -90,8 +90,8 @@ test('resolves TypeScript skill routes from task, path, and reason signals', () 
 		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('Use When')));
 		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('route_dependencies')));
 		assert.ok(report.selected.main.route_card.read_strategy.some((entry) => entry.includes('INDEX.md')));
-		assert.ok(report.candidates.length <= 5);
-		assert.equal(report.read_plan.selection_limits.candidates, 5);
+		assert.ok(report.candidates.length <= 3);
+		assert.equal(report.read_plan.selection_limits.candidates, 3);
 		assert.equal(report.read_plan.selection_limits.main, 1);
 		assert.equal(report.read_plan.selection_limits.adjuncts, 2);
 		assert.deepEqual(report.read_plan.stable_kernel, ['.mustflow/skills/router.toml']);
