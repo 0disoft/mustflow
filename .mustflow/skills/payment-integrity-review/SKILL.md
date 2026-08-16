@@ -2,7 +2,7 @@
 mustflow_doc: skill.payment-integrity-review
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: payment-integrity-review
@@ -159,6 +159,42 @@ Review payment code as money-event integrity, not provider API success. The core
 33. Check invoice, receipt, and tax-document delivery. Payment success is separate from receipt generation, receipt email delivery, invoice finalization, credit note issuance, refund receipt delivery, and tax document issuance. Support should be able to find records by order ID, payment ID, invoice number, receipt number, provider object, safe customer identifier, and correlation ID.
 34. Check public errors and support evidence. Payment failures must not lie about success, leak sensitive payment facts, or leave support with no safe correlation ID, provider object ID, receipt or invoice ID, dispute ID, refund ID, or internal event ID.
 35. Test the nightmare paths. Include repeated pay-button clicks, replayed webhooks, out-of-order webhooks, success redirect plus database failure, database success plus provider timeout, amount or currency tampering, wrong order ID, concurrent double refund, pay then cancel, expired-session completion, partial refund tax reversal, refund failure, refund then dispute, dispute then refund attempt, subscription retry and dunning, provider-side manual refund, receipt delivery failure, tax-document gap, payout failure, card-testing spike, orphan authorization cleanup, provider kill switch or hold state, and admin override rollback.
+36. Verify the provider account and tenant binding even on valid signatures.
+    - In multi-tenant or marketplace setups, cross-check `provider_account_id`, merchant or Connect
+      account, PayPal app, and test or live mode against the server's tenant mapping; never route by
+      user-mutable webhook metadata.
+    - A valid webhook delivered to the wrong tenant or through a shared signature key is a real
+      corruption path; keep endpoint- and environment-specific keys with rotation overlap only
+      during the change window.
+37. Treat a quote as an immutable single-use price object.
+    - Store `quote_id` with product version, unit prices, quantity, currency, discounts, tax lines,
+      shipping, final total, price-rule version, and expiry; payments reference the quote, not the
+      live cart. Invalidate the quote and any payment session when price, quantity, address, or
+      coupon changes.
+    - Bind the quote to user, tenant, seller, and currency, mark it consumed server-side, and if a
+      client token must carry it, sign the normalized body with HMAC including expiry and nonce;
+      signing alone does not prevent reuse.
+38. Confirm amounts against the provider object before fulfillment.
+    - Do not fulfill on an event name alone. Fetch the provider object and compare account,
+      environment, order reference, quote id, authorized and actually captured amounts, currency,
+      and discount, tax, and refund totals against the local quote; transition to `PAID_VALIDATED`
+      only on exact match or a predefined partial-capture policy.
+    - On mismatch, quarantine as `PAYMENT_MISMATCH` instead of auto-refunding, so money and goods
+      cannot both leave before investigation. Browser redirects are never confirmation.
+39. Make subscription billing unique by cycle, not by run time.
+    - A scheduler run at midnight is not the billing identity. Use
+      `UNIQUE (subscription_id, billing_cycle_id, charge_purpose)` so restarts, timezone changes,
+      and duplicate cron runs read the same invoice and payment operation; give proration, usage,
+      and manual corrections separate charge purposes and revisions.
+40. Model authorization, capture, and refund as separate entities with reserved-amount invariants.
+    - Keep `payment_authorizations`, `payment_captures`, `payment_cancellations`, and
+      `payment_refunds` as separate one-to-many entities rather than one status column; distinguish
+      provider raw state, internal money state (authorized, captured, refunded amounts), and
+      fulfillment state.
+    - Enforce `captured + capture_reserved <= authorized` and
+      `refunded + refund_reserved <= captured`; reserve amounts in the database transaction before
+      calling the provider, move to actuals on success, release on failure, and drive transitions
+      through a versioned transition table with serialization-failure retry.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

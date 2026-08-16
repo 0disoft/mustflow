@@ -2,7 +2,7 @@
 mustflow_doc: skill.credit-ledger-integrity-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: credit-ledger-integrity-review
@@ -116,6 +116,63 @@ Review credit, point, and wallet balance code as an accounting ledger, not a bal
 28. Reconcile ledger and balance independently. Require scheduled or manual checks that compare current balance to ledger sums, lot sums, reservation sums, and settlement reports, then surface drift with enough identifiers to repair safely.
 29. Log evidence, not vibes. Balance-changing logs should include safe user, wallet, amount, before, after, source type, source ID, idempotency key, request ID, transaction ID, policy version, and operator ID when applicable.
 30. Test the nightmare paths. Include concurrent overdraw attempts, repeated submit clicks, duplicate idempotency key with changed amount, duplicate queue delivery, out-of-order cancellation and deduction, expiry batch racing usage, partial refund, cache stale display, replica stale read, admin adjustment, and reconciliation drift.
+31. Enforce double-entry posting invariants at the post transaction.
+    - A posted ledger transaction needs at least one debit and one credit whose sums match within the
+      same currency and asset unit. Post payment receivable, provider receivable, customer
+      liability, platform revenue, tax, and processor fee to separate accounts instead of storing
+      one net amount, because a net total cannot reconstruct settlement differences or refund
+      responsibility.
+    - Enforce the invariant in the posting transaction or procedure, not only in application code;
+      store money as integer minor units or exact decimals.
+32. Separate draft from posted records and correct only by reversal or supersede.
+    - Draft or pending entries stay editable, but once `posted`, amount, account, currency, and
+      occurred time must not change. A wrong posted transaction is not deleted or overwritten; post
+      a reversal with `reversal_of` and a correct replacement with `supersedes` so the correction
+      path stays connected.
+33. Distinguish occurred, received, and posted times on every ledger record.
+    - `occurred_at` (provider event time), `received_at` (server receipt), and `posted_at` (ledger
+      publication) are different facts. Collapsing them makes a late webhook look like a rewrite of
+      the past.
+    - Give every record an external identity: `source_system`, `provider_account_id`,
+      `source_object_id`, `source_event_type`, and `source_revision`, with a unique constraint on
+      the combination and a normalized payload hash to detect same-identity content changes.
+34. Treat balances as projections with sequence and state separation.
+    - Do not mutate `accounts.balance` directly and lose the cause trail. Cache balances with a
+      `through_sequence` updated in the same transaction as posting, or recompute at any time, and
+      let the ledger win on mismatch. Separate `pending_balance`, `posted_balance`, and
+      `available_balance` so an authorization-only amount is never treated as spendable.
+35. Deny direct ledger mutation to runtime roles and use fixed business journal functions.
+    - Applications, admin pages, and workers must not hold `INSERT`, `UPDATE`, `DELETE`, or
+      `TRUNCATE` on posted ledger tables. Keep the ledger schema owner as a `NOLOGIN` role and
+      expose only approved business functions such as post capture, post refund, post chargeback,
+      post fee, and post payout, rejecting caller-chosen accounts and validating account, currency,
+      amount, source, and tenant inside.
+    - Admin screens request adjustments; a separate ledger service executes them with requester and
+      approver separated, two-person approval for high amounts, cash accounts, cross-tenant
+      adjustments, and chargebacks, and short-lived emergency rights with full post-use review.
+      Audit by privilege and intent, not only by who ran: actor type and id, session, service
+      identity, request id, reason, ticket, approvers, code and policy versions, and input hash;
+      remove shared admin credentials.
+36. Reconcile internal, PSP, and bank ledgers with suspense handling and corrective journals.
+    - Keep the internal ledger, the PSP ledger, and the bank ledger as separate facts and reconcile
+      at transaction, payout-batch, and bank-deposit levels, matching by PSP identifiers first and
+      by amount, currency, date, and reference only for bank entries, with ambiguity sent to an
+      exception queue.
+    - Put unconfirmed money in a suspense account instead of attaching it to the closest order,
+      classify discrepancies as missing internal, missing PSP, missing bank, amount, fee, currency,
+      duplicate, orphan refund, or timing only with a unique case fingerprint, and repair only
+      through corrective journals carrying `reconciliation_case_id`, `reversal_of`, `reason_code`,
+      and `repair_rule_version`, idempotent on case and version.
+37. Detect tampering with hash chains and keep audit and permission changes independent.
+    - Serialize ledger rows to canonical bytes, chain each row to the previous hash, and sign
+      periodic Merkle roots with a key held outside the ledger database, storing roots in a
+      separate account, write-locked storage, or an independent audit system so a database
+      administrator who edits or deletes past rows is detected.
+    - Replicate audit records to an append-only store outside the ledger administrator's control
+      with retention locks, and audit permission and protection changes: grants, revokes, role
+      inheritance, ownership changes, function replacement, RLS policy changes, trigger
+      disablement, and extension installs. Fail CI when a runtime role gains `UPDATE`, `DELETE`,
+      `TRUNCATE`, or `TRIGGER` on ledger tables, and alert on function-hash or owner drift.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

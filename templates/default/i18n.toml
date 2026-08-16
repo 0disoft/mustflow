@@ -272,13 +272,13 @@ translations = {}
 [documents."skill.payment-integrity-review"]
 source = "locales/en/.mustflow/skills/payment-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.credit-ledger-integrity-review"]
 source = "locales/en/.mustflow/skills/credit-ledger-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.dual-write-consistency"]
