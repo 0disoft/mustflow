@@ -1,0 +1,51 @@
+{
+  "affectedArea": "Lock file maintenance",
+  "confidence": 0.64,
+  "contributionType": "maintenance",
+  "contributor": {
+    "id": "29139614",
+    "login": "renovate[bot]",
+    "platform": "github",
+    "profileUrl": "https://github.com/apps/renovate"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-12",
+      "kind": "pull_request",
+      "title": "Lock file maintenance",
+      "url": "https://github.com/0disoft/mustflow/pull/12"
+    },
+    {
+      "id": "label:dependencies",
+      "kind": "label",
+      "title": "dependencies"
+    },
+    {
+      "id": "label:docs-site",
+      "kind": "label",
+      "title": "docs-site"
+    },
+    {
+      "id": "docs-site/bun.lock",
+      "kind": "file",
+      "title": "docs-site/bun.lock"
+    },
+    {
+      "id": "279641209e1fa7bd041ac1502c382a32039c1ec0",
+      "kind": "commit",
+      "title": "Merge commit 279641209e1f"
+    }
+  ],
+  "evidenceSummary": "Drafted maintenance recognition for Lock file maintenance from pull_request PR-12.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Reduced maintenance work around Lock file maintenance.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-16T16:09:20Z",
+    "pullRequestNumber": 12,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Maintenance Steward"
+}
