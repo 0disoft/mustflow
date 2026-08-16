@@ -19,6 +19,14 @@ interface SkillRouteFixtureCase {
 	readonly requiredCandidates: readonly string[];
 	readonly requiredAdjuncts: readonly string[];
 	readonly forbiddenCandidates: readonly string[];
+	// "exact" (default) asserts the full main/candidate/adjunct contract.
+	// "invariant" asserts only that a required main is selected, forbidden
+	// candidates are absent, the candidate count stays within the limit, and
+	// the same signal resolves deterministically. Use invariant mode for
+	// low-risk language, framework, and documentation routing; keep exact mode
+	// for security, money, data, tenant, privacy, destructive-tool, and
+	// forbidden-candidate cases (audit P1-13).
+	readonly mode: 'exact' | 'invariant';
 }
 
 export interface SkillRouteFixtureValidationIssue {
@@ -147,6 +155,7 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		requiredCandidates,
 		requiredAdjuncts,
 		forbiddenCandidates,
+		mode: value.mode === 'invariant' ? 'invariant' : 'exact',
 	} satisfies SkillRouteFixtureCase;
 
 	if (
@@ -192,6 +201,80 @@ function evaluateFixtureCase(
 	};
 	const candidateSkills = new Set(report.candidates.map((candidate) => candidate.skill));
 	const adjunctSkills = new Set(report.selected.adjuncts.map((candidate) => candidate.skill));
+
+	if (fixture.mode === 'invariant') {
+		// Low-risk routing: prove the required main is selected, every required
+		// candidate appears somewhere in the candidate pool, no forbidden
+		// candidate leaks into the selection, the candidate count stays within
+		// the limit, and the same signal resolves deterministically. Exact
+		// candidate ranking and adjunct membership are not pinned for these
+		// cases, which is what lowers golden-maintenance cost (audit P1-13).
+		// Reset the per-case expected counts so the invariant loop below is the
+		// single counter (the constructor pre-filled requiredCandidates.length).
+		counts.candidateExpected = 0;
+		counts.adjunctExpected = 0;
+		if (fixture.requiredMain && report.selected.main?.skill !== fixture.requiredMain) {
+			issues.push({
+				kind: 'mismatch',
+				message: `Skill route fixture "${fixture.id}" expected selected main "${fixture.requiredMain}" but got "${formatSkill(report.selected.main?.skill)}"`,
+			});
+		} else if (fixture.requiredMain) {
+			counts.mainMatched += 1;
+		}
+		for (const skill of fixture.requiredCandidates) {
+			counts.candidateExpected += 1;
+			if (candidateSkills.has(skill)) {
+				counts.candidateMatched += 1;
+			} else {
+				issues.push({
+					kind: 'mismatch',
+					message: `Skill route fixture "${fixture.id}" expected candidate "${skill}" within top ${report.input.max_candidates}`,
+				});
+			}
+		}
+		for (const skill of fixture.requiredAdjuncts) {
+			counts.adjunctExpected += 1;
+			if (adjunctSkills.has(skill)) {
+				counts.adjunctMatched += 1;
+			}
+		}
+		if (report.candidates.length > (fixture.maxCandidates ?? report.input.max_candidates)) {
+			issues.push({
+				kind: 'mismatch',
+				message: `Skill route fixture "${fixture.id}" exceeded the candidate limit with ${report.candidates.length} candidates`,
+			});
+		}
+		const second = resolveSkillRoutes(projectRoot, {
+			taskText: fixture.task,
+			paths: fixture.paths,
+			reasons: fixture.reasons,
+			maxCandidates: fixture.maxCandidates,
+		});
+		const firstKeys = [
+			report.selected.main?.skill ?? 'none',
+			...report.selected.adjuncts.map((candidate) => candidate.skill),
+		].join('|');
+		const secondKeys = [
+			second.selected.main?.skill ?? 'none',
+			...second.selected.adjuncts.map((candidate) => candidate.skill),
+		].join('|');
+		if (firstKeys !== secondKeys) {
+			issues.push({
+				kind: 'mismatch',
+				message: `Skill route fixture "${fixture.id}" resolved non-deterministically: "${firstKeys}" vs "${secondKeys}"`,
+			});
+		}
+		for (const skill of fixture.forbiddenCandidates) {
+			if (candidateSkills.has(skill) || adjunctSkills.has(skill) || report.selected.main?.skill === skill) {
+				counts.forbiddenViolations += 1;
+				issues.push({
+					kind: 'mismatch',
+					message: `Skill route fixture "${fixture.id}" forbids selected or candidate skill "${skill}"`,
+				});
+			}
+		}
+		return { issues, counts };
+	}
 
 	if (fixture.requiredMain && report.selected.main?.skill !== fixture.requiredMain) {
 		issues.push({

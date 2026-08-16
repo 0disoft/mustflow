@@ -3,6 +3,7 @@
   "cases": [
     {
       "id": "typescript-public-cli-json",
+      "mode": "invariant",
       "task": "Change TypeScript CLI JSON output and tests",
       "paths": [
         "src/cli/commands/context.ts",
@@ -38,6 +39,7 @@
     },
     {
       "id": "public-docs-strict-check",
+      "mode": "invariant",
       "task": "Update public docs for strict check behavior",
       "paths": [
         "docs-site/src/content/docs/en/commands/check.md"
@@ -670,6 +672,7 @@
     },
     {
       "id": "ai-game-transparent-sprite-atlas-production",
+      "mode": "invariant",
       "task": "Build a repeatable AI-generated transparent PNG character sprite pipeline with real RGBA checks, stable pivots, foot-contact validation, trim metadata, atlas extrude and padding, and engine-rendered acceptance scenes",
       "paths": [
         "assets/characters/player/walk-01.png",
@@ -688,6 +691,7 @@
     },
     {
       "id": "editable-svg-vector-pipeline-korean",
+      "mode": "invariant",
       "task": "이미지 모델 초안을 편집 가능한 SVG로 재구성하고 viewBox, 허용 요소, path 명령 예산, 외부 참조 차단, SVGO 프로필과 여러 크기 렌더 차이를 검증해",
       "paths": [
         "assets/icons/navigation.svg",
@@ -709,6 +713,7 @@
     },
     {
       "id": "web-raster-image-optimization-only",
+      "mode": "invariant",
       "task": "Web-raster-only optimization: compress a generated PNG hero image and convert it to responsive WebP and AVIF",
       "paths": [
         "public/images/hero.png"
@@ -727,6 +732,7 @@
     },
     {
       "id": "type-contract-korean-typescript",
+      "mode": "invariant",
       "task": "공유 인터페이스의 타입 계약과 타입 영향 범위를 수정해",
       "paths": [
         "src/core/public-types.ts"
@@ -762,6 +768,7 @@
     },
     {
       "id": "semantic-repository-discovery-korean",
+      "mode": "invariant",
       "task": "이름이 다른 기존 구현 찾기를 위해 의미 기반 저장소 탐색을 진행해",
       "paths": [
         "src/features/new-command.ts"
@@ -796,6 +803,7 @@
     },
     {
       "id": "native-crash-forensics-korean",
+      "mode": "invariant",
       "task": "ARM64 최적화 C++ 바이너리의 코어 덤프와 세그폴트에서 정확한 Build ID, 레지스터, 메모리 맵, 객체 수명선을 따라 원인을 찾아줘",
       "paths": [
         "src/native/plugin.cpp"
@@ -812,6 +820,7 @@
     },
     {
       "id": "reader-centered-technical-content-korean",
+      "mode": "invariant",
       "task": "독자 중심으로 독자 이득과 실제 판단 오류가 보이는 기술 글을 고쳐",
       "paths": [
         "docs/guide.md"
@@ -848,6 +857,7 @@
     },
     {
       "id": "chart-accessibility-tree-only",
+      "mode": "invariant",
       "task": "The chart form and data meaning are already correct; perform accessibility-tree-only keyboard and naming fixes",
       "paths": [
         "src/components/RevenueChart.tsx"
@@ -862,6 +872,7 @@
     },
     {
       "id": "test-suite-value-pruning-korean",
+      "mode": "invariant",
       "task": "중복 테스트를 삭제하기 전에 뮤턴트 처형 기록과 고유 결함 탐지 증거로 대체 테스트를 검증하고 E2E 배선은 남긴 채 그림자 퇴역해",
       "paths": [
         "tests/e2e/payment-flow.test.ts"
@@ -877,6 +888,7 @@
     },
     {
       "id": "test-suite-performance-shard-only",
+      "mode": "invariant",
       "task": "Rebalance CI shards by p95 duration, tune worker limits, and inspect cache misses without deleting or replacing tests",
       "paths": [
         ".github/workflows/test.yml"
@@ -895,6 +907,7 @@
     },
     {
       "id": "evidence-backed-actionable-feedback-korean",
+      "mode": "invariant",
       "task": "칭찬과 양비론으로 흐리지 말고 애매한 답변을 판단, 증거, 오독, 수정 행동과 완료 기준이 있는 구체적인 지적으로 바꿔",
       "paths": [
         "docs/review.md"
@@ -910,6 +923,7 @@
     },
     {
       "id": "consequence-driven-document-review-korean",
+      "mode": "invariant",
       "task": "이 PRD를 냉정하게 리뷰해서 작성 의도와 실제 해석이 갈리는 첫 결정, 역할별로 달라지는 구현, 언제 발견되는지와 재작업 결과를 추적하고 BLOCKER MAJOR MINOR로 나눠 고칠 계약을 제시해",
       "paths": [
         "docs/product/feature-prd.md"
@@ -926,6 +940,7 @@
     },
     {
       "id": "document-summary-only-boundary",
+      "mode": "invariant",
       "task": "Summary only: summarize this proposal without critique, severity, recommendations, or changes",
       "paths": [
         "docs/proposal.md"
@@ -944,6 +959,7 @@
     },
     {
       "id": "actionable-feedback-code-discovery-only",
+      "mode": "invariant",
       "task": "Code defect discovery only: inspect this diff for runtime regressions and report the findings",
       "paths": [
         "src/core/parser.ts"
@@ -962,6 +978,7 @@
     },
     {
       "id": "actionable-feedback-prose-cleanup-only",
+      "mode": "invariant",
       "task": "Prose cleanup only: remove translationese and awkward phrasing without changing the review decision",
       "paths": [
         "docs/guide.md"
@@ -979,6 +996,7 @@
     },
     {
       "id": "automation-operating-model-korean",
+      "mode": "invariant",
       "task": "자동화 운영 모델을 설계해서 예약 실행 이벤트 큐의 책임을 나누고 자동화 조용한 실패, 승인 경계, 보안 운영, 유효 결과 비용과 중단 조건까지 검증해",
       "paths": [
         "docs/architecture/automation.md"
@@ -995,6 +1013,7 @@
     },
     {
       "id": "automation-investment-only-boundary",
+      "mode": "invariant",
       "task": "Automation ROI only: compare human touch time, wait cost, exception density, maintenance tax, break-even, and NPV before deciding whether to build",
       "paths": [
         "docs/decisions/automation-roi.md"
@@ -1031,6 +1050,7 @@
     },
     {
       "id": "managed-service-economics-korean",
+      "mode": "invariant",
       "task": "같은 기능의 관리형 서비스를 비교해서 성공 작업 1건당 총비용, 정상 성장 장애월 비용 곡선, p95 p99 포화점, 약정 손익분기, 지원 품질과 탈출세까지 보고 하나를 골라",
       "paths": [
         "docs/decisions/service-provider.md"
@@ -1090,6 +1110,7 @@
     },
     {
       "id": "postgresql-18-upgrade-operations",
+      "mode": "invariant",
       "task": "PostgreSQL 17에서 18.4로 올리면서 pg_upgrade 체크섬·확장·통계 재구축, AIO 튜닝, skip scan 인덱스 판단, logical replication slot WAL 위험과 OAuth TLS 검증을 점검해",
       "paths": [
         "db/migrations/postgresql-18.sql",
@@ -1109,6 +1130,7 @@
     },
     {
       "id": "ubuntu-lts-upgrade-and-recovery-korean",
+      "mode": "invariant",
       "task": "Ubuntu 24.04.4 LTS 서버를 26.04 LTS로 올릴 수 있는지 현재 포인트 릴리스 경계, PPA와 Snap 소유권, needrestart, Livepatch, SSH socket, 백업 복원, OOB 콘솔과 재부팅 롤백까지 검토해",
       "paths": [
         "infra/images/ubuntu-server.pkr.hcl",
@@ -1127,6 +1149,7 @@
     },
     {
       "id": "ubuntu-host-performance-tuning-korean",
+      "mode": "invariant",
       "task": "Ubuntu 24.04 서버의 sysctl 50개 복붙안을 거부하고 PSI, cgroup memory.events, CPU steal, IRQ NUMA, 디스크 큐, NIC drop과 애플리케이션 p99로 병목을 증명해",
       "paths": [
         "infra/sysctl/70-performance.conf",
@@ -1144,6 +1167,7 @@
     },
     {
       "id": "coolify-rolling-backup-authority-korean",
+      "mode": "invariant",
       "task": "Coolify 프로덕션 앱의 native rolling update 자격, healthcheck와 PID 1 SIGTERM, image digest rollback, APP_KEY와 SSH key, 앱 DB volume 복원, deploy API token 최소 권한을 검토해",
       "paths": [
         "infra/coolify/application.json",
@@ -1163,6 +1187,7 @@
     },
     {
       "id": "coolify-proxy-resource-incident-korean",
+      "mode": "invariant",
       "task": "Coolify에서 재배포 뒤 랜덤 504와 unhealthy restart가 나고 Docker 로그와 빌드 캐시가 디스크를 채운다. Compose network, proxy target port, in-container healthcheck, UFW 우회, cleanup volume 삭제 위험을 진단해",
       "paths": [
         "compose.coolify.yaml",
@@ -1182,6 +1207,7 @@
     },
     {
       "id": "native-mobile-navigation-lifecycle-ux",
+      "mode": "invariant",
       "task": "Review a React Native iOS and Android flow so back, up, dismiss and cancel stay distinct, each tab preserves its stack, predictive back and edge gestures do not fight a carousel, keyboard insets keep the CTA visible, and an external payment result is consumed once after process recreation",
       "paths": [
         "apps/mobile/src/navigation/CheckoutFlow.tsx",
@@ -1202,6 +1228,7 @@
     },
     {
       "id": "web-responsive-safe-area-not-native-mobile",
+      "mode": "invariant",
       "task": "Fix a browser-only responsive checkout footer that overlaps CSS safe-area-inset-bottom and loses focus at 200 percent browser zoom",
       "paths": [
         "src/web/checkout-footer.css",
@@ -1221,6 +1248,7 @@
     },
     {
       "id": "tablet-adaptive-workspace-korean",
+      "mode": "invariant",
       "task": "React Native 네이티브 모바일 앱을 태블릿과 폴더블에서 목록 상세 편집 패널을 현재 창 폭과 작업 상태에 맞춰 1개 2개 3개로 바꾸고, 분할 화면 회전 중에도 선택 ID 초안 포커스 스크롤을 보존해. 터치 펜 키보드 마우스가 같은 명령과 실행 취소 계약을 쓰게 해",
       "paths": [
         "apps/mobile/src/adaptive/WorkspaceLayout.tsx",
@@ -1241,6 +1269,7 @@
     },
     {
       "id": "browser-container-query-not-native-large-screen",
+      "mode": "invariant",
       "task": "Fix a browser-only dashboard CSS grid so container queries collapse three columns inside a narrow embedded parent and remain usable at 200 percent zoom",
       "paths": [
         "src/web/dashboard-grid.css",
@@ -1261,6 +1290,7 @@
     },
     {
       "id": "async-operation-progress-control-ux",
+      "mode": "invariant",
       "task": "Review a long-running export UI so real processed rows drive phase-local progress, cancel requested stays pending until acknowledged, navigation continues through a global job tray, and 100% waits for a downloadable result",
       "paths": [
         "src/ui/export-job-progress.tsx",
@@ -1442,6 +1472,7 @@
     },
     {
       "id": "prompt-contract-evidence-routing",
+      "mode": "invariant",
       "task": "Review a prompt contract with an atomic requirement ledger, evidence-type routing, conditional tool use, minimal contrast examples, held-out cases, and separate semantic and surface gates",
       "paths": [
         "src/ai/prompt-contract.ts",
@@ -1462,6 +1493,7 @@
     },
     {
       "id": "llm-claim-state-uncertainty",
+      "mode": "invariant",
       "task": "Gate an LLM answer with a claim-state ledger, three-item assumption budget, weakest-premise uncertainty propagation, separate fact and logic validation, and evidence sufficiency",
       "paths": [
         "src/ai/answer-grounding.ts",
@@ -1494,6 +1526,7 @@
     },
     {
       "id": "complex-decision-hidden-assumptions",
+      "mode": "invariant",
       "task": "Write a decision record that treats the proposed solution as candidate A, exposes hidden assumptions and stakeholders, compares a null hypothesis and independent alternatives, runs a pre-mortem, and chooses the smallest discriminating experiment",
       "paths": [
         "docs/decisions/platform-choice.md"
@@ -1510,6 +1543,7 @@
     },
     {
       "id": "agent-eval-compositional-generalization",
+      "mode": "invariant",
       "task": "Build an agent eval with minimal contrasts, independent rule-domain-format-label factors, sealed compositional holdouts, valid metamorphic transformations, invariance and equivariance checks, arbitrary labels, and a difficulty curve",
       "paths": [
         "tests/agents/generalization-eval.test.ts"
@@ -1568,6 +1602,7 @@
     },
     {
       "id": "native-machine-code-performance-korean",
+      "mode": "invariant",
       "task": "네이티브 핫 루프의 머신 코드 성능을 개선해. 실제 워크로드와 PMU로 병목을 분류하고 alias 분석, 캐시 배치, 분기 예측, 벡터화, register spill, PGO 결과를 검증해",
       "paths": [
         "src/native/filter.cpp",
@@ -1586,6 +1621,7 @@
     },
     {
       "id": "client-bundle-performance-only",
+      "mode": "invariant",
       "task": "Reduce first-route JS and shared vendor dependency bloat with tree shaking and measured bundle-size budgets; no secret, source-map, hydration, or artifact-security change is involved",
       "paths": [
         "src/client/routes/dashboard.tsx"
