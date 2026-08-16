@@ -45,11 +45,13 @@ test('related selection uses explicit command test contracts without router fall
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('verify-inputs.test.js'), true);
 	assert.equal(selected.has('explain-verify.test.js'), true);
-	for (const testName of schemaSmokeTests) {
-		assert.equal(selected.has(testName), true);
-	}
 	assert.equal(selected.has('router.test.js'), false);
 	assert.equal(selected.has('check.test.js'), false);
+	// Schema smoke tests run only when a schema file or schema source changes,
+	// not on every command change (audit P0-6).
+	for (const testName of schemaSmokeTests) {
+		assert.equal(selected.has(testName), false);
+	}
 });
 
 test('related selection keeps router changes out of local index suites', () => {
@@ -67,8 +69,10 @@ test('related selection covers shared command eligibility behavior', () => {
 	assert.equal(selected.has('verify.test.js'), true);
 	assert.equal(selected.has('verify-inputs.test.js'), true);
 	assert.equal(selected.has('security-fuzz.test.js'), true);
+	// Schema smoke tests run only when a schema file or schema source changes
+	// (audit P0-6); a command-eligibility change selects its focused tests only.
 	for (const testName of schemaSmokeTests) {
-		assert.equal(selected.has(testName), true);
+		assert.equal(selected.has(testName), false);
 	}
 });
 
@@ -152,7 +156,7 @@ test('related selection keeps delegated workspace execution changes on focused c
 	}
 	assert.equal(selected.has('check-config-validation.test.js'), true);
 	assert.equal(selected.has('workspace.test.js'), true);
-	assert.equal(selected.has('schema-cli-output-contracts.test.js'), true);
+	assert.equal(selected.has('schema-cli-output-contracts.test.js'), false);
 	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
 });
 
@@ -354,12 +358,14 @@ test('related selection keeps line-ending implementation changes out of schema s
 	assert.deepEqual([...selected], ['line-endings.test.js']);
 });
 
-test('related selection keeps line-ending command changes schema-covered', () => {
+test('related selection keeps line-ending command changes out of schema smoke tests', () => {
 	const selected = selectedFor(['src/cli/commands/line-endings.ts']);
 
 	assert.equal(selected.has('line-endings.test.js'), true);
+	// Schema smoke tests run only when a schema file or schema source changes
+	// (audit P0-6); a line-endings command change selects its focused test only.
 	for (const testName of schemaSmokeTests) {
-		assert.equal(selected.has(testName), true);
+		assert.equal(selected.has(testName), false);
 	}
 });
 
