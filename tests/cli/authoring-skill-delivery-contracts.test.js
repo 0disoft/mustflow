@@ -563,11 +563,12 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		},
 		{
 			name: 'agent-job-control-review',
+			skillPath: '.mustflow/skills/agent-job-control-review/SKILL.md',
 			category: 'general_code',
 			routeType: 'adjunct',
 			priority: 73,
 			phrases: [
-				'job table as the source of truth',
+				'Make the job table the source of truth',
 				'Never treat the job id as the idempotency key',
 				'`cancel_requested` first',
 				'Trust a reconciler over worker discipline',
@@ -606,9 +607,11 @@ test('durable execution skills keep distinct ownership and synchronized install 
 
 	for (const entry of cases) {
 		const revision = entry.revision ?? 1;
-		const localSkill = readText(`.mustflow/skills/${entry.name}/SKILL.md`);
+		const localSkill = readText(entry.skillPath ?? `.mustflow/skills/${entry.name}/SKILL.md`);
 		const templateSkill = readText(
-			`templates/default/locales/en/.mustflow/skills/${entry.name}/SKILL.md`,
+			entry.skillPath
+				? `templates/default/locales/en/${entry.skillPath}`
+				: `templates/default/locales/en/.mustflow/skills/${entry.name}/SKILL.md`,
 		);
 
 		assert.equal(localSkill, templateSkill, `${entry.name} source and template must match`);
