@@ -148,6 +148,9 @@ export interface EffectivePolicyContext {
 	readonly auto_push: boolean;
 	readonly state_is_versioned: boolean;
 	readonly raw_logs_allowed: boolean;
+	// Verification profile the agent should present (audit P1-8): edit, change,
+	// release, or scheduled. Read from preferences verification.selection.profile.
+	readonly verification_profile: 'edit' | 'change' | 'release' | 'scheduled';
 }
 
 export interface StatePolicyContext {
@@ -969,6 +972,10 @@ function readEffectivePolicyContext(
 	const allowInferredCommands = readBoolean(verification, 'allow_inferred_commands', false);
 	const requireConfiguredIntents = readBoolean(verification, 'require_configured_intents', true);
 	const rawEventsStore = readRetentionStore(retention, 'raw_events') ?? 'none';
+	const verificationSelection = readNestedTable(preferences, 'verification.selection');
+	const rawProfile = verificationSelection ? readString(verificationSelection, 'profile') : undefined;
+	const verificationProfile =
+		rawProfile === 'change' || rawProfile === 'release' || rawProfile === 'scheduled' ? rawProfile : 'edit';
 
 	return {
 		entrypoint: 'AGENTS.md',
@@ -981,6 +988,7 @@ function readEffectivePolicyContext(
 		auto_push: readBoolean(git, 'auto_push', false),
 		state_is_versioned: false,
 		raw_logs_allowed: rawEventsStore !== 'none',
+		verification_profile: verificationProfile,
 	};
 }
 
