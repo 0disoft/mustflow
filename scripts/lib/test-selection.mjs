@@ -29,33 +29,19 @@ export function createTestSelection(allCliTests, options = {}) {
 		'index-verification-evidence.test.js',
 		'index-source-anchors.test.js',
 		'search.test.js',
-		'search-backends.test.js',
-		'search-index-state.test.js',
-		'search-output.test.js',
-		'search-source-scope.test.js',
 	];
 
 	const indexTests = ['index-workflow.test.js', 'index-verification-evidence.test.js', 'index-source-anchors.test.js'];
 	const versioningTests = ['check-versioning.test.js', 'version-sources.test.js'];
-	const runTests = [
-		'run-execution.test.js',
-		'run-preview.test.js',
-		'run-receipts.test.js',
-		'run-safety.test.js',
-	];
-	const dashboardTests = [
-		'dashboard-preferences.test.js',
-		'dashboard-rendering.test.js',
-		'dashboard-safety.test.js',
-		'dashboard-verification.test.js',
-	];
+	const runTests = ['run.test.js'];
+	const dashboardTests = ['dashboard.test.js'];
 	const testSelectionTests = ['test-selection-related-contracts.test.js', 'test-selection-runner-contracts.test.js'];
 	const commandContractTests = ['check-command-contracts.test.js', ...runTests];
 	const sourceAnchorTests = [
 		'check-source-anchors.test.js',
 		'explain-source-anchor.test.js',
 		'index-source-anchors.test.js',
-		'search-source-scope.test.js',
+		'search.test.js',
 	];
 	const schemaSmokeTests = ['schema-contracts.test.js'];
 	const nativeCrashEvidenceTests = ['native-crash-evidence.test.js', 'native-crash-collectors.test.js', 'deterministic-race-harness.test.js', 'crash-evidence.test.js', ...schemaSmokeTests];
@@ -222,7 +208,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		['onboard', ['onboard.test.js', 'contract-lint.test.js']],
 		['workspace', ['workspace.test.js']],
 		['run', [...runTests]],
-		['search', ['search.test.js', 'search-backends.test.js', 'search-index-state.test.js', 'search-output.test.js', 'search-source-scope.test.js']],
+		['search', ['search.test.js']],
 		['status', ['status.test.js']],
 		['update', ['update.test.js']],
 		['upgrade', ['upgrade.test.js', 'update.test.js', ...routerSmokeTests]],
@@ -322,10 +308,6 @@ export function createTestSelection(allCliTests, options = {}) {
 				'next.test.js',
 				'onboard.test.js',
 				'search.test.js',
-				'search-backends.test.js',
-				'search-index-state.test.js',
-				'search-output.test.js',
-				'search-source-scope.test.js',
 				'update.test.js',
 				'upgrade.test.js',
 				...verifyTests,
@@ -388,7 +370,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/text-budget\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/route-outline\.ts$/u, tests: codeOutlineContractTests },
 		{ match: /^src\/core\/completion-verdict\.ts$/u, tests: verifyCompletionVerdictTests },
-		{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard-verification.test.js', 'verify.test.js', ...verifyCompletionVerdictTests] },
+		{ match: /^src\/core\/dashboard-verification\.ts$/u, tests: ['dashboard.test.js', 'verify.test.js', ...verifyCompletionVerdictTests] },
 		{ match: /^src\/core\/doc-review-triage\.ts$/u, tests: ['docs.test.js', ...dashboardTests] },
 		{ match: /^src\/core\/change-classification\.ts$/u, tests: ['classify.test.js', ...verifyTests, 'explain-surface.test.js', 'explain-verify.test.js'] },
 		{ match: /^src\/core\/change-verification\.ts$/u, tests: verificationPlanningTests },
@@ -417,7 +399,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/repeated-failure\.ts$/u, tests: ['verify-completion-verdict-repeated-failure-contracts.test.js'] },
 		{ match: /^src\/core\/validation-ratchet\.ts$/u, tests: ['verify-completion-verdict-ratchet-contracts.test.js'] },
 		{ match: /^src\/core\/verification-plan\.ts$/u, tests: verificationPlanningTests },
-		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', ...verifyCompletionVerdictTests, 'dashboard-verification.test.js'] },
+		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', ...verifyCompletionVerdictTests, 'dashboard.test.js'] },
 		{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 		{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
 		{ match: /^src\/core\/skill-route-resolution\.ts$/u, tests: skillRouteTests },
@@ -427,8 +409,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^scripts\/evaluate-skill-routes\.ts$/u, tests: [...skillRouteTests, ...testSelectionTests] },
 		{ match: /^scripts\/benchmark-skill-routes\.ts$/u, tests: [...skillRouteTests, ...testSelectionTests] },
 		{ match: /^src\/core\/source-anchor-(explanation|validation)\.ts$/u, tests: ['check-source-anchors.test.js', 'explain-source-anchor.test.js'] },
-		{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js'] },
-		{ match: /^src\/core\/source-anchor-symbols\.ts$/u, tests: ['index-source-anchors.test.js', 'search-source-scope.test.js', 'check-source-anchors.test.js'] },
+		{ match: /^src\/core\/source-anchor-status\.ts$/u, tests: ['index-source-anchors.test.js', 'search.test.js'] },
+		{ match: /^src\/core\/source-anchor-symbols\.ts$/u, tests: ['index-source-anchors.test.js', 'search.test.js', 'check-source-anchors.test.js'] },
 		{ match: /^src\/core\/source-anchors\.ts$/u, tests: sourceAnchorTests },
 		{ match: /^src\/core\/surface-decision-model\.ts$/u, tests: ['explain-surface.test.js', 'verify.test.js', 'verify-plan-scheduler.test.js'] },
 		{ match: /^src\/core\/toml\.ts$/u, tests: ['check-config-validation.test.js', 'contract-lint.test.js', ...runTests] },

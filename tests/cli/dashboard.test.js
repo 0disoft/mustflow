@@ -5,7 +5,6 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-
 import {
 	browserOpenModuleUrl,
 	cliPath,
@@ -832,3 +831,592 @@ test('dashboard serves and updates safe preferences', async () => {
 		removeTempProject(projectPath);
 	}
 });
+
+test('dashboard browser opener uses platform-native commands', async () => {
+	const { getBrowserOpenCommand, getFileManagerOpenCommand } = await import(browserOpenModuleUrl);
+	const url = 'http://127.0.0.1:4173/';
+	const folderPath = path.join(projectRoot, '.mustflow');
+
+	assert.deepEqual(getBrowserOpenCommand(url, 'win32'), {
+		bin: 'cmd',
+		args: ['/c', 'start', '', url],
+	});
+	assert.deepEqual(getBrowserOpenCommand(url, 'darwin'), {
+		bin: 'open',
+		args: [url],
+	});
+	assert.deepEqual(getBrowserOpenCommand(url, 'linux'), {
+		bin: 'xdg-open',
+		args: [url],
+	});
+	assert.equal(getBrowserOpenCommand(url, 'aix'), undefined);
+
+	assert.deepEqual(getFileManagerOpenCommand(folderPath, 'win32'), {
+		bin: 'cmd',
+		args: ['/c', 'start', '', folderPath],
+	});
+	assert.deepEqual(getFileManagerOpenCommand(folderPath, 'darwin'), {
+		bin: 'open',
+		args: [folderPath],
+	});
+	assert.deepEqual(getFileManagerOpenCommand(folderPath, 'linux'), {
+		bin: 'xdg-open',
+		args: [folderPath],
+	});
+	assert.equal(getFileManagerOpenCommand(folderPath, 'aix'), undefined);
+});
+
+test('dashboard HTML escapes inline JSON for script context', async () => {
+	const { renderDashboardHtml } = await import(dashboardHtmlModuleUrl);
+	const injected = '</script><script>window.__mustflowInjected=1</script>&\u2028\u2029';
+	const html = renderDashboardHtml(
+		{
+			projectRoot: injected,
+			preferencesPath: injected,
+			settings: [],
+			lockedSettings: [],
+			groups: [],
+			metadata: { generatedAt: injected },
+		},
+		injected,
+		{
+			schema_version: '1',
+			command: 'dashboard status',
+			mustflow_root: injected,
+			preferences: { marker: injected },
+			command_contract: { intents: [{ name: 'malicious', description: injected }] },
+		},
+		{
+			schema_version: '1',
+			command: 'dashboard docs status',
+			documents: [{ path: injected, review_summary: injected }],
+		},
+	);
+	const scriptBody = /<script>\n([\s\S]*?)\n<\/script>/u.exec(html)?.[1] ?? '';
+
+	assert.equal([...html.matchAll(/<\/script>/gu)].length, 1);
+	assert.doesNotMatch(html, /<\/script><script>/u);
+	assert.doesNotMatch(html, /<script>window\.__mustflowInjected/u);
+	assert.doesNotMatch(scriptBody, /\u2028/u);
+	assert.doesNotMatch(scriptBody, /\u2029/u);
+	assert.match(
+		scriptBody,
+		/\\u003C\/script\\u003E\\u003Cscript\\u003Ewindow\.__mustflowInjected=1\\u003C\/script\\u003E\\u0026\\u2028\\u2029/u,
+	);
+});
+
+test('dashboard exports static HTML and redacted JSON without starting a server', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		writeLatestRunReceipt(projectPath);
+
+		const htmlResult = runCli(projectPath, ['dashboard', '--export', 'reports/dashboard.html']);
+		assert.equal(htmlResult.status, 0, htmlResult.stderr || htmlResult.stdout);
+		assert.match(htmlResult.stdout, /Wrote dashboard export to reports\/dashboard\.html/);
+		assert.doesNotMatch(htmlResult.stdout, /listening/);
+
+		const htmlPath = path.join(projectPath, 'reports', 'dashboard.html');
+		assert.ok(existsSync(htmlPath));
+		const html = readFileSync(htmlPath, 'utf8');
+		assert.match(html, /mustflow dashboard export/);
+		assert.match(html, /Dashboard status/);
+		assert.match(html, /<script id="dashboard-export-data" type="application\/json">/);
+		assert.doesNotMatch(html, /dashboardToken/);
+		assert.doesNotMatch(html, /fetch\("/);
+		assert.doesNotMatch(html, /\/api\//);
+		assert.doesNotMatch(html, /navigator\.clipboard/);
+		assert.doesNotMatch(html, /id="open-mustflow"/);
+		assert.doesNotMatch(html, /<button\b/);
+		assert.doesNotMatch(html, /supersecretvalue/);
+		assert.doesNotMatch(html, /sk-abcdefghijklmnop/);
+		assert.doesNotMatch(html, /ghp_1234567890abcdefghij/);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', 'reports/dashboard.json']);
+		assert.equal(jsonResult.status, 0, jsonResult.stderr || jsonResult.stdout);
+		assert.match(jsonResult.stdout, /Wrote dashboard export to reports\/dashboard\.json/);
+		assert.doesNotMatch(jsonResult.stdout, /listening/);
+
+		const jsonPath = path.join(projectPath, 'reports', 'dashboard.json');
+		assert.ok(existsSync(jsonPath));
+		const exportSnapshot = JSON.parse(readFileSync(jsonPath, 'utf8'));
+		assert.equal(exportSnapshot.schema_version, '1');
+		assert.equal(exportSnapshot.command, 'dashboard export');
+		assert.match(exportSnapshot.correlation_id, /^mf-dashboard-[0-9a-f]{16}$/u);
+		assert.equal(exportSnapshot.format, 'json');
+		assert.equal(exportSnapshot.output_policy.starts_server, false);
+		assert.equal(exportSnapshot.output_policy.omits_dashboard_token, true);
+		assert.equal(exportSnapshot.output_policy.omits_raw_run_output, true);
+		assert.equal(exportSnapshot.output_policy.redacts_secret_like_values, true);
+		assert.equal(exportSnapshot.harness_report.schema_version, '1');
+		assert.equal(exportSnapshot.harness_report.generated_from, 'dashboard_status_snapshot');
+		assert.equal(exportSnapshot.harness_report.install.installed, true);
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.schema_version, '1');
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.status, 'partially_verified');
+		assert.equal(
+			exportSnapshot.harness_report.verification.completion_verdict.primary_reason,
+			'latest_run_passed_without_current_claim_binding',
+		);
+		assert.equal(exportSnapshot.harness_report.verification.completion_verdict.evidence.source, 'dashboard_export');
+		assert.equal(exportSnapshot.harness_report.verification.evidence_model.source, 'dashboard_export');
+		assert.deepEqual(exportSnapshot.harness_report.verification.evidence_model.coverage_matrix, []);
+		assert.equal(exportSnapshot.harness_report.verification.evidence_model.receipts[0].intent, 'test_related');
+		assert.equal(
+			exportSnapshot.harness_report.verification.evidence_model.receipts[0].receipt_path,
+			'.mustflow/state/runs/latest.json',
+		);
+		assert.deepEqual(
+			exportSnapshot.harness_report.verification.evidence_model.explanation.downgraded_by,
+			['dashboard_export_is_read_only', 'latest_run_is_not_bound_to_a_current_completion_claim'],
+		);
+		assert.equal(exportSnapshot.harness_report.run_history.intent, 'test_related');
+		assert.equal(exportSnapshot.harness_report.run_history.receipt_path, '.mustflow/state/runs/latest.json');
+		assert.equal(exportSnapshot.harness_report.docs_review.active_documents, 0);
+		assert.equal(exportSnapshot.status.run_history.command_line_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stdout.tail_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stderr.tail_omitted, true);
+		assert.equal(exportSnapshot.status.run_history.stdout.redacted, true);
+		assert.equal(exportSnapshot.status.run_history.stderr.redacted, true);
+		assert.ok(exportSnapshot.status.run_history.stdout.redaction_count > 0);
+		assert.ok(exportSnapshot.status.run_history.stderr.redaction_count > 0);
+		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.command_line'));
+		assert.ok(exportSnapshot.limits.omitted_fields.includes('status.run_history.stdout.tail'));
+		assert.equal(typeof exportSnapshot.limits.max_string_bytes, 'number');
+		assert.equal(typeof exportSnapshot.limits.max_array_items, 'number');
+		assert.equal(typeof exportSnapshot.limits.redaction_count, 'number');
+		assert.ok(Array.isArray(exportSnapshot.limits.redacted_fields));
+		assert.ok(Array.isArray(exportSnapshot.limits.redaction_kinds));
+		assert.ok(Array.isArray(exportSnapshot.limits.truncated_fields));
+		const serialized = JSON.stringify(exportSnapshot);
+		assert.doesNotMatch(serialized, /dashboardToken/);
+		assert.doesNotMatch(serialized, /supersecretvalue/);
+		assert.doesNotMatch(serialized, /sk-abcdefghijklmnop/);
+		assert.doesNotMatch(serialized, /ghp_1234567890abcdefghij/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard JSON export includes harness verification gaps and remaining risks', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.verify_schema_contract]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract changes."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["public_api_change"]
+
+[intents.verify_schema_manual_review]
+status = "manual_only"
+description = "Manual schema verification review."
+reason = "Schema review requires explicit maintainer approval."
+agent_action = "do_not_run_report_gap"
+required_after = ["public_api_change"]
+
+[intents.verify_schema_unknown_tool]
+status = "unknown"
+description = "Unknown schema verification tool."
+reason = "No schema verification tool is configured."
+agent_action = "do_not_guess_report_missing"
+required_after = ["public_api_change"]
+`,
+		);
+		assert.equal(runGit(projectPath, ['init']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.email', 'mustflow@example.invalid']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
+		assert.equal(runGit(projectPath, ['add', '.']).status, 0);
+		assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+
+		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'schemas', 'output.schema.json'), '{"type":"object"}\n');
+		writeFileSync(path.join(projectPath, 'docs', 'guide.md'), '# Guide\n');
+		const addReview = runCli(projectPath, [
+			'docs',
+			'review',
+			'add',
+			'docs/guide.md',
+			'--actor-kind',
+			'llm',
+			'--actor-id',
+			'codex',
+			'--comment',
+			'Check dashboard export wording.',
+		]);
+		assert.equal(addReview.status, 0, addReview.stderr || addReview.stdout);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', 'reports/harness.json']);
+		assert.equal(jsonResult.status, 0, jsonResult.stderr || jsonResult.stdout);
+
+		const exportSnapshot = JSON.parse(readFileSync(path.join(projectPath, 'reports', 'harness.json'), 'utf8'));
+		const report = exportSnapshot.harness_report;
+		const gapKinds = report.verification.gaps.map((gap) => gap.kind);
+		const riskCodes = report.remaining_risks.map((risk) => risk.code);
+
+		assert.equal(report.schema_version, '1');
+		assert.equal(report.verification.completion_verdict.status, 'blocked');
+		assert.equal(report.verification.completion_verdict.primary_reason, 'verification_gaps_present');
+		assert.equal(report.verification.evidence_model.source, 'dashboard_export');
+		assert.equal(report.verification.evidence_model.requirements[0].reason, 'dashboard_snapshot');
+		assert.equal(report.verification.evidence_model.coverage_matrix[0].status, 'blocked');
+		assert.ok(
+			report.verification.evidence_model.coverage_matrix[0].evidence.gap_reasons.includes(
+				'Schema review requires explicit maintainer approval.',
+			),
+		);
+		assert.equal(report.verification.evidence_model.coverage_matrix[0].evidence.gap_reasons.length > 1, true);
+		assert.ok(report.verification.evidence_model.gaps.some((gap) => gap.status === 'manual_only'));
+		assert.ok(report.verification.evidence_model.remaining_risks.some((risk) => risk.code === 'docs_review_pending'));
+		assert.deepEqual(report.verification.conflict_ledger, report.verification.evidence_model.conflict_ledger);
+		assert.equal(report.verification.conflict_ledger.status, 'open');
+		assert.ok(report.verification.conflict_ledger.items.some((item) => item.kind === 'verification_gap'));
+		assert.ok(report.verification.conflict_ledger.items.some((item) => item.kind === 'remaining_risk'));
+		assert.equal(report.verification.changed_file_count > 0, true);
+		assert.ok(report.verification.changed_surfaces.includes('schema_contract'));
+		assert.equal(report.verification.decision_graph_summary.root, 'verification_decision');
+		assert.equal(report.verification.decision_graph_summary.runnable > 0, true);
+		assert.ok(report.verification.runnable_intents.includes('verify_schema_contract'));
+		assert.ok(report.verification.skipped_intents.some((intent) => intent.intent === 'verify_schema_manual_review'));
+		assert.ok(report.verification.skipped_intents.some((intent) => intent.intent === 'verify_schema_unknown_tool'));
+		assert.ok(gapKinds.includes('manual_only'));
+		assert.ok(gapKinds.includes('unknown'));
+		assert.equal(report.docs_review.active_documents, 1);
+		assert.ok(riskCodes.includes('docs_review_pending'));
+		assert.ok(riskCodes.includes('manual_only_verification_gap'));
+		assert.ok(riskCodes.includes('unknown_verification_gap'));
+		assert.doesNotMatch(JSON.stringify(report), /schema contract"\]/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard export rejects paths outside the mustflow root', () => {
+	const projectPath = createTempProject();
+	const outsideHtmlPath = path.resolve(projectPath, '..', 'mustflow-dashboard-outside.html');
+	const outsideJsonPath = path.resolve(projectPath, '..', 'mustflow-dashboard-outside.json');
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		const htmlResult = runCli(projectPath, ['dashboard', '--export', '../mustflow-dashboard-outside.html']);
+		assert.equal(htmlResult.status, 1);
+		assert.match(htmlResult.stderr, /export path must stay inside the mustflow root/i);
+		assert.equal(existsSync(outsideHtmlPath), false);
+
+		const jsonResult = runCli(projectPath, ['dashboard', '--export-json', '../mustflow-dashboard-outside.json']);
+		assert.equal(jsonResult.status, 1);
+		assert.match(jsonResult.stderr, /export path must stay inside the mustflow root/i);
+		assert.equal(existsSync(outsideJsonPath), false);
+	} finally {
+		rmSync(outsideHtmlPath, { force: true });
+		rmSync(outsideJsonPath, { force: true });
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard status cache invalidates command contract edits', async () => {
+	const projectPath = createTempProject();
+	let dashboard;
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+
+		const info = await waitForDashboardInfo(dashboard);
+		const html = await fetch(info.url).then((response) => response.text());
+		const token = /const dashboardToken = "([^"]+)";/u.exec(html)?.[1];
+		assert.ok(token);
+
+		const headers = { 'x-mustflow-dashboard-token': token };
+		const firstStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		const secondStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		assert.equal(firstStatus.command_contract.intents.length, secondStatus.command_contract.intents.length);
+
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[intents.dashboard_status_cache_probe]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe dashboard status cache invalidation."
+argv = ['${process.execPath}', '-e', 'console.log("cache probe")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+
+[intents.dashboard_shell_without_allow_shell]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Probe dashboard shared runnable eligibility for shell intents."
+mode = "shell"
+cmd = "echo dashboard shell probe"
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+`,
+		);
+
+		const changedStatus = await fetch(new URL('/api/status', info.url), { headers }).then((response) =>
+			response.json(),
+		);
+		assert.ok(
+			changedStatus.command_contract.intents.some((intent) => intent.name === 'dashboard_status_cache_probe'),
+		);
+		assert.ok(changedStatus.runnable_intents.includes('dashboard_status_cache_probe'));
+		assert.equal(changedStatus.runnable_intents.includes('dashboard_shell_without_allow_shell'), false);
+		assert.ok(
+			changedStatus.command_contract.intents.some(
+				(intent) => intent.name === 'dashboard_shell_without_allow_shell' && intent.runnable === false,
+			),
+		);
+	} finally {
+		if (dashboard) {
+			await stopDashboard(dashboard);
+		}
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard rejects non-local host binding', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		const result = runCli(projectPath, ['dashboard', '--host', '0.0.0.0']);
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Refused dashboard host 0\.0\.0\.0/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard options use shared value and boolean option rules', () => {
+	const projectPath = createTempProject();
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+
+		const booleanValue = runCli(projectPath, ['dashboard', '--json=true']);
+		assert.equal(booleanValue.status, 1);
+		assert.match(booleanValue.stderr, /Unknown option: --json=true/u);
+		assert.match(booleanValue.stderr, /mf dashboard --help/u);
+
+		const missingHost = runCli(projectPath, ['dashboard', '--host=']);
+		assert.equal(missingHost.status, 1);
+		assert.match(missingHost.stderr, /Missing value for --host/u);
+		assert.match(missingHost.stderr, /mf dashboard --help/u);
+
+		const conflictingExport = runCli(projectPath, [
+			'dashboard',
+			'--export=reports/first.html',
+			'--export=reports/second.html',
+		]);
+		assert.equal(conflictingExport.status, 1);
+		assert.match(conflictingExport.stderr, /Use only one dashboard export mode/u);
+		assert.match(conflictingExport.stderr, /mf dashboard --help/u);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('dashboard verification recommendations use the core change verification contract', async () => {
+	const projectPath = createTempProject();
+	let dashboard;
+
+	try {
+		const init = runCli(projectPath, ['init', '--yes']);
+		assert.equal(init.status, 0, init.stderr);
+		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(
+			commandsPath,
+			`${readFileSync(commandsPath, 'utf8')}
+[resources.schema_artifact]
+type = "path"
+paths = ["dist/**"]
+concurrency = "exclusive_writer"
+description = "Schema verification artifact."
+
+[intents.verify_schema_contract]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract changes."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "schema_artifact", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["public_api_change"]
+
+[intents.verify_schema_contract_followup]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify schema contract follow-up."
+argv = ['${process.execPath}', '-e', 'console.log("schema followup")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+effects = [{ type = "write", mode = "delete_recreate", path = "dist/**", lock = "schema_artifact", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["public_api_change"]
+
+[intents."verify_schema_contract; echo injected #"]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Unsafe intent names must not become copyable shell recommendations."
+argv = ['${process.execPath}', '-e', 'console.log("schema contract")']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["public_api_change"]
+`,
+		);
+		assert.equal(runGit(projectPath, ['init']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.email', 'mustflow@example.invalid']).status, 0);
+		assert.equal(runGit(projectPath, ['config', 'user.name', 'mustflow test']).status, 0);
+		assert.equal(runGit(projectPath, ['add', '.']).status, 0);
+		assert.equal(runGit(projectPath, ['commit', '-m', 'baseline']).status, 0);
+		const index = runCli(projectPath, ['index', '--json']);
+		assert.equal(index.status, 0, index.stderr || index.stdout);
+
+		mkdirSync(path.join(projectPath, 'schemas'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'schemas', 'output.schema.json'), '{"type":"object"}\n');
+
+		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
+			cwd: projectPath,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		});
+
+		const info = await waitForDashboardInfo(dashboard);
+		const html = await fetch(info.url).then((response) => response.text());
+		const token = /const dashboardToken = "([^"]+)";/u.exec(html)?.[1];
+		assert.ok(token);
+
+		const status = await fetch(new URL('/api/status', info.url), {
+			headers: { 'x-mustflow-dashboard-token': token },
+		}).then((response) => response.json());
+		const recommendedIntents = status.verification.recommendations.map((recommendation) => recommendation.intent);
+		const recommendedCommands = status.verification.recommendations.map((recommendation) => recommendation.command);
+		const skippedIntents = status.verification.skipped.map((skipped) => skipped.intent);
+
+		assert.ok(status.verification.changed_files.includes('schemas/output.schema.json'));
+		assert.ok(status.verification.surfaces.includes('schema_contract'));
+		assert.ok(recommendedIntents.includes('verify_schema_contract'));
+		assert.ok(recommendedIntents.includes('verify_schema_contract_followup'));
+		assert.ok(recommendedCommands.includes('mf run verify_schema_contract'));
+		assert.equal(recommendedIntents.includes('verify_schema_contract; echo injected #'), false);
+		assert.equal(recommendedCommands.includes('mf run verify_schema_contract; echo injected #'), false);
+		assert.ok(skippedIntents.includes('verify_schema_contract; echo injected #'));
+		const schemaBatch = status.verification.schedule.batches.find((batch) =>
+			batch.intents.includes('verify_schema_contract'),
+		);
+		const schemaFollowupBatch = status.verification.schedule.batches.find((batch) =>
+			batch.intents.includes('verify_schema_contract_followup'),
+		);
+		assert.ok(schemaBatch);
+		assert.ok(schemaFollowupBatch);
+		assert.notEqual(schemaBatch.index, schemaFollowupBatch.index);
+		assert.ok(schemaBatch.locks.includes('schema_artifact'));
+		assert.ok(schemaFollowupBatch.locks.includes('schema_artifact'));
+		assert.equal(status.command_contract.effect_graph_status.status, 'fresh');
+		const schemaIntent = status.command_contract.intents.find((intent) => intent.name === 'verify_schema_contract');
+		assert.ok(schemaIntent);
+		assert.equal(schemaIntent.effect_graph.authority, 'explanation_only');
+		assert.equal(schemaIntent.effect_graph.command_authority, '.mustflow/config/commands.toml');
+		assert.equal(schemaIntent.effect_graph.grants_command_authority, false);
+		assert.equal(schemaIntent.effect_graph.status, 'fresh');
+		assert.ok(
+			schemaIntent.effect_graph.write_locks.some(
+				(lock) => lock.lock === 'schema_artifact' && lock.paths.includes('dist/**'),
+			),
+		);
+		assert.ok(
+			schemaIntent.effect_graph.lock_conflicts.some(
+				(conflict) => conflict.intent === 'verify_schema_contract_followup' && conflict.lock === 'schema_artifact',
+			),
+		);
+		assert.ok(
+			status.verification.schedule.entries.some(
+				(entry) =>
+					entry.intent === 'verify_schema_contract' &&
+					entry.effects.some((effect) => effect.mode === 'delete_recreate' && effect.lock === 'schema_artifact'),
+			),
+		);
+		assert.equal(status.verification.decision_graph.root, 'verification_decision');
+		assert.ok(
+			status.verification.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'command_candidate' &&
+					node.intent === 'verify_schema_contract' &&
+					node.status === 'runnable',
+			),
+		);
+		assert.ok(
+			status.verification.decision_graph.nodes.some(
+				(node) =>
+					node.kind === 'effect' &&
+					node.intent === 'verify_schema_contract' &&
+					node.data.lock === 'schema_artifact',
+			),
+		);
+		assert.equal(recommendedIntents.includes('test_release'), false);
+		assert.ok(skippedIntents.includes('build'));
+		assert.ok(skippedIntents.includes('docs_validate'));
+		assert.equal(skippedIntents.includes('test_audit'), false);
+	} finally {
+		if (dashboard) {
+			await stopDashboard(dashboard);
+		}
+		removeTempProject(projectPath);
+	}
+});
+

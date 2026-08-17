@@ -14,23 +14,13 @@ import {
 } from '../../../scripts/lib/test-ordering.mjs';
 
 export const projectRoot = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)));
-export const runTests = [
-	'run-execution.test.js',
-	'run-preview.test.js',
-	'run-receipts.test.js',
-	'run-safety.test.js',
-];
+export const runTests = ['run.test.js'];
 export const indexTests = [
 	'index-workflow.test.js',
 	'index-verification-evidence.test.js',
 	'index-source-anchors.test.js',
 ];
-export const dashboardTests = [
-	'dashboard-preferences.test.js',
-	'dashboard-rendering.test.js',
-	'dashboard-safety.test.js',
-	'dashboard-verification.test.js',
-];
+export const dashboardTests = ['dashboard.test.js'];
 export const schemaSmokeTests = ['schema-contracts.test.js'];
 export const scriptPackContractTests = [
 	'script-pack-catalog-contracts.test.js',

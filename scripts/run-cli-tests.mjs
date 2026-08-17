@@ -410,10 +410,6 @@ function testDemand(testPath) {
 			'index-dry-run.test.js',
 			...indexTests,
 			'search.test.js',
-			'search-backends.test.js',
-			'search-index-state.test.js',
-			'search-output.test.js',
-			'search-source-scope.test.js',
 		].includes(name)
 	) {
 		return { cpu: 1, io: 3, process: 2, sqlite: 1, git: 0, className: 'sqlite_io_heavy' };
