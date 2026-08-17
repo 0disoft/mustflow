@@ -17,9 +17,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed surfaces
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.filter.outputs.source }}
+      docs: ${{ steps.filter.outputs.docs }}
+      package: ${{ steps.filter.outputs.package }}
+      windows: ${{ steps.filter.outputs.windows }}
+      site: ${{ steps.filter.outputs.site }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+      - name: Classify changed paths
+        id: filter
+        uses: dorny/paths-filter@2cc35dfe5faf1e6c939b0e0e3f6b7a26c9e0f4c1
+        with:
+          filters: |
+            source:
+              - 'src/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'bun.lock'
+            docs:
+              - 'docs-site/src/content/docs/**'
+              - 'README.md'
+            package:
+              - 'templates/**'
+              - 'scripts/release-plan.mjs'
+              - '.github/workflows/publish-npm.yml'
+            windows:
+              - 'src/cli/lib/process-*.ts'
+              - 'src/core/process-*.ts'
+              - 'src/**/windows*.ts'
+              - 'tests/cli/*windows*.test.js'
+            site:
+              - 'docs-site/**'
+
   validate:
     name: Validate CLI and docs
     runs-on: ubuntu-latest
+    needs: changes
+    # Full gate on main push and dispatch; on PRs run only when a relevant
+    # surface changed (audit P1-10: docs-site install and packed-install smoke
+    # should not run for a one-line source change).
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.source == 'true' ||
+      needs.changes.outputs.docs == 'true' ||
+      needs.changes.outputs.package == 'true' ||
+      needs.changes.outputs.site == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -39,25 +88,51 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install documentation site dependencies
-        run: bun install --frozen-lockfile
-        working-directory: docs-site
-
       - name: Check CLI package
         run: bun run check
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.source == 'true' ||
+          needs.changes.outputs.package == 'true'
 
       - name: Check Node-only core path
         run: npm run check:core:node
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.source == 'true' ||
+          needs.changes.outputs.windows == 'true'
 
       - name: Check packed install smoke
         run: npm run check:install
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.package == 'true' ||
+          needs.changes.outputs.source == 'true'
+
+      - name: Install documentation site dependencies
+        run: bun install --frozen-lockfile
+        working-directory: docs-site
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.docs == 'true' ||
+          needs.changes.outputs.site == 'true'
 
       - name: Check documentation site
         run: bun run docs:check
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.docs == 'true' ||
+          needs.changes.outputs.site == 'true'
 
   windows-core:
     name: Windows Node core check
     runs-on: windows-latest
+    needs: changes
+    # Windows-sensitive paths only on PRs; always on main push (audit P1-10).
+    if: >-
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.windows == 'true' ||
+      needs.changes.outputs.source == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0

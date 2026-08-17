@@ -118,6 +118,15 @@ skip_low_risk_code_full_test = true
 skip_translation_only_full_test = true
 skip_copy_only_full_test = true
 report_skipped = true
+# Verification profile to present to agents (audit P1-8). Instead of exposing a
+# dozen test intents, agents choose one of four profiles; the planner maps them
+# to concrete intents:
+#   edit      -> lint, direct tests, quick checks for the changed contract
+#   change    -> build, test_related, affected schema/skill/docs contracts
+#   release   -> full tests, package, install, docs, version, platforms
+#   scheduled -> coverage, audit, quality gaming, prompt cache, full line endings
+# "edit" is the default rapid feedback loop for ordinary code changes.
+profile = "edit"
 
 [testing.authoring]
 # new_test_policy:

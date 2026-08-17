@@ -399,7 +399,11 @@ writes = [".mustflow/review/docs.toml"]
 effects = [{ type = "write", mode = "replace", path = ".mustflow/review/docs.toml", lock = "documentation_review_queue", concurrency = "exclusive" }]
 network = false
 destructive = false
-required_after = ["docs_change", "mustflow_docs_change", "i18n_change", "copy_change"]
+# User-visible documentation changes go through the review queue. Internal
+# skill, context, authoring, and i18n document changes are covered by
+# mustflow_check schema/link/anchor validation instead (audit P1-12), so they
+# no longer require a review-queue write.
+required_after = ["docs_change", "copy_change"]
 
 [intents.mustflow_doctor]
 status = "configured"
