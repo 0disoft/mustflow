@@ -31,16 +31,7 @@ export const dashboardTests = [
 	'dashboard-safety.test.js',
 	'dashboard-verification.test.js',
 ];
-export const schemaSmokeTests = [
-	'schema-api-workspace-contracts.test.js',
-	'schema-cli-output-contracts.test.js',
-	'schema-command-contracts.test.js',
-	'schema-docs-workflow-contracts.test.js',
-	'schema-explain-verify-output.test.js',
-	'schema-manifest-contracts.test.js',
-	'schema-script-pack-code-contracts.test.js',
-	'schema-script-pack-repo-contracts.test.js',
-];
+export const schemaSmokeTests = ['schema-contracts.test.js'];
 export const scriptPackContractTests = [
 	'script-pack-catalog-contracts.test.js',
 	'script-pack-code-boundary-contracts.test.js',

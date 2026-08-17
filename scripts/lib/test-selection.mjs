@@ -57,16 +57,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		'index-source-anchors.test.js',
 		'search-source-scope.test.js',
 	];
-	const schemaSmokeTests = [
-		'schema-api-workspace-contracts.test.js',
-		'schema-cli-output-contracts.test.js',
-		'schema-command-contracts.test.js',
-		'schema-docs-workflow-contracts.test.js',
-		'schema-explain-verify-output.test.js',
-		'schema-manifest-contracts.test.js',
-		'schema-script-pack-code-contracts.test.js',
-		'schema-script-pack-repo-contracts.test.js',
-	];
+	const schemaSmokeTests = ['schema-contracts.test.js'];
 	const nativeCrashEvidenceTests = ['native-crash-evidence.test.js', 'native-crash-collectors.test.js', 'deterministic-race-harness.test.js', 'crash-evidence.test.js', ...schemaSmokeTests];
 	const packageContractTests = [
 		'package-command-contracts.test.js',
@@ -80,7 +71,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		'context.test.js',
 		'check-skill-contracts.test.js',
 		skillInstallSurfaceTest,
-		'schema-cli-output-contracts.test.js',
+		'schema-contracts.test.js',
 	];
 	const skillContractShardPattern = /^authoring-skill(?:-[a-z0-9-]+)?-contracts\.test\.js$/u;
 	const authoringSkillContractTests = allCliTests.filter((name) => skillContractShardPattern.test(name));
@@ -158,7 +149,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		'verify-changed.test.js',
 		'verify-plan-scheduler.test.js',
 		'explain-verify.test.js',
-		'schema-explain-verify-output.test.js',
+		'schema-contracts.test.js',
 	];
 
 	const fastCommandSurfaceTests = [
@@ -463,7 +454,7 @@ export function createTestSelection(allCliTests, options = {}) {
 				'index-workflow.test.js',
 				...runTests,
 				...verifyTests,
-				'schema-command-contracts.test.js',
+				'schema-contracts.test.js',
 			],
 		},
 		{ match: /^\.mustflow\/config\/mustflow\.toml$/u, tests: ['check-config-validation.test.js', 'doctor.test.js'] },

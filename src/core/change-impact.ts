@@ -321,7 +321,7 @@ function addContractImpacts(
 ): void {
 	const contractPaths =
 		changedFile.surface === 'schema'
-			? ['schemas/README.md', 'src/core/public-json-contracts.ts', 'tests/cli/schema-manifest-contracts.test.js']
+			? ['schemas/README.md', 'src/core/public-json-contracts.ts', 'tests/cli/schema-contracts.test.js']
 			: changedFile.surface === 'package' || changedFile.surface === 'template'
 				? [
 						'tests/cli/package-command-contracts.test.js',

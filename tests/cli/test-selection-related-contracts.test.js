@@ -117,7 +117,7 @@ test('related selection maps command config changes to contract surfaces', () =>
 	assert.equal(selected.has('check-command-contracts.test.js'), true);
 	assert.equal(selected.has('explain-command.test.js'), true);
 	assert.equal(selected.has('index-workflow.test.js'), true);
-	assert.equal(selected.has('schema-command-contracts.test.js'), true);
+	assert.equal(selected.has('schema-contracts.test.js'), true);
 	for (const testName of runTests) {
 		assert.equal(selected.has(testName), true);
 	}
@@ -156,7 +156,7 @@ test('related selection keeps delegated workspace execution changes on focused c
 	}
 	assert.equal(selected.has('check-config-validation.test.js'), true);
 	assert.equal(selected.has('workspace.test.js'), true);
-	assert.equal(selected.has('schema-cli-output-contracts.test.js'), false);
+	assert.equal(selected.has('schema-contracts.test.js'), false);
 	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
 });
 
@@ -181,7 +181,7 @@ test('related selection keeps skill router implementation and generated catalog 
 		'context.test.js',
 		'check-skill-contracts.test.js',
 		'skill-install-surface-contracts.test.js',
-		'schema-cli-output-contracts.test.js',
+		'schema-contracts.test.js',
 	];
 	const implementationPaths = [
 		'src/core/skill-route-resolution.ts',
@@ -377,11 +377,11 @@ test('related selection keeps verification planning changes out of classificatio
 		'verify-changed.test.js',
 		'verify-plan-scheduler.test.js',
 		'explain-verify.test.js',
-		'schema-explain-verify-output.test.js',
+		'schema-contracts.test.js',
 	]);
 	assert.equal(selected.has('classify.test.js'), false);
 	assert.equal(selected.has('explain-surface.test.js'), false);
-	for (const testName of schemaSmokeTests.filter((testName) => testName !== 'schema-explain-verify-output.test.js')) {
+	for (const testName of schemaSmokeTests.filter((testName) => testName !== 'schema-contracts.test.js')) {
 		assert.equal(selected.has(testName), false);
 	}
 	assert.equal(selected.has('verify-inputs.test.js'), false);
@@ -403,7 +403,7 @@ test('related selection maps verification profile policy to focused planning tes
 		'verify-changed.test.js',
 		'verify-plan-scheduler.test.js',
 		'explain-verify.test.js',
-		'schema-explain-verify-output.test.js',
+		'schema-contracts.test.js',
 	]);
 });
 

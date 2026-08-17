@@ -120,7 +120,7 @@ test('change-impact classifies schema changes with release verification hints', 
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.ok(report.changed_files.some((file) => file.path === 'schemas/sample.schema.json' && file.surface === 'schema'));
-		assert.ok(report.impacts.some((impact) => impact.path === 'tests/cli/schema-manifest-contracts.test.js'));
+		assert.ok(report.impacts.some((impact) => impact.path === 'tests/cli/schema-contracts.test.js'));
 		const selectorHint = report.script_hints.find((hint) => hint.script_ref === 'test/regression-selector');
 		assert.ok(selectorHint, 'missing regression selector fallback hint for schema changes');
 		assert.ok(selectorHint.related_intents.includes('test_release'));
