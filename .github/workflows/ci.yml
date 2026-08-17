@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
       - name: Classify changed paths
         id: filter
-        uses: dorny/paths-filter@2cc35dfe5faf1e6c939b0e0e3f6b7a26c9e0f4c1
+        uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         with:
           filters: |
             source:

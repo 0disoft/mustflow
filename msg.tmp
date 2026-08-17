@@ -1,0 +1,7 @@
+fix(ci): pin dorny/paths-filter to valid v3.0.4 SHA
+
+The changes job added in af14c2ce pinned a non-existent commit SHA
+(2cc35dfe...), so every CI run failed at the Detect changed surfaces step
+and all dependent jobs were skipped. Pin the action to the v3.0.4 tag SHA
+(0e4a8c6e...) which preserves the boolean outputs the workflow compares
+against; v4 changed output semantics and would require rewriting the gates.
