@@ -1,0 +1,19 @@
+feat(skill): add agent-operational-hygiene-review and commit-message guard
+
+New adjunct review skill turns recurring agent work-loop mistakes into named
+checklist guards: merged or split files keep every import, fixture, and
+per-case state; the changed artifact is executed before commit; commit
+messages and inline commands stay shell-safe; line endings and encoding stay
+LF UTF-8 no BOM; line references come from tool output; regex and block
+removals leave no residue. Sync surface updated: SKILL.md plus template copy,
+INDEX 340 to 341, routes.toml block, i18n skill document, manifest creates and
+six profiles, catalog.v2.json regenerated, route fixture 111 to 112, and
+authoring shard contract test with a literal skill path.
+
+Adds scripts/guard-commit-message.mjs plus tests/cli/guard-commit-message
+.test.js that reject backticks, command substitution, variable interpolation,
+and whitespace-delimited separators, recommending git commit -F.
+
+Validation: mf run build; mf run test_skill_contracts; mf run mustflow_check;
+bun run scripts/evaluate-skill-routes.ts; node --test guard, authoring, and
+skill-route suites.

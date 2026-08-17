@@ -2007,6 +2007,27 @@
       ]
     },
     {
+      "id": "agent-operational-hygiene-review",
+      "task": "Consolidate test files and fix a commit message that failed because the host shell parsed a backtick before the merged file was run",
+      "paths": [
+        "tests/cli/merged.test.js"
+      ],
+      "reasons": [
+        "code_change",
+        "test_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-operational-hygiene-review"
+      ],
+      "required_adjuncts": [
+        "agent-operational-hygiene-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
       "id": "cache-friendly-context-design-review",
       "task": "Restructure AGENTS.md and docs so agents load a stable prefix plus a small dynamic tail instead of re-reading the whole repository",
       "paths": [

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:110ac8da6213be4430fa1107b649467503ec936321487abf3582eb2d2803c045",
+  "source_fingerprint": "sha256:5678d097420ac0f85c0d60d2c6893c7a1382567c19078297b84d02e0d3f22a3a",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -500,6 +500,60 @@
         "build",
         "test_related",
         "test",
+        "docs_validate_fast",
+        "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "agent-operational-hygiene-review",
+      "skill_path": ".mustflow/skills/agent-operational-hygiene-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "adjunct",
+      "selection_axis": "task",
+      "priority": 74,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "docs_change",
+        "package_metadata_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "commit message shell metacharacters",
+        "file encoding drift",
+        "merged file missing import",
+        "regex removal residue",
+        "unverified refactor",
+        "검증 안 된 리팩터",
+        "병합 후 import 누락",
+        "정규식 제거 잔여물",
+        "줄바꿈 인코딩 드리프트",
+        "커밋 메시지 백틱"
+      ],
+      "negative_signals": [
+        "bulk line ending normalization only",
+        "residual path after move only",
+        "shell script authoring only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, shell metacharacters in commit messages or inline commands, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "test_audit",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"

@@ -619,3 +619,53 @@ test('notification delivery integrity review keeps message intent delivery and s
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.notification-delivery-integrity-review"\][\s\S]*?revision = 1/u);
 });
+
+test('agent operational hygiene review keeps merge, shell, encoding, and residue guards template-synced', () => {
+	const localSkill = readText('.mustflow/skills/agent-operational-hygiene-review/SKILL.md');
+	const templateSkill = readText(
+		'templates/default/locales/en/.mustflow/skills/agent-operational-hygiene-review/SKILL.md',
+	);
+	const skillIndex = readText('.mustflow/skills/INDEX.md');
+	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
+	const routes = readText('.mustflow/skills/routes.toml');
+	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
+	const manifest = readText('templates/default/manifest.toml');
+	const i18n = readText('templates/default/i18n.toml');
+
+	assert.equal(localSkill, templateSkill);
+	assert.equal(skillIndex, templateSkillIndex);
+	assert.equal(routes, templateRoutes);
+	assert.match(localSkill, /^revision: 1$/mu);
+	assert.match(localSkill, /Run the changed artifact before committing/u);
+	assert.match(localSkill, /Keep commit messages safe for the host shell/u);
+	assert.match(localSkill, /Never compute line ranges by hand/u);
+	assert.match(localSkill, /After any regex, block, or table removal, re-scan for residue/u);
+	assert.match(localSkill, /Check encoding and line endings on every rewrite/u);
+	assert.match(localSkill, /git commit -F/u);
+	assert.match(localSkill, /scripts\/guard-commit-message\.mjs/u);
+	assert.match(localSkill, /node:child_process/u);
+	assert.match(localSkill, /`line-ending-hygiene`/u);
+	assert.match(localSkill, /`split-refactor-residual-path-review`/u);
+	assert.match(localSkill, /Remaining agent-operational risk/u);
+	assert.match(skillIndex, /\.mustflow\/skills\/agent-operational-hygiene-review\/SKILL\.md/u);
+	assert.match(skillIndex, /agent-operational-hygiene triage/u);
+	assert.match(skillIndex, /remaining operational risk/u);
+	assert.match(routes, /\[routes\."agent-operational-hygiene-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 74/u);
+	assert.deepEqual(routeReasons(routes, 'agent-operational-hygiene-review'), [
+		'unknown_change',
+		'code_change',
+		'behavior_change',
+		'test_change',
+		'docs_change',
+		'package_metadata_change',
+		'release_risk',
+	]);
+	assert.match(manifest, /"\.mustflow\/skills\/agent-operational-hygiene-review\/SKILL\.md"/u);
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
+		assert.ok(profileMatch, `missing ${profile} profile`);
+		assert.match(profileMatch[1], /"agent-operational-hygiene-review"/u);
+	}
+	assertSkillsIndexRevision(i18n);
+	assert.match(i18n, /\[documents\."skill\.agent-operational-hygiene-review"\][\s\S]*?revision = 1/u);
+});
