@@ -1007,7 +1007,8 @@
           "auto_commit": false,
           "auto_push": false,
           "state_is_versioned": false,
-          "raw_logs_allowed": false
+          "raw_logs_allowed": false,
+          "verification_profile": "edit"
         },
         "state_policy": {
           "cache_path": ".mustflow/cache/",
@@ -1703,7 +1704,8 @@
           "auto_commit": false,
           "auto_push": false,
           "state_is_versioned": false,
-          "raw_logs_allowed": false
+          "raw_logs_allowed": false,
+          "verification_profile": "edit"
         },
         "state_policy": {
           "cache_path": ".mustflow/cache/",
@@ -4746,7 +4748,8 @@
           "auto_commit": false,
           "auto_push": false,
           "state_is_versioned": false,
-          "raw_logs_allowed": false
+          "raw_logs_allowed": false,
+          "verification_profile": "edit"
         },
         "state_policy": {
           "cache_path": ".mustflow/cache/",

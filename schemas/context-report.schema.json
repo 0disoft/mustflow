@@ -280,7 +280,8 @@
         "auto_commit",
         "auto_push",
         "state_is_versioned",
-        "raw_logs_allowed"
+        "raw_logs_allowed",
+        "verification_profile"
       ],
       "properties": {
         "entrypoint": { "type": "string" },
@@ -292,7 +293,11 @@
         "auto_commit": { "type": "boolean" },
         "auto_push": { "type": "boolean" },
         "state_is_versioned": { "type": "boolean" },
-        "raw_logs_allowed": { "type": "boolean" }
+        "raw_logs_allowed": { "type": "boolean" },
+        "verification_profile": {
+          "type": "string",
+          "enum": ["edit", "change", "release", "scheduled"]
+        }
       }
     },
     "statePolicy": {
