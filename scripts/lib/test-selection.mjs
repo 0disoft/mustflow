@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { executableArtifactPlan, loadVerificationTargets } from './verification-targets.mjs';
 
 export function createTestSelection(allCliTests, options = {}) {
 	const projectRoot = options.projectRoot;
@@ -270,6 +271,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^\.mustflow\/skills\/(readme-authoring|project-context-authoring)\//u, tests: ['authoring-fixtures.test.js'] },
 		{ match: /^scripts\/run-cli-tests\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/audit-related-selection\.mjs$/u, tests: testSelectionTests },
+		{ match: /^scripts\/guard-commit-message\.mjs$/u, tests: ['guard-commit-message.test.js'], terminal: true },
+		{ match: /^scripts\/guard-staged-scope\.mjs$/u, tests: ['guard-staged-scope.test.js'], terminal: true },
 		{ match: /^scripts\/analyze-test-ops\.mjs$/u, tests: ['test-ops-profiler.test.js'] },
 		{ match: /^scripts\/lib\/build-freshness\.mjs$/u, tests: testSelectionTests },
 		{ match: /^scripts\/lib\/test-selection\.mjs$/u, tests: testSelectionTests },
@@ -599,10 +602,30 @@ export function createTestSelection(allCliTests, options = {}) {
 			});
 		}
 
+		// Direct-witness obligation (audit P0-3): a changed executable artifact
+		// must carry a declared witness. Declared witnesses are added to the
+		// selection; undeclared executable artifacts are reported so the runner
+		// fails closed instead of silently falling back.
+		const targets = loadVerificationTargets(projectRoot);
+		const executablePlan = executableArtifactPlan(files, targets);
+		for (const mapped of executablePlan.artifacts) {
+			if (mapped.kind === 'test') {
+				continue;
+			}
+			for (const witness of mapped.witnesses) {
+				const witnessName = witness.replace(/^tests\/cli\//u, '');
+				if (commandTestNames.has(witnessName)) {
+					selectedTests.add(witnessName);
+				}
+			}
+		}
+		const unmappedExecutableArtifacts = [...executablePlan.unmapped];
+
 		if (selectedTests.size > 0) {
 			return {
 				selected: [...selectedTests],
 				selection_reasons: [...selectionReasons, ...unsafeFallbackReasons],
+				unmapped_executable_artifacts: unmappedExecutableArtifacts,
 			};
 		}
 
@@ -619,6 +642,7 @@ export function createTestSelection(allCliTests, options = {}) {
 						note: 'no related-test rule matched; using the fast baseline fallback',
 					},
 				],
+				unmapped_executable_artifacts: unmappedExecutableArtifacts,
 			};
 		}
 
@@ -633,6 +657,7 @@ export function createTestSelection(allCliTests, options = {}) {
 					note: files.length === 0 ? 'no changed files and fallback is disabled' : 'no related-test rule matched and fallback is disabled',
 				},
 			],
+			unmapped_executable_artifacts: unmappedExecutableArtifacts,
 		};
 	}
 
@@ -682,6 +707,7 @@ export function createTestSelection(allCliTests, options = {}) {
 			changed_files: files,
 			selected: uniqueExisting(selectedForMode),
 			release_sensitive: releaseReasons.length > 0,
+			unmapped_executable_artifacts: relatedSelection?.unmapped_executable_artifacts ?? [],
 			selection_reasons: relatedSelection ? [...relatedSelection.selection_reasons, ...releaseReasons] : [],
 		};
 	}

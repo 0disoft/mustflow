@@ -13,6 +13,11 @@ import {
 } from './lib/test-ordering.mjs';
 import { buildFreshnessReport as readBuildFreshnessReport } from './lib/build-freshness.mjs';
 import { createTestSelection } from './lib/test-selection.mjs';
+import { executableArtifactPlan, loadVerificationTargets } from './lib/verification-targets.mjs';
+import {
+	beginVerificationReceipt,
+	finalizeVerificationReceipt,
+} from './lib/verification-receipt.mjs';
 import {
 	processStartTokensProveMismatch,
 	readCurrentProcessStartToken,
@@ -643,6 +648,38 @@ if (listOnly) {
 	writeJsonAndExit(selectionReportForMode(mode, currentChangedFiles));
 }
 
+// Direct-witness obligation and verification receipt (audit P0-3/P0-4).
+// A changed executable artifact must carry a declared witness; otherwise the
+// run fails closed before any test executes. When the obligation holds, a
+// receipt records artifact hashes, git head, and cwd so the completion gate
+// can detect artifacts that changed after verification began.
+const verificationReceiptPath = path.join(repoRoot, '.mustflow', 'state', 'verification-receipt.json');
+if (baseMode === 'related' && !listOnly && !profileMode) {
+	const verificationPlan = executableArtifactPlan(currentChangedFiles, loadVerificationTargets(repoRoot));
+
+	if (verificationPlan.unmapped.length > 0) {
+		console.error(
+			[
+				'Related-mode verification failed closed: changed executable artifacts have no declared direct witness.',
+				...verificationPlan.unmapped.map((artifact) => `  - ${artifact}`),
+				'Declare each artifact and its witness test in .mustflow/config/verification-targets.toml,',
+				'or the broad suite may silently skip the artifact it must execute.',
+				'',
+			].join('\n'),
+		);
+		process.exit(2);
+	}
+
+	beginVerificationReceipt({
+		repoRoot,
+		receiptPath: verificationReceiptPath,
+		intent: 'test_related',
+		mode,
+		artifacts: verificationPlan.artifacts,
+		witnesses: verificationPlan.artifacts.flatMap((artifact) => artifact.witnesses),
+	});
+}
+
 function assertCachedModeSafe() {
 	if (!cachedMode) {
 		return;
@@ -934,6 +971,15 @@ if (profileSummary) {
 
 if (schedulerMode === 'auto') {
 	await runScheduledTests();
+	const finalized = finalizeVerificationReceipt({
+		repoRoot,
+		receiptPath: verificationReceiptPath,
+		exitCode: 0,
+	});
+	if (finalized.stale.length > 0) {
+		console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
+		process.exit(1);
+	}
 	process.exit(0);
 }
 
@@ -945,6 +991,16 @@ const result = runTestProcess(testPaths, nodeTestArgs);
 
 if (result.error) {
 	console.error(result.error.message);
+	process.exit(1);
+}
+
+const finalized = finalizeVerificationReceipt({
+	repoRoot,
+	receiptPath: verificationReceiptPath,
+	exitCode: result.status ?? 1,
+});
+if (finalized.stale.length > 0) {
+	console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
 	process.exit(1);
 }
 

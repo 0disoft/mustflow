@@ -1,0 +1,80 @@
+# verification-targets.toml
+#
+# Declares direct witnesses for executable artifacts. When a changed
+# executable artifact (top-level script under scripts/) is not declared here,
+# related-mode verification fails closed instead of silently falling back to
+# a broad suite that may never execute the artifact.
+#
+# Test files under tests/cli/*.test.js are self-witnessed and need no entry.
+
+[verification_targets."scripts/accept-manifest-lock-baseline.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/manifest-lock-accept-go.test.js"]
+
+[verification_targets."scripts/analyze-test-ops.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/test-ops-profiler.test.js"]
+
+[verification_targets."scripts/audit-related-selection.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/test-selection-related-contracts.test.js", "tests/cli/test-selection-runner-contracts.test.js"]
+
+[verification_targets."scripts/audit-tests.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/test-audit.test.js"]
+
+[verification_targets."scripts/benchmark-skill-routes.ts"]
+kind = "executable"
+witnesses = ["tests/cli/skill-route.test.js", "tests/cli/test-selection-runner-contracts.test.js"]
+
+[verification_targets."scripts/check-npm-release-version.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
+
+[verification_targets."scripts/cleanup-pinned-intents.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/check-command-contracts.test.js"]
+
+[verification_targets."scripts/cross-validate-native-crash-fixtures.ts"]
+kind = "executable"
+witnesses = ["tests/cli/native-crash-fixture-external-validation.test.js"]
+
+[verification_targets."scripts/evaluate-skill-routes.ts"]
+kind = "executable"
+witnesses = ["tests/cli/skill-route.test.js", "tests/cli/test-selection-runner-contracts.test.js"]
+
+[verification_targets."scripts/generate-skill-route-catalog.ts"]
+kind = "executable"
+witnesses = ["tests/cli/skill-route.test.js", "tests/cli/package-template.test.js", "tests/cli/check-skill-contracts.test.js"]
+
+[verification_targets."scripts/guard-commit-message.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/guard-commit-message.test.js"]
+
+[verification_targets."scripts/guard-staged-scope.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/guard-staged-scope.test.js"]
+
+[verification_targets."scripts/release-plan.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
+
+[verification_targets."scripts/run-cli-tests.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/test-selection-related-contracts.test.js", "tests/cli/test-selection-runner-contracts.test.js"]
+
+[verification_targets."scripts/run-node-core-check.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/run.test.js", "tests/cli/check.test.js"]
+
+[verification_targets."scripts/smoke-npm-release-install.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
+
+[verification_targets."scripts/start-npm-release.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
+
+[verification_targets."scripts/write-build-fingerprint.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/run.test.js", "tests/cli/check.test.js"]
