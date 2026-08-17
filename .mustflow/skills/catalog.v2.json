@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:2e8353f131b2826d0fa0c651516416323a88ed70b6224d0f3a220d341c66ddaf",
+  "source_fingerprint": "sha256:ef77f03bdd5e384f3031b3f766b352a0dfa6f8e8a5f3f5bf71f5e7f4b07ad962",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -511,7 +511,7 @@
       "category": "general_code",
       "route_type": "adjunct",
       "selection_axis": "task",
-      "priority": 74,
+      "priority": 70,
       "applies_to_reasons": [
         "unknown_change",
         "code_change",
@@ -523,21 +523,27 @@
       ],
       "mutually_exclusive_with": [],
       "positive_signals": [
-        "commit message shell metacharacters",
-        "file encoding drift",
-        "merged file missing import",
-        "regex removal residue",
-        "unverified refactor",
-        "검증 안 된 리팩터",
-        "병합 후 import 누락",
-        "정규식 제거 잔여물",
-        "줄바꿈 인코딩 드리프트",
-        "커밋 메시지 백틱"
+        "broad suite skipped changed test",
+        "changed artifact direct witness",
+        "mechanical edit residue",
+        "merged file completeness audit",
+        "merged file lost fixture state",
+        "staged path contamination",
+        "stale line reference after edit",
+        "stray temp file staged",
+        "verification receipt mismatch",
+        "verified artifact changed afterward",
+        "wrong worktree was tested"
       ],
       "negative_signals": [
-        "bulk line ending normalization only",
-        "residual path after move only",
-        "shell script authoring only"
+        "multi agent orchestration",
+        "normalize line endings",
+        "paths filter",
+        "powershell parsing",
+        "public github issue",
+        "semantic old runtime path",
+        "shell quoting",
+        "test design"
       ],
       "dependencies": {
         "requires_skills": [],
@@ -545,7 +551,7 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, staged sets that escape the task write set, commit-message transport through a shell string, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.",
+      "trigger": "Apply this skill when files, tests, scripts, or workflows are finalized for commit and the change set, the verification evidence, the mechanical edits, or the final report could disagree with the final files — staged paths that escape the task write set, changed executable artifacts without a direct witness, verification receipts that went stale, mechanical-edit residue after merges or regex rewrites, or final-report claims that no longer match the artifact hashes, git head, or working directory.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",

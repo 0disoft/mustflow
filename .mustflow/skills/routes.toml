@@ -1620,14 +1620,14 @@ concept_aliases = ["작업 명령 API", "작업 상태 머신", "작업-시도 �
 [routes."agent-operational-hygiene-review"]
 category = "general_code"
 route_type = "adjunct"
-priority = 74
+priority = 70
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
 
 [routes."agent-operational-hygiene-review".contexts]
-positive_terms = ["commit-message-shell-metacharacters", "file-encoding-drift", "merged-file-missing-import", "regex-removal-residue", "unverified-refactor"]
-negative_terms = ["bulk-line-ending-normalization-only", "residual-path-after-move-only", "shell-script-authoring-only"]
-concept_aliases = ["병합 후 import 누락", "커밋 메시지 백틱", "줄바꿈 인코딩 드리프트", "정규식 제거 잔여물", "검증 안 된 리팩터"]
+positive_terms = ["staged-path-contamination", "changed-artifact-direct-witness", "merged-file-completeness-audit", "verification-receipt-mismatch", "mechanical-edit-residue"]
+negative_terms = ["shell-quoting", "powershell-parsing", "normalize-line-endings", "public-github-issue", "test-design", "semantic-old-runtime-path", "paths-filter", "multi-agent-orchestration"]
+concept_aliases = ["stray temp file staged", "broad suite skipped changed test", "verified artifact changed afterward", "wrong worktree was tested", "stale line reference after edit", "merged file lost fixture state"]
 
 [routes."agent-planning-recovery-review"]
 category = "general_code"

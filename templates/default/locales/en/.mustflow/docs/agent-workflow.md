@@ -66,7 +66,7 @@ Activate a skill later if new evidence changes the task type. For example, a fai
 
 When multiple skills apply, follow the most specific skill for each affected scope and combine only their declared command intents. Skills never authorize raw shell commands, long-running processes, or writes outside the task scope.
 
-When a skill is used, report the skill name and selection reason briefly in the next user-facing update or final report. When files were created or modified, the final report must include a concise skill-selection note: list the skills used, say that no matching installed skill was found, or report that a plausible skill is missing from the installed profile. Do not create a versioned worklog solely to record skill selection.
+When a skill is used, report the skill name and selection reason briefly in the next user-facing update or final report. A full skill-selection note (list the skills used, say that no matching installed skill was found, or report that a plausible skill is missing) is required only when the route was ambiguous or a high-risk adjunct intervened, or when files were created or modified in a security, payment, data, or release scope; ordinary low-risk work needs only a one-line mention. Do not create a versioned worklog solely to record skill selection.
 
 ### Script-Pack Selection
 
@@ -160,15 +160,16 @@ Refresh mustflow instructions at these points:
 - after editing `AGENTS.md` or `.mustflow/**`
 - after switching roots or entering a nested repository
 - after context compaction or summarization
-- before the final report
 - after the configured turn, tool-call, or output-size threshold
 
 Use `.mustflow/config/mustflow.toml` `[refresh]` to determine the refresh level:
 
-- `light`: reread `AGENTS.md` and `.mustflow/docs/agent-workflow.md`
+- `light`: reread `AGENTS.md`
 - `command`: reread `AGENTS.md` and `.mustflow/config/commands.toml`
-- `edit`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/docs/agent-workflow.md` before sensitive edits
-- `report`: reread `AGENTS.md`, `.mustflow/config/mustflow.toml`, and `.mustflow/config/preferences.toml` before the final report
+- `edit`: reread `AGENTS.md` and `.mustflow/config/mustflow.toml` before sensitive edits
+- `report`: reread `AGENTS.md` before the final report only when the task is security, payment,
+  data, release, or failed or partial work; ordinary low-risk final reports start from the
+  instructions already loaded at task start
 - `skill`: reread `AGENTS.md` and `.mustflow/skills/router.toml`
 - `full`: reread the full mustflow read sequence
 
@@ -274,7 +275,13 @@ A command intent is eligible for agent use only when all of these are true:
 
 Prefer `mf run <intent>` so the project receives a concise run record in `.mustflow/state/runs/latest.json` and a retained run index in `.mustflow/state/runs/latest.index.json`.
 
-Run `mf run` command intents serially. Do not start a second `mf run` while another configured intent is still running. Intents that declare non-empty `writes` are exclusive verification phases; wait for them to finish before running any other `mf run`. This is especially important when an intent rewrites package output such as `dist/`, because the local `mf` executable may load from that output.
+Run `mf run` command intents by effect, not globally serially. Read-only intents with no
+overlapping `writes`, `effects`, or shared locks may run concurrently with each other. Intents that
+declare non-empty `writes` are exclusive verification phases: wait for them to finish before running
+any other `mf run`, especially when an intent rewrites package output such as `dist/`, because the
+local `mf` executable may load from that output. The test runner keeps a repository-level lock for
+write-bearing runs; read-only verification that declares no conflicting path or resource effect may
+proceed without waiting on that lock.
 
 For installed mustflow workflow updates, use configured update intents instead of running raw `mf update` directly. Run `mustflow_update_dry_run` first. Run `mustflow_update_apply` only when the dry-run plan has no blocking or manual-review items and the task calls for applying template updates. The apply intent still relies on `mf update` safety policy: it writes only template manifest paths, backups, and manifest-lock entries, and refuses local changes.
 

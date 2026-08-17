@@ -2008,7 +2008,7 @@
     },
     {
       "id": "agent-operational-hygiene-review",
-      "task": "Consolidate test files and fix a commit message that failed because the host shell parsed a backtick before the merged file was run",
+      "task": "Consolidate test files and audit the staged commit set for a stray temp file before the merged file is verified",
       "paths": [
         "tests/cli/merged.test.js"
       ],
@@ -2025,6 +2025,173 @@
       ],
       "forbidden_candidates": [
         "docs-update"
+      ]
+    },
+    {
+      "id": "hygiene-staged-contamination",
+      "task": "Investigate why a stray temp file was staged in the commit set and restore the staged scope to the task write set",
+      "paths": [
+        "scripts/guard-staged-scope.mjs"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-operational-hygiene-review"
+      ],
+      "required_adjuncts": [
+        "agent-operational-hygiene-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "hygiene-direct-witness-missing",
+      "task": "A changed executable artifact passed the broad suite but was never executed; enforce a changed artifact direct witness before the change is verified",
+      "paths": [
+        "scripts/guard-commit-message.mjs"
+      ],
+      "reasons": [
+        "code_change",
+        "test_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-operational-hygiene-review"
+      ],
+      "required_adjuncts": [
+        "agent-operational-hygiene-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "hygiene-stale-receipt",
+      "task": "The verification receipt mismatch shows the artifact hash changed after the generator rewrote it; re-run the witness against the final files",
+      "paths": [
+        "scripts/generate-skill-route-catalog.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-operational-hygiene-review"
+      ],
+      "required_adjuncts": [
+        "agent-operational-hygiene-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "hygiene-wrong-worktree",
+      "task": "The tests were run in a different worktree than the one being committed and the verification receipt mismatch proves the wrong files were witnessed",
+      "paths": [
+        "tests/cli/run.test.js"
+      ],
+      "reasons": [
+        "test_change",
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "agent-operational-hygiene-review"
+      ],
+      "required_adjuncts": [
+        "agent-operational-hygiene-review"
+      ],
+      "forbidden_candidates": [
+        "docs-update"
+      ]
+    },
+    {
+      "id": "hygiene-forbidden-shell-quoting",
+      "task": "Fix shell quoting and pwsh -Command argument passing in a deployment script",
+      "paths": [
+        "scripts/deploy.ps1"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "shell-code-change"
+      ],
+      "forbidden_candidates": [
+        "agent-operational-hygiene-review"
+      ]
+    },
+    {
+      "id": "hygiene-forbidden-semantic-residual",
+      "task": "Trace the residual runtime path that still executes after a module split",
+      "paths": [
+        "src/legacy/runner.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "split-refactor-residual-path-review"
+      ],
+      "forbidden_candidates": [
+        "agent-operational-hygiene-review"
+      ]
+    },
+    {
+      "id": "hygiene-forbidden-test-design",
+      "task": "Design test fixture isolation and per-case reset for a new test suite",
+      "paths": [
+        "tests/cli/foo.test.js"
+      ],
+      "reasons": [
+        "test_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "test-design-guard"
+      ],
+      "forbidden_candidates": [
+        "agent-operational-hygiene-review"
+      ]
+    },
+    {
+      "id": "hygiene-forbidden-ci-paths",
+      "task": "Adjust the CI paths-filter trigger matrix for a new surface",
+      "paths": [
+        ".github/workflows/ci.yml"
+      ],
+      "reasons": [
+        "workflow_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "ci-pipeline-triage"
+      ],
+      "forbidden_candidates": [
+        "agent-operational-hygiene-review"
+      ]
+    },
+    {
+      "id": "hygiene-forbidden-markdown",
+      "task": "Review a public GitHub issue body and PR description prose with inline code",
+      "paths": [
+        "docs/issue.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "github-contribution-quality-gate"
+      ],
+      "forbidden_candidates": [
+        "agent-operational-hygiene-review"
       ]
     },
     {

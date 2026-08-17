@@ -635,23 +635,28 @@ test('agent operational hygiene review keeps merge, shell, encoding, and residue
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
-	assert.match(localSkill, /Run the changed artifact before committing/u);
-	assert.match(localSkill, /Keep commit messages safe at the transport boundary/u);
-	assert.match(localSkill, /Never compute line ranges by hand/u);
-	assert.match(localSkill, /After any regex, block, or table removal, re-scan for residue/u);
-	assert.match(localSkill, /Check encoding and line endings on every rewrite/u);
+	assert.match(localSkill, /^revision: 3$/mu);
+	assert.match(localSkill, /finalization boundary/u);
+	assert.match(localSkill, /Prove the staged set stays inside the task's intended write set/u);
+	assert.match(localSkill, /Keep commit-message transport at the boundary, not content/u);
+	assert.match(localSkill, /Prove every changed executable artifact has a direct witness that ran/u);
+	assert.match(localSkill, /verification-targets\.toml/u);
+	assert.match(localSkill, /fails closed on an undeclared executable artifact/u);
+	assert.match(localSkill, /Re-scan mechanically edited files for omissions and residue/u);
+	assert.match(localSkill, /never hand-compute ranges/u);
+	assert.match(localSkill, /Make the final report's evidence match the final files/u);
 	assert.match(localSkill, /git commit -F/u);
 	assert.match(localSkill, /scripts\/guard-commit-message\.mjs/u);
 	assert.match(localSkill, /scripts\/guard-staged-scope\.mjs/u);
 	assert.match(localSkill, /node:child_process/u);
 	assert.match(localSkill, /`line-ending-hygiene`/u);
 	assert.match(localSkill, /`split-refactor-residual-path-review`/u);
+	assert.match(localSkill, /New Failure Class Admission Criteria/u);
 	assert.match(localSkill, /Remaining agent-operational risk/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-operational-hygiene-review\/SKILL\.md/u);
 	assert.match(skillIndex, /agent-operational-hygiene triage/u);
 	assert.match(skillIndex, /remaining operational risk/u);
-	assert.match(routes, /\[routes\."agent-operational-hygiene-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 74/u);
+	assert.match(routes, /\[routes\."agent-operational-hygiene-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"\r?\npriority = 70/u);
 	assert.deepEqual(routeReasons(routes, 'agent-operational-hygiene-review'), [
 		'unknown_change',
 		'code_change',
@@ -668,5 +673,5 @@ test('agent operational hygiene review keeps merge, shell, encoding, and residue
 		assert.match(profileMatch[1], /"agent-operational-hygiene-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-operational-hygiene-review"\][\s\S]*?revision = 2/u);
+	assert.match(i18n, /\[documents\."skill\.agent-operational-hygiene-review"\][\s\S]*?revision = 3/u);
 });
