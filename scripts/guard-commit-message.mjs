@@ -1,92 +1,170 @@
 #!/usr/bin/env node
 // guard-commit-message.mjs
 //
-// Rejects commit messages that the host shell (PowerShell, bash, zsh, cmd) can
-// interpret as commands: backticks, $(...) command substitution, $VAR/${VAR}
-// interpolation, and whitespace-delimited command separators (; | &).
+// Enforces the *transport* contract for commit messages, not their content.
+// Backticks, $(...), $VAR, and separators are ordinary text in a commit
+// message: they only become dangerous when the message is assembled inside a
+// shell command string and re-parsed (sh -c, bash -c, pwsh -Command,
+// cmd /c). This guard never rejects message content.
+//
+// Transport rules:
+//   1. Direct argv arguments are safe: the shell already tokenized them and
+//      git receives the final strings without re-parsing. Inline -m is fine
+//      when the value comes from a direct argv array.
+//   2. `--file <path>` is required for multi-line or metacharacter-heavy
+//      messages, and the file must live OUTSIDE the worktree (OS temp
+//      directory) or under `<repo>/.git/mustflow/` so the shell never parses
+//      it as part of a command line.
+//   3. Never assemble the message through a shell command string.
+//
+// Data contracts checked here:
+//   - no NUL bytes
+//   - valid UTF-8
+//   - message size <= 65536 bytes
 //
 // Usage:
-//   node scripts/guard-commit-message.mjs "<message>"
-//   node scripts/guard-commit-message.mjs --file <message-file>
-//   echo "<message>" | node scripts/guard-commit-message.mjs
-//
-// When a message must contain such characters, write it to a file and commit
-// with `git commit -F <file>` so the shell never parses it. Exit code 1 flags
-// an unsafe message; 0 means the message is safe for inline -m use.
+//   node scripts/guard-commit-message.mjs "feat: add widget"
+//   node scripts/guard-commit-message.mjs --file "$TEMP/msg.txt" --repo-root .
+//   printf 'chore: sync copies\n' | node scripts/guard-commit-message.mjs
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
 
-function findProblems(message) {
+const MAX_MESSAGE_BYTES = 65536;
+
+function parseArgs(argv) {
+	const options = { repoRoot: process.cwd(), file: null, help: false, unknown: null, messageArgs: [] };
+	for (let i = 0; i < argv.length; i += 1) {
+		const arg = argv[i];
+		if (arg === '--file') {
+			options.file = argv[++i] ?? null;
+		} else if (arg === '--repo-root') {
+			options.repoRoot = argv[++i] ?? null;
+		} else if (arg === '--help' || arg === '-h') {
+			options.help = true;
+		} else if (arg.startsWith('-')) {
+			options.unknown = arg;
+		} else {
+			options.messageArgs.push(arg);
+		}
+	}
+	return options;
+}
+
+function dataContractProblemsForBuffer(buffer) {
 	const problems = [];
-
-	const backtick = /`/gu;
-	for (const match of message.matchAll(backtick)) {
-		problems.push(`backtick at column ${match.index + 1}`);
+	if (buffer.includes(0)) {
+		problems.push('message contains a NUL byte');
 	}
-
-	const substitution = /\$\(/gu;
-	for (const match of message.matchAll(substitution)) {
-		problems.push(`command substitution "$(" at column ${match.index + 1}`);
+	if (buffer.byteLength > MAX_MESSAGE_BYTES) {
+		problems.push(`message exceeds ${MAX_MESSAGE_BYTES} bytes (${buffer.byteLength})`);
 	}
-
-	const interpolation = /\$[A-Za-z0-9_{]/gu;
-	for (const match of message.matchAll(interpolation)) {
-		problems.push(`interpolation "${match[0]}" at column ${match.index + 1}`);
+	const decoded = buffer.toString('utf8');
+	if (Buffer.byteLength(decoded, 'utf8') !== buffer.byteLength) {
+		problems.push('message is not valid UTF-8');
 	}
-
-	const separators = /(?:^|\s)([;&|])(?=\s|$)/gu;
-	for (const match of message.matchAll(separators)) {
-		problems.push(`command separator "${match[1]}" at column ${match.index + 1}`);
-	}
-
 	return problems;
 }
 
-function readMessage() {
-	const args = process.argv.slice(2);
-
-	if (args.length === 0) {
-		if (process.stdin.isTTY) {
-			return { message: '', ok: false, error: 'no message provided; pass it as an argument, --file <path>, or stdin' };
-		}
-		return { message: readFileSync(0, 'utf8').trim(), ok: true };
+function dataContractProblemsForString(message) {
+	const problems = [];
+	if (message.includes('\0')) {
+		problems.push('message contains a NUL byte');
 	}
-
-	if (args[0] === '--file') {
-		const filePath = args[1];
-		if (!filePath) {
-			return { message: '', ok: false, error: '--file requires a path' };
-		}
-		return { message: readFileSync(filePath, 'utf8').trim(), ok: true };
+	if (Buffer.byteLength(message, 'utf8') > MAX_MESSAGE_BYTES) {
+		problems.push(`message exceeds ${MAX_MESSAGE_BYTES} bytes`);
 	}
-
-	if (args[0].startsWith('-')) {
-		return { message: '', ok: false, error: `unknown option ${args[0]}` };
-	}
-
-	return { message: args.join(' '), ok: true };
+	return problems;
 }
 
-const { message, ok, error } = readMessage();
+function fileInsideWorktree(filePath, repoRoot) {
+	let resolvedFile;
+	let resolvedRoot;
+	try {
+		resolvedFile = realpathSync(filePath);
+		resolvedRoot = realpathSync(repoRoot);
+	} catch {
+		return false; // unreadable or missing path: caller will fail on read
+	}
+	if (resolvedFile === resolvedRoot) {
+		return true;
+	}
+	const relative = path.relative(resolvedRoot, resolvedFile);
+	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+		return false;
+	}
+	// .git/ is allowed as a scratch area for commit-message files.
+	if (relative.startsWith('.git' + path.sep)) {
+		return false;
+	}
+	return true;
+}
 
-if (!ok) {
-	process.stderr.write(`guard-commit-message: ${error}\n`);
+const options = parseArgs(process.argv.slice(2));
+
+if (options.help) {
+	process.stdout.write(
+		[
+			'guard-commit-message.mjs: enforce commit-message transport safety',
+			'',
+			'  --file <path>      read the message from a file outside the worktree',
+			'                     (or under <repo>/.git/mustflow/); required for messages',
+			'                     that must not be assembled through a shell string',
+			'  --repo-root <path> repository root for the worktree check (default: cwd)',
+			'',
+			'Message content (backticks, $(), $VAR, separators) is never rejected;',
+			'only the transport boundary is checked.',
+			'',
+		].join('\n'),
+	);
+	process.exit(0);
+}
+
+if (options.unknown) {
+	process.stderr.write(`guard-commit-message: unknown option ${options.unknown}\n`);
 	process.exit(1);
 }
 
-const problems = findProblems(message);
+let message;
+let problems;
+
+if (options.file) {
+	try {
+		const buffer = readFileSync(options.file);
+		problems = dataContractProblemsForBuffer(buffer);
+		message = buffer.toString('utf8').trim();
+	} catch (error) {
+		process.stderr.write(`guard-commit-message: cannot read --file: ${error.message}\n`);
+		process.exit(1);
+	}
+	if (fileInsideWorktree(options.file, options.repoRoot)) {
+		process.stderr.write(
+			[
+				'guard-commit-message: --file path is inside the worktree.',
+				'Commit-message scratch files belong outside the worktree (OS temp directory)',
+				'or under <repo>/.git/mustflow/ so the shell can never parse them.',
+				'',
+			].join('\n'),
+		);
+		process.exit(1);
+	}
+} else if (options.messageArgs.length > 0) {
+	message = options.messageArgs.join(' ').trim();
+	problems = dataContractProblemsForString(message);
+} else if (!process.stdin.isTTY) {
+	message = readFileSync(0, 'utf8').trim();
+	problems = dataContractProblemsForString(message);
+} else {
+	process.stderr.write(
+		'guard-commit-message: no message provided; pass it as argv, --file <path>, or stdin\n',
+	);
+	process.exit(1);
+}
 
 if (problems.length > 0) {
 	process.stderr.write(
-		[
-			'guard-commit-message: commit message contains shell-interpretable text:',
-			...problems.map((problem) => `  - ${problem}`),
-			'',
-			'Retype the message without shell metacharacters, or write it to a file and commit with:',
-			'  git commit -F <message-file>',
-			'',
-		].join('\n'),
+		['guard-commit-message: message violates the data contract:', ...problems.map((p) => `  - ${p}`), ''].join('\n'),
 	);
 	process.exit(1);
 }

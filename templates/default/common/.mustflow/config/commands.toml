@@ -398,6 +398,21 @@ network = false
 destructive = false
 required_after = ["before_final_report", "commit_message_suggestion"]
 
+[intents.changes_staged_status]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Inspect the staged Git change set read-only before a commit is created."
+argv = ["git", "diff", "--cached", "--name-status"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["before_final_report", "commit_message_suggestion"]
+
 [intents.git_commit]
 status = "manual_only"
 description = "Create an unscoped Git commit."

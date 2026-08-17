@@ -26,6 +26,7 @@ jobs:
       package: ${{ steps.filter.outputs.package }}
       windows: ${{ steps.filter.outputs.windows }}
       site: ${{ steps.filter.outputs.site }}
+      skills: ${{ steps.filter.outputs.skills }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -39,6 +40,9 @@ jobs:
             source:
               - 'src/**'
               - 'scripts/**'
+              - 'tests/**'
+              - '.mustflow/config/**'
+              - '.mustflow/docs/**'
               - 'package.json'
               - 'bun.lock'
             docs:
@@ -55,6 +59,11 @@ jobs:
               - 'tests/cli/*windows*.test.js'
             site:
               - 'docs-site/**'
+            skills:
+              - '.mustflow/skills/**'
+              - 'templates/default/locales/en/.mustflow/skills/**'
+              - 'templates/default/manifest.toml'
+              - 'templates/default/i18n.toml'
 
   validate:
     name: Validate CLI and docs
@@ -68,7 +77,8 @@ jobs:
       needs.changes.outputs.source == 'true' ||
       needs.changes.outputs.docs == 'true' ||
       needs.changes.outputs.package == 'true' ||
-      needs.changes.outputs.site == 'true'
+      needs.changes.outputs.site == 'true' ||
+      needs.changes.outputs.skills == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -94,6 +104,12 @@ jobs:
           github.event_name != 'pull_request' ||
           needs.changes.outputs.source == 'true' ||
           needs.changes.outputs.package == 'true'
+
+      - name: Check skill contracts and route evaluation
+        run: bun run test:skill-contracts && bun run scripts/evaluate-skill-routes.ts
+        if: >-
+          github.event_name != 'pull_request' ||
+          needs.changes.outputs.skills == 'true'
 
       - name: Check Node-only core path
         run: npm run check:core:node

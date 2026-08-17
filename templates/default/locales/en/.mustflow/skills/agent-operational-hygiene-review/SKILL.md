@@ -2,11 +2,11 @@
 mustflow_doc: skill.agent-operational-hygiene-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: agent-operational-hygiene-review
-description: Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, shell metacharacters in commit messages or inline commands, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.
+description: Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, staged sets that escape the task write set, commit-message transport through a shell string, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -15,6 +15,7 @@ metadata:
   command_intents:
     - changes_status
     - changes_diff_summary
+    - changes_staged_status
     - lint
     - build
     - test_related
@@ -97,8 +98,8 @@ residue behind a regex or block removal?"
 ## Allowed Edits
 
 - Fix missing imports, stale fixtures, and broken shared state in merged or split artifacts.
-- Rewrite or regenerate commit messages to be shell-safe, and run the commit-message guard when
-  one is configured.
+- Rewrite or regenerate commit messages at the transport boundary, and run the commit-message and
+  staged-scope guards when they are configured.
 - Re-write touched text files as LF with UTF-8 no BOM when encoding drift is detected, and remove
   residual fragments left by regex or block removals.
 - Update the directly synchronized documentation, templates, or tests that describe the same
@@ -124,13 +125,19 @@ residue behind a regex or block removal?"
      file, `build` for compiled code, the narrowest configured intent that touches the artifact).
    - "Covered by the broad suite later" is not evidence: a broad run may not select the file at
      all. If the artifact cannot be executed, label the change unverified in the report.
-3. Keep commit messages safe for the host shell.
-   - Avoid backticks, `$(` command substitution, `$VAR` or `${VAR}` interpolation, and unquoted
-     `;`, `|`, `&`, `<`, `>` that the shell can interpret.
-   - When a message must contain such characters, write it to a temp file and commit with
-     `git commit -F <file>` instead of inline `-m`.
-   - Prefer plain text with a gitmoji prefix. Run `scripts/guard-commit-message.mjs` on the
-     message when in doubt; treat a guard failure as a defect to fix, not a message to retype.
+3. Keep commit messages safe at the transport boundary, not by content filtering.
+   - Backticks, `$(` command substitution, `$VAR` interpolation, and separators are ordinary
+     message text. They only become dangerous when the message is assembled inside a shell command
+     string (`sh -c`, `bash -c`, `pwsh -Command`, `cmd /c`) and re-parsed.
+   - Pass the message through direct argv or `git commit -F <file>`; never build it through a shell
+     string. Put `-F` scratch files outside the worktree (OS temp directory) or under
+     `<repo>/.git/mustflow/`; a repo-root scratch file is a staging defect.
+   - Run `scripts/guard-commit-message.mjs` on the message to check the transport contract (NUL,
+     valid UTF-8, size, and file location); treat a guard failure as a defect to fix, not a message
+     to retype.
+   - Before committing, verify the staged set with `changes_staged_status` and
+     `scripts/guard-staged-scope.mjs --allow <task write set>`: a staged file outside the write
+     set, a repo-root scratch file, or an index/worktree mismatch is a defect.
 4. Never compute line ranges by hand.
    - Use line numbers reported by the read or search tool (`Select-String`, editor jump-to-line),
      and treat tool-reported lines as 1-based unless the tool states otherwise.
@@ -169,6 +176,7 @@ Use configured oneshot command intents when available:
 
 - `changes_status`
 - `changes_diff_summary`
+- `changes_staged_status`
 - `lint`
 - `build`
 - `test_related`
@@ -179,8 +187,8 @@ Use configured oneshot command intents when available:
 - `mustflow_check`
 
 Prefer the narrowest configured tests that execute the changed artifact directly, and confirm
-with `git diff --stat` and a commit-message guard run that the shell, encoding, and residue
-classes are clean.
+with `git diff --stat`, a commit-message transport guard run, and the staged-scope guard that the
+staging, shell-transport, encoding, and residue classes are clean.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
@@ -188,7 +196,8 @@ classes are clean.
 - If a merged or split file fails with a missing import or moved symbol, fix the import or
   restore the symbol and rerun the artifact before continuing.
 - If a commit fails because the host shell interpreted the message, retry through
-  `git commit -F <file>` and record the shell class in the report.
+  `git commit -F <file>` with the scratch file outside the worktree, and record the transport class
+  in the report.
 - If line endings or BOM drift is found, re-write the touched files with explicit LF and UTF-8 no
   BOM, re-diff, and report the class.
 - If a regex or block removal left residue, remove the fragment and re-grep for the removed names
@@ -202,7 +211,7 @@ classes are clean.
 - Agent operational hygiene reviewed
 - Merge and split findings: imports, moved symbols, fixtures, per-case state
 - Execution findings: which artifact was run before commit, and which was not
-- Commit-message and shell findings: metacharacters found or cleared, `-F` usage
+- Commit-message and transport findings: transport boundary used, `-F` file location
 - Encoding and line-ending findings: drift found or confirmed clean
 - Offset, block, and regex findings: residue found or confirmed clean
 - Fixes made or recommendation

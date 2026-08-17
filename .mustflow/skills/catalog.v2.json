@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:5678d097420ac0f85c0d60d2c6893c7a1382567c19078297b84d02e0d3f22a3a",
+  "source_fingerprint": "sha256:2e8353f131b2826d0fa0c651516416323a88ed70b6224d0f3a220d341c66ddaf",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -545,10 +545,11 @@
         "conflicts_with": [],
         "unlocks_on": []
       },
-      "trigger": "Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, shell metacharacters in commit messages or inline commands, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.",
+      "trigger": "Apply this skill when files, tests, scripts, or workflows are created, changed, merged, split, renamed, or committed and the change risks agent-operational mistakes such as merged files with missing standard-module imports or stale fixtures, staged sets that escape the task write set, commit-message transport through a shell string, CRLF or BOM line-ending drift, hand-computed line offsets, regex-removal residue, unverified refactors, or host-shell breakage that a named checklist can prevent before the verification gate runs.",
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "changes_staged_status",
         "lint",
         "build",
         "test_related",
