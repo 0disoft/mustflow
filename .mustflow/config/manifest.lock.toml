@@ -65,3 +65,293 @@ content_hash = "sha256:1bdac92185eba634e07d466562c5150c66789007048352c799c1e3f69
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:4a44720ec9d20bfe9bb84a06fe109911c64d27ee4a922ef610a925e532482bfd"
+
+[files.".mustflow/skills/INDEX.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9c9eeee29e7a1f80ddcc9cd922410e398ff60253427e21718e3e7d1f7de2e2cf"
+
+[files.".mustflow/skills/routes.toml"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9f4325a6493819325822da11bc92732e690dae0825d2fec8d99186283182c578"
+
+[files.".mustflow/skills/backend-reliability-change/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:36e7c8a2e0fd321fcef90018bee681e08f700b27f68025738aaaf3ea4490e8df"
+
+[files.".mustflow/skills/http-delivery-streaming/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:ac10b98e2da167cb99e02840fa9f3fc6b57f6020deea1616844b0c8249ec4b54"
+
+[files.".mustflow/skills/ai-generated-code-hardening/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:2bbd21a38e8b35861e71e982cba43a3a629a13cdef133912ffc745f3755aca2a"
+
+[files.".mustflow/skills/structured-concurrency-supervision-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:d59825f54d3b80dd41ebf43670ae21639b80e0cddf5724777ee3f8401506e928"
+
+[files.".mustflow/skills/memory-lifetime-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:5234b40013a56007b2b15a3ed6d11d88d47386a10aa475b2a1569c6741da02c9"
+
+[files.".mustflow/skills/desktop-memory-footprint-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:ddd38de2adae772d2c5477b50e456fd4bd66e7ed78a51cc9d9fca9d0195da7de"
+
+[files.".mustflow/skills/hot-path-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:7e2853a7f5d039ca4269749bca152970f4470ffb4a90c84278aedc740a5374bd"
+
+[files.".mustflow/skills/api-request-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:5f3940364524c9c093fa421cdd94b3d9a359c26ba0cd96cb9bc859e2c1c28e70"
+
+[files.".mustflow/skills/web-render-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:6c6f79c593556074dd83394b7af5fc8c9724a5e70c933cf7e535366419380fcb"
+
+[files.".mustflow/skills/core-web-vitals-field-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:5067d7166e7c8492f833dcb8f08071b63078d4ed0b8fbe19aa57cc001be22290"
+
+[files.".mustflow/skills/image-delivery-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:dc827fd41a43b7d04f33ee174856c607d44ae335814de44bb564d3bf37b4ca46"
+
+[files.".mustflow/skills/client-bundle-pruning-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:78e82a1fe582e543fca2ee4b06aabd3c148fd2653d284243c476bdf84b40fa1b"
+
+[files.".mustflow/skills/frame-render-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:53c5529c94fd5b2a2a3d3124c2b8327187bdb16bfa5415a313ab301d4b3acc76"
+
+[files.".mustflow/skills/motion-system-contract-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:8b8dedfc78d5bdf96903ee66e393632a2a4b5a8cdd3626087c01ad11f7d4efdf"
+
+[files.".mustflow/skills/app-startup-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:6fbbb1663bb3a3aa32ce5a6ba1614c24cc91e2ee8991e81e26c52d75027b4d55"
+
+[files.".mustflow/skills/low-end-device-support-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:7fc44a3286c5ae12a641cedc0ed140bbcb8be8c51ab6a065d07e36f045ba0904"
+
+[files.".mustflow/skills/mobile-interaction-ux-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9c8cf108b23b4266aab76344d52e4d92c03b9a42ae6aa23465e9cb2db6331693"
+
+[files.".mustflow/skills/async-operation-ux-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b3b08acc64fc8fb14f13cf900726d49ae2db004b81f42df060d878a9a45cda6e"
+
+[files.".mustflow/skills/ui-state-resurrection-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:7d871919e2651866f80255085e4128d3487af509bb94a1da9ae8c515114b022c"
+
+[files.".mustflow/skills/frontend-accessibility-tree-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:515b05d2a30b0b0a5807237b2db5d9e2faabe55447a84c308daa0e76622ac316"
+
+[files.".mustflow/skills/website-task-friction-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:4ffe75809df0724fe3e9faacfd84d961009020d52597c01400545d442eed1044"
+
+[files.".mustflow/skills/cache-integrity-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:edb2747911c53a90e03f3a60fda359af89a6a25b1001d02a619d01e1a05ce8ed"
+
+[files.".mustflow/skills/quadratic-scan-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:a5bff9b211425e8315d9a61124f7039b2f193dc2641b4576e4ed1fcd1d1635c2"
+
+[files.".mustflow/skills/async-timing-boundary-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b9aa3f52e5e1020bc1f367e09284fea78a470486956d34794875b30fe2da6168"
+
+[files.".mustflow/skills/cloud-cost-guardrail-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:104eb174d16f188bb5aa44ad890722440163fe212661533c1827b8e63f57afd4"
+
+[files.".mustflow/skills/next-action-menu/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:94757ae1f678046295a614aaa7aaf97c364142f53dbad26257aff8261eaf4242"
+
+[files.".mustflow/skills/technology-stack-selection/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:349d7ab3999b4bcab17d930687505fae6cf89f749165820653dab60931b48118"
+
+[files.".mustflow/skills/design-implementation-handoff/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b6fe6e9b29145ac5653ce3bf8e1375fb21c45bfd4bcd0d2ac28d00320fed0dc0"
+
+[files.".mustflow/skills/database-change-safety/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:fb8674ff324b70d02c2b2c384675480435c1ef783e523bf5795fabc4131b7927"
+
+[files.".mustflow/skills/database-query-bottleneck-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:5787c670af75d4376f4fb25e774298f52a7a1883916258d55ab7f3714874428b"
+
+[files.".mustflow/skills/postgresql-code-change/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f9486b77514ac68c713505a564092ae6c866aa72d839ace832949deede61516d"
+
+[files.".mustflow/skills/clickhouse-code-change/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:844157ee1ceffeaec6162c75e6444de016b4d31b85a4fed138e1964f714e8701"
+
+[files.".mustflow/skills/duckdb-code-change/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:0d7c61142dd99baffb413e065a332ff67490c35167215a60756561680a079d60"
+
+[files.".mustflow/skills/test-suite-performance-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:bd93aafd6958a6abf453cbd72b21bdf9453539c7ec0ca744fae985ce41e4967f"
+
+[files.".mustflow/skills/ai-product-readiness-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:0d2699c0c1a7ee3544b6c2df9e1f6bb48e240c33bc3ed56301642c1ea89cc1bc"
+
+[files.".mustflow/skills/prompt-contract-quality-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:255fa8f10dfdfc394bab146f2a64796f6bfa3f296a2ebd7197bc3b002cb733d5"
+
+[files.".mustflow/skills/llm-hallucination-control-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:5ad89e3b26392966cf95f9748fad93e24e4883fc130ebb1a84a0daadc223c529"
+
+[files.".mustflow/skills/llm-token-cost-control-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:de2c6ec80a3be9d9554567fc87fb770d36c8f8476341d210ac612cb5d9c86d58"
+
+[files.".mustflow/skills/cache-friendly-context-design-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9fe5f9fa703dffd2d2321a282a216bf5ec310163fb53f3bf2ef9425ae030c636"
+
+[files.".mustflow/skills/llm-response-latency-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:566c921986ad9c742be9f44a34362b593dc89d7af5fdd1e2aabc09d3dc14c522"
+
+[files.".mustflow/skills/llm-model-routing-integrity-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:0a4344ace6843862cbdb0d46bdd6211d1bc6d12ee9f58a4c3da8b87ab84c27e3"
+
+[files.".mustflow/skills/agent-execution-control-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:e9bd23386a19906d6b6b975aa50b0f095c3878296ebe8a9ec414c64f2b2e739f"
+
+[files.".mustflow/skills/agent-operational-hygiene-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:719a27aef471c612faa15b1131071c56695ddcc4d2b4cd2598cab1081b8c0b56"
+
+[files.".mustflow/skills/agent-runtime-multi-worker-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:d04012c7b455c7a9fa8a6aa547cfda4d80355ec98c5bcf0f751e0c9d405a7187"
+
+[files.".mustflow/skills/browser-automation-reliability-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:e72ae8bf330401ac7bed32aa238d0b3acc86dc890681b46c508bb3b9f24bd7b9"
+
+[files.".mustflow/skills/agent-eval-integrity-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9a21b461942e8a5e755ab423eb40ded58881c49116e8182ad3892e59ea272772"
+
+[files.".mustflow/skills/idea-triage/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:20d688dc858d4da5a59342a4df159a23225f6574f59870bc982edaa5283f50ba"
+
+[files.".mustflow/skills/performance-measurement-integrity-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:210442b5f38bed11331b31a0e7d203203c41064652a14648d870cdae5161abfb"
+
+[files.".mustflow/skills/provenance-license-gate/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:694df0fe2a556bbe37bba3f00fe78662fed95e0779ea9c9c9eb6b1ebd8725184"
+
+[files.".mustflow/skills/proactive-risk-surfacing/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:0a1c3fbd56aee5cd630b54afd2ba3a876ba56cf8e9b6b6086dcfb0385a48ddcd"
+
+[files.".mustflow/skills/cross-agent-session-reference/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:4d7258b731530123e57a5f157733bf23c9ffd9a9147997da4f7d16ff484a37f4"
+
+[files.".mustflow/skills/readme-authoring/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:c8082e570fe1ae55b6349680b568704bc4125f24e754a47dd5fa662a2c2532f3"
+
+[files.".mustflow/skills/writing-elegance/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f1ca8e3ccec1b741b8dbe2542f28d8e6707ef4d0dc0b1ef7ea2e3cf2677f2edb"
+
+[files.".mustflow/skills/skill-refresh/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f8f6f061b26743f22488f60db07b09c88cdfefdbdefd284e3e213b5a24d414a8"
+
+[files.".mustflow/skills/template-install-surface-sync/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:2e2c5794537b01c4aa27e0999c41a9279657045a9c0565612653ffca8e9ed134"
+
+[files.".mustflow/config/preferences.toml"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:9d46b43d2f1b73a35f10a1e00aefd13893e6c31c437807f54f8e0444cb86e897"

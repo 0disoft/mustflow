@@ -9,11 +9,21 @@ const allowedPaths = new Set([
 	'.mustflow/config/commands.toml',
 	'.mustflow/config/commands.d/scoped-check.toml',
 	'.mustflow/config/commands.d/command-contract-scaling.toml',
-	'.mustflow/skills/dependency-upgrade-review/SKILL.md',
-	'.mustflow/skills/native-crash-forensics-review/SKILL.md',
+	'.mustflow/config/preferences.toml',
+	'.mustflow/skills/INDEX.md',
+	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/router.toml',
-	'.mustflow/skills/security-privacy-review/SKILL.md',
 ]);
+
+// The manifest-lock policy (mustflow 2.134.0) tracks the whole skill surface:
+// every installed skill SKILL.md is part of the locked install surface.
+function isAllowedPath(entry) {
+	if (allowedPaths.has(entry)) {
+		return true;
+	}
+
+	return /^\.mustflow\/skills\/[a-z0-9-]+\/SKILL\.md$/u.test(entry);
+}
 
 function toPosixRelative(value) {
 	return value.replace(/\\/g, '/').replace(/^\.\//u, '');
@@ -29,7 +39,7 @@ if ((action !== 'apply' && requestedPaths.length === 0) || ((action === 'plan' |
 	process.exit(2);
 }
 
-const invalidPath = requestedPaths.find((entry) => !allowedPaths.has(entry));
+const invalidPath = requestedPaths.find((entry) => !isAllowedPath(entry));
 
 if (invalidPath) {
 	console.error(`Refusing to accept manifest lock baseline for unsupported path: ${invalidPath}`);
