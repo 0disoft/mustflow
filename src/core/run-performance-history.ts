@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { withRunStateUpdateMutex } from './active-run-locks.js';
+import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
 import type { RunReceipt, RunReceiptPerformance } from './run-receipt.js';
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
@@ -467,7 +467,7 @@ export function recordRunPerformanceHistory(projectRoot: string, receipt: RunRec
 	}
 
 	try {
-		withRunStateUpdateMutex(projectRoot, () => {
+		withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.performanceHistory, () => {
 			const historyDir = path.join(projectRoot, PERFORMANCE_HISTORY_DIR);
 			const samplesPath = path.join(historyDir, PERFORMANCE_SAMPLES_FILE);
 			const summaryPath = path.join(historyDir, PERFORMANCE_SUMMARY_FILE);
