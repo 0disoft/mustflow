@@ -66,7 +66,7 @@
     "effect": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "access", "mode", "path", "lock", "concurrency", "scope"],
+      "required": ["source", "access", "mode", "path", "lock", "concurrency"],
       "properties": {
         "source": { "type": "string" },
         "access": { "type": "string" },
