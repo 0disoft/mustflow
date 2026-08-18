@@ -66,14 +66,15 @@
     "effect": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "access", "mode", "path", "lock", "concurrency"],
+      "required": ["source", "access", "mode", "path", "lock", "concurrency", "scope"],
       "properties": {
         "source": { "type": "string" },
         "access": { "type": "string" },
         "mode": { "type": "string" },
         "path": { "type": ["string", "null"] },
         "lock": { "type": "string" },
-        "concurrency": { "type": "string" }
+        "concurrency": { "type": "string" },
+        "scope": { "enum": ["worktree", "repository", "host"] }
       }
     },
     "staleLock": {
