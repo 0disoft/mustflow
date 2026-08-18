@@ -13,6 +13,9 @@ const allowedPaths = new Set([
 	'.mustflow/skills/INDEX.md',
 	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/router.toml',
+	'.mustflow/skills/dependency-upgrade-review/SKILL.md',
+	'.mustflow/skills/native-crash-forensics-review/SKILL.md',
+	'.mustflow/skills/security-privacy-review/SKILL.md',
 ]);
 
 // The manifest-lock policy (mustflow 2.134.0) tracks the whole skill surface:
