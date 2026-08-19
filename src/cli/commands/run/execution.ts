@@ -17,6 +17,11 @@ import {
 	startRunWriteTracking,
 } from '../../../core/run-write-drift.js';
 import { resolveRunReceiptRetentionPolicy } from '../../../core/retention-policy.js';
+import {
+	acquireVerificationResourceLease,
+	resolveVerificationResourceCapacities,
+	type VerificationResourceLease,
+} from '../../../core/verification-resource-budget.js';
 import { renderCliError } from '../../lib/cli-output.js';
 import { t, type CliLang, type MessageKey } from '../../lib/i18n.js';
 import { assessRunRootTrust } from '../../lib/run-root-trust.js';
@@ -169,6 +174,15 @@ function createPlanCommandHash(plan: RunnableRunPlan): string {
 	};
 
 	return `sha256:${createHash('sha256').update(JSON.stringify(payload)).digest('hex')}`;
+}
+
+function isVerificationChildRun(options: RunCommandOptions): boolean {
+	return (
+		options.correlationId?.startsWith('mf-verify-') === true &&
+		options.writeLatestReceipt === false &&
+		options.writeLatestProfile === false &&
+		options.recordPerformanceHistory === false
+	);
 }
 
 function renderActiveLockConflictMessage(intentName: string, conflicts: readonly ActiveRunLockConflict[], lang: CliLang): string {
@@ -344,7 +358,23 @@ export async function executeRunCommand(
 	}
 
 	let releaseActiveRunLock = true;
+	let releaseVerificationResourceLease = true;
+	let verificationResourceLease: VerificationResourceLease | null = null;
 	try {
+		if (isVerificationChildRun(options)) {
+			verificationResourceLease = await profiler.measureAsync('verification_resource_budget', () =>
+				acquireVerificationResourceLease(projectRoot, {
+					capacities: resolveVerificationResourceCapacities({}),
+					weights: {
+						cpu: 1,
+						memory: 1,
+						disk: activeRunLock.handle.record.effects.some((effect) => effect.access === 'write') ? 1 : 0,
+					},
+					label: `mf verify:${request.intentName}`,
+				}),
+			);
+		}
+
 		const runReceiptPolicy = profiler.measure('retention_policy', () =>
 			resolveRunReceiptRetentionPolicy(runContext.mustflowConfig),
 		);
@@ -427,6 +457,7 @@ export async function executeRunCommand(
 			termination = result.termination;
 			killMethod = termination.method;
 			releaseActiveRunLock = termination.confirmed;
+			releaseVerificationResourceLease = termination.confirmed;
 		}
 
 		const receipt = profiler.measure('receipt_create', () =>
@@ -497,6 +528,9 @@ export async function executeRunCommand(
 
 		return { exitCode: commandExitCode, receipt };
 	} finally {
+		if (releaseVerificationResourceLease) {
+			verificationResourceLease?.release();
+		}
 		if (releaseActiveRunLock) {
 			activeRunLock.handle.release();
 		}
