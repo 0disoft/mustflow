@@ -153,7 +153,7 @@ export function resolveVerifyParallelism(
 		!VERIFY_PARALLEL_EXECUTION_ENABLED
 			? 'Parallel verification is temporarily held at serial execution until process, lock, path-scope, and write-drift safety gates are satisfied.'
 			: mode === 'parallel_chunks'
-				? 'Each started verification intent acquires shared host and repository CPU and memory tokens, plus a disk token when the command declares writes.'
+				? 'Parallel verification is a bounded optimization for eligible non-conflicting entries; each started intent also acquires shared host and repository CPU and memory tokens, plus a disk token when the command declares writes.'
 				: 'Verification runs serially, and the started intent still acquires the same shared host and repository resource tokens.';
 
 	return {
