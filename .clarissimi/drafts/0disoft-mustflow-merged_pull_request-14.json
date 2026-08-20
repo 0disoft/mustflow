@@ -1,0 +1,61 @@
+{
+  "affectedArea": "⚡ Split run state mutex lanes to remove cross-session contention",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-14",
+      "kind": "pull_request",
+      "title": "⚡ Split run state mutex lanes to remove cross-session contention",
+      "url": "https://github.com/0disoft/mustflow/pull/14"
+    },
+    {
+      "id": "src/core/run-performance-history.ts",
+      "kind": "file",
+      "title": "src/core/run-performance-history.ts"
+    },
+    {
+      "id": "src/core/run-profile.ts",
+      "kind": "file",
+      "title": "src/core/run-profile.ts"
+    },
+    {
+      "id": "src/core/run-receipt.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt.ts"
+    },
+    {
+      "id": "src/core/run-state-mutex.ts",
+      "kind": "file",
+      "title": "src/core/run-state-mutex.ts"
+    },
+    {
+      "id": "tests/cli/run-state-mutex.test.js",
+      "kind": "test",
+      "title": "tests/cli/run-state-mutex.test.js"
+    },
+    {
+      "id": "a639ab68ca1bc6a275a44792ad629186ef5707e8",
+      "kind": "commit",
+      "title": "Merge commit a639ab68ca1b"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for ⚡ Split run state mutex lanes to remove cross-session contention from pull_request PR-14.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for ⚡ Split run state mutex lanes to remove cross-session contention.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:11:46Z",
+    "pullRequestNumber": 14,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
