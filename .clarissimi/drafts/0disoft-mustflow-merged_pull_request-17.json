@@ -1,0 +1,66 @@
+{
+  "affectedArea": "⚡️ Bound verification resources across concurrent sessions",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-17",
+      "kind": "pull_request",
+      "title": "⚡️ Bound verification resources across concurrent sessions",
+      "url": "https://github.com/0disoft/mustflow/pull/17"
+    },
+    {
+      "id": "docs-site/src/content/docs/en/commands/verify.md",
+      "kind": "file",
+      "title": "docs-site/src/content/docs/en/commands/verify.md"
+    },
+    {
+      "id": "src/cli/commands/run/execution.ts",
+      "kind": "file",
+      "title": "src/cli/commands/run/execution.ts"
+    },
+    {
+      "id": "src/cli/commands/verify/args.ts",
+      "kind": "file",
+      "title": "src/cli/commands/verify/args.ts"
+    },
+    {
+      "id": "src/core/verification-resource-budget.ts",
+      "kind": "file",
+      "title": "src/core/verification-resource-budget.ts"
+    },
+    {
+      "id": "tests/cli/verification-resource-budget.test.js",
+      "kind": "test",
+      "title": "tests/cli/verification-resource-budget.test.js"
+    },
+    {
+      "id": "b400095869b0ba56c583ff8dbfc43ad797f31ded",
+      "kind": "commit",
+      "title": "Merge commit b400095869b0"
+    },
+    {
+      "id": "#16",
+      "kind": "issue",
+      "title": "Linked issue candidate #16"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for ⚡️ Bound verification resources across concurrent sessions from pull_request PR-17.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for ⚡️ Bound verification resources across concurrent sessions.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:08:18Z",
+    "pullRequestNumber": 17,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
