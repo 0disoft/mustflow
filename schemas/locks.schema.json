@@ -73,7 +73,8 @@
         "mode": { "type": "string" },
         "path": { "type": ["string", "null"] },
         "lock": { "type": "string" },
-        "concurrency": { "type": "string" }
+        "concurrency": { "type": "string" },
+        "scope": { "enum": ["worktree", "repository", "host"] }
       }
     },
     "staleLock": {

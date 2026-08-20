@@ -76,6 +76,7 @@
         "type": { "enum": ["path", "cache", "database", "service", "port", "gpu", "resource"] },
         "paths": { "$ref": "#/$defs/stringArray" },
         "concurrency": { "enum": ["shared_reader", "exclusive_writer", "exclusive"] },
+        "scope": { "enum": ["worktree", "repository", "host"] },
         "description": { "type": "string" }
       }
     },
@@ -88,7 +89,8 @@
         "path": { "type": "string" },
         "paths": { "$ref": "#/$defs/stringArray" },
         "lock": { "type": "string" },
-        "concurrency": { "enum": ["shared", "exclusive"] }
+        "concurrency": { "enum": ["shared", "exclusive"] },
+        "scope": { "enum": ["worktree", "repository", "host"] }
       }
     },
     "coverageHints": {
@@ -194,9 +196,7 @@
           "type": "array",
           "items": { "type": "integer" }
         },
-        "writes": {
-          "$ref": "#/$defs/stringArray"
-        },
+        "writes": { "$ref": "#/$defs/stringArray" },
         "env_policy": { "$ref": "#/$defs/envPolicy" },
         "env_allowlist": { "$ref": "#/$defs/stringArray" },
         "allow_env_inheritance_risks": { "type": "boolean" },

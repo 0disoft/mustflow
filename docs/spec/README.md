@@ -6,6 +6,7 @@ The current specification set is versioned with `-v1` filenames:
 
 - [Instruction Authority v1](instruction-authority-v1.md)
 - [Command Contract v1](command-contract-v1.md)
+- [Active Run Lock Scopes v1](active-run-lock-scopes-v1.md)
 - [Verification Receipt v1](verification-receipt-v1.md)
 - [State Retention v1](state-retention-v1.md)
 
@@ -19,6 +20,9 @@ The specifications describe behavior implemented or installed through these repo
 - [.mustflow/config/commands.toml](../../.mustflow/config/commands.toml)
 - [src/cli/commands/run.ts](../../src/cli/commands/run.ts)
 - [src/cli/lib/run-receipt.ts](../../src/cli/lib/run-receipt.ts)
+- [src/core/command-effects.ts](../../src/core/command-effects.ts)
+- [src/core/active-run-locks.ts](../../src/core/active-run-locks.ts)
+- [src/core/active-run-lock-scopes.ts](../../src/core/active-run-lock-scopes.ts)
 
 If this directory and the current source behavior conflict, treat the discrepancy as a bug in either the documentation or implementation. Do not use these specifications to override current user instructions, host safety gates, or the nearest installed mustflow root.
 

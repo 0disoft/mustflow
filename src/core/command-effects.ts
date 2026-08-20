@@ -15,11 +15,14 @@ import { parsePathScope, pathScopesIntersect } from './path-scope.js';
 export const COMMAND_EFFECT_MODES = new Set(['read', 'write', 'append', 'replace', 'delete_recreate']);
 export const COMMAND_EFFECT_TYPES = new Set(['read', 'write']);
 export const COMMAND_EFFECT_CONCURRENCY = new Set(['shared', 'exclusive']);
+export const COMMAND_EFFECT_SCOPES = new Set(['worktree', 'repository', 'host']);
+const RESERVED_SCOPED_LOCK_PREFIX = 'mustflow-scope:';
 
 export type CommandEffectMode = 'read' | 'write' | 'append' | 'replace' | 'delete_recreate';
 export type CommandEffectAccess = 'read' | 'write';
 export type CommandEffectConcurrency = 'shared' | 'exclusive';
 export type CommandEffectSource = 'effects' | 'writes';
+export type CommandEffectScope = 'worktree' | 'repository' | 'host';
 
 export interface NormalizedCommandEffect {
 	readonly intent: string;
@@ -29,6 +32,7 @@ export interface NormalizedCommandEffect {
 	readonly path: string | null;
 	readonly lock: string;
 	readonly concurrency: CommandEffectConcurrency;
+	readonly scope?: CommandEffectScope;
 }
 
 export interface CommandEffectIssue {
@@ -38,6 +42,29 @@ export interface CommandEffectIssue {
 
 function hasOwn(table: TomlTable, key: string): boolean {
 	return Object.prototype.hasOwnProperty.call(table, key);
+}
+
+export function isCommandEffectScope(value: unknown): value is CommandEffectScope {
+	return typeof value === 'string' && COMMAND_EFFECT_SCOPES.has(value);
+}
+
+export function resolveCommandEffectScope(
+	effect: Pick<NormalizedCommandEffect, 'scope' | 'lock'>,
+): CommandEffectScope {
+	if (isCommandEffectScope(effect.scope)) {
+		return effect.scope;
+	}
+
+	const match = /^mustflow-scope:(repository|host):/u.exec(effect.lock);
+	return isCommandEffectScope(match?.[1]) ? match[1] : 'worktree';
+}
+
+function scopedLockKey(lock: string, scope: CommandEffectScope): string {
+	if (lock.startsWith(RESERVED_SCOPED_LOCK_PREFIX)) {
+		throw new Error(`Command lock names must not start with reserved prefix ${RESERVED_SCOPED_LOCK_PREFIX}`);
+	}
+
+	return scope === 'worktree' ? lock : `${RESERVED_SCOPED_LOCK_PREFIX}${scope}:${lock}`;
 }
 
 function normalizeRelativePath(rawPath: string): string {
@@ -61,13 +88,47 @@ function validateEffectPath(projectRoot: string, commandContract: CommandContrac
 	return parsePathScope(normalizeRelativePath(relative)).expression;
 }
 
-function readResourcePaths(commandContract: CommandContract, lock: string): string[] {
+function readResource(commandContract: CommandContract, lock: string): TomlTable | null {
 	const resource = commandContract.resources[lock];
-	if (!isRecord(resource)) {
-		return [];
+	return isRecord(resource) ? resource : null;
+}
+
+function readResourcePaths(commandContract: CommandContract, lock: string): string[] {
+	const resource = readResource(commandContract, lock);
+	return resource ? readStringArray(resource, 'paths') ?? [] : [];
+}
+
+function readScopeValue(table: TomlTable, key: string, location: string): CommandEffectScope | null {
+	if (!hasOwn(table, key)) {
+		return null;
 	}
 
-	return readStringArray(resource, 'paths') ?? [];
+	const value = table[key];
+	if (!isCommandEffectScope(value)) {
+		throw new Error(`${location}.${key} must be one of worktree, repository, or host`);
+	}
+	return value;
+}
+
+function readEffectScope(
+	commandContract: CommandContract,
+	intentName: string,
+	effect: TomlTable,
+	lock: string | undefined,
+): CommandEffectScope {
+	const effectScope = readScopeValue(effect, 'scope', `Command effect for intent ${intentName}`);
+	const resource = lock ? readResource(commandContract, lock) : null;
+	const resourceScope = resource
+		? readScopeValue(resource, 'scope', `Command resource ${lock}`)
+		: null;
+
+	if (effectScope && resourceScope && effectScope !== resourceScope) {
+		throw new Error(
+			`Command effect for intent ${intentName} declares scope ${effectScope} but resource ${lock} declares ${resourceScope}`,
+		);
+	}
+
+	return effectScope ?? resourceScope ?? 'worktree';
 }
 
 function readEffectMode(effect: TomlTable): CommandEffectMode {
@@ -113,6 +174,7 @@ function normalizeDeclaredEffect(
 	const access = effectAccess(mode, effect);
 	const concurrency = readEffectConcurrency(effect, mode, access);
 	const lock = readString(effect, 'lock');
+	const scope = readEffectScope(commandContract, intentName, effect, lock);
 	const rawPaths = [
 		...(readStringArray(effect, 'paths') ?? []),
 		...(readString(effect, 'path') ? [readString(effect, 'path') as string] : []),
@@ -123,6 +185,9 @@ function normalizeDeclaredEffect(
 	if (!lock && paths.length === 0) {
 		throw new Error(`Command effect for intent ${intentName} must define path, paths, or lock`);
 	}
+	if (scope === 'host' && !lock) {
+		throw new Error(`Host-scoped command effect for intent ${intentName} must define an explicit named lock`);
+	}
 
 	if (paths.length === 0) {
 		return [
@@ -132,8 +197,9 @@ function normalizeDeclaredEffect(
 				access,
 				mode,
 				path: null,
-				lock: lock as string,
+				lock: scopedLockKey(lock as string, scope),
 				concurrency,
+				...(scope === 'worktree' ? {} : { scope }),
 			},
 		];
 	}
@@ -146,8 +212,9 @@ function normalizeDeclaredEffect(
 			access,
 			mode,
 			path: normalizedPath,
-			lock: lock ?? pathLockKey(normalizedPath),
+			lock: scopedLockKey(lock ?? pathLockKey(normalizedPath), scope),
 			concurrency,
+			...(scope === 'worktree' ? {} : { scope }),
 		};
 	});
 }
@@ -195,8 +262,15 @@ export function normalizeCommandEffects(
 }
 
 export function commandEffectsConflict(left: NormalizedCommandEffect, right: NormalizedCommandEffect): boolean {
+	const leftScope = resolveCommandEffectScope(left);
+	const rightScope = resolveCommandEffectScope(right);
+	if (leftScope !== rightScope) {
+		return false;
+	}
+
 	const sameLock = left.lock === right.lock;
-	const overlappingPaths = left.path !== null
+	const overlappingPaths = leftScope !== 'host'
+		&& left.path !== null
 		&& right.path !== null
 		&& pathScopesIntersect(parsePathScope(left.path), parsePathScope(right.path));
 
@@ -215,6 +289,22 @@ export function commandEffectsConflict(left: NormalizedCommandEffect, right: Nor
 	return left.access === 'write' || right.access === 'write';
 }
 
+function validateCommandResourceScopes(commandContract: CommandContract): CommandEffectIssue[] {
+	const issues: CommandEffectIssue[] = [];
+	for (const [resourceName, resource] of Object.entries(commandContract.resources)) {
+		if (!isRecord(resource) || !hasOwn(resource, 'scope')) {
+			continue;
+		}
+
+		try {
+			readScopeValue(resource, 'scope', `Command resource ${resourceName}`);
+		} catch (error) {
+			issues.push({ message: error instanceof Error ? error.message : String(error) });
+		}
+	}
+	return issues;
+}
+
 export function validateCommandEffects(projectRoot: string, commandsToml: TomlTable | undefined): CommandEffectIssue[] {
 	const issues: CommandEffectIssue[] = [];
 	if (!commandsToml || !isRecord(commandsToml.intents)) {
@@ -226,6 +316,7 @@ export function validateCommandEffects(projectRoot: string, commandsToml: TomlTa
 		intents: commandsToml.intents,
 		resources: isRecord(commandsToml.resources) ? commandsToml.resources : {},
 	};
+	issues.push(...validateCommandResourceScopes(commandContract));
 
 	for (const [intentName, intent] of Object.entries(commandContract.intents)) {
 		if (!isRecord(intent)) {

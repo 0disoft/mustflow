@@ -11,10 +11,19 @@ import path from 'node:path';
 
 import {
 	commandEffectsConflict,
+	isCommandEffectScope,
 	normalizeCommandEffects,
+	resolveCommandEffectScope,
+	type CommandEffectScope,
 	type NormalizedCommandEffect,
 } from './command-effects.js';
 import type { CommandContract } from './config-loading.js';
+import {
+	listAvailableActiveRunLockScopeRoots,
+	resolveActiveRunLockScopeRoot,
+	resolveActiveRunLockScopeRoots,
+	type ActiveRunLockScopeRoot,
+} from './active-run-lock-scopes.js';
 import {
 	readUtf8FileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
@@ -25,10 +34,10 @@ import {
 	readProcessStartToken,
 } from './process-identity.js';
 
-const ACTIVE_LOCK_SCHEMA_VERSION = '2';
+const ACTIVE_LOCK_SCHEMA_VERSION = '3';
+const PREVIOUS_ACTIVE_LOCK_SCHEMA_VERSION = '2';
 const LEGACY_ACTIVE_LOCK_SCHEMA_VERSION = '1';
 const ACTIVE_LOCK_KIND = 'active_run_lock';
-const LOCK_ROOT_RELATIVE_PATH = '.mustflow/state/locks';
 export const ACTIVE_RUN_LOCK_ID_ENV = 'MUSTFLOW_ACTIVE_RUN_LOCK_ID';
 const LOCK_MUTEX_STALE_MS = 30_000;
 const LOCK_MUTEX_WAIT_MS = 1_000;
@@ -46,10 +55,14 @@ export interface ActiveRunLockEffect {
 	readonly path: string | null;
 	readonly lock: string;
 	readonly concurrency: string;
+	readonly scope: CommandEffectScope;
 }
 
 export interface ActiveRunLockRecord {
-	readonly schema_version: typeof ACTIVE_LOCK_SCHEMA_VERSION | typeof LEGACY_ACTIVE_LOCK_SCHEMA_VERSION;
+	readonly schema_version:
+		| typeof ACTIVE_LOCK_SCHEMA_VERSION
+		| typeof PREVIOUS_ACTIVE_LOCK_SCHEMA_VERSION
+		| typeof LEGACY_ACTIVE_LOCK_SCHEMA_VERSION;
 	readonly kind: typeof ACTIVE_LOCK_KIND;
 	readonly run_id: string;
 	readonly owner_token: string | null;
@@ -96,6 +109,7 @@ export interface ActiveRunLockState {
 
 export interface ActiveRunLockHandle {
 	readonly record: ActiveRunLockRecord;
+	readonly records: readonly ActiveRunLockRecord[];
 	readonly recoveredStaleRecords: readonly ActiveRunLockStaleRecord[];
 	release(): void;
 }
@@ -107,6 +121,21 @@ export type ActiveRunLockAcquireResult =
 		readonly conflicts: readonly ActiveRunLockConflict[];
 		readonly recoveredStaleRecords: readonly ActiveRunLockStaleRecord[];
 	};
+
+interface ActiveRunLockIdentity {
+	readonly runId: string;
+	readonly ownerToken: string;
+	readonly processStartToken: string;
+	readonly startedAt: string;
+	readonly rootHash: string;
+	readonly commandHash: string | null;
+}
+
+interface ScopedLockRecord {
+	readonly scopeRoot: ActiveRunLockScopeRoot;
+	readonly record: ActiveRunLockRecord;
+	readonly recordPath: string;
+}
 
 function sleep(milliseconds: number): void {
 	try {
@@ -123,16 +152,12 @@ function sha256(value: string): string {
 	return createHash('sha256').update(value).digest('hex');
 }
 
-function activeLockRoot(projectRoot: string): string {
-	return path.join(projectRoot, ...LOCK_ROOT_RELATIVE_PATH.split('/'));
+function activeLockDirectory(lockRoot: string): string {
+	return path.join(lockRoot, 'active');
 }
 
-function activeLockDirectory(projectRoot: string): string {
-	return path.join(activeLockRoot(projectRoot), 'active');
-}
-
-function activeLockMutexDirectory(projectRoot: string): string {
-	return path.join(activeLockRoot(projectRoot), 'mutex');
+function activeLockMutexDirectory(lockRoot: string): string {
+	return path.join(lockRoot, 'mutex');
 }
 
 function activeLockMutexRecoveryDirectory(mutex: string): string {
@@ -147,6 +172,7 @@ function normalizeEffect(effect: NormalizedCommandEffect): ActiveRunLockEffect {
 		path: effect.path,
 		lock: effect.lock,
 		concurrency: effect.concurrency,
+		scope: resolveCommandEffectScope(effect),
 	};
 }
 
@@ -177,11 +203,12 @@ function commandEffectsFromRecord(record: ActiveRunLockRecord): readonly Normali
 		path: effect.path,
 		lock: effect.lock,
 		concurrency: effect.concurrency === 'shared' ? 'shared' : 'exclusive',
+		scope: effect.scope,
 	}));
 }
 
-function activeLockRecordPath(projectRoot: string, runId: string): string {
-	return path.join(activeLockDirectory(projectRoot), `${sha256(runId)}.json`);
+function activeLockRecordPath(lockRoot: string, runId: string): string {
+	return path.join(activeLockDirectory(lockRoot), `${sha256(runId)}.json`);
 }
 
 function parseRecord(value: unknown): ActiveRunLockRecord | null {
@@ -190,8 +217,13 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 	}
 
 	const record = value as Record<string, unknown>;
+	const schemaVersion = record.schema_version;
+	const isCurrentSchema = schemaVersion === ACTIVE_LOCK_SCHEMA_VERSION;
+	const hasOwnerIdentity = isCurrentSchema || schemaVersion === PREVIOUS_ACTIVE_LOCK_SCHEMA_VERSION;
 	if (
-		(record.schema_version !== ACTIVE_LOCK_SCHEMA_VERSION && record.schema_version !== LEGACY_ACTIVE_LOCK_SCHEMA_VERSION) ||
+		(!isCurrentSchema &&
+			schemaVersion !== PREVIOUS_ACTIVE_LOCK_SCHEMA_VERSION &&
+			schemaVersion !== LEGACY_ACTIVE_LOCK_SCHEMA_VERSION) ||
 		record.kind !== ACTIVE_LOCK_KIND ||
 		typeof record.run_id !== 'string' ||
 		typeof record.intent !== 'string' ||
@@ -204,44 +236,56 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 	) {
 		return null;
 	}
-	const isCurrentSchema = record.schema_version === ACTIVE_LOCK_SCHEMA_VERSION;
 	if (
-		isCurrentSchema &&
+		hasOwnerIdentity &&
 		(typeof record.owner_token !== 'string' ||
 			typeof record.process_start_token !== 'string')
 	) {
 		return null;
 	}
 
-	const effects = record.effects.filter((effect): effect is ActiveRunLockEffect => {
+	const effects: ActiveRunLockEffect[] = [];
+	for (const effect of record.effects) {
 		if (!effect || typeof effect !== 'object' || Array.isArray(effect)) {
-			return false;
+			return null;
 		}
 
 		const candidate = effect as Record<string, unknown>;
-		return (
-			typeof candidate.source === 'string' &&
-			typeof candidate.access === 'string' &&
-			typeof candidate.mode === 'string' &&
-			(typeof candidate.path === 'string' || candidate.path === null) &&
-			typeof candidate.lock === 'string' &&
-			typeof candidate.concurrency === 'string'
-		);
-	});
-	const writes = record.writes.filter((write): write is string => typeof write === 'string');
+		if (
+			typeof candidate.source !== 'string' ||
+			typeof candidate.access !== 'string' ||
+			typeof candidate.mode !== 'string' ||
+			!(typeof candidate.path === 'string' || candidate.path === null) ||
+			typeof candidate.lock !== 'string' ||
+			typeof candidate.concurrency !== 'string' ||
+			(isCurrentSchema && !isCommandEffectScope(candidate.scope))
+		) {
+			return null;
+		}
 
-	if (effects.length !== record.effects.length || writes.length !== record.writes.length) {
+		effects.push({
+			source: candidate.source,
+			access: candidate.access,
+			mode: candidate.mode,
+			path: candidate.path,
+			lock: candidate.lock,
+			concurrency: candidate.concurrency,
+			scope: isCurrentSchema && isCommandEffectScope(candidate.scope) ? candidate.scope : 'worktree',
+		});
+	}
+	const writes = record.writes.filter((write): write is string => typeof write === 'string');
+	if (writes.length !== record.writes.length) {
 		return null;
 	}
 
 	return {
-		schema_version: isCurrentSchema ? ACTIVE_LOCK_SCHEMA_VERSION : LEGACY_ACTIVE_LOCK_SCHEMA_VERSION,
+		schema_version: schemaVersion,
 		kind: ACTIVE_LOCK_KIND,
 		run_id: record.run_id,
-		owner_token: isCurrentSchema ? record.owner_token as string : null,
+		owner_token: hasOwnerIdentity ? record.owner_token as string : null,
 		intent: record.intent,
 		pid: Number(record.pid),
-		process_start_token: isCurrentSchema ? record.process_start_token as string : null,
+		process_start_token: hasOwnerIdentity ? record.process_start_token as string : null,
 		started_at: record.started_at,
 		root_hash: record.root_hash,
 		command_hash: record.command_hash,
@@ -251,10 +295,10 @@ function parseRecord(value: unknown): ActiveRunLockRecord | null {
 }
 
 function readActiveRecords(
-	projectRoot: string,
+	lockRoot: string,
 	options: { readonly failClosedOnUnreadable?: boolean } = {},
 ): readonly ActiveRunLockRecord[] {
-	const directory = activeLockDirectory(projectRoot);
+	const directory = activeLockDirectory(lockRoot);
 	if (!existsSync(directory)) {
 		return [];
 	}
@@ -317,12 +361,12 @@ function staleRecordFor(record: ActiveRunLockRecord): ActiveRunLockStaleRecord |
 		: null;
 }
 
-function removeRecord(projectRoot: string, record: ActiveRunLockRecord): void {
-	rmSync(activeLockRecordPath(projectRoot, record.run_id), { force: true });
+function removeRecord(lockRoot: string, record: ActiveRunLockRecord): void {
+	rmSync(activeLockRecordPath(lockRoot, record.run_id), { force: true });
 }
 
 function conflictDetail(current: NormalizedCommandEffect, active: NormalizedCommandEffect): string {
-	return `lock "${current.lock}" conflicts with active intent "${active.intent}"`;
+	return `${resolveCommandEffectScope(current)} lock "${current.lock}" conflicts with active intent "${active.intent}"`;
 }
 
 function findConflicts(
@@ -358,31 +402,38 @@ function findConflicts(
 	return conflicts;
 }
 
+function createIdentity(projectRoot: string, commandHash: string | null): ActiveRunLockIdentity {
+	return {
+		runId: randomUUID(),
+		ownerToken: randomUUID(),
+		processStartToken: readCurrentProcessStartToken(),
+		startedAt: new Date().toISOString(),
+		rootHash: sha256(path.resolve(projectRoot)),
+		commandHash,
+	};
+}
+
 function createRecord(
-	projectRoot: string,
+	identity: ActiveRunLockIdentity,
 	intentName: string,
 	effects: readonly NormalizedCommandEffect[],
-	commandHash: string | null,
 ): ActiveRunLockRecord {
-	const startedAt = new Date().toISOString();
 	const writes = effects
 		.filter((effect) => effect.access === 'write' && effect.path !== null)
 		.map((effect) => effect.path as string)
 		.sort((left, right) => left.localeCompare(right));
-	const runId = randomUUID();
-	const processStartToken = readCurrentProcessStartToken();
 
 	return {
 		schema_version: ACTIVE_LOCK_SCHEMA_VERSION,
 		kind: ACTIVE_LOCK_KIND,
-		run_id: runId,
-		owner_token: randomUUID(),
+		run_id: identity.runId,
+		owner_token: identity.ownerToken,
 		intent: intentName,
 		pid: process.pid,
-		process_start_token: processStartToken,
-		started_at: startedAt,
-		root_hash: sha256(path.resolve(projectRoot)),
-		command_hash: commandHash,
+		process_start_token: identity.processStartToken,
+		started_at: identity.startedAt,
+		root_hash: identity.rootHash,
+		command_hash: identity.commandHash,
 		effects: effects.map(normalizeEffect),
 		writes: [...new Set(writes)],
 	};
@@ -546,9 +597,8 @@ function recoverStaleMutexWithoutOwner(mutex: string): boolean {
 	}
 }
 
-function acquireMutex(projectRoot: string, options: { readonly waitMs?: number } = {}): () => void {
-	const root = activeLockRoot(projectRoot);
-	const mutex = activeLockMutexDirectory(projectRoot);
+function acquireMutex(lockRoot: string, options: { readonly waitMs?: number } = {}): () => void {
+	const mutex = activeLockMutexDirectory(lockRoot);
 	const ownerPath = path.join(mutex, 'owner.json');
 	const processStartToken = readCurrentProcessStartToken();
 	const ownerRecord = {
@@ -565,7 +615,7 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 		startedAt: ownerRecord.started_at,
 		ownerToken: ownerRecord.owner_token,
 	};
-	mkdirSync(root, { recursive: true });
+	mkdirSync(lockRoot, { recursive: true, mode: 0o700 });
 	const startedAt = Date.now();
 	const waitMs = options.waitMs ?? LOCK_MUTEX_WAIT_MS;
 
@@ -573,7 +623,7 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 		try {
 			mkdirSync(mutex);
 			try {
-				writeJsonFileInsideWithoutSymlinks(root, ownerPath, ownerRecord);
+				writeJsonFileInsideWithoutSymlinks(lockRoot, ownerPath, ownerRecord);
 			} catch (error) {
 				rmSync(mutex, { recursive: true, force: true });
 				throw error;
@@ -629,8 +679,83 @@ function acquireMutex(projectRoot: string, options: { readonly waitMs?: number }
 	}
 }
 
+function releaseMutexes(releases: readonly (() => void)[]): void {
+	for (let index = releases.length - 1; index >= 0; index -= 1) {
+		try {
+			releases[index]?.();
+		} catch {
+			// Releasing one scope must not prevent releasing broader scopes.
+		}
+	}
+}
+
+function uniqueEffectScopes(effects: readonly NormalizedCommandEffect[]): readonly CommandEffectScope[] {
+	return [...new Set(effects.map(resolveCommandEffectScope))];
+}
+
+function effectsForScope(
+	effects: readonly NormalizedCommandEffect[],
+	scope: CommandEffectScope,
+): readonly NormalizedCommandEffect[] {
+	return effects.filter((effect) => resolveCommandEffectScope(effect) === scope);
+}
+
+function dedupeStaleRecords(records: readonly ActiveRunLockStaleRecord[]): readonly ActiveRunLockStaleRecord[] {
+	const byRunId = new Map<string, ActiveRunLockStaleRecord>();
+	for (const record of records) {
+		if (!byRunId.has(record.runId)) {
+			byRunId.set(record.runId, record);
+		}
+	}
+	return [...byRunId.values()];
+}
+
+function mergeRecords(records: readonly ActiveRunLockRecord[]): readonly ActiveRunLockRecord[] {
+	const merged = new Map<string, ActiveRunLockRecord>();
+
+	for (const record of records) {
+		const existing = merged.get(record.run_id);
+		if (!existing) {
+			merged.set(record.run_id, record);
+			continue;
+		}
+
+		const effects = new Map<string, ActiveRunLockEffect>();
+		for (const effect of [...existing.effects, ...record.effects]) {
+			const key = JSON.stringify([
+				effect.scope,
+				effect.source,
+				effect.access,
+				effect.mode,
+				effect.path,
+				effect.lock,
+				effect.concurrency,
+			]);
+			effects.set(key, effect);
+		}
+
+		merged.set(record.run_id, {
+			...existing,
+			schema_version: ACTIVE_LOCK_SCHEMA_VERSION,
+			effects: [...effects.values()],
+			writes: [...new Set([...existing.writes, ...record.writes])].sort((left, right) => left.localeCompare(right)),
+		});
+	}
+
+	return [...merged.values()].sort((left, right) =>
+		left.started_at.localeCompare(right.started_at) || left.run_id.localeCompare(right.run_id));
+}
+
+function rootRecords(
+	scopeRoot: ActiveRunLockScopeRoot,
+	options: { readonly failClosedOnUnreadable?: boolean } = {},
+): readonly ActiveRunLockRecord[] {
+	return readActiveRecords(scopeRoot.root, options);
+}
+
 export function withRunStateUpdateMutex<T>(projectRoot: string, callback: () => T): T {
-	const releaseMutex = acquireMutex(projectRoot, { waitMs: RUN_STATE_UPDATE_MUTEX_WAIT_MS });
+	const lockRoot = resolveActiveRunLockScopeRoot(projectRoot, 'worktree').root;
+	const releaseMutex = acquireMutex(lockRoot, { waitMs: RUN_STATE_UPDATE_MUTEX_WAIT_MS });
 
 	try {
 		return callback();
@@ -645,25 +770,40 @@ export function inspectActiveRunLocks(
 	intentName: string,
 ): ActiveRunLockInspection {
 	const effects = normalizeCommandEffects(projectRoot, contract, intentName);
-	const records = readActiveRecords(projectRoot);
-	const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
-	const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
-	const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
+	const roots = effects.length > 0
+		? resolveActiveRunLockScopeRoots(projectRoot, uniqueEffectScopes(effects))
+		: [resolveActiveRunLockScopeRoot(projectRoot, 'worktree')];
+	const conflicts: ActiveRunLockConflict[] = [];
+	const staleRecords: ActiveRunLockStaleRecord[] = [];
+
+	for (const scopeRoot of roots) {
+		const records = rootRecords(scopeRoot);
+		const rootStaleRecords = records
+			.map(staleRecordFor)
+			.filter((record): record is ActiveRunLockStaleRecord => record !== null);
+		const staleRecordIds = new Set(rootStaleRecords.map((stale) => stale.runId));
+		const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
+		conflicts.push(...findConflicts(intentName, effectsForScope(effects, scopeRoot.scope), liveRecords));
+		staleRecords.push(...rootStaleRecords);
+	}
 
 	return {
-		conflicts: findConflicts(intentName, effects, liveRecords),
-		staleRecords,
+		conflicts,
+		staleRecords: dedupeStaleRecords(staleRecords),
 	};
 }
 
 export function listActiveRunLocks(projectRoot: string): ActiveRunLockState {
-	const records = readActiveRecords(projectRoot);
-	const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
+	const records = listAvailableActiveRunLockScopeRoots(projectRoot)
+		.flatMap((scopeRoot) => rootRecords(scopeRoot));
+	const staleRecords = dedupeStaleRecords(
+		records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null),
+	);
 	const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
-	const activeRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
+	const activeRecords = mergeRecords(records.filter((record) => !staleRecordIds.has(record.run_id)));
 
 	return {
-		records,
+		records: mergeRecords(records),
 		activeRecords,
 		staleRecords,
 	};
@@ -680,12 +820,14 @@ export function acquireActiveRunLock(
 	} = {},
 ): ActiveRunLockAcquireResult {
 	const effects = normalizeCommandEffects(projectRoot, contract, intentName);
+	const identity = createIdentity(projectRoot, options.commandHash ?? null);
 	if (effects.length === 0) {
-		const emptyRecord = createRecord(projectRoot, intentName, [], options.commandHash ?? null);
+		const emptyRecord = createRecord(identity, intentName, []);
 		return {
 			ok: true,
 			handle: {
 				record: emptyRecord,
+				records: [],
 				recoveredStaleRecords: [],
 				release() {
 					// No declared effects means no active lock record was written.
@@ -694,65 +836,117 @@ export function acquireActiveRunLock(
 		};
 	}
 
-	mkdirSync(activeLockDirectory(projectRoot), { recursive: true });
-	const releaseMutex = acquireMutex(projectRoot);
+	const scopeRoots = resolveActiveRunLockScopeRoots(projectRoot, uniqueEffectScopes(effects));
+	for (const scopeRoot of scopeRoots) {
+		mkdirSync(activeLockDirectory(scopeRoot.root), { recursive: true, mode: 0o700 });
+	}
+	const releases: Array<() => void> = [];
 
 	try {
-		const records = readActiveRecords(projectRoot, {
-			failClosedOnUnreadable: effects.some((effect) => effect.access === 'write' || effect.concurrency === 'exclusive'),
-		});
-		const staleRecords = records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null);
-		for (const stale of staleRecords) {
-			const staleRecord = records.find((record) => record.run_id === stale.runId);
-			if (staleRecord) {
-				removeRecord(projectRoot, staleRecord);
-			}
+		for (const scopeRoot of scopeRoots) {
+			releases.push(acquireMutex(scopeRoot.root));
 		}
 
-		const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
-		const liveRecords = records.filter((record) => {
-			if (staleRecordIds.has(record.run_id)) {
-				return false;
+		const recoveredStaleRecords: ActiveRunLockStaleRecord[] = [];
+		const conflicts: ActiveRunLockConflict[] = [];
+
+		for (const scopeRoot of scopeRoots) {
+			const scopeEffects = effectsForScope(effects, scopeRoot.scope);
+			const records = rootRecords(scopeRoot, {
+				failClosedOnUnreadable: scopeEffects.some(
+					(effect) => effect.access === 'write' || effect.concurrency === 'exclusive',
+				),
+			});
+			const staleRecords = records
+				.map(staleRecordFor)
+				.filter((record): record is ActiveRunLockStaleRecord => record !== null);
+			for (const stale of staleRecords) {
+				const staleRecord = records.find((record) => record.run_id === stale.runId);
+				if (staleRecord) {
+					removeRecord(scopeRoot.root, staleRecord);
+				}
 			}
 
-			return record.run_id !== options.ignoreRunId || record.pid !== options.ignorePid;
-		});
-		const conflicts = findConflicts(intentName, effects, liveRecords);
+			const staleRecordIds = new Set(staleRecords.map((stale) => stale.runId));
+			const liveRecords = records.filter((record) => {
+				if (staleRecordIds.has(record.run_id)) {
+					return false;
+				}
+
+				return record.run_id !== options.ignoreRunId || record.pid !== options.ignorePid;
+			});
+			conflicts.push(...findConflicts(intentName, scopeEffects, liveRecords));
+			recoveredStaleRecords.push(...staleRecords);
+		}
+
+		const uniqueRecoveredStaleRecords = dedupeStaleRecords(recoveredStaleRecords);
 		if (conflicts.length > 0) {
-			return { ok: false, conflicts, recoveredStaleRecords: staleRecords };
+			return {
+				ok: false,
+				conflicts,
+				recoveredStaleRecords: uniqueRecoveredStaleRecords,
+			};
 		}
 
-		const record = createRecord(projectRoot, intentName, effects, options.commandHash ?? null);
-		const recordPath = activeLockRecordPath(projectRoot, record.run_id);
-		writeJsonFileInsideWithoutSymlinks(activeLockDirectory(projectRoot), recordPath, record);
-		let released = false;
+		const scopedRecords: ScopedLockRecord[] = scopeRoots.map((scopeRoot) => {
+			const record = createRecord(identity, intentName, effectsForScope(effects, scopeRoot.scope));
+			return {
+				scopeRoot,
+				record,
+				recordPath: activeLockRecordPath(scopeRoot.root, record.run_id),
+			};
+		});
+		const writtenRecords: ScopedLockRecord[] = [];
+		try {
+			for (const scopedRecord of scopedRecords) {
+				writeJsonFileInsideWithoutSymlinks(
+					activeLockDirectory(scopedRecord.scopeRoot.root),
+					scopedRecord.recordPath,
+					scopedRecord.record,
+				);
+				writtenRecords.push(scopedRecord);
+			}
+		} catch (error) {
+			for (const writtenRecord of writtenRecords) {
+				rmSync(writtenRecord.recordPath, { force: true });
+			}
+			throw error;
+		}
 
+		const logicalRecord = createRecord(identity, intentName, effects);
+		let released = false;
 		return {
 			ok: true,
 			handle: {
-				record,
-				recoveredStaleRecords: staleRecords,
+				record: logicalRecord,
+				records: scopedRecords.map((entry) => entry.record),
+				recoveredStaleRecords: uniqueRecoveredStaleRecords,
 				release() {
 					if (released) {
 						return;
 					}
 					released = true;
-					try {
-						const currentRecord = parseRecord(JSON.parse(readUtf8FileInsideWithoutSymlinks(
-							activeLockDirectory(projectRoot),
-							recordPath,
-							{ maxBytes: ACTIVE_LOCK_RECORD_MAX_BYTES },
-						)));
-						if (currentRecord?.run_id === record.run_id && currentRecord.owner_token === record.owner_token) {
-							rmSync(recordPath, { force: true });
+					for (const scopedRecord of scopedRecords) {
+						try {
+							const currentRecord = parseRecord(JSON.parse(readUtf8FileInsideWithoutSymlinks(
+								activeLockDirectory(scopedRecord.scopeRoot.root),
+								scopedRecord.recordPath,
+								{ maxBytes: ACTIVE_LOCK_RECORD_MAX_BYTES },
+							)));
+							if (
+								currentRecord?.run_id === scopedRecord.record.run_id &&
+								currentRecord.owner_token === scopedRecord.record.owner_token
+							) {
+								rmSync(scopedRecord.recordPath, { force: true });
+							}
+						} catch {
+							// Missing, malformed, or replaced records are no longer owned by this handle.
 						}
-					} catch {
-						// Missing, malformed, or replaced records are no longer owned by this handle.
 					}
 				},
 			},
 		};
 	} finally {
-		releaseMutex();
+		releaseMutexes(releases);
 	}
 }
