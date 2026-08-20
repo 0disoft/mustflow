@@ -30,9 +30,14 @@ export const RUN_STATE_MUTEX_SCOPES = {
 	receipts: 'run-receipts',
 	profiles: 'run-profiles',
 	performanceHistory: 'run-performance-history',
+	compaction: 'run-state-compaction',
 } as const;
 
 export type RunStateMutexScope = (typeof RUN_STATE_MUTEX_SCOPES)[keyof typeof RUN_STATE_MUTEX_SCOPES];
+
+export function isRunStateMutexBusyError(error: unknown, scope: RunStateMutexScope): boolean {
+	return error instanceof Error && error.message === `run_state_mutex_busy:${scope}`;
+}
 
 interface RunStateMutexOwner {
 	readonly lockId: string;
@@ -299,7 +304,7 @@ function acquireRunStateMutex(
 				throw error;
 			}
 
-			if (Date.now() - startedAt > waitMs) {
+			if (Date.now() - startedAt >= waitMs) {
 				const owner = readMutexOwner(ownerPath);
 				if (owner) {
 					if (mutexOwnerIsStale(owner) && recoverStaleMutexWithOwner(mutex, ownerPath, owner)) {

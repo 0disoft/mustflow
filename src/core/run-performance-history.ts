@@ -1,14 +1,29 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
-import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
+import {
+	isRunStateMutexBusyError,
+	RUN_STATE_MUTEX_SCOPES,
+	withRunStateUpdateMutex,
+} from './run-state-mutex.js';
 import type { RunReceipt, RunReceiptPerformance } from './run-receipt.js';
-import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import {
+	ensureInside,
+	readUtf8FileInsideWithoutSymlinks,
+	writeJsonFileInsideWithoutSymlinks,
+} from './safe-filesystem.js';
 
 const PERFORMANCE_HISTORY_SCHEMA_VERSION = '1';
 const PERFORMANCE_HISTORY_DIR = path.join('.mustflow', 'state', 'perf');
 const PERFORMANCE_SAMPLES_FILE = 'samples.json';
 const PERFORMANCE_SUMMARY_FILE = 'summary.json';
+const PERFORMANCE_RECORDS_DIRECTORY = 'records';
+const PERFORMANCE_RECORD_SCHEMA_VERSION = '1';
+const PERFORMANCE_RECORD_KIND = 'run_performance_sample';
+const MAX_PERFORMANCE_RECORD_BYTES = 128 * 1024;
+const MAX_PENDING_RECORDS_PER_COMPACTION = 2_048;
+const PERFORMANCE_RECORD_ID_PATTERN = /^[a-f0-9]{64}$/u;
 const MAX_AGE_DAYS = 30;
 const MAX_TOTAL_KB = 256;
 const MAX_TOTAL_BYTES = MAX_TOTAL_KB * 1024;
@@ -48,6 +63,9 @@ export interface RunPerformanceSample {
 
 interface RunPerformanceSamplesFile {
 	readonly schema_version: string;
+	readonly generation?: string;
+	readonly record_ids?: readonly string[];
+	readonly record_sort_keys?: readonly string[];
 	readonly retention: RunPerformanceRetention;
 	readonly samples: readonly RunPerformanceSample[];
 }
@@ -70,6 +88,7 @@ interface RunPerformanceRetention {
 
 interface RunPerformanceSummaryFile {
 	readonly schema_version: string;
+	readonly generation: string;
 	readonly generated_day: string;
 	readonly retention: RunPerformanceRetention;
 	readonly intents: Record<string, RunPerformanceIntentSummary>;
@@ -98,6 +117,27 @@ interface RunPerformanceFingerprintSummary {
 interface RunPerformanceRunnerSummary {
 	readonly sample_count: number;
 	readonly p50_duration_ms: number;
+}
+
+interface RunPerformanceRecord {
+	readonly schema_version: typeof PERFORMANCE_RECORD_SCHEMA_VERSION;
+	readonly kind: typeof PERFORMANCE_RECORD_KIND;
+	readonly record_id: string;
+	readonly recorded_at: string;
+	readonly receipt_path: string;
+	readonly sample: RunPerformanceSample;
+}
+
+interface StoredPerformanceSample {
+	readonly recordId: string;
+	readonly sortKey: string;
+	readonly sample: RunPerformanceSample;
+	readonly pendingPath: string | null;
+}
+
+export interface RunPerformanceCompactionOptions {
+	readonly waitMs?: number;
+	readonly skipWhenBusy?: boolean;
 }
 
 function getRetention(): RunPerformanceRetention {
@@ -183,17 +223,172 @@ function toPhaseDurations(phases: NonNullable<RunReceiptPerformance['phases']>):
 	return durations;
 }
 
-function readSamples(samplesPath: string): readonly RunPerformanceSample[] {
+function sha256Hex(parts: readonly string[]): string {
+	const hash = createHash('sha256');
+	for (const part of parts) {
+		hash.update(part);
+		hash.update('\0');
+	}
+	return hash.digest('hex');
+}
+
+function isPerformanceRecordId(value: unknown): value is string {
+	return typeof value === 'string' && PERFORMANCE_RECORD_ID_PATTERN.test(value);
+}
+
+function legacyRecordId(sample: RunPerformanceSample, index: number): string {
+	return sha256Hex(['legacy', String(index), JSON.stringify(sample)]);
+}
+
+function legacySortKey(sample: RunPerformanceSample, index: number): string {
+	return `${sample.observed_day}T23:59:59.999Z:legacy:${String(index).padStart(6, '0')}`;
+}
+
+function readStoredSamples(projectRoot: string, samplesPath: string): readonly StoredPerformanceSample[] {
 	if (!existsSync(samplesPath)) {
 		return [];
 	}
 
 	try {
-		const parsed = JSON.parse(readFileSync(samplesPath, 'utf8')) as Partial<RunPerformanceSamplesFile>;
-		return Array.isArray(parsed.samples) ? parsed.samples.filter(isRunPerformanceSample) : [];
+		const parsed = JSON.parse(
+			readUtf8FileInsideWithoutSymlinks(projectRoot, samplesPath, {
+				maxBytes: MAX_TOTAL_BYTES * 2,
+			}),
+		) as Partial<RunPerformanceSamplesFile>;
+		const samples = Array.isArray(parsed.samples) ? parsed.samples.filter(isRunPerformanceSample) : [];
+		const recordIds = Array.isArray(parsed.record_ids) &&
+			parsed.record_ids.length === samples.length &&
+			parsed.record_ids.every(isPerformanceRecordId) &&
+			new Set(parsed.record_ids).size === parsed.record_ids.length
+			? parsed.record_ids
+			: null;
+		const sortKeys = Array.isArray(parsed.record_sort_keys) &&
+			parsed.record_sort_keys.length === samples.length &&
+			parsed.record_sort_keys.every((value) => typeof value === 'string')
+			? parsed.record_sort_keys
+			: null;
+
+		return samples.map((sample, index) => ({
+			recordId: recordIds?.[index] ?? legacyRecordId(sample, index),
+			sortKey: sortKeys?.[index] ?? legacySortKey(sample, index),
+			sample,
+			pendingPath: null,
+		}));
 	} catch {
 		return [];
 	}
+}
+
+function recordsDirectory(projectRoot: string): string {
+	return path.join(projectRoot, PERFORMANCE_HISTORY_DIR, PERFORMANCE_RECORDS_DIRECTORY);
+}
+
+function performanceRecordPath(projectRoot: string, recordId: string): string {
+	return path.join(recordsDirectory(projectRoot), `${recordId}.json`);
+}
+
+function createPerformanceRecord(receipt: RunReceipt, sample: RunPerformanceSample): RunPerformanceRecord {
+	const receiptPath = typeof receipt.receipt_path === 'string' ? receipt.receipt_path : '';
+	const correlationId = typeof receipt.correlation_id === 'string' ? receipt.correlation_id : '';
+	const recordId = sha256Hex([
+		receiptPath,
+		receipt.finished_at,
+		correlationId,
+		JSON.stringify(sample),
+	]);
+	return {
+		schema_version: PERFORMANCE_RECORD_SCHEMA_VERSION,
+		kind: PERFORMANCE_RECORD_KIND,
+		record_id: recordId,
+		recorded_at: receipt.finished_at,
+		receipt_path: receiptPath,
+		sample,
+	};
+}
+
+function parsePerformanceRecord(
+	projectRoot: string,
+	recordPath: string,
+	expectedRecordId: string,
+): RunPerformanceRecord | null {
+	try {
+		const parsed = JSON.parse(
+			readUtf8FileInsideWithoutSymlinks(projectRoot, recordPath, {
+				maxBytes: MAX_PERFORMANCE_RECORD_BYTES,
+			}),
+		) as Partial<RunPerformanceRecord>;
+		if (
+			parsed.schema_version !== PERFORMANCE_RECORD_SCHEMA_VERSION ||
+			parsed.kind !== PERFORMANCE_RECORD_KIND ||
+			parsed.record_id !== expectedRecordId ||
+			typeof parsed.recorded_at !== 'string' ||
+			typeof parsed.receipt_path !== 'string' ||
+			!isRunPerformanceSample(parsed.sample)
+		) {
+			return null;
+		}
+
+		return parsed as RunPerformanceRecord;
+	} catch {
+		return null;
+	}
+}
+
+function appendPerformanceRecord(projectRoot: string, receipt: RunReceipt, sample: RunPerformanceSample): void {
+	const record = createPerformanceRecord(receipt, sample);
+	const recordPath = performanceRecordPath(projectRoot, record.record_id);
+	if (existsSync(recordPath) && parsePerformanceRecord(projectRoot, recordPath, record.record_id)) {
+		return;
+	}
+
+	writeJsonFileInsideWithoutSymlinks(projectRoot, recordPath, record);
+}
+
+function readPendingRecords(projectRoot: string): readonly StoredPerformanceSample[] {
+	const directory = recordsDirectory(projectRoot);
+	if (!existsSync(directory)) {
+		return [];
+	}
+
+	return readdirSync(directory, { withFileTypes: true })
+		.filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+		.map((entry) => entry.name)
+		.sort()
+		.slice(0, MAX_PENDING_RECORDS_PER_COMPACTION)
+		.flatMap((name) => {
+			const recordId = name.slice(0, -'.json'.length);
+			if (!isPerformanceRecordId(recordId)) {
+				return [];
+			}
+
+			const recordPath = path.join(directory, name);
+			const record = parsePerformanceRecord(projectRoot, recordPath, recordId);
+			return record
+				? [{
+						recordId,
+						sortKey: `${record.recorded_at}:${record.receipt_path}:${recordId}`,
+						sample: record.sample,
+						pendingPath: recordPath,
+					}]
+				: [];
+		});
+}
+
+function mergeStoredSamples(
+	stored: readonly StoredPerformanceSample[],
+	pending: readonly StoredPerformanceSample[],
+): readonly StoredPerformanceSample[] {
+	const byId = new Map<string, StoredPerformanceSample>();
+	for (const entry of stored) {
+		byId.set(entry.recordId, entry);
+	}
+	for (const entry of pending) {
+		byId.set(entry.recordId, entry);
+	}
+
+	return [...byId.values()].sort(
+		(left, right) => left.sortKey.localeCompare(right.sortKey) || left.recordId.localeCompare(right.recordId),
+	);
 }
 
 function isRunPerformanceSample(value: unknown): value is RunPerformanceSample {
@@ -366,7 +561,11 @@ function summarizeFingerprint(samples: readonly RunPerformanceSample[]): RunPerf
 	};
 }
 
-function createSummary(samples: readonly RunPerformanceSample[], generatedDay: string): RunPerformanceSummaryFile {
+function createSummary(
+	samples: readonly RunPerformanceSample[],
+	generatedDay: string,
+	generation: string,
+): RunPerformanceSummaryFile {
 	const intents: Record<string, RunPerformanceIntentSummary> = {};
 	const byIntent = groupBy(samples, (sample) => sample.intent);
 
@@ -383,6 +582,7 @@ function createSummary(samples: readonly RunPerformanceSample[], generatedDay: s
 
 	return {
 		schema_version: PERFORMANCE_HISTORY_SCHEMA_VERSION,
+		generation,
 		generated_day: generatedDay,
 		retention: getRetention(),
 		intents,
@@ -402,11 +602,21 @@ function groupBy<T>(items: readonly T[], keyFor: (item: T) => string): Map<strin
 	return groups;
 }
 
-function createSamplesFile(samples: readonly RunPerformanceSample[]): RunPerformanceSamplesFile {
+function generationFor(entries: readonly StoredPerformanceSample[]): string {
+	return `sha256:${sha256Hex(entries.map((entry) => entry.recordId))}`;
+}
+
+function createSamplesFile(
+	entries: readonly StoredPerformanceSample[],
+	generation: string,
+): RunPerformanceSamplesFile {
 	return {
 		schema_version: PERFORMANCE_HISTORY_SCHEMA_VERSION,
+		generation,
+		record_ids: entries.map((entry) => entry.recordId),
+		record_sort_keys: entries.map((entry) => entry.sortKey),
 		retention: getRetention(),
-		samples,
+		samples: entries.map((entry) => entry.sample),
 	};
 }
 
@@ -414,28 +624,33 @@ function serialize(value: unknown): string {
 	return `${JSON.stringify(value, null, 2)}\n`;
 }
 
-function serializedHistorySize(samples: readonly RunPerformanceSample[], today: string): number {
+function serializedHistorySize(entries: readonly StoredPerformanceSample[], today: string): number {
+	const generation = generationFor(entries);
+	const samples = entries.map((entry) => entry.sample);
 	return (
-		Buffer.byteLength(serialize(createSamplesFile(samples)), 'utf8') +
-		Buffer.byteLength(serialize(createSummary(samples, today)), 'utf8')
+		Buffer.byteLength(serialize(createSamplesFile(entries, generation)), 'utf8') +
+		Buffer.byteLength(serialize(createSummary(samples, today, generation)), 'utf8')
 	);
 }
 
-function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: string): readonly RunPerformanceSample[] {
-	const currentSize = serializedHistorySize(samples, today);
+function enforceSizeLimit(
+	entries: readonly StoredPerformanceSample[],
+	today: string,
+): readonly StoredPerformanceSample[] {
+	const currentSize = serializedHistorySize(entries, today);
 	if (currentSize <= MAX_TOTAL_BYTES) {
-		return samples;
+		return entries;
 	}
 
-	const averageBytesPerSample = Math.max(1, currentSize / Math.max(1, samples.length));
+	const averageBytesPerSample = Math.max(1, currentSize / Math.max(1, entries.length));
 	const estimatedDropCount = Math.floor((currentSize - MAX_TOTAL_BYTES) / averageBytesPerSample);
 	let low = 1;
-	let high = samples.length;
-	let firstFittingIndex = samples.length;
-	const probeIndex = Math.max(1, Math.min(samples.length, estimatedDropCount));
+	let high = entries.length;
+	let firstFittingIndex = entries.length;
+	const probeIndex = Math.max(1, Math.min(entries.length, estimatedDropCount));
 
 	if (probeIndex > 1) {
-		if (serializedHistorySize(samples.slice(probeIndex), today) <= MAX_TOTAL_BYTES) {
+		if (serializedHistorySize(entries.slice(probeIndex), today) <= MAX_TOTAL_BYTES) {
 			firstFittingIndex = probeIndex;
 			high = probeIndex - 1;
 		} else {
@@ -445,7 +660,7 @@ function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: strin
 
 	while (low <= high) {
 		const middle = Math.floor((low + high) / 2);
-		const candidate = samples.slice(middle);
+		const candidate = entries.slice(middle);
 
 		if (serializedHistorySize(candidate, today) <= MAX_TOTAL_BYTES) {
 			firstFittingIndex = middle;
@@ -456,7 +671,88 @@ function enforceSizeLimit(samples: readonly RunPerformanceSample[], today: strin
 		low = middle + 1;
 	}
 
-	return samples.slice(firstFittingIndex);
+	return entries.slice(firstFittingIndex);
+}
+
+function pruneStoredSamples(
+	entries: readonly StoredPerformanceSample[],
+	today: string,
+): readonly StoredPerformanceSample[] {
+	const samples = entries.map((entry) => entry.sample);
+	const retainedSamples = new Set(pruneSamples(samples, today));
+	return entries.filter((entry) => retainedSamples.has(entry.sample));
+}
+
+function latestObservedDay(entries: readonly StoredPerformanceSample[]): string {
+	return entries.reduce(
+		(latest, entry) => entry.sample.observed_day > latest ? entry.sample.observed_day : latest,
+		'1970-01-01',
+	);
+}
+
+function removeCompactedRecords(projectRoot: string, pending: readonly StoredPerformanceSample[]): void {
+	const directory = recordsDirectory(projectRoot);
+	for (const entry of pending) {
+		if (!entry.pendingPath) {
+			continue;
+		}
+
+		ensureInside(directory, entry.pendingPath);
+		rmSync(entry.pendingPath, { force: true });
+	}
+}
+
+function compactPerformanceHistory(projectRoot: string): void {
+	const historyDir = path.join(projectRoot, PERFORMANCE_HISTORY_DIR);
+	const samplesPath = path.join(historyDir, PERFORMANCE_SAMPLES_FILE);
+	const summaryPath = path.join(historyDir, PERFORMANCE_SUMMARY_FILE);
+	const stored = readStoredSamples(projectRoot, samplesPath);
+	const pending = readPendingRecords(projectRoot);
+	const merged = mergeStoredSamples(stored, pending);
+	if (merged.length === 0) {
+		return;
+	}
+
+	const today = latestObservedDay(merged);
+	const pruned = pruneStoredSamples(merged, today);
+	const retained = enforceSizeLimit(pruned, today);
+	const generation = generationFor(retained);
+	const samples = retained.map((entry) => entry.sample);
+
+	// Publish the matching summary first. A reader that understands generations can reject
+	// a transient mismatch while legacy readers keep their existing files and shape.
+	writeJsonFileInsideWithoutSymlinks(
+		projectRoot,
+		summaryPath,
+		createSummary(samples, today, generation),
+	);
+	writeJsonFileInsideWithoutSymlinks(
+		projectRoot,
+		samplesPath,
+		createSamplesFile(retained, generation),
+	);
+	removeCompactedRecords(projectRoot, pending);
+}
+
+export function compactRunPerformanceHistory(
+	projectRoot: string,
+	options: RunPerformanceCompactionOptions = {},
+): boolean {
+	try {
+		withRunStateUpdateMutex(
+			projectRoot,
+			RUN_STATE_MUTEX_SCOPES.compaction,
+			() => compactPerformanceHistory(projectRoot),
+			{ waitMs: options.waitMs },
+		);
+		return true;
+	} catch (error) {
+		if (options.skipWhenBusy && isRunStateMutexBusyError(error, RUN_STATE_MUTEX_SCOPES.compaction)) {
+			return false;
+		}
+
+		throw error;
+	}
 }
 
 export function recordRunPerformanceHistory(projectRoot: string, receipt: RunReceipt): void {
@@ -467,18 +763,13 @@ export function recordRunPerformanceHistory(projectRoot: string, receipt: RunRec
 	}
 
 	try {
-		withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.performanceHistory, () => {
-			const historyDir = path.join(projectRoot, PERFORMANCE_HISTORY_DIR);
-			const samplesPath = path.join(historyDir, PERFORMANCE_SAMPLES_FILE);
-			const summaryPath = path.join(historyDir, PERFORMANCE_SUMMARY_FILE);
-			const samples = enforceSizeLimit(pruneSamples([...readSamples(samplesPath), sample], sample.observed_day), sample.observed_day);
-			const samplesFile = createSamplesFile(samples);
-			const summaryFile = createSummary(samples, sample.observed_day);
-
-			writeJsonFileInsideWithoutSymlinks(projectRoot, samplesPath, samplesFile);
-			writeJsonFileInsideWithoutSymlinks(projectRoot, summaryPath, summaryFile);
+		appendPerformanceRecord(projectRoot, receipt, sample);
+		compactRunPerformanceHistory(projectRoot, {
+			waitMs: 0,
+			skipWhenBusy: true,
 		});
 	} catch {
-		// Performance history is a local optimization hint. A write failure must not affect command execution.
+		// Performance records are local optimization hints. A write or compaction failure
+		// must not affect command execution.
 	}
 }

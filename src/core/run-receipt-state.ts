@@ -3,6 +3,11 @@ import path from 'node:path';
 
 import type { RunReceipt } from './run-receipt.js';
 import type { RunReceiptRetentionPolicy } from './retention-policy.js';
+import {
+	isRunStateMutexBusyError,
+	RUN_STATE_MUTEX_SCOPES,
+	withRunStateUpdateMutex,
+} from './run-state-mutex.js';
 import { ensureInside, writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
@@ -372,7 +377,12 @@ function latestLookupEntries(entries: readonly RunReceiptIndexEntry[]): {
 	return { latestByIntent, latestByCwdIntent };
 }
 
-export function updateRunReceiptState(projectRoot: string, policy: RunReceiptRetentionPolicy): void {
+export interface RunReceiptStateUpdateOptions {
+	readonly waitMs?: number;
+	readonly skipWhenBusy?: boolean;
+}
+
+function compactRunReceiptState(projectRoot: string, policy: RunReceiptRetentionPolicy): void {
 	const retainedDirectories = applyRunReceiptRetention(projectRoot, policy);
 	const entries = createIndexEntries(retainedDirectories);
 	const lookups = latestLookupEntries(entries);
@@ -391,4 +401,26 @@ export function updateRunReceiptState(projectRoot: string, policy: RunReceiptRet
 	};
 
 	writeJsonFileInsideWithoutSymlinks(projectRoot, latestIndexPath(projectRoot), index);
+}
+
+export function updateRunReceiptState(
+	projectRoot: string,
+	policy: RunReceiptRetentionPolicy,
+	options: RunReceiptStateUpdateOptions = {},
+): boolean {
+	try {
+		withRunStateUpdateMutex(
+			projectRoot,
+			RUN_STATE_MUTEX_SCOPES.compaction,
+			() => compactRunReceiptState(projectRoot, policy),
+			{ waitMs: options.waitMs },
+		);
+		return true;
+	} catch (error) {
+		if (options.skipWhenBusy && isRunStateMutexBusyError(error, RUN_STATE_MUTEX_SCOPES.compaction)) {
+			return false;
+		}
+
+		throw error;
+	}
 }

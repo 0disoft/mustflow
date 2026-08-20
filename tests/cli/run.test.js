@@ -2965,6 +2965,8 @@ test('keeps performance history bounded and separate from raw run receipts', asy
 		for (let index = 0; index < 45; index += 1) {
 			recordRunPerformanceHistory(projectPath, {
 				finished_at: '2026-05-15T12:00:00.000Z',
+				correlation_id: `perf-correlation-${String(index).padStart(2, '0')}`,
+				receipt_path: `.mustflow/state/runs/run-perf-${String(index).padStart(2, '0')}/receipt.json`,
 				intent: 'perf_fixture',
 				stdout: {
 					tail: `raw receipt tail ${index}`,
