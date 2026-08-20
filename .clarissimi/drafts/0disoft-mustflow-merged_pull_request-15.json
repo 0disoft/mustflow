@@ -1,0 +1,76 @@
+{
+  "affectedArea": "⚡ Make run-state writes immutable and move aggregation off the hot path",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-15",
+      "kind": "pull_request",
+      "title": "⚡ Make run-state writes immutable and move aggregation off the hot path",
+      "url": "https://github.com/0disoft/mustflow/pull/15"
+    },
+    {
+      "id": "src/core/run-performance-history.ts",
+      "kind": "file",
+      "title": "src/core/run-performance-history.ts"
+    },
+    {
+      "id": "src/core/run-receipt-publication.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt-publication.ts"
+    },
+    {
+      "id": "src/core/run-receipt-state.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt-state.ts"
+    },
+    {
+      "id": "src/core/run-receipt.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt.ts"
+    },
+    {
+      "id": "src/core/run-state-mutex.ts",
+      "kind": "file",
+      "title": "src/core/run-state-mutex.ts"
+    },
+    {
+      "id": "tests/cli/run-state-publication.test.js",
+      "kind": "test",
+      "title": "tests/cli/run-state-publication.test.js"
+    },
+    {
+      "id": "tests/cli/run.test.js",
+      "kind": "test",
+      "title": "tests/cli/run.test.js"
+    },
+    {
+      "id": "2a36c3c40581a935660b7fc696348e820c6cbe81",
+      "kind": "commit",
+      "title": "Merge commit 2a36c3c40581"
+    },
+    {
+      "id": "#14",
+      "kind": "issue",
+      "title": "Linked issue candidate #14"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for ⚡ Make run-state writes immutable and move aggregation off the hot path from pull_request PR-15.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for ⚡ Make run-state writes immutable and move aggregation off the hot path.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:39:45Z",
+    "pullRequestNumber": 15,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
