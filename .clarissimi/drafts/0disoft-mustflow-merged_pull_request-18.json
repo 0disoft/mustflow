@@ -1,0 +1,51 @@
+{
+  "affectedArea": "perf(snapshot): reuse file hashes across write-drift snapshots",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-18",
+      "kind": "pull_request",
+      "title": "perf(snapshot): reuse file hashes across write-drift snapshots",
+      "url": "https://github.com/0disoft/mustflow/pull/18"
+    },
+    {
+      "id": "src/core/repository-snapshot.ts",
+      "kind": "file",
+      "title": "src/core/repository-snapshot.ts"
+    },
+    {
+      "id": "src/core/run-write-drift.ts",
+      "kind": "file",
+      "title": "src/core/run-write-drift.ts"
+    },
+    {
+      "id": "tests/cli/repository-snapshot.test.js",
+      "kind": "test",
+      "title": "tests/cli/repository-snapshot.test.js"
+    },
+    {
+      "id": "b47529bf41af2bcaede9e6149b84d7de93ec6270",
+      "kind": "commit",
+      "title": "Merge commit b47529bf41af"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for perf(snapshot): reuse file hashes across write-drift snapshots from pull_request PR-18.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for perf(snapshot): reuse file hashes across write-drift snapshots.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T06:39:33Z",
+    "pullRequestNumber": 18,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
