@@ -6,6 +6,19 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.135.0 - 2026-08-20
+
+- Coordinated verification CPU, memory, and write budgets across concurrent sessions and linked
+  worktrees instead of applying each process limit independently.
+- Reduced run-state hot-path contention with split mutex lanes, immutable local-index generations,
+  and receipt aggregation outside the critical execution path.
+- Reused repository file hashes across write-drift snapshots while preserving ignored-file coverage
+  and existing receipt contracts.
+- Fixed manifest-lock baseline handling for the full reviewed skill surface, corrected source-anchor
+  risk metadata, and refreshed documentation site dependencies, lock files, and pinned GitHub Actions.
+
+## 2.134.0 - 2026-08-18
+
 - Added early command-contract size warnings at 192 KiB and a dedicated 1 MiB recovery ceiling, so
   oversized command files produce actionable sharding guidance instead of failing at the generic
   Mustflow TOML limit.

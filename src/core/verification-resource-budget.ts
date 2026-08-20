@@ -537,7 +537,7 @@ function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
  * purpose: Bound verification CPU, memory, and disk concurrency across processes and repositories on one host.
  * search: verification resource budget, shared tokens, process lease, host concurrency, repository concurrency
  * invariant: A lease owns every slot it releases, partial acquisitions never wait while holding slots, and stale slots require process-death evidence or an aged ownerless directory.
- * risk: concurrency, filesystem, performance
+ * risk: state
  */
 export async function acquireVerificationResourceLease(
 	projectRoot: string,

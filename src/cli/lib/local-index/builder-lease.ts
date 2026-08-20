@@ -256,7 +256,7 @@ function recoverStaleLease(
  * purpose: Admit one local-index builder while allowing other sessions to keep reading the current generation.
  * search: local index builder lease, stale lease recovery, equivalent build coalescing
  * invariant: Only the owner token that atomically published a live lease may release it.
- * risk: cache, concurrency, filesystem
+ * risk: cache, state
  */
 export async function acquireLocalIndexBuildLease(
 	projectRoot: string,

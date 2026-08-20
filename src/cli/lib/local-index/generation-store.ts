@@ -146,7 +146,7 @@ function normalizeResult(
  * purpose: Publish immutable content-addressed SQLite generations behind an atomic current pointer.
  * search: local index generations, current pointer, immutable sqlite, compatibility snapshot
  * invariant: A generation is complete before the compatibility snapshot and current pointer can reference it.
- * risk: cache, concurrency, filesystem
+ * risk: cache, data_consistency, state
  */
 export async function createLocalIndex(
 	projectRoot: string,
