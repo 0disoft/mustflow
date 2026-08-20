@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 
-import { withRunStateUpdateMutex } from './active-run-locks.js';
+import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const RUN_PROFILE_SCHEMA_VERSION = '1';
@@ -129,7 +129,7 @@ export class RunProfiler {
 		};
 		const profilePath = path.join(input.projectRoot, RUN_PROFILE_DIR, LATEST_RUN_PROFILE);
 
-		withRunStateUpdateMutex(input.projectRoot, () => {
+		withRunStateUpdateMutex(input.projectRoot, RUN_STATE_MUTEX_SCOPES.profiles, () => {
 			writeJsonFileInsideWithoutSymlinks(input.projectRoot, profilePath, profile);
 		});
 	}
