@@ -9,7 +9,7 @@ const workflowPath = path.join(projectRoot, '.github', 'workflows', 'docs-site.y
 const clarissimiWorkflowPath = path.join(projectRoot, '.github', 'workflows', 'clarissimi.yml');
 const pinnedActionPattern = '[a-f0-9]{40}';
 const checkoutCommit = '9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0';
-const clarissimiCommit = '2def5c4b6630c26ca19245984c3d1eba033e7e5b';
+const clarissimiCommit = '4719cee445759fad720b486c2c43b2a57aa6dd4e';
 
 test('docs site deploy workflow builds docs-site and deploys the Pages artifact', () => {
 	assert.equal(existsSync(workflowPath), true);
