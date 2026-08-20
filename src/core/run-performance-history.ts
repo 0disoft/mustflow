@@ -288,10 +288,12 @@ function performanceRecordPath(projectRoot: string, recordId: string): string {
 }
 
 function createPerformanceRecord(receipt: RunReceipt, sample: RunPerformanceSample): RunPerformanceRecord {
+	const receiptPath = typeof receipt.receipt_path === 'string' ? receipt.receipt_path : '';
+	const correlationId = typeof receipt.correlation_id === 'string' ? receipt.correlation_id : '';
 	const recordId = sha256Hex([
-		receipt.receipt_path,
+		receiptPath,
 		receipt.finished_at,
-		receipt.correlation_id,
+		correlationId,
 		JSON.stringify(sample),
 	]);
 	return {
@@ -299,7 +301,7 @@ function createPerformanceRecord(receipt: RunReceipt, sample: RunPerformanceSamp
 		kind: PERFORMANCE_RECORD_KIND,
 		record_id: recordId,
 		recorded_at: receipt.finished_at,
-		receipt_path: receipt.receipt_path,
+		receipt_path: receiptPath,
 		sample,
 	};
 }
