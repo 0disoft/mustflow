@@ -366,7 +366,7 @@ function readPendingRecords(projectRoot: string): readonly StoredPerformanceSamp
 			return record
 				? [{
 						recordId,
-						sortKey: `${record.recorded_at}:${recordId}`,
+						sortKey: `${record.recorded_at}:${record.receipt_path}:${recordId}`,
 						sample: record.sample,
 						pendingPath: recordPath,
 					}]
