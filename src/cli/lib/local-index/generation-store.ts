@@ -110,7 +110,7 @@ function publishLocalIndexGeneration(
 
 	const compatibilityPath = getLocalIndexCompatibilityDatabasePath(projectRoot);
 	writeFileInsideWithoutSymlinks(projectRoot, compatibilityPath, databaseBytes);
-	const compatibilityStats = lstatSync(compatibilityPath);
+	const compatibilityStats = lstatSync(compatibilityPath, { bigint: true });
 	const pointer: LocalIndexGenerationPointer = {
 		schema_version: LOCAL_INDEX_POINTER_SCHEMA_VERSION,
 		kind: 'local_index_generation',
@@ -119,8 +119,9 @@ function publishLocalIndexGeneration(
 		database_path: generationRelativePath(sha256),
 		published_at: new Date().toISOString(),
 		compatibility_path: DEFAULT_DATABASE_RELATIVE_PATH,
-		compatibility_size_bytes: compatibilityStats.size,
-		compatibility_mtime_ms: compatibilityStats.mtimeMs,
+		compatibility_size_bytes: Number(compatibilityStats.size),
+		compatibility_mtime_ms: Number(compatibilityStats.mtimeNs) / 1_000_000,
+		compatibility_ctime_ns: compatibilityStats.ctimeNs.toString(),
 	};
 
 	writeJsonFileInsideWithoutSymlinks(projectRoot, getLocalIndexPointerPath(projectRoot), pointer);
