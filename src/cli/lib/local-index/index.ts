@@ -20,7 +20,10 @@ import {
 	MAX_SNIPPET_BYTES_PER_DOCUMENT,
 } from './constants.js';
 import { collectCommandIntents } from './command-effect-index.js';
-import { getLocalIndexDatabasePath } from './database-path.js';
+import {
+	getLocalIndexCompatibilityDatabasePath,
+	getLocalIndexDatabasePath,
+} from './database-path.js';
 import {
 	detectLocalSearchCapabilities,
 	hasTable,
@@ -617,9 +620,10 @@ function createLocalIndexPromptContextStatus(
 
 export async function readLocalIndexPromptContext(projectRoot: string): Promise<LocalIndexPromptContext> {
 	const databasePath = getLocalIndexDatabasePath(projectRoot);
+	const reportedDatabasePath = getLocalIndexCompatibilityDatabasePath(projectRoot);
 
 	if (!existsSync(databasePath)) {
-		return createLocalIndexPromptContextStatus(databasePath, 'missing');
+		return createLocalIndexPromptContextStatus(reportedDatabasePath, 'missing');
 	}
 
 	let database: SqlJsDatabase | undefined;
@@ -631,12 +635,12 @@ export async function readLocalIndexPromptContext(projectRoot: string): Promise<
 		const stalePaths = getStalePaths(projectRoot, database, { includeState: false });
 
 		if (stalePaths.length > 0) {
-			return createLocalIndexPromptContextStatus(databasePath, 'stale', stalePaths, capabilities);
+			return createLocalIndexPromptContextStatus(reportedDatabasePath, 'stale', stalePaths, capabilities);
 		}
 
-		return createLocalIndexPromptContextStatus(databasePath, 'fresh', [], capabilities);
+		return createLocalIndexPromptContextStatus(reportedDatabasePath, 'fresh', [], capabilities);
 	} catch {
-		return createLocalIndexPromptContextStatus(databasePath, 'unreadable');
+		return createLocalIndexPromptContextStatus(reportedDatabasePath, 'unreadable');
 	} finally {
 		database?.close();
 	}
