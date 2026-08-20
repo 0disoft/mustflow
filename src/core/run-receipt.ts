@@ -1,15 +1,17 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
 import { createStateRunId } from './atomic-state-write.js';
 import type { CommandEnvPolicy } from './command-env.js';
 import { COMMAND_OUTPUT_LIMIT_SCOPE } from './command-output-limits.js';
 import { decodeUtf8Tail, type BoundedOutputSnapshot } from './bounded-output.js';
 import { DEFAULT_RUN_RECEIPT_TAIL_BYTES, type RunReceiptRetentionPolicy } from './retention-policy.js';
+import {
+	publishLatestRunReceipt,
+	writeImmutableRunReceipt,
+} from './run-receipt-publication.js';
 import { updateRunReceiptState } from './run-receipt-state.js';
 import type { RunWriteDriftReceipt } from './run-write-drift.js';
-import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { redactSecretLikeText } from './secret-redaction.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
@@ -540,7 +542,6 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 
 export function writeRunReceipt(projectRoot: string, receipt: RunReceipt, policy?: RunReceiptRetentionPolicy): void {
 	const receiptDir = path.join(projectRoot, RUN_RECEIPT_DIR);
-	const latestPath = path.join(receiptDir, LATEST_RUN_RECEIPT);
 	const receiptPath = path.resolve(projectRoot, receipt.receipt_path);
 	const relativeToRunDir = path.relative(receiptDir, receiptPath);
 
@@ -548,12 +549,13 @@ export function writeRunReceipt(projectRoot: string, receipt: RunReceipt, policy
 		throw new Error(`Run receipt path must stay inside ${RUN_RECEIPT_DIR}`);
 	}
 
-	withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.receipts, () => {
-		writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
-		writeJsonFileInsideWithoutSymlinks(projectRoot, latestPath, receipt);
+	writeImmutableRunReceipt(projectRoot, receiptPath, receipt);
+	publishLatestRunReceipt(projectRoot, receipt);
 
-		if (policy) {
-			updateRunReceiptState(projectRoot, policy);
-		}
-	});
+	if (policy) {
+		updateRunReceiptState(projectRoot, policy, {
+			waitMs: 0,
+			skipWhenBusy: true,
+		});
+	}
 }
