@@ -23,11 +23,8 @@ import {
 	getLocalIndexGenerationDatabasePath,
 	getLocalIndexPointerPath,
 	getLocalIndexStagingDirectoryPath,
-	localIndexCompatibilitySnapshotMatches,
 	LOCAL_INDEX_POINTER_SCHEMA_VERSION,
 	LOCAL_INDEX_GENERATIONS_RELATIVE_PATH,
-	readLocalIndexGenerationPointer,
-	resolveLocalIndexGenerationDatabasePath,
 	withLocalIndexDatabasePath,
 	type LocalIndexGenerationPointer,
 } from './database-path.js';
@@ -121,20 +118,12 @@ function publishLocalIndexGeneration(
 		compatibility_path: DEFAULT_DATABASE_RELATIVE_PATH,
 		compatibility_size_bytes: Number(compatibilityStats.size),
 		compatibility_mtime_ms: Number(compatibilityStats.mtimeNs) / 1_000_000,
+		compatibility_mtime_ns: compatibilityStats.mtimeNs.toString(),
 		compatibility_ctime_ns: compatibilityStats.ctimeNs.toString(),
 	};
 
 	writeJsonFileInsideWithoutSymlinks(projectRoot, getLocalIndexPointerPath(projectRoot), pointer);
 	return pointer;
-}
-
-function currentGenerationIsHealthy(projectRoot: string): boolean {
-	const pointer = readLocalIndexGenerationPointer(projectRoot);
-	return (
-		pointer !== null &&
-		resolveLocalIndexGenerationDatabasePath(projectRoot, pointer) !== null &&
-		localIndexCompatibilitySnapshotMatches(projectRoot, pointer)
-	);
 }
 
 function normalizeResult(
@@ -170,6 +159,7 @@ export async function createLocalIndex(
 
 	const requestKey = createRequestKey(options);
 	const lease = await acquireLocalIndexBuildLease(projectRoot, requestKey);
+	const pointerExistedBeforeBuild = existsSync(getLocalIndexPointerPath(projectRoot));
 	const stagingPath = createStagingDatabasePath(projectRoot);
 
 	try {
@@ -180,7 +170,7 @@ export async function createLocalIndex(
 		const result = await withLocalIndexDatabasePath(stagingPath, () =>
 			createMutableLocalIndex(projectRoot, effectiveOptions),
 		);
-		const shouldPublish = result.wrote_files || !currentGenerationIsHealthy(projectRoot);
+		const shouldPublish = result.wrote_files || !pointerExistedBeforeBuild;
 
 		if (shouldPublish) {
 			publishLocalIndexGeneration(projectRoot, stagingPath);
