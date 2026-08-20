@@ -1,0 +1,76 @@
+{
+  "affectedArea": "feat(locking): coordinate active runs across worktrees and host resources",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-13",
+      "kind": "pull_request",
+      "title": "feat(locking): coordinate active runs across worktrees and host resources",
+      "url": "https://github.com/0disoft/mustflow/pull/13"
+    },
+    {
+      "id": "docs/spec/README.md",
+      "kind": "test",
+      "title": "docs/spec/README.md"
+    },
+    {
+      "id": "docs/spec/active-run-lock-scopes-v1.md",
+      "kind": "test",
+      "title": "docs/spec/active-run-lock-scopes-v1.md"
+    },
+    {
+      "id": "schemas/commands.schema.json",
+      "kind": "file",
+      "title": "schemas/commands.schema.json"
+    },
+    {
+      "id": "schemas/locks.schema.json",
+      "kind": "file",
+      "title": "schemas/locks.schema.json"
+    },
+    {
+      "id": "src/core/active-run-lock-scopes.ts",
+      "kind": "file",
+      "title": "src/core/active-run-lock-scopes.ts"
+    },
+    {
+      "id": "src/core/active-run-locks.ts",
+      "kind": "file",
+      "title": "src/core/active-run-locks.ts"
+    },
+    {
+      "id": "src/core/command-effects.ts",
+      "kind": "file",
+      "title": "src/core/command-effects.ts"
+    },
+    {
+      "id": "tests/cli/active-run-lock-scopes.test.js",
+      "kind": "test",
+      "title": "tests/cli/active-run-lock-scopes.test.js"
+    },
+    {
+      "id": "33eb135b27156e2bd8ea18442d44720784766b04",
+      "kind": "commit",
+      "title": "Merge commit 33eb135b2715"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for feat(locking): coordinate active runs across worktrees and host resources from pull_request PR-13.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for feat(locking): coordinate active runs across worktrees and host resources.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:10:36Z",
+    "pullRequestNumber": 13,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
