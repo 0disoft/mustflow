@@ -15,7 +15,8 @@ This file applies to the mustflow repository itself. It is not installed into us
 - Reused repository file hashes across write-drift snapshots while preserving ignored-file coverage
   and existing receipt contracts.
 - Fixed manifest-lock baseline handling for the full reviewed skill surface, corrected source-anchor
-  risk metadata, and refreshed documentation site dependencies, lock files, and pinned GitHub Actions.
+  risk metadata, added a bounded release-main push contract, and refreshed documentation site
+  dependencies, lock files, and pinned GitHub Actions.
 
 ## 2.134.0 - 2026-08-18
 

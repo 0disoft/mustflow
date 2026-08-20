@@ -157,6 +157,9 @@ test('npm publish workflow uses trusted publisher identity', () => {
 
 test('source repository declares bounded npm registry release checks', () => {
 	assert.match(sourceCommandContract, /\[intents\.release_npm_version_available\]/u);
+	assert.match(sourceCommandContract, /\[intents\.release_main_push\]/u);
+	assert.match(sourceCommandContract, /argv = \["git", "push", "--porcelain", "origin", "HEAD:refs\/heads\/main"\]/u);
+	assert.match(sourceCommandContract, /\[intents\.release_main_push\][\s\S]*?approval_actions = \["git_push"\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_publish\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_publish\][\s\S]*approval_actions = \["release"\]/u);
 	assert.match(sourceCommandContract, /\[intents\.release_npm_published_verify\]/u);
