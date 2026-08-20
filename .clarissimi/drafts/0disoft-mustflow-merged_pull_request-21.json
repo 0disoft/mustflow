@@ -1,0 +1,61 @@
+{
+  "affectedArea": "chore(deps): update documentation site dependencies",
+  "confidence": 0.64,
+  "contributionType": "bug_report",
+  "contributor": {
+    "id": "29139614",
+    "login": "renovate[bot]",
+    "platform": "github",
+    "profileUrl": "https://github.com/apps/renovate"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-21",
+      "kind": "pull_request",
+      "title": "chore(deps): update documentation site dependencies",
+      "url": "https://github.com/0disoft/mustflow/pull/21"
+    },
+    {
+      "id": "label:dependencies",
+      "kind": "label",
+      "title": "dependencies"
+    },
+    {
+      "id": "label:docs-site",
+      "kind": "label",
+      "title": "docs-site"
+    },
+    {
+      "id": "docs-site/bun.lock",
+      "kind": "file",
+      "title": "docs-site/bun.lock"
+    },
+    {
+      "id": "docs-site/package.json",
+      "kind": "file",
+      "title": "docs-site/package.json"
+    },
+    {
+      "id": "060faf6b774310c300a81940b20f2c8e80aebd6c",
+      "kind": "commit",
+      "title": "Merge commit 060faf6b7743"
+    },
+    {
+      "id": "#63527",
+      "kind": "issue",
+      "title": "Linked issue candidate #63527"
+    }
+  ],
+  "evidenceSummary": "Drafted bug_report recognition for chore(deps): update documentation site dependencies from pull_request PR-21.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Helped narrow a reported problem in chore(deps): update documentation site dependencies.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T06:47:04Z",
+    "pullRequestNumber": 21,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Problem Mapper"
+}
