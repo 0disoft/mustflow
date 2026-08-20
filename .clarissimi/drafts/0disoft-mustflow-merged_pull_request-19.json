@@ -1,0 +1,66 @@
+{
+  "affectedArea": "perf(index): publish immutable local-index generations",
+  "confidence": 0.64,
+  "contributionType": "test",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-19",
+      "kind": "pull_request",
+      "title": "perf(index): publish immutable local-index generations",
+      "url": "https://github.com/0disoft/mustflow/pull/19"
+    },
+    {
+      "id": "src/cli/lib/local-index.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/builder-lease.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/builder-lease.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/database-path.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/database-path.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/generation-store.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/generation-store.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/index.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/index.ts"
+    },
+    {
+      "id": "tests/cli/index-generation-store.test.js",
+      "kind": "test",
+      "title": "tests/cli/index-generation-store.test.js"
+    },
+    {
+      "id": "e76e69fcfe4902663c17a84d390ac660d1a5cebc",
+      "kind": "commit",
+      "title": "Merge commit e76e69fcfe49"
+    }
+  ],
+  "evidenceSummary": "Drafted test recognition for perf(index): publish immutable local-index generations from pull_request PR-19.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Added regression coverage for perf(index): publish immutable local-index generations.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:38:05Z",
+    "pullRequestNumber": 19,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Regression Shield"
+}
