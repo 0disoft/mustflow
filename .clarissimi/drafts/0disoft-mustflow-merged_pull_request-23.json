@@ -1,0 +1,51 @@
+{
+  "affectedArea": "chore(deps): update dorny/paths-filter action to v4",
+  "confidence": 0.64,
+  "contributionType": "maintenance",
+  "contributor": {
+    "id": "29139614",
+    "login": "renovate[bot]",
+    "platform": "github",
+    "profileUrl": "https://github.com/apps/renovate"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-23",
+      "kind": "pull_request",
+      "title": "chore(deps): update dorny/paths-filter action to v4",
+      "url": "https://github.com/0disoft/mustflow/pull/23"
+    },
+    {
+      "id": "label:dependencies",
+      "kind": "label",
+      "title": "dependencies"
+    },
+    {
+      "id": "label:github-actions",
+      "kind": "label",
+      "title": "github-actions"
+    },
+    {
+      "id": ".github/workflows/ci.yml",
+      "kind": "file",
+      "title": ".github/workflows/ci.yml"
+    },
+    {
+      "id": "1400b4cee164f4861127e39976af60689cfc803a",
+      "kind": "commit",
+      "title": "Merge commit 1400b4cee164"
+    }
+  ],
+  "evidenceSummary": "Drafted maintenance recognition for chore(deps): update dorny/paths-filter action to v4 from pull_request PR-23.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Reduced maintenance work around chore(deps): update dorny/paths-filter action to v4.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T06:47:15Z",
+    "pullRequestNumber": 23,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Maintenance Steward"
+}
