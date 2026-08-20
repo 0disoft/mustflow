@@ -1,8 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { createHash } from 'node:crypto';
 import { existsSync, lstatSync } from 'node:fs';
 import path from 'node:path';
 
-import { readUtf8FileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
+import {
+	readFileInsideWithoutSymlinks,
+	readUtf8FileInsideWithoutSymlinks,
+} from '../../../core/safe-filesystem.js';
 import { DEFAULT_DATABASE_RELATIVE_PATH } from './constants.js';
 
 export const LOCAL_INDEX_STORE_RELATIVE_PATH = '.mustflow/cache/local-index';
@@ -14,7 +18,6 @@ export const LOCAL_INDEX_POINTER_SCHEMA_VERSION = '1';
 
 const LOCAL_INDEX_POINTER_MAX_BYTES = 16 * 1024;
 const LOCAL_INDEX_GENERATION_FILE_PATTERN = /^sha256-([a-f0-9]{64})\.sqlite$/u;
-const LOCAL_INDEX_COMPATIBILITY_MTIME_TOLERANCE_MS = 1;
 const databasePathOverride = new AsyncLocalStorage<string>();
 
 export interface LocalIndexGenerationPointer {
@@ -27,6 +30,7 @@ export interface LocalIndexGenerationPointer {
 	readonly compatibility_path: typeof DEFAULT_DATABASE_RELATIVE_PATH;
 	readonly compatibility_size_bytes: number;
 	readonly compatibility_mtime_ms: number;
+	readonly compatibility_mtime_ns: string;
 	readonly compatibility_ctime_ns: string;
 }
 
@@ -62,6 +66,7 @@ function parseLocalIndexGenerationPointer(value: unknown): LocalIndexGenerationP
 		pointer.compatibility_path !== DEFAULT_DATABASE_RELATIVE_PATH ||
 		!isNonNegativeFiniteNumber(pointer.compatibility_size_bytes) ||
 		!isNonNegativeFiniteNumber(pointer.compatibility_mtime_ms) ||
+		!isNonNegativeIntegerString(pointer.compatibility_mtime_ns) ||
 		!isNonNegativeIntegerString(pointer.compatibility_ctime_ns)
 	) {
 		return null;
@@ -89,6 +94,7 @@ function parseLocalIndexGenerationPointer(value: unknown): LocalIndexGenerationP
 		compatibility_path: DEFAULT_DATABASE_RELATIVE_PATH,
 		compatibility_size_bytes: pointer.compatibility_size_bytes,
 		compatibility_mtime_ms: pointer.compatibility_mtime_ms,
+		compatibility_mtime_ns: pointer.compatibility_mtime_ns,
 		compatibility_ctime_ns: pointer.compatibility_ctime_ns,
 	};
 }
@@ -173,14 +179,23 @@ export function localIndexCompatibilitySnapshotMatches(
 
 	try {
 		const stats = lstatSync(compatibilityPath, { bigint: true });
-		return (
-			stats.isFile() &&
-			!stats.isSymbolicLink() &&
-			Number(stats.size) === pointer.compatibility_size_bytes &&
-			Math.abs(Number(stats.mtimeNs) / 1_000_000 - pointer.compatibility_mtime_ms) <=
-				LOCAL_INDEX_COMPATIBILITY_MTIME_TOLERANCE_MS &&
+		if (
+			!stats.isFile() ||
+			stats.isSymbolicLink() ||
+			Number(stats.size) !== pointer.compatibility_size_bytes
+		) {
+			return false;
+		}
+
+		if (
+			stats.mtimeNs.toString() === pointer.compatibility_mtime_ns &&
 			stats.ctimeNs.toString() === pointer.compatibility_ctime_ns
-		);
+		) {
+			return true;
+		}
+
+		const compatibilityBytes = readFileInsideWithoutSymlinks(projectRoot, compatibilityPath);
+		return createHash('sha256').update(compatibilityBytes).digest('hex') === pointer.sha256;
 	} catch {
 		return false;
 	}
