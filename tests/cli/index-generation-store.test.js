@@ -64,6 +64,7 @@ test('publishes an immutable content-addressed local-index generation', async ()
 			`.mustflow/cache/local-index/generations/sha256-${pointer.sha256}.sqlite`,
 		);
 		assert.equal(pointer.compatibility_path, '.mustflow/cache/mustflow.sqlite');
+		assert.match(pointer.compatibility_ctime_ns, /^(?:0|[1-9]\d*)$/u);
 		assert.equal(pointer.sha256, sha256(generationBytes));
 		assert.deepEqual(readFileSync(compatibilityPath), generationBytes);
 		assert.deepEqual(generationFiles(projectPath), [`sha256-${pointer.sha256}.sqlite`]);
