@@ -32,7 +32,7 @@ jobs:
       issues: read
     steps:
       - name: Check contributor recognition decision
-        uses: 0disoft/clarissimi@2def5c4b6630c26ca19245984c3d1eba033e7e5b # v0
+        uses: 0disoft/clarissimi@4719cee445759fad720b486c2c43b2a57aa6dd4e # v0
         with:
           mode: gate
           gate-mode: ${{ vars.CLARISSIMI_GATE_MODE || 'advisory' }}
@@ -57,7 +57,7 @@ jobs:
           persist-credentials: true # Clarissimi publishes a review branch with this scoped token.
 
       - name: Stage contributor recognition draft
-        uses: 0disoft/clarissimi@2def5c4b6630c26ca19245984c3d1eba033e7e5b # v0
+        uses: 0disoft/clarissimi@4719cee445759fad720b486c2c43b2a57aa6dd4e # v0
         with:
           mode: stage-draft
           base-branch: main
@@ -80,7 +80,7 @@ jobs:
           persist-credentials: true # Clarissimi publishes a review branch with this scoped token.
 
       - name: Propose approved contributor recognition
-        uses: 0disoft/clarissimi@2def5c4b6630c26ca19245984c3d1eba033e7e5b # v0
+        uses: 0disoft/clarissimi@4719cee445759fad720b486c2c43b2a57aa6dd4e # v0
         with:
           mode: promote-draft
           draft-path: ${{ inputs.draft-path }}
