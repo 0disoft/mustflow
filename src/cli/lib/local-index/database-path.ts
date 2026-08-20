@@ -27,6 +27,7 @@ export interface LocalIndexGenerationPointer {
 	readonly compatibility_path: typeof DEFAULT_DATABASE_RELATIVE_PATH;
 	readonly compatibility_size_bytes: number;
 	readonly compatibility_mtime_ms: number;
+	readonly compatibility_ctime_ns: string;
 }
 
 function toPosixPath(value: string): string {
@@ -35,6 +36,10 @@ function toPosixPath(value: string): string {
 
 function isNonNegativeFiniteNumber(value: unknown): value is number {
 	return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+function isNonNegativeIntegerString(value: unknown): value is string {
+	return typeof value === 'string' && /^(?:0|[1-9]\d*)$/u.test(value);
 }
 
 function parseGenerationFileName(value: string): string | null {
@@ -56,7 +61,8 @@ function parseLocalIndexGenerationPointer(value: unknown): LocalIndexGenerationP
 		typeof pointer.published_at !== 'string' ||
 		pointer.compatibility_path !== DEFAULT_DATABASE_RELATIVE_PATH ||
 		!isNonNegativeFiniteNumber(pointer.compatibility_size_bytes) ||
-		!isNonNegativeFiniteNumber(pointer.compatibility_mtime_ms)
+		!isNonNegativeFiniteNumber(pointer.compatibility_mtime_ms) ||
+		!isNonNegativeIntegerString(pointer.compatibility_ctime_ns)
 	) {
 		return null;
 	}
@@ -83,6 +89,7 @@ function parseLocalIndexGenerationPointer(value: unknown): LocalIndexGenerationP
 		compatibility_path: DEFAULT_DATABASE_RELATIVE_PATH,
 		compatibility_size_bytes: pointer.compatibility_size_bytes,
 		compatibility_mtime_ms: pointer.compatibility_mtime_ms,
+		compatibility_ctime_ns: pointer.compatibility_ctime_ns,
 	};
 }
 
@@ -165,13 +172,14 @@ export function localIndexCompatibilitySnapshotMatches(
 	const compatibilityPath = getLocalIndexCompatibilityDatabasePath(projectRoot);
 
 	try {
-		const stats = lstatSync(compatibilityPath);
+		const stats = lstatSync(compatibilityPath, { bigint: true });
 		return (
 			stats.isFile() &&
 			!stats.isSymbolicLink() &&
-			stats.size === pointer.compatibility_size_bytes &&
-			Math.abs(stats.mtimeMs - pointer.compatibility_mtime_ms) <=
-				LOCAL_INDEX_COMPATIBILITY_MTIME_TOLERANCE_MS
+			Number(stats.size) === pointer.compatibility_size_bytes &&
+			Math.abs(Number(stats.mtimeNs) / 1_000_000 - pointer.compatibility_mtime_ms) <=
+				LOCAL_INDEX_COMPATIBILITY_MTIME_TOLERANCE_MS &&
+			stats.ctimeNs.toString() === pointer.compatibility_ctime_ns
 		);
 	} catch {
 		return false;
