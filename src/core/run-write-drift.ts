@@ -1,33 +1,18 @@
-import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { existsSync, lstatSync, readFileSync, readlinkSync, readdirSync } from 'node:fs';
-import path from 'node:path';
-
 import { normalizeCommandEffects } from './command-effects.js';
-import { parsePathScope, pathScopeContainsPath } from './path-scope.js';
 import type { CommandContract } from './config-loading.js';
+import { parsePathScope, pathScopeContainsPath } from './path-scope.js';
+import {
+	captureRepositorySnapshot,
+	normalizeRepositoryRelativePath,
+	repositoryPathKey,
+	type RepositorySnapshot,
+	type RepositorySnapshotEnvironment,
+	type RepositorySnapshotStatus,
+} from './repository-snapshot.js';
 
-const MAX_SNAPSHOT_FILES = 20_000;
-const MAX_SNAPSHOT_DIRECTORY_DEPTH = 200;
 const MAX_REPORTED_PATHS = 200;
-const GIT_STATUS_TIMEOUT_MS = 10_000;
-const GIT_STATUS_MAX_BUFFER_BYTES = 16 * 1024 * 1024;
-const GIT_STATUS_UNTRACKED_MODE = 'all';
-const MAX_HASH_BYTES = 5 * 1024 * 1024;
-const RECURSIVE_SNAPSHOT_ENV = 'MUSTFLOW_WRITE_DRIFT_SNAPSHOT';
-const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
-const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/perf', '.mustflow/state/runs']);
 
-type FileSignature = string;
-type SnapshotEnvironment = NodeJS.ProcessEnv;
-export type RunWriteDriftStatus = 'checked' | 'partial' | 'unavailable';
-
-interface SnapshotResult {
-	readonly status: RunWriteDriftStatus;
-	readonly entries: ReadonlyMap<string, FileSignature>;
-	readonly reason: string | null;
-	readonly source: 'git_status' | 'recursive_snapshot' | 'unavailable';
-}
+export type RunWriteDriftStatus = RepositorySnapshotStatus;
 
 export interface RunWriteDriftReceipt {
 	readonly status: RunWriteDriftStatus;
@@ -50,15 +35,15 @@ export interface RunWriteDriftReceipt {
 
 export interface RunWriteTracker {
 	readonly projectRoot: string;
-	readonly env: SnapshotEnvironment;
+	readonly env: RepositorySnapshotEnvironment;
 	readonly declaredPaths: readonly string[];
-	readonly before: SnapshotResult;
+	readonly before: RepositorySnapshot;
 }
 
 export interface RunWriteBatchTracker {
 	readonly projectRoot: string;
-	readonly env: SnapshotEnvironment;
-	readonly before: SnapshotResult;
+	readonly env: RepositorySnapshotEnvironment;
+	readonly before: RepositorySnapshot;
 }
 
 export interface RunWriteBatchIntent {
@@ -69,240 +54,7 @@ export interface RunWriteBatchIntent {
 
 export interface RunWriteTrackingOptions {
 	readonly additionalDeclaredPaths?: readonly string[];
-	readonly env: SnapshotEnvironment;
-}
-
-function isRecursiveSnapshotEnabled(): boolean {
-	const value = process.env[RECURSIVE_SNAPSHOT_ENV];
-
-	return value === '1' || value?.toLowerCase() === 'true';
-}
-
-function toPosixPath(value: string): string {
-	return value.split(path.sep).join('/');
-}
-
-function normalizeRelativePath(value: string): string {
-	return toPosixPath(value).replace(/^\.\/+/u, '').replace(/\/+$/u, '') || '.';
-}
-
-function pathKey(value: string): string {
-	const normalized = normalizeRelativePath(value);
-	return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-function isExcludedDirectory(relativePath: string, basename: string): boolean {
-	const normalized = normalizeRelativePath(relativePath);
-	return EXCLUDED_DIRECTORY_NAMES.has(basename) || EXCLUDED_RELATIVE_DIRECTORY_PATHS.has(normalized);
-}
-
-function signatureForPath(fullPath: string): FileSignature {
-	const stat = lstatSync(fullPath);
-
-	if (stat.isSymbolicLink()) {
-		return `symlink:${readlinkSync(fullPath)}`;
-	}
-
-	const type = stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
-	return `${type}:${stat.size}:${stat.mtimeMs}`;
-}
-
-function signatureForGitStatusPath(projectRoot: string, relativePath: string, status: string): FileSignature {
-	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
-
-	try {
-		if (!existsSync(fullPath)) {
-			return `git:${status}:missing`;
-		}
-
-		const stat = lstatSync(fullPath);
-
-		if (stat.isSymbolicLink()) {
-			return `git:${status}:symlink:${readlinkSync(fullPath)}`;
-		}
-
-		if (!stat.isFile()) {
-			return `git:${status}:${stat.isDirectory() ? 'directory' : 'other'}:${stat.size}:${stat.mtimeMs}`;
-		}
-
-		if (stat.size > MAX_HASH_BYTES) {
-			return `git:${status}:file:${stat.size}:${stat.mtimeMs}:unhashed`;
-		}
-
-		const digest = createHash('sha256').update(readFileSync(fullPath)).digest('hex');
-		return `git:${status}:file:${stat.size}:${digest}`;
-	} catch {
-		return `git:${status}:missing`;
-	}
-}
-
-function collectSnapshotEntries(
-	currentPath: string,
-	currentRelativePath: string,
-	depth: number,
-	entries: Map<string, FileSignature>,
-): void {
-	if (depth > MAX_SNAPSHOT_DIRECTORY_DEPTH) {
-		throw new Error('snapshot_directory_depth_limit_exceeded');
-	}
-
-	const names = readdirSync(currentPath).sort((left, right) => left.localeCompare(right));
-
-	for (const name of names) {
-		const fullPath = path.join(currentPath, name);
-		const relativePath = currentRelativePath === '.' ? name : `${currentRelativePath}/${name}`;
-		const stat = lstatSync(fullPath);
-
-		if (stat.isDirectory()) {
-			if (isExcludedDirectory(relativePath, name)) {
-				continue;
-			}
-
-			collectSnapshotEntries(fullPath, relativePath, depth + 1, entries);
-			continue;
-		}
-
-		if (entries.size >= MAX_SNAPSHOT_FILES) {
-			throw new Error('snapshot_file_limit_exceeded');
-		}
-
-		entries.set(relativePath, signatureForPath(fullPath));
-	}
-}
-
-function captureSnapshot(projectRoot: string, env: SnapshotEnvironment): SnapshotResult {
-	const gitSnapshot = captureGitStatusSnapshot(projectRoot, env);
-	if (gitSnapshot) {
-		return gitSnapshot;
-	}
-
-	if (!isRecursiveSnapshotEnabled()) {
-		return {
-			status: 'unavailable',
-			entries: new Map<string, FileSignature>(),
-			reason: 'git_status_unavailable_recursive_snapshot_disabled',
-			source: 'unavailable',
-		};
-	}
-
-	try {
-		const entries = new Map<string, FileSignature>();
-		collectSnapshotEntries(projectRoot, '.', 0, entries);
-		return { status: 'checked', entries, reason: null, source: 'recursive_snapshot' };
-	} catch (error) {
-		return {
-			status: 'unavailable',
-			entries: new Map<string, FileSignature>(),
-			reason: error instanceof Error && error.message.length > 0 ? error.message : 'snapshot_unavailable',
-			source: 'unavailable',
-		};
-	}
-}
-
-function captureGitStatusSnapshot(projectRoot: string, env: SnapshotEnvironment): SnapshotResult | null {
-	const result = spawnSync('git', ['-C', projectRoot, 'status', '--porcelain=v1', '-z', `--untracked-files=${GIT_STATUS_UNTRACKED_MODE}`], {
-		encoding: 'utf8',
-		env,
-		input: '',
-		maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
-		stdio: ['ignore', 'pipe', 'pipe'],
-		timeout: GIT_STATUS_TIMEOUT_MS,
-		windowsHide: true,
-	});
-
-	const errorCode = typeof result.error === 'object' && result.error && 'code' in result.error
-		? String(result.error.code)
-		: null;
-
-	if (errorCode === 'ETIMEDOUT') {
-		return {
-			status: 'unavailable',
-			entries: new Map<string, FileSignature>(),
-			reason: 'git_status_timeout',
-			source: 'unavailable',
-		};
-	}
-
-	if (errorCode === 'ENOBUFS') {
-		return {
-			status: 'unavailable',
-			entries: new Map<string, FileSignature>(),
-			reason: 'git_status_output_limit_exceeded',
-			source: 'unavailable',
-		};
-	}
-
-	if (result.error || result.status !== 0) {
-		return null;
-	}
-
-	const entries = new Map<string, FileSignature>();
-	const parts = result.stdout.split('\0').filter((part) => part.length > 0);
-
-	for (let index = 0; index < parts.length; index += 1) {
-		const entry = parts[index] ?? '';
-		const status = entry.slice(0, 2);
-		const filePath = normalizeRelativePath(entry.slice(3));
-
-		if (filePath.length === 0) {
-			continue;
-		}
-
-		entries.set(filePath, signatureForGitStatusPath(projectRoot, filePath, status));
-
-		if (status.includes('R') || status.includes('C')) {
-			const sourcePath = normalizeRelativePath(parts[index + 1] ?? '');
-			if (status.includes('R') && sourcePath.length > 0) {
-				entries.set(sourcePath, `git:${status}:missing`);
-			}
-			index += 1;
-		}
-	}
-
-	const ignored = spawnSync(
-		'git',
-		[
-			'-C', projectRoot,
-			'ls-files', '--others', '--ignored', '--exclude-standard', '-z',
-			'--', '.', ':(exclude,glob)**/node_modules/**',
-		],
-		{
-			encoding: 'utf8',
-			env,
-			input: '',
-			maxBuffer: GIT_STATUS_MAX_BUFFER_BYTES,
-			stdio: ['ignore', 'pipe', 'pipe'],
-			timeout: GIT_STATUS_TIMEOUT_MS,
-			windowsHide: true,
-		},
-	);
-	if (ignored.error || ignored.status !== 0) {
-		return {
-			status: 'partial',
-			entries,
-			reason: 'git_ignored_paths_unavailable',
-			source: 'git_status',
-		};
-	}
-
-	for (const ignoredPath of ignored.stdout.split('\0').filter(Boolean).map(normalizeRelativePath)) {
-		if (entries.size >= MAX_SNAPSHOT_FILES) {
-			return {
-				status: 'partial',
-				entries,
-				reason: 'snapshot_file_limit_exceeded',
-				source: 'git_status',
-			};
-		}
-		entries.set(ignoredPath, signatureForGitStatusPath(projectRoot, ignoredPath, '!!'));
-	}
-
-	return {
-		status: 'checked',
-		entries,
-		reason: null,
-		source: 'git_status',
-	};
+	readonly env: RepositorySnapshotEnvironment;
 }
 
 function listDeclaredWritePaths(projectRoot: string, contract: CommandContract, intentName: string): string[] {
@@ -311,10 +63,13 @@ function listDeclaredWritePaths(projectRoot: string, contract: CommandContract, 
 		.map((effect) => effect.path)
 		.filter((effectPath): effectPath is string => typeof effectPath === 'string');
 
-	return [...new Set(paths.map(normalizeRelativePath))].sort((left, right) => left.localeCompare(right));
+	return [...new Set(paths.map(normalizeRepositoryRelativePath))].sort((left, right) => left.localeCompare(right));
 }
 
-function listObservedChangedPaths(before: ReadonlyMap<string, FileSignature>, after: ReadonlyMap<string, FileSignature>): string[] {
+function listObservedChangedPaths(
+	before: ReadonlyMap<string, string>,
+	after: ReadonlyMap<string, string>,
+): string[] {
 	const paths = new Set([...before.keys(), ...after.keys()]);
 	const changed: string[] = [];
 
@@ -340,7 +95,7 @@ function truncatePaths(paths: readonly string[]): { readonly paths: readonly str
 }
 
 function uniqueSortedPaths(paths: Iterable<string>): string[] {
-	return [...new Set([...paths].map(normalizeRelativePath))].sort((left, right) => left.localeCompare(right));
+	return [...new Set([...paths].map(normalizeRepositoryRelativePath))].sort((left, right) => left.localeCompare(right));
 }
 
 function pathsCoverObservedPath(declaredPaths: readonly string[], observedPath: string): boolean {
@@ -374,22 +129,25 @@ export function startRunWriteTracking(
 ): RunWriteTracker {
 	const declaredPaths = [
 		...listDeclaredWritePaths(projectRoot, contract, intentName),
-		...(options.additionalDeclaredPaths ?? []).map(normalizeRelativePath),
+		...(options.additionalDeclaredPaths ?? []).map(normalizeRepositoryRelativePath),
 	];
 
 	return {
 		projectRoot,
 		env: options.env,
 		declaredPaths: [...new Set(declaredPaths)].sort((left, right) => left.localeCompare(right)),
-		before: captureSnapshot(projectRoot, options.env),
+		before: captureRepositorySnapshot(projectRoot, { env: options.env }),
 	};
 }
 
-export function startRunWriteBatchTracking(projectRoot: string, env: SnapshotEnvironment): RunWriteBatchTracker {
+export function startRunWriteBatchTracking(
+	projectRoot: string,
+	env: RepositorySnapshotEnvironment,
+): RunWriteBatchTracker {
 	return {
 		projectRoot,
 		env,
-		before: captureSnapshot(projectRoot, env),
+		before: captureRepositorySnapshot(projectRoot, { env }),
 	};
 }
 
@@ -411,7 +169,10 @@ export function finishRunWriteBatchTracking(
 		return fallbackReceipts;
 	}
 
-	const after = captureSnapshot(tracker.projectRoot, tracker.env);
+	const after = captureRepositorySnapshot(tracker.projectRoot, {
+		env: tracker.env,
+		previous: tracker.before,
+	});
 	if (after.status === 'unavailable') {
 		return new Map(
 			intents.map((intent) => [
@@ -448,7 +209,7 @@ export function finishRunWriteBatchTracking(
 		}
 
 		const observedWitnesses = intents.filter((intent) =>
-			intent.observedPaths.some((intentObservedPath) => pathKey(intentObservedPath) === pathKey(observedPath)),
+			intent.observedPaths.some((intentObservedPath) => repositoryPathKey(intentObservedPath) === repositoryPathKey(observedPath)),
 		);
 
 		if (observedWitnesses.length === 1) {
@@ -507,7 +268,10 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 		return createUnavailableRunWriteDriftReceipt(tracker.declaredPaths, tracker.before.reason);
 	}
 
-	const after = captureSnapshot(tracker.projectRoot, tracker.env);
+	const after = captureRepositorySnapshot(tracker.projectRoot, {
+		env: tracker.env,
+		previous: tracker.before,
+	});
 	if (after.status === 'unavailable') {
 		return createUnavailableRunWriteDriftReceipt(tracker.declaredPaths, after.reason);
 	}
