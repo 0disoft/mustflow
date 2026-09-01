@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.136.0 - 2026-09-01
+
+- Added the `delivery-verification-budget` built-in skill so MVP and fast-delivery tasks lock their
+  completion criteria, classify R0-R3 failure cost, stop redundant verification, and defer unrelated
+  refactors without weakening security, payment, permission, privacy, or data-integrity gates.
+- Added English and Korean routing evidence, high-risk payment coexistence coverage, test-pruning
+  exclusion coverage, and synchronized every default template profile and generated route surface.
+
 ## 2.135.0 - 2026-08-20
 
 - Coordinated verification CPU, memory, and write budgets across concurrent sessions and linked
