@@ -1358,3 +1358,76 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.delivery_verification_skill_manifest_accept]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Accept only the reviewed delivery verification skill and its route index baseline."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", ".mustflow/skills/INDEX.md", ".mustflow/skills/routes.toml", ".mustflow/skills/delivery-verification-budget/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = ["mustflow_docs_change"]
+
+[intents.delivery_verification_skill_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed delivery verification skill, route, template, manifest, catalog, fixture, and bounded command contract files."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/skills/INDEX.md",
+  ".mustflow/skills/catalog.v2.json",
+  ".mustflow/skills/delivery-verification-budget/SKILL.md",
+  ".mustflow/skills/route-fixtures.json",
+  ".mustflow/skills/routes.toml",
+  "REPO_FLOW.md",
+  "REPO_MAP.md",
+  "templates/default/locales/en/.mustflow/skills/INDEX.md",
+  "templates/default/locales/en/.mustflow/skills/catalog.v2.json",
+  "templates/default/locales/en/.mustflow/skills/delivery-verification-budget/SKILL.md",
+  "templates/default/locales/en/.mustflow/skills/routes.toml",
+  "templates/default/i18n.toml",
+  "templates/default/manifest.toml",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.delivery_verification_skill_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed delivery verification budget skill and synchronized install surfaces."
+argv = [
+  "git", "commit",
+  "-m", "✨ feat(skills): bound delivery verification",
+  "-m", "Add an MVP-focused completion lock, R0-R3 failure-cost tiers, bounded verification ladder, rerun stop rules, and explicit protection for security, money, permission, privacy, and data-integrity work.",
+  "-m", "Validation: 124/124 route fixtures, strict Mustflow checks, and the full docs build passed. Skill install assertions passed; the wrapper stayed non-zero because a concurrent HEAD update left its shared verification receipt stale.",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

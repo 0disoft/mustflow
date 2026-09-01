@@ -373,6 +373,18 @@ priority = 35
 selection_axis = "task"
 applies_to_reasons = ["behavior_change", "test_change"]
 
+[routes."delivery-verification-budget"]
+category = "workflow_contracts"
+route_type = "adjunct"
+priority = 70
+selection_axis = "workflow"
+applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "workflow_change", "product_change"]
+
+[routes."delivery-verification-budget".contexts]
+positive_terms = ["acceptance-lock", "bounded-verification", "delivery-budget", "finish-when-criteria-pass", "minimal-verification", "mvp-delivery", "over-testing", "scope-creep", "stop-rule", "verification-budget"]
+concept_aliases = ["MVP를 먼저 출시", "과도한 검증 중단", "검증 예산 제한", "최소 검증 후 완료", "완료 조건을 잠그기", "추가 리팩터링 금지"]
+negative_terms = ["deep-security-scan", "exhaustive-audit", "migration-rehearsal", "release-certification", "test-deletion", "test-pruning"]
+
 [routes."multi-agent-work-coordination"]
 category = "workflow_contracts"
 route_type = "adjunct"

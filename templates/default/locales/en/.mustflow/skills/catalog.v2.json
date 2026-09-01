@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:ef77f03bdd5e384f3031b3f766b352a0dfa6f8e8a5f3f5bf71f5e7f4b07ad962",
+  "source_fingerprint": "sha256:8ad45e0b2d3b3cc1325bdbfc1e30e774c5c4c38f06721146102c48dae11a05e0",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -4406,6 +4406,66 @@
         "build",
         "docs_validate_fast",
         "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "delivery-verification-budget",
+      "skill_path": ".mustflow/skills/delivery-verification-budget/SKILL.md",
+      "category": "workflow_contracts",
+      "route_type": "adjunct",
+      "selection_axis": "workflow",
+      "priority": 70,
+      "applies_to_reasons": [
+        "unknown_change",
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "workflow_change",
+        "product_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "acceptance lock",
+        "bounded verification",
+        "delivery budget",
+        "finish when criteria pass",
+        "minimal verification",
+        "mvp delivery",
+        "mvp를 먼저 출시",
+        "over testing",
+        "scope creep",
+        "stop rule",
+        "verification budget",
+        "검증 예산 제한",
+        "과도한 검증 중단",
+        "완료 조건을 잠그기",
+        "최소 검증 후 완료",
+        "추가 리팩터링 금지"
+      ],
+      "negative_signals": [
+        "deep security scan",
+        "exhaustive audit",
+        "migration rehearsal",
+        "release certification",
+        "test deletion",
+        "test pruning"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when an implementation task explicitly prioritizes MVP delivery, a bounded verification budget, stopping over-testing, or finishing once acceptance criteria are met. Use it to lock completion scope, classify R0-R3 failure cost, choose the smallest sufficient configured checks, and defer unrelated refactors or speculative edge cases without weakening security, money, permission, privacy, or data-integrity gates.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
         "mustflow_check"
       ]
     },

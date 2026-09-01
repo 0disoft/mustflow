@@ -2213,6 +2213,66 @@
       "forbidden_candidates": [
         "docs-update"
       ]
+    },
+    {
+      "id": "delivery-verification-budget-mvp-korean",
+      "mode": "invariant",
+      "task": "MVP를 먼저 출시할 수 있게 완료 조건을 잠그고 관련 테스트만 한 번 실행한 뒤 과도한 검증과 추가 리팩터링 없이 끝내줘",
+      "paths": [
+        "src/product/onboarding.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "behavior_change",
+        "product_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "delivery-verification-budget"
+      ],
+      "required_adjuncts": [
+        "delivery-verification-budget"
+      ]
+    },
+    {
+      "id": "delivery-verification-budget-payment-r3",
+      "mode": "invariant",
+      "task": "Ship the payment webhook quickly with a bounded verification budget, but keep duplicate delivery idempotency and credit integrity as R3 blockers",
+      "paths": [
+        "src/payments/webhook.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "behavior_change",
+        "security_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "delivery-verification-budget",
+        "payment-integrity-review"
+      ],
+      "required_adjuncts": [
+        "delivery-verification-budget"
+      ]
+    },
+    {
+      "id": "delivery-verification-budget-forbidden-test-pruning",
+      "mode": "invariant",
+      "task": "Delete redundant tests after proving the surviving suite preserves each unique defect witness",
+      "paths": [
+        "tests/e2e/legacy-checkout.test.ts"
+      ],
+      "reasons": [
+        "test_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "test-suite-value-pruning-review",
+      "required_candidates": [
+        "test-suite-value-pruning-review"
+      ],
+      "forbidden_candidates": [
+        "delivery-verification-budget"
+      ]
     }
   ]
 }

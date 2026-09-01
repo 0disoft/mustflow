@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 342
+anchor_count: 343
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:af0c98237d6ef596b833114f63bd09f7e5f8fdb12c8d6e0526f52c97551e9572"
+source_fingerprint: "sha256:2006d509f722c2bd39f5888e0b00a448cbff0cbbceac94d6e96456910f5ebd0f"
 ---
 
 # REPO_MAP.md
@@ -412,6 +412,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/deletion-lifecycle-review/
 
 - `.mustflow/skills/deletion-lifecycle-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/delivery-verification-budget/
+
+- `.mustflow/skills/delivery-verification-budget/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/deno-code-change/
 
