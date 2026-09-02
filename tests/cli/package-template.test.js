@@ -144,412 +144,56 @@ test('default template source metadata uses English text', () => {
 	}
 });
 
-test('default template declares profile-specific skill surfaces', async () => {
+test('default template declares lean and profile-specific skill surfaces', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const template = templatesModule.getDefaultTemplate();
+	const minimal = template.manifest.skillProfiles.minimal;
+	const expandedProfiles = ['patterns', 'oss', 'team', 'product', 'library'];
 
-	assert.deepEqual(template.manifest.profiles, ['minimal', 'patterns', 'oss', 'team', 'product', 'library']);
+	assert.deepEqual(template.manifest.profiles, ['minimal', ...expandedProfiles]);
 	assert.equal(template.manifest.defaultProfile, 'minimal');
-	assert.ok(template.manifest.skillProfiles.minimal.includes('adapter-boundary'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('api-contract-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('http-api-semantics-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-reliability-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('auth-permission-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('code-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('idempotency-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-memory-footprint-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-background-process-stability-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('desktop-auto-update-safety-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('backend-log-evidence-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('observability-debuggability-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('performance-measurement-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('incident-triage-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('deployment-rollout-safety-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('queue-processing-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('transaction-boundary-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('api-request-performance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('heuristic-candidate-selection'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('command-contract-authoring'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('retry-policy-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('config-env-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('database-change-safety'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('database-migration-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('database-json-modeling-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('deletion-lifecycle-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('database-lock-contention-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('dependency-upgrade-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('version-freshness-check'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('prompt-contract-quality-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-hallucination-control-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-token-cost-control-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('llm-response-latency-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('agent-execution-control-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('agent-eval-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('agent-memory-context-governance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('file-path-cross-platform-change'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('source-anchor-authoring'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('test-design-guard'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('test-maintenance'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('test-suite-performance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('test-suite-value-pruning-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('async-timing-boundary-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('vertical-slice-tdd'));
-	for (const skillName of technologySkillNames) {
-		assert.ok(template.manifest.skillProfiles.minimal.includes(skillName), `minimal should include ${skillName}`);
-		assert.ok(template.manifest.skillProfiles.patterns.includes(skillName), `patterns should include ${skillName}`);
-		assert.ok(template.manifest.skillProfiles.oss.includes(skillName), `oss should include ${skillName}`);
-		assert.ok(template.manifest.skillProfiles.team.includes(skillName), `team should include ${skillName}`);
-		assert.ok(template.manifest.skillProfiles.product.includes(skillName), `product should include ${skillName}`);
-		assert.ok(template.manifest.skillProfiles.library.includes(skillName), `library should include ${skillName}`);
-	}
-	for (const profileName of template.manifest.profiles) {
-		for (const skillName of durableExecutionSkillNames) {
-			assert.ok(
-				template.manifest.skillProfiles[profileName].includes(skillName),
-				`${profileName} should include ${skillName}`,
-			);
-		}
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('parser-engineering-review'),
-			`${profileName} should include parser-engineering-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('name-resolution-integrity-review'),
-			`${profileName} should include name-resolution-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('compiler-engineering-review'),
-			`${profileName} should include compiler-engineering-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('interpreter-engineering-review'),
-			`${profileName} should include interpreter-engineering-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('formal-verification-review'),
-			`${profileName} should include formal-verification-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('config-env-change'),
-			`${profileName} should include config-env-change`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('version-freshness-check'),
-			`${profileName} should include version-freshness-check`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('structure-first-engineering'),
-			`${profileName} should include structure-first-engineering`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('support-surface-advisor'),
-			`${profileName} should include support-surface-advisor`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('heuristic-candidate-selection'),
-			`${profileName} should include heuristic-candidate-selection`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('http-delivery-streaming'),
-			`${profileName} should include http-delivery-streaming`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('http-api-semantics-review'),
-			`${profileName} should include http-api-semantics-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('backend-reliability-change'),
-			`${profileName} should include backend-reliability-change`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('api-request-performance-review'),
-			`${profileName} should include api-request-performance-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('llm-response-latency-review'),
-			`${profileName} should include llm-response-latency-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-execution-control-review'),
-			`${profileName} should include agent-execution-control-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('llm-model-routing-integrity-review'),
-			`${profileName} should include llm-model-routing-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-runtime-multi-worker-review'),
-			`${profileName} should include agent-runtime-multi-worker-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-runtime-isolation-review'),
-			`${profileName} should include agent-runtime-isolation-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-planning-recovery-review'),
-			`${profileName} should include agent-planning-recovery-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-release-bundle-rollout-review'),
-			`${profileName} should include agent-release-bundle-rollout-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-eval-integrity-review'),
-			`${profileName} should include agent-eval-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('agent-memory-context-governance-review'),
-			`${profileName} should include agent-memory-context-governance-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('test-suite-performance-review'),
-			`${profileName} should include test-suite-performance-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('test-suite-value-pruning-review'),
-			`${profileName} should include test-suite-value-pruning-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('technology-stack-selection'),
-			`${profileName} should include technology-stack-selection`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('async-timing-boundary-review'),
-			`${profileName} should include async-timing-boundary-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('desktop-memory-footprint-review'),
-			`${profileName} should include desktop-memory-footprint-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('desktop-background-process-stability-review'),
-			`${profileName} should include desktop-background-process-stability-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('desktop-auto-update-safety-review'),
-			`${profileName} should include desktop-auto-update-safety-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('idempotency-integrity-review'),
-			`${profileName} should include idempotency-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('backend-log-evidence-review'),
-			`${profileName} should include backend-log-evidence-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('observability-debuggability-review'),
-			`${profileName} should include observability-debuggability-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('performance-measurement-integrity-review'),
-			`${profileName} should include performance-measurement-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('incident-triage-review'),
-			`${profileName} should include incident-triage-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('deployment-rollout-safety-review'),
-			`${profileName} should include deployment-rollout-safety-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('retry-policy-integrity-review'),
-			`${profileName} should include retry-policy-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('queue-processing-integrity-review'),
-			`${profileName} should include queue-processing-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('transaction-boundary-integrity-review'),
-			`${profileName} should include transaction-boundary-integrity-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('database-lock-contention-review'),
-			`${profileName} should include database-lock-contention-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('database-json-modeling-review'),
-			`${profileName} should include database-json-modeling-review`,
-		);
-		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('deletion-lifecycle-review'),
-			`${profileName} should include deletion-lifecycle-review`,
-		);
-	}
-	assert.equal(template.manifest.skillProfiles.minimal.includes('architecture-deepening-review'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('cli-output-contract-review'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('command-pattern'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('composition-over-inheritance'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('cross-platform-filesystem-safety'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('dependency-injection'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('external-skill-intake'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('github-contribution-quality-gate'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('facade-pattern'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('null-object-pattern'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('process-execution-safety'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('pure-core-imperative-shell'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('release-notes-authoring'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('release-publish-change'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('result-option'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('service-boundary-architecture'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('state-machine-pattern'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('strategy-pattern'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('frontend-render-stability'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('llm-service-ux-review'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('search-ad-content-authoring'), false);
-	assert.ok(template.manifest.skillProfiles.minimal.includes('web-render-performance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('core-web-vitals-field-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('image-delivery-performance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('client-bundle-pruning-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('frame-render-performance-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('motion-system-contract-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('split-refactor-residual-path-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-state-ownership-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('ui-state-resurrection-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('information-visualization-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('native-crash-forensics-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-stress-layout-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-accessibility-tree-review'));
-	assert.ok(template.manifest.skillProfiles.minimal.includes('frontend-localization-review'));
-	assert.equal(template.manifest.skillProfiles.minimal.includes('web-asset-optimization'), false);
-	assert.ok(template.manifest.skillProfiles.patterns.includes('architecture-deepening-review'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('command-contract-authoring'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('command-pattern'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('composition-over-inheritance'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('dependency-injection'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('facade-pattern'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('null-object-pattern'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('pure-core-imperative-shell'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('result-option'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('service-boundary-architecture'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('state-machine-pattern'));
-	assert.ok(template.manifest.skillProfiles.patterns.includes('strategy-pattern'));
-	assert.equal(template.manifest.skillProfiles.product.includes('architecture-deepening-review'), false);
-	assert.ok(template.manifest.skillProfiles.product.includes('command-contract-authoring'));
-	assert.equal(template.manifest.skillProfiles.product.includes('cli-output-contract-review'), false);
-	assert.equal(template.manifest.skillProfiles.product.includes('process-execution-safety'), false);
-	assert.equal(template.manifest.skillProfiles.product.includes('release-notes-authoring'), false);
-	assert.equal(template.manifest.skillProfiles.product.includes('release-publish-change'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('complex-decision-analysis'), false);
-	assert.equal(template.manifest.skillProfiles.patterns.includes('complex-decision-analysis'), false);
-	assert.equal(template.manifest.skillProfiles.oss.includes('complex-decision-analysis'), false);
-	assert.equal(template.manifest.skillProfiles.library.includes('complex-decision-analysis'), false);
-	assert.ok(template.manifest.skillProfiles.team.includes('complex-decision-analysis'));
-	assert.ok(template.manifest.skillProfiles.product.includes('complex-decision-analysis'));
-	assert.ok(template.manifest.skillProfiles.team.includes('automation-investment-case-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('automation-investment-case-review'));
-	assert.equal(template.manifest.skillProfiles.minimal.includes('automation-investment-case-review'), false);
-	assert.equal(template.manifest.skillProfiles.patterns.includes('automation-investment-case-review'), false);
-	assert.equal(template.manifest.skillProfiles.oss.includes('automation-investment-case-review'), false);
-	assert.equal(template.manifest.skillProfiles.library.includes('automation-investment-case-review'), false);
-	for (const skillName of [
-		'product-onboarding-activation-review',
-		'subscription-retention-profit-review',
-		'product-engagement-retention-review',
-		'credit-monetization-integrity-review',
-		'pricing-model-integrity-review',
-		'freemium-ad-monetization-review',
-		'referral-incentive-integrity-review',
-		'localization-market-expansion-review',
-	]) {
-		assert.ok(template.manifest.skillProfiles.team.includes(skillName));
-		assert.ok(template.manifest.skillProfiles.product.includes(skillName));
-		assert.equal(template.manifest.skillProfiles.minimal.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.patterns.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.oss.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.library.includes(skillName), false);
-	}
-	assert.ok(template.manifest.skillProfiles.product.includes('game-economy-monetization-review'));
-	assert.equal(template.manifest.skillProfiles.team.includes('game-economy-monetization-review'), false);
-	assert.equal(template.manifest.skillProfiles.minimal.includes('game-economy-monetization-review'), false);
-	assert.equal(template.manifest.skillProfiles.patterns.includes('game-economy-monetization-review'), false);
-	assert.equal(template.manifest.skillProfiles.oss.includes('game-economy-monetization-review'), false);
-	assert.equal(template.manifest.skillProfiles.library.includes('game-economy-monetization-review'), false);
-	for (const skillName of [
-		'llm-product-monetization-review',
-		'game-liveops-commerce-integrity-review',
-		'growth-distribution-integrity-review',
-		'product-portfolio-integrity-review',
-		'desktop-commercial-distribution-review',
-		'client-platform-strategy-review',
-		'service-portfolio-capital-allocation-review',
-	]) {
-		assert.ok(template.manifest.skillProfiles.product.includes(skillName));
-		assert.equal(template.manifest.skillProfiles.team.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.minimal.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.patterns.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.oss.includes(skillName), false);
-		assert.equal(template.manifest.skillProfiles.library.includes(skillName), false);
-	}
-	assert.ok(template.manifest.skillProfiles.product.includes('frontend-render-stability'));
-	assert.ok(template.manifest.skillProfiles.product.includes('llm-service-ux-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('prompt-contract-quality-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('llm-hallucination-control-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('llm-token-cost-control-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('llm-response-latency-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('agent-execution-control-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('agent-eval-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('agent-memory-context-governance-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('search-ad-content-authoring'));
-	assert.ok(template.manifest.skillProfiles.product.includes('service-boundary-architecture'));
-	assert.ok(template.manifest.skillProfiles.product.includes('web-render-performance-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('core-web-vitals-field-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('image-delivery-performance-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('client-bundle-pruning-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('frame-render-performance-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('motion-system-contract-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('split-refactor-residual-path-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('frontend-state-ownership-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('ui-state-resurrection-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('information-visualization-integrity-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('native-crash-forensics-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('cross-platform-filesystem-safety'));
-	assert.ok(template.manifest.skillProfiles.product.includes('frontend-stress-layout-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('frontend-accessibility-tree-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('frontend-localization-review'));
-	assert.ok(template.manifest.skillProfiles.product.includes('web-asset-optimization'));
-	assert.ok(template.manifest.skillProfiles.product.includes('visual-review-artifact'));
-	assert.ok(template.manifest.skillProfiles.product.includes('github-contribution-quality-gate'));
-	assert.ok(template.manifest.skillProfiles.team.includes('architecture-deepening-review'));
-	assert.ok(template.manifest.skillProfiles.team.includes('command-contract-authoring'));
-	assert.ok(template.manifest.skillProfiles.team.includes('cross-platform-filesystem-safety'));
-	assert.ok(template.manifest.skillProfiles.team.includes('process-execution-safety'));
-	assert.equal(template.manifest.skillProfiles.team.includes('cli-output-contract-review'), false);
-	assert.equal(template.manifest.skillProfiles.team.includes('release-notes-authoring'), false);
-	assert.equal(template.manifest.skillProfiles.team.includes('release-publish-change'), false);
-	assert.ok(template.manifest.skillProfiles.team.includes('github-contribution-quality-gate'));
-	assert.ok(template.manifest.skillProfiles.team.includes('multi-agent-work-coordination'));
-	assert.ok(template.manifest.skillProfiles.team.includes('service-boundary-architecture'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('architecture-deepening-review'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('cli-output-contract-review'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('command-contract-authoring'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('cross-platform-filesystem-safety'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('external-skill-intake'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('github-contribution-quality-gate'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('process-execution-safety'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('release-notes-authoring'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('release-publish-change'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('service-boundary-architecture'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('skill-authoring'));
-	assert.ok(template.manifest.skillProfiles.oss.includes('vertical-slice-tdd'));
-	assert.ok(template.manifest.skillProfiles.library.includes('architecture-deepening-review'));
-	assert.ok(template.manifest.skillProfiles.library.includes('cli-output-contract-review'));
-	assert.ok(template.manifest.skillProfiles.library.includes('command-contract-authoring'));
-	assert.ok(template.manifest.skillProfiles.library.includes('cross-platform-filesystem-safety'));
-	assert.ok(template.manifest.skillProfiles.library.includes('github-contribution-quality-gate'));
-	assert.ok(template.manifest.skillProfiles.library.includes('migration-safety-check'));
-	assert.ok(template.manifest.skillProfiles.library.includes('process-execution-safety'));
-	assert.ok(template.manifest.skillProfiles.library.includes('release-notes-authoring'));
-	assert.ok(template.manifest.skillProfiles.library.includes('release-publish-change'));
-	assert.ok(template.manifest.skillProfiles.library.includes('service-boundary-architecture'));
+	assert.ok(minimal.length <= 70, `minimal should stay within 70 skills, got ${minimal.length}`);
 
-	for (const profileName of template.manifest.profiles) {
+	for (const skillName of [
+		'api-contract-change',
+		'auth-permission-change',
+		'payment-integrity-review',
+		'credit-ledger-integrity-review',
+		'file-upload-security-review',
+		'database-migration-change',
+		'deletion-lifecycle-review',
+		'idempotency-integrity-review',
+		'secret-exposure-response',
+		'delivery-verification-budget',
+	]) {
+		assert.ok(minimal.includes(skillName), `minimal should include critical route ${skillName}`);
+	}
+
+	for (const skillName of [
+		'formal-verification-review',
+		'test-suite-performance-review',
+		'test-suite-value-pruning-review',
+		'vertical-slice-tdd',
+		'jurisdictional-product-compliance-review',
+		'container-platform-security-review',
+		'infrastructure-access-review',
+		'multi-tenant-isolation-review',
+		'cryptographic-storage-review',
+	]) {
+		assert.equal(minimal.includes(skillName), false, `minimal should omit specialist ${skillName}`);
+	}
+
+	for (const profileName of expandedProfiles) {
 		assert.ok(
-			template.manifest.skillProfiles[profileName].includes('motion-system-contract-review'),
-			`${profileName} profile should include motion-system-contract-review`,
+			template.manifest.skillProfiles[profileName].length > minimal.length,
+			`${profileName} should expose a broader skill surface than minimal`,
 		);
+		for (const skillName of technologySkillNames) {
+			assert.ok(template.manifest.skillProfiles[profileName].includes(skillName), `${profileName} should include ${skillName}`);
+		}
+		for (const skillName of durableExecutionSkillNames) {
+			assert.ok(template.manifest.skillProfiles[profileName].includes(skillName), `${profileName} should include ${skillName}`);
+		}
 	}
 });
 

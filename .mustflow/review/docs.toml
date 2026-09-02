@@ -1654,7 +1654,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-07-28T14:00:12.083Z"
+last_touched_at = "2026-09-02T10:01:03.727Z"
 
 [[documents]]
 path = "schemas/README.md"

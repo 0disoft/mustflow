@@ -422,7 +422,7 @@ npx mf init --product-source-locale en --product-locale ko-KR
 npx mf init --set git.auto_commit=true
 ```
 
-- `--profile`: Project profile. The default is `minimal`. Profiles also select the installed skill surface: `minimal` installs core everyday coding skills, `patterns` adds architecture-pattern procedures, and `oss`, `team`, `product`, and `library` add opt-in skill groups without removing optional skill files from the package.
+- `--profile`: Project profile. The default is `minimal`. It installs a lean everyday coding set plus explicit authentication, payment, credit, upload, deletion, migration, idempotency, and secret-response guards. Specialist audits, uncommon technology procedures, and broad test methodologies stay in the opt-in `patterns`, `oss`, `team`, `product`, and `library` profiles without being removed from the package.
 - `--locale`: Installed mustflow document language. The default template currently supports `en`, `ko`, `zh`, `es`, `fr`, and `hi`. The default template includes localized documents for all these locales.
 - `--agent-lang`: Default language for final agent reports.
 - `--interactive`: Choose init settings via prompts.
