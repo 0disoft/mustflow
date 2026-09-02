@@ -354,6 +354,80 @@ test('uses router selection limits as the resolver source of truth', () => {
 	}
 });
 
+test('keeps weakly related adjuncts out of low-risk selected skill reads', () => {
+	const cases = [
+		{
+			taskText: 'Change the Svelte settings button copy from Save to Apply',
+			paths: ['src/routes/settings/+page.svelte'],
+			reasons: ['ui_change', 'copy_change'],
+			forbidden: ['website-task-friction-review', 'web-render-performance-review'],
+		},
+		{
+			taskText: 'Add a TypeScript CRUD endpoint for project notes',
+			paths: ['src/api/notes.ts'],
+			reasons: ['code_change', 'behavior_change'],
+			forbidden: [
+				'modal-loop-reentrancy-review',
+				'frontend-state-ownership-review',
+				'business-rule-leakage-review',
+			],
+		},
+		{
+			taskText: 'Fix a typo in the installation guide',
+			paths: ['docs/installation.md'],
+			reasons: ['docs_change'],
+			forbidden: ['cache-friendly-context-design-review', 'css-code-change', 'security-privacy-review'],
+		},
+	];
+
+	for (const input of cases) {
+		const report = resolveSkillRoutes(projectRoot, { ...input, maxCandidates: 10 });
+		const selected = new Set([
+			report.selected.main?.skill,
+			...report.selected.adjuncts.map((candidate) => candidate.skill),
+			...Object.values(report.selected.axes).flat().map((candidate) => candidate.skill),
+		]);
+
+		for (const skill of input.forbidden) {
+			assert.equal(selected.has(skill), false, `${skill} selected for: ${input.taskText}`);
+		}
+	}
+});
+
+test('retains focused risk adjuncts for explicit upload payment and session work', () => {
+	const cases = [
+		{
+			taskText: 'Validate an untrusted image upload by content type and size before storage',
+			paths: ['src/uploads/image-upload.ts'],
+			reasons: ['security_change', 'data_change'],
+			required: 'file-upload-security-review',
+		},
+		{
+			taskText: 'Handle duplicate payment webhook delivery without double charging the customer',
+			paths: ['src/payments/webhook.ts'],
+			reasons: ['security_change', 'data_change'],
+			required: 'payment-integrity-review',
+		},
+		{
+			taskText: 'Terminate a user session and force logout on every device',
+			paths: ['src/auth/sessions.ts'],
+			reasons: ['security_change'],
+			required: 'session-management-review',
+		},
+	];
+
+	for (const input of cases) {
+		const report = resolveSkillRoutes(projectRoot, { ...input, maxCandidates: 10 });
+		const selected = new Set([
+			report.selected.main?.skill,
+			...report.selected.adjuncts.map((candidate) => candidate.skill),
+			...Object.values(report.selected.axes).flat().map((candidate) => candidate.skill),
+		]);
+
+		assert.ok(selected.has(input.required), `${input.required} not selected for: ${input.taskText}`);
+	}
+});
+
 test('falls back to built-in skill frontmatter when the route catalog is invalid', () => {
 	const projectPath = createTempProject();
 

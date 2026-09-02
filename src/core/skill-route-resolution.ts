@@ -1105,6 +1105,18 @@ function hasCandidateEvidence(candidate: SkillRouteResolvedCandidate): boolean {
 	);
 }
 
+function hasFocusedAdjunctEvidence(candidate: SkillRouteResolvedCandidate): boolean {
+	const breakdown = candidate.score_breakdown;
+	const hasExactPathHint = candidate.selection_reasons.some((reason) => reason.startsWith('path_skill_hint:'));
+
+	return (
+		hasExactPathHint ||
+		breakdown.pattern_signal_match > 0 ||
+		breakdown.task_text_match >= 9 ||
+		breakdown.path_match >= 6
+	);
+}
+
 function sortCandidates(
 	left: SkillRouteResolvedCandidate,
 	right: SkillRouteResolvedCandidate,
@@ -1317,6 +1329,7 @@ function selectAdjuncts(
 		.filter((candidate) => {
 			return (
 				candidate.route_type === 'adjunct' &&
+				hasFocusedAdjunctEvidence(candidate) &&
 				!excluded.has(candidate.skill) &&
 				!selected.some((selectedCandidate) => selectedCandidate.skill === candidate.skill) &&
 				![selectedMain, ...selected].some((selectedCandidate) => routesConflict(selectedCandidate, candidate, metadata))
@@ -1335,7 +1348,10 @@ function selectAdjuncts(
 		if (selected.length >= adjunctLimit) {
 			break;
 		}
-		addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
+		const suggestedCandidate = allCandidatesBySkill.get(skill);
+		if (suggestedCandidate && hasFocusedAdjunctEvidence(suggestedCandidate)) {
+			addDependencySkill(skill, `route_dependency:suggested_by:${selectedMain.skill}`);
+		}
 	}
 
 	return selected.slice(0, adjunctLimit);
@@ -1360,6 +1376,9 @@ function selectCandidatesByAxis(
 				break;
 			}
 			if (candidate.selection_axis !== axis) {
+				continue;
+			}
+			if (candidate.route_type === 'adjunct' && !hasFocusedAdjunctEvidence(candidate)) {
 				continue;
 			}
 			const alreadySelected = Object.values(selected).flat();
