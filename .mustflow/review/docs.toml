@@ -1324,7 +1324,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-28T08:27:56.107Z"
-last_touched_at = "2026-06-28T08:53:04.190Z"
+last_touched_at = "2026-09-02T11:05:57.976Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/es/commands/crash-evidence.md"
@@ -1523,6 +1523,14 @@ first_seen_at = "2026-07-29T04:08:50.113Z"
 last_touched_at = "2026-07-29T04:36:58.000Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/ko/commands/evidence.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T11:05:57.992Z"
+last_touched_at = "2026-09-02T11:05:57.992Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/ko/commands/map.md"
 status = "pending"
 origin = "llm_modified"
@@ -1563,6 +1571,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-07-28T13:38:22.593Z"
 last_touched_at = "2026-07-28T14:00:12.045Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/ko/commands/workspace.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T11:05:58.003Z"
+last_touched_at = "2026-09-02T11:05:58.003Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/ko/design/update-policy.md"
@@ -1615,6 +1631,14 @@ origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-28T08:27:56.188Z"
 last_touched_at = "2026-09-02T10:34:49.514Z"
+
+[[documents]]
+path = "docs-site/src/content/docs/ko/start/agent-tool-integration.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T11:05:58.013Z"
+last_touched_at = "2026-09-02T11:05:58.013Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/zh/commands/crash-evidence.md"
@@ -1678,7 +1702,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-09-02T10:56:10.631Z"
+last_touched_at = "2026-09-02T11:05:58.023Z"
 
 [[documents]]
 path = "schemas/README.md"

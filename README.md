@@ -16,15 +16,13 @@ Place `AGENTS.md` at the project root and keep the detailed workflow under `.mus
 
 ## Choose your path
 
-- Use mustflow in your repository: start with [Quick start](#quick-start), then review the [no-guessing workflow](#no-guessing-workflow) and [`examples/minimal-js/`](examples/minimal-js/).
+- Use mustflow in your repository: start with [Quick start](#quick-start), then review [how commands are chosen](#how-commands-are-chosen) and [`examples/minimal-js/`](examples/minimal-js/).
 - Contribute to mustflow: read [CONTRIBUTING.md](CONTRIBUTING.md), then run only configured command intents from [`.mustflow/config/commands.toml`](.mustflow/config/commands.toml).
 - Build an AI coding tool or agent harness: use `AGENTS.md` and `mf context --json` for repository context, then consume JSON output and schemas from `mf api`, `mf classify`, `mf verify`, `mf run`, `mf dashboard`, and [`schemas/`](schemas/).
 
-## No-guessing workflow
+## How commands are chosen
 
-The initial mustflow path is deliberately narrow.
-
-Authority stays narrow:
+mustflow uses a short decision path:
 
 - Current user instructions define the task goal unless they are unsafe.
 - Host safety, sandbox, and approval gates still apply.
@@ -244,102 +242,26 @@ mf run mustflow_update_dry_run
 mf run mustflow_update_apply
 ```
 
-## Commands
+## Common commands
 
 | Command | Purpose |
 | --- | --- |
-| `mf init` | Install `AGENTS.md` and `.mustflow/**`. |
-| `mf init --dry-run` | Show which files would be created without writing files. |
-| `mf init --merge` | Merge the mustflow managed block into an existing `AGENTS.md`. |
-| `mf init --force` | Back up conflicting files, then overwrite them. |
-| `mf check` | Validate mustflow files, TOML configuration, and skill document shape. |
-| `mf check --strict` | Run additional safety checks for document identity, authority/lifecycle metadata, skill index/body alignment, skill metadata, command boundaries, version-source discovery, retention policy, output limits, raw logs, and secret-like context. |
-| `mf check --strict --repo <path>` | Strictly validate one delegated workspace repository and its command fragment; unrelated manifest drift is reported as a warning instead of blocking the task. |
-| `mf adapters status` | Inspect existing host-specific instruction and adapter files without generating adapter files or granting command authority. |
-| `mf classify --changed` | Classify changed paths, public surfaces, and validation reasons. Add `--write <path>` to save the classification report. |
-| `mf contract-lint` | Inspect `.mustflow/config/commands.toml` for command-contract errors and warnings without running commands. Add `--suggest` to print non-runnable candidate snippets from existing command files. |
-| `mf onboard commands` | Suggest review-only command-intent snippets from package.json, Makefile, or justfile without writing files or granting command authority. |
-| `mf next` | Inspect install state, changed files, verification coverage, and command-contract gaps, then print the next safe mustflow action without running commands. |
-| `mf evidence` | Summarize changed-file verification requirements, risk-priced evidence assessment, latest failure replay capsule, conflict ledger, receipts, remaining risks, and gaps without running commands. |
-| `mf workspace scan` | Scan a `projects/` directory for nested repositories without requiring workspace configuration or granting command authority. |
-| `mf workspace status` | Inspect configured workspace roots and nested repository contract readiness without granting parent-to-child command authority. |
-| `mf workspace command-catalog` | Aggregate per-repository command intent availability with safe `mf run` entrypoints and no raw command strings. |
-| `mf workspace command-fragments` | Suggest repo-level `.mustflow/config/commands/*.toml` fragments for repo-farm orchestration without writing files or granting parent-to-child command authority. |
-| `mf workspace verify --changed --plan-only` | Aggregate per-repository changed-file verification plans without running commands or granting parent-to-child command authority. |
-| `mf doctor` | Inspect the current mustflow root without writing files. |
-| `mf api workspace-summary --json` | Print a stable, read-only JSON summary for coding agents and external harnesses. |
-| `mf api command-catalog --json` | Print command intent availability and safe `mf run` entrypoints without exposing raw command strings. |
-| `mf api verification-plan --changed --json` | Print a stable, read-only verification plan for changed files without executing commands. |
-| `mf api latest-evidence --json` | Print bounded latest run or verify evidence without raw command output. |
-| `mf api diff-risk --changed --json` | Print a compact changed-file risk, verification summary, read-only complexity budget, and residual correction signals. |
-| `mf api health --json` | Print a compact workspace health report for quick agent gating. |
-| `mf api locks --json` | Print active `mf run` locks for multi-session coordination. |
-| `mf api serve --stdio` | Serve the same read-only API reports as newline-delimited JSON responses over stdin/stdout. |
-| `mf docs review list` | Show documents still waiting for prose review after agent edits. |
-| `mf docs review add <path>` | Add or refresh a document review queue entry. |
-| `mf docs review comment <path>` | Add multiline review guidance to an existing queue entry. |
-| `mf docs review approve <path>` | Mark review complete and hide the document from the default queue. |
-| `mf handoff validate <path>` | Validate a restricted work-item or handoff JSON record without writing files. |
-| `mf context --json` | Print read order, command rules, context trust metadata, available capabilities, prompt-cache bundles, and recent run summary as JSON. |
-| `mf skill route` | Resolve compact skill route candidates from task text, paths, and reasons before reading selected skill documents. |
-| `mf skill outdated` | Check installed external skills against their saved upstream provenance, report file hash drift, and refresh the local update-check timestamp without writing skill files. |
-| `mf skill update <skill-name>\|--all` | Refresh installed external skills from their saved provenance source, refusing to overwrite local drift. Use `--dry-run` to preview and refresh the update-check timestamp. |
-| `mf map --stdout` | Print the current mustflow root map to stdout. |
-| `mf map --write` | Create or update `REPO_MAP.md`. |
-| `mf flow --stdout` | Print the current mustflow root design-flow map to stdout. |
-| `mf flow --write` | Create or update `REPO_FLOW.md`. |
-| `mf flow --check` | Check whether `REPO_FLOW.md` is current. |
-| `mf quality check` | Inspect changed files for quality-gaming patterns without writing files. |
-| `mf quality check --all` | Inspect every tracked text file for quality-gaming patterns. |
-| `mf script-pack list` | List bundled script packs, script refs, routing hints, side-effect flags, input/output labels, and JSON schema files. |
-| `mf script-pack suggest --changed --json` | Rank optional read-only helpers for current changed files without running those helpers or granting command authority. |
-| `mf script-pack suggest --path <path> --phase before_change` | Rank helpers for an explicit path and workflow phase before deciding which script to run. |
-| `mf script-pack run code/outline scan <path...> --json` | Scan TypeScript, JavaScript, Astro, Svelte, Go, Rust, and Python files for symbol headers, line ranges, source anchors, return metadata, and content hashes. |
-| `mf script-pack run code/dependency-graph scan <path...> --json` | Trace bounded relative import, export, require, and dynamic import edges for TypeScript and JavaScript source files. |
-| `mf script-pack run code/module-boundary check <path...> --json` | Check configured module-boundary import rules, import cycles, public entrypoints, feature imports, and shared budgets. |
-| `mf script-pack run code/change-impact analyze --base HEAD --json` | Analyze changed files and return bounded impact candidates, script-pack hints, and verification intent hints. |
-| `mf script-pack run code/symbol-read read <path> --start-line <line> --json` | Read the focused symbol range or bounded source snippet after `code/outline` identifies the relevant location. |
-| `mf script-pack run code/symbol-read read --anchor <id> --json` | Read the conservative target symbol for a structured `mf:anchor` source marker. |
-| `mf script-pack run code/route-outline scan <path...> --json` | Scan Hono, Elysia, Axum, and NestJS files for route methods, paths, handlers, lifecycle chains, line ranges, and content hashes. |
-| `mf script-pack run code/export-diff compare --base HEAD --json` | Compare exported TypeScript or JavaScript declarations, return metadata, and package surface hints against a git base. |
-| `mf script-pack run docs/reference-drift check [path...] --json` | Check documentation references to `mf` commands, script-pack refs, schema files, and repository paths against current local surfaces. |
-| `mf script-pack run repo/config-chain inspect <path...> --json` | Inspect nearby package, TypeScript, ESLint, Vite, Tailwind, test, and mustflow config files plus static inheritance edges without executing dynamic config code. |
-| `mf script-pack run repo/toolchain-provenance inspect --json` | Inspect repository-visible runtime, package-manager, lockfile, Docker, and CI toolchain provenance without running those tools. |
-| `mf script-pack run repo/automation-surface inspect --json` | Inventory package scripts, task runners, CI workflows, and mustflow command-intent coverage before adopting automation advice. |
-| `mf script-pack run repo/dependency-surface inspect --json` | Inspect dependency manifests, lockfiles, update automation, and policy surfaces without installing or updating packages. |
-| `mf script-pack run repo/env-contract scan [path...] --json` | Scan code, CI, docs, config, and env examples for environment-variable contract drift without reading or printing real secret env values. |
-| `mf script-pack run repo/secret-risk-scan scan [path...] --json` | Scan code, docs, config, CI, and examples for plausible hardcoded secrets while reporting only redacted fingerprints. |
-| `mf script-pack run repo/generated-boundary check <path...> --json` | Check whether candidate paths cross generated, ignored, protected, vendor, or cache boundaries before or after edits. |
-| `mf script-pack run repo/related-files map <path...> --json` | Map direct imports, importers, same-basename siblings, and nearby config or package boundaries for source navigation. |
-| `mf script-pack run core/text-budget check <path...> --max <count>` | Check exact text length budgets for files using grapheme counts by default. |
-| `mf script-pack run core/text-budget check package.json --json-pointer /description --max <count> --json` | Check a JSON string field and print the stable report schema. |
-| `mf run <intent>` | Run an allowed one-shot command. |
-| `mf run <intent> --repo <path>` | Run one delegated scoped workspace contract from the workspace root. |
-| `mf run <intent> --no-wait` | Fail immediately instead of using the default bounded wait for a conflicting active run lock. |
-| `mf run <intent> --input <name=value>` | Bind one declared typed intent input as a whole argument; repeat for multiple inputs. |
-| `mf run <intent> --dry-run --json` | Preview whether an intent is runnable and what command metadata would be used, without executing it. |
-| `mf index` | Build a SQLite index for mustflow docs, skill routes, command rules, command-effect locks, and file fingerprints. Use `--incremental` to reuse a compatible fresh index without rewriting it. |
-| `mf search <query>` | Search docs, skills, skill routes, command rules, and command-effect locks in the SQLite index. |
-| `mf status` | Inspect installed state and changed or missing files. |
-| `mf update --dry-run` | Calculate create, update, and safe retired-file removal actions without writing files. |
-| `mf update --apply` | Apply template changes and lock-proven retired-file removals when nothing is blocked. |
-| `mf upgrade` | Check package freshness, then apply safe bundled template updates when the package is current. |
-| `mf upgrade --dry-run` | Check package freshness and print the safe project update plan without writing files. |
-| `mf help <topic>` | Show installed mustflow help. |
-| `mf dashboard` | Start a local inspection dashboard for status, verification recommendations, release/version-source status, template update readiness, latest run receipt, skill routes, safe preferences, and documentation review. Use `--export-json <path>` or `--export <path>` for a bounded static report. It does not execute commands or apply fixes. |
-| `mf version` | Print the installed mustflow package version. |
-| `mf version --check` | Compare the installed package version with the latest npm release and print package-manager update commands if a newer version exists. |
-| `mf version-sources` | Inspect detected package, template, and declared version sources without modifying files. |
-| `mf impact --changed` | Report whether changed paths require a package or template version decision. |
-| `mf verify --reason <event>` | Run configured verification intents selected by `required_after` metadata. |
-| `mf verify --reason <event> --plan-only --json` | Print the required verification plan without running commands. |
-| `mf verify --changed --profile edit` | Run the smallest sufficient configured checks for fast feedback. This is the default profile. |
-| `mf verify --changed --profile commit` | Run a wider bounded related-check set before committing. |
-| `mf verify --changed --profile release` | Run all applicable release and high-risk verification without receipt reuse. |
-| `mf explain authority [path]` | Explain managed Markdown authority decisions without modifying files. |
-| `mf explain skill <skill_id>` | Explain the trigger, scope, risk, checks, output contract, and selection evidence for one skill route. |
-| `mf explain skills` | Explain the strict skill index/body alignment summary used by `mf doctor --strict`. |
-| `mf explain surface [path]` | Explain how a path maps to public-surface and validation categories. |
+| `mf init` | Install `AGENTS.md` and the `.mustflow/**` workflow. Add `--dry-run` to preview or `--merge` to preserve an existing `AGENTS.md`. |
+| `mf check --strict` | Validate the installed workflow and command contract. |
+| `mf doctor` | Diagnose the current Mustflow root without writing files. |
+| `mf status` | Show installed, changed, and missing workflow files. |
+| `mf classify --changed` | Identify changed-file categories and applicable verification reasons. |
+| `mf verify --changed --profile edit` | Run the smallest sufficient checks for active editing. Use `commit` or `release` for broader gates. |
+| `mf run <intent>` | Run one configured, eligible command intent. |
+| `mf update --dry-run` | Preview bundled template updates. Use `--apply` after reviewing an unblocked plan. |
+| `mf upgrade` | Check package freshness and apply safe bundled workflow updates. |
+| `mf dashboard` | Open the local status and settings dashboard. |
+| `mf help <topic>` | Show help for a command or concept. |
+
+The documentation site covers the advanced `api`, `workspace`, `evidence`, `script-pack`,
+`skill`, `handoff`, `explain`, indexing, dashboard export, and JSON contract commands.
+Start with the [Mustflow documentation](https://0disoft.github.io/mustflow/) instead of treating
+this README as the complete CLI specification.
 
 Automation and agents should use `--json` output or `mf api serve --stdio` JSONL responses instead of parsing human-facing text. Published JSON Schemas for stable outputs live in `schemas/`.
 
@@ -386,7 +308,7 @@ Development servers, watch modes, browser UIs, interactive commands, and backgro
 
 Command environments remove the project-local `node_modules/.bin` path from `PATH` by default. If an intent needs a project dependency binary such as `eslint`, `tsc`, or `vitest`, declare it through the package manager, for example `npm exec eslint -- ...`, `pnpm exec tsc -- --noEmit`, `bun x eslint ...`, or `yarn exec eslint ...`. `mf check --strict` warns when an agent-runnable intent uses a bare executable name that appears under the project-local `.bin` directory, except for names listed in `defaults.allow_project_local_bin_bare_executables`. `mf run` may resolve those allowed names directly from the local `.bin` directory without exposing every local binary through `PATH`. The installed template allows `mf` and `mustflow` by default. Intent-level `allow_env_inheritance_risks = true` is available when a command intentionally uses `env_policy = "inherit"`.
 
-Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, risk-priced evidence requirements, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
+Use `mf verify --reason <event> --plan-only --json` to inspect matching verification intents, command eligibility, evidence requirements, remaining gaps, and missing runnable coverage without executing commands. Use `mf run <intent> --dry-run --json` to inspect one resolved command intent without spawning a process or writing a run receipt. Plan-only verification includes a `decision_graph` that connects changed surfaces, classification reasons, command candidates, eligibility checks, effects, and gaps. When `.mustflow/cache/mustflow.sqlite` is fresh, scheduled entries also include read-only `effectGraph` metadata for write locks and lock conflicts. These graph rows are marked `explanation_only` and never grant command authority; `.mustflow/config/commands.toml` remains the only runnable command source.
 
 `mf verify` defaults to `--profile edit` and safe parallelism up to 4 commands, further capped by
 local CPU limits. Only explicit-effect, non-conflicting entries from the same scheduled batch may

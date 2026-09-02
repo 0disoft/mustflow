@@ -1741,12 +1741,10 @@ argv = [
   ".mustflow/review/docs.toml",
   "README.md",
   "REPO_FLOW.md",
-  "docs/i18n/ko/README.md",
-  "docs-site/src/content/docs/ko/index.md",
-  "docs-site/src/content/docs/en/design/manifest-lock-decision.md",
-  "docs-site/src/content/docs/en/files/manifest-lock-toml.md",
-  "docs-site/src/content/docs/en/files/project-context.md",
-  "docs-site/src/content/docs/en/files/repo-map.md",
+  "docs-site/src/content/docs/en/index.md",
+  "docs-site/src/content/docs/ko/commands/evidence.md",
+  "docs-site/src/content/docs/ko/commands/workspace.md",
+  "docs-site/src/content/docs/ko/start/agent-tool-integration.md",
 ]
 cwd = "."
 timeout_seconds = 60
@@ -1763,11 +1761,11 @@ approval_actions = ["git_commit"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Commit the reviewed public documentation readability improvements."
+description = "Commit the reviewed public documentation navigation and readability improvements."
 argv = [
   "git", "commit",
-  "-m", "📝 docs: simplify public documentation copy",
-  "-m", "Shorten the README feature overview and replace inflated wording in the English documentation while preserving contract keys, specifications, and agent-facing procedures.\n\nValidation: mf run docs_validate_fast; mf run mustflow_check",
+  "-m", "📝 docs: streamline the public command guide",
+  "-m", "Simplify the documentation landing page and command-selection overview, rewrite three Korean command pages in natural language, and keep only common commands in the README reference.\n\nValidation: mf run docs_validate_fast; mf run mustflow_check",
 ]
 cwd = "."
 timeout_seconds = 120

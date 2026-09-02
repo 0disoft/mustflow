@@ -1,9 +1,9 @@
 ---
 title: 에이전트 도구 통합 만들기
-description: 중립적인 저장소 로컬 계약을 통해 AI 코딩 도구나 하네스를 mustflow에 연결합니다.
+description: AI 코딩 도구나 자동화가 mustflow의 JSON 출력을 사용하도록 연결합니다.
 ---
 
-AI 코딩 도구, 에이전트 하네스, 편집기 통합, 자동화가 안정적인 mustflow 데이터를 소비해야 할 때 이 경로를 사용하세요.
+AI 코딩 도구, 에이전트 실행기, 편집기 확장, 자동화에서 mustflow 데이터를 읽어야 할 때 이 안내를 사용하세요.
 
 ## 읽기
 
@@ -23,18 +23,18 @@ mf run <intent> --json
 
 사람용 터미널 문구를 파싱하지 말고 JSON 출력과 스키마를 사용하세요. 공개 스키마는 `schemas/`에 있습니다.
 
-## 편의 표면
+## 기존 기능 활용
 
-새 명령 이름을 추가하기 전에 기존 JSON 표면을 먼저 개선하세요.
+새 명령을 만들기 전에 기존 JSON 출력으로 해결할 수 있는지 확인하세요.
 
-- 경로와 표면 근거를 분류해야 하면 `mf classify --changed --json`을 사용합니다.
-- 안정적인 읽기 전용 workspace, command, evidence, risk, health, lock 보고서가 필요하면 `mf api <action> --json` 또는 `mf api serve --stdio`를 사용합니다.
-- 실행 없는 검증 계획 시뮬레이션이 필요하면 `mf verify --plan-only --json`을 사용합니다.
+- 바뀐 파일의 종류와 검사 이유를 나누려면 `mf classify --changed --json`을 사용합니다.
+- 작업공간, 명령, 검증 결과, 위험, 상태, 잠금 정보를 읽으려면 `mf api <action> --json` 또는 `mf api serve --stdio`를 사용합니다.
+- 명령을 실행하기 전에 검사 계획만 보려면 `mf verify --plan-only --json`을 사용합니다.
 - 결정 근거가 필요하면 `mf explain <topic> --json`을 사용합니다.
-- 제한된 정적 검토 산출물이 필요하면 `mf dashboard --export-json <path>`를 사용합니다.
+- 파일로 저장할 짧은 검토 보고서가 필요하면 `mf dashboard --export-json <path>`를 사용합니다.
 - 호스트별 파일 호환성을 확인하려면 `mf adapters status --json`을 사용합니다. 어댑터 파일 생성은 기본 작업 흐름에 포함되지 않습니다.
 
-새 래퍼 명령은 이 표면들로 안전하게 표현할 수 없을 때만 추가해야 합니다.
+이 기능들로 표현할 수 없을 때만 새 래퍼 명령을 추가하세요.
 
 ## 권한 경계
 
