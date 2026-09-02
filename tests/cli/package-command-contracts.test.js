@@ -444,8 +444,8 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 	assert.match(changeVerificationSchema, /"decision_graph"/u);
 	assert.match(changeVerificationSchema, /"effectGraph"/u);
 	assert.match(changeVerificationSchema, /"surfaceReadModels"/u);
-	assert.match(readme, /verification decision graph/u);
-	assert.match(readme, /read-only local-index lock explanations/u);
+	assert.match(readme, /`decision_graph`/u);
+	assert.match(readme, /`effectGraph`/u);
 
 	for (const locale of supportedTemplateLocales) {
 		const commandIndex = readProjectText(`docs-site/src/content/docs/${locale}/commands/index.md`);

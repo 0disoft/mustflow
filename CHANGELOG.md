@@ -6,6 +6,16 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.0 - 2026-09-02
+
+- Reduced the default `minimal` profile from 231 skills to 64 while retaining common web and CLI
+  procedures plus authentication, payment, credit, upload, deletion, migration, idempotency, queue,
+  transaction, and secret-response safeguards. Specialist skills remain available in opt-in profiles.
+- Removed automatic next-action menus and proactive scope expansion from the installed workflow, and
+  require focused task evidence before adjunct skill routes are selected.
+- Simplified the English and Korean public documentation, shortened the README feature and command
+  references, and kept contract keys, specifications, and agent-facing procedures unchanged.
+
 ## 2.136.0 - 2026-09-01
 
 - Added the `delivery-verification-budget` built-in skill so MVP and fast-delivery tasks lock their
