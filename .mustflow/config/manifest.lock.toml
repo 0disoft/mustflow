@@ -14,7 +14,7 @@ content_hash = "sha256:224d03ed2e2c6d990b6fda7d6be57e43a7da26da070cb69692452258b
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:03994def793c995923f24043416001241261ec87c4b60e921ec51e541dc742cf"
+content_hash = "sha256:7a1008bece88422de4d48b3a1e6b2e63b5dfb27a6719446598c590b71d4aaeab"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -69,12 +69,12 @@ content_hash = "sha256:4a44720ec9d20bfe9bb84a06fe109911c64d27ee4a922ef610a925e53
 [files.".mustflow/skills/INDEX.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:7a9a186cc10dbf5307e7fa03d4831a424adf183c6aa0a8261d172679c062af7b"
+content_hash = "sha256:5294c1177c41c31067b37907de34620dd7e1537dabb010360b15bdf51ed2b42f"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:c2563e3cad59da17cccb6de4378f60919351628139e4f83f2f675c192c147e52"
+content_hash = "sha256:2a4417868191cf0fd4fedd168b578514fa4b9e755a7672367815c70e931a8295"
 
 [files.".mustflow/skills/backend-reliability-change/SKILL.md"]
 source = "template_common"
@@ -315,11 +315,6 @@ content_hash = "sha256:210442b5f38bed11331b31a0e7d203203c41064652a14648d870cdae5
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:694df0fe2a556bbe37bba3f00fe78662fed95e0779ea9c9c9eb6b1ebd8725184"
-
-[files.".mustflow/skills/proactive-risk-surfacing/SKILL.md"]
-source = "template_common"
-last_action = "customized"
-content_hash = "sha256:0a1c3fbd56aee5cd630b54afd2ba3a876ba56cf8e9b6b6086dcfb0385a48ddcd"
 
 [files.".mustflow/skills/cross-agent-session-reference/SKILL.md"]
 source = "template_common"

@@ -173,13 +173,6 @@ priority = 85
 selection_axis = "workflow"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "mustflow_docs_change", "mustflow_config_change", "package_metadata_change", "release_risk"]
 
-[routes."proactive-risk-surfacing"]
-category = "workflow_contracts"
-route_type = "event"
-priority = 72
-selection_axis = "workflow"
-applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "docs_change", "mustflow_docs_change", "public_api_change", "security_change", "privacy_change", "data_change", "performance_change", "ui_change", "release_risk"]
-
 [routes."restricted-handoff-resume"]
 category = "workflow_contracts"
 route_type = "primary"

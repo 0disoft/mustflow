@@ -615,53 +615,6 @@ test('support surface advisor scopes product support contracts', () => {
 	assert.match(i18n, /\[documents\."skill\.support-surface-advisor"\][\s\S]*?revision = 1/u);
 });
 
-test('proactive risk surfacing permits bounded evidence-backed intervention', () => {
-	const localSkill = readText('.mustflow/skills/proactive-risk-surfacing/SKILL.md');
-	const templateSkill = readText(
-		'templates/default/locales/en/.mustflow/skills/proactive-risk-surfacing/SKILL.md',
-	);
-	const skillIndex = readText('.mustflow/skills/INDEX.md');
-	const templateSkillIndex = readText('templates/default/locales/en/.mustflow/skills/INDEX.md');
-	const routes = readText('.mustflow/skills/routes.toml');
-	const templateRoutes = readText('templates/default/locales/en/.mustflow/skills/routes.toml');
-	const manifest = readText('templates/default/manifest.toml');
-	const i18n = readText('templates/default/i18n.toml');
-
-	assert.equal(localSkill, templateSkill);
-	assert.equal(skillIndex, templateSkillIndex);
-	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /scope-adjacent risk/u);
-	assert.match(localSkill, /fix_now/u);
-	assert.match(localSkill, /report_only/u);
-	assert.match(localSkill, /ask_first/u);
-	assert.match(localSkill, /ignore/u);
-	assert.match(localSkill, /same root cause/u);
-	assert.match(localSkill, /high_severity_adjacent/u);
-	assert.match(localSkill, /Do not perform broad unrelated refactors/u);
-	assert.match(localSkill, /No current repository evidence supports the extra concern/u);
-	assert.match(skillIndex, /\.mustflow\/skills\/proactive-risk-surfacing\/SKILL\.md/u);
-	assert.match(skillIndex, /fix now, report only, ask first, or ignore/u);
-	assert.match(routes, /\[routes\."proactive-risk-surfacing"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "event"/u);
-	assertRouteReasonsText(routes, [
-		'unknown_change',
-		'code_change',
-		'behavior_change',
-		'test_change',
-		'docs_change',
-		'mustflow_docs_change',
-		'public_api_change',
-		'security_change',
-		'privacy_change',
-		'data_change',
-		'performance_change',
-		'ui_change',
-		'release_risk',
-	]);
-	assert.match(manifest, /"\.mustflow\/skills\/proactive-risk-surfacing\/SKILL\.md"/u);
-	assert.match(manifest, /"proactive-risk-surfacing"/u);
-	assert.match(i18n, /\[documents\."skill\.proactive-risk-surfacing"\]/u);
-});
-
 test('pure core imperative shell keeps legacy effects visible and pure capabilities closed', () => {
 	const skillName = 'pure-core-imperative-shell';
 	const localSkill = readText(`.mustflow/skills/${skillName}/SKILL.md`);

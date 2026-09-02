@@ -561,7 +561,6 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				relatedSkills: [
 					'command-intent-mapping-gate',
 					'completion-evidence-gate',
-					'proactive-risk-surfacing',
 					'release-publish-change',
 				],
 				riskLevel: 'medium',
@@ -706,7 +705,6 @@ export const SCRIPT_PACKS: readonly ScriptPackDefinition[] = [
 				outputs: ['human_summary', 'json_report'],
 				relatedSkills: [
 					'completion-evidence-gate',
-					'proactive-risk-surfacing',
 					'quality-gaming-guard',
 					'repo-improvement-loop',
 					'template-install-surface-sync',

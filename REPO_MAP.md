@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 342
+anchor_count: 341
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:8bc72ccf6a60af170c68486151a204372e985dff7c589ca431a6f82feb6e76a4"
+source_fingerprint: "sha256:23ae3fea301f4aafcaf9c47f4b68c0cfd05c27a4a19c69f4ee47d6734127335d"
 ---
 
 # REPO_MAP.md
@@ -852,10 +852,6 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/pricing-model-integrity-review/
 
 - `.mustflow/skills/pricing-model-integrity-review/SKILL.md`: Procedural skill document for a repeatable agent task.
-
-### .mustflow/skills/proactive-risk-surfacing/
-
-- `.mustflow/skills/proactive-risk-surfacing/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/process-execution-safety/
 

@@ -62,7 +62,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 343
+revision = 344
 translations = {}
 
 [documents."skill.delivery-verification-budget"]
@@ -1417,12 +1417,6 @@ translations = {}
 source = "locales/en/.mustflow/skills/pattern-scout/SKILL.md"
 source_locale = "en"
 revision = 4
-translations = {}
-
-[documents."skill.proactive-risk-surfacing"]
-source = "locales/en/.mustflow/skills/proactive-risk-surfacing/SKILL.md"
-source_locale = "en"
-revision = 1
 translations = {}
 
 [documents."skill.complex-decision-analysis"]

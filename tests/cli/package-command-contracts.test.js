@@ -404,6 +404,8 @@ test('CLI test runner keeps concurrency configurable', () => {
 	assert.match(cliTestRunner, /git: '2'/u);
 	assert.match(cliTestRunner, /serial total/u);
 	assert.match(cliTestRunner, /dist\/ is older than changed TypeScript source/u);
+	assert.match(cliTestRunner, /const recordsVerificationReceipt = baseMode === 'related'/u);
+	assert.match(cliTestRunner, /if \(recordsVerificationReceipt\) \{[\s\S]*?finalizeVerificationReceipt/u);
 
 	const relatedResult = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', 'related'], {
 		cwd: projectRoot,
@@ -473,4 +475,3 @@ test('SQLite local index contracts stay synchronized across docs and schemas', (
 		assert.match(releaseChecksDesign, /MUSTFLOW_TEST_CONCURRENCY/u, `${locale} release docs should document test concurrency`);
 	}
 });
-

@@ -654,7 +654,8 @@ if (listOnly) {
 // receipt records artifact hashes, git head, and cwd so the completion gate
 // can detect artifacts that changed after verification began.
 const verificationReceiptPath = path.join(repoRoot, '.mustflow', 'state', 'verification-receipt.json');
-if (baseMode === 'related' && !listOnly && !profileMode) {
+const recordsVerificationReceipt = baseMode === 'related' && !listOnly && !profileMode;
+if (recordsVerificationReceipt) {
 	const verificationPlan = executableArtifactPlan(currentChangedFiles, loadVerificationTargets(repoRoot));
 
 	if (verificationPlan.unmapped.length > 0) {
@@ -971,14 +972,16 @@ if (profileSummary) {
 
 if (schedulerMode === 'auto') {
 	await runScheduledTests();
-	const finalized = finalizeVerificationReceipt({
-		repoRoot,
-		receiptPath: verificationReceiptPath,
-		exitCode: 0,
-	});
-	if (finalized.stale.length > 0) {
-		console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
-		process.exit(1);
+	if (recordsVerificationReceipt) {
+		const finalized = finalizeVerificationReceipt({
+			repoRoot,
+			receiptPath: verificationReceiptPath,
+			exitCode: 0,
+		});
+		if (finalized.stale.length > 0) {
+			console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
+			process.exit(1);
+		}
 	}
 	process.exit(0);
 }
@@ -994,14 +997,16 @@ if (result.error) {
 	process.exit(1);
 }
 
-const finalized = finalizeVerificationReceipt({
-	repoRoot,
-	receiptPath: verificationReceiptPath,
-	exitCode: result.status ?? 1,
-});
-if (finalized.stale.length > 0) {
-	console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
-	process.exit(1);
+if (recordsVerificationReceipt) {
+	const finalized = finalizeVerificationReceipt({
+		repoRoot,
+		receiptPath: verificationReceiptPath,
+		exitCode: result.status ?? 1,
+	});
+	if (finalized.stale.length > 0) {
+		console.error(`Verification receipt stale: artifact(s) changed during the run: ${finalized.stale.join(', ')}. Re-run to verify the final files.`);
+		process.exit(1);
+	}
 }
 
 process.exit(result.status ?? 1);
