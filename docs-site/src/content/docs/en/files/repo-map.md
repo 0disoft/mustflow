@@ -39,13 +39,13 @@ Delegating repository navigation to this generated file ensures that `AGENTS.md`
 ## Generation Policy
 
 - **Command Authority**: Generate the map via the `repo_map` intent or the `mf map` command.
-- **Discovery Logic**: Utilize both `git ls-files` and filesystem-based anchor discovery where possible.
+- **Discovery Logic**: Use both `git ls-files` and filesystem-based anchor discovery where possible.
 - **Discovery Depth**: The default discovery depth is set to 3. This limit applies to the identification of non-priority anchor files, not the absolute tree depth.
 - **Exclusion List**: Automatically exclude `node_modules`, `dist`, `build`, `.git`, `.mustflow/backups`, caches, and large binary outputs.
 - **Content Policy**: Do not include summaries of individual file contents.
 - **Input Stability**: Include only stable generated metadata at the beginning of the file. Avoid generation timestamps, branch names, remote URLs, change summaries, and logs.
 - **Staleness Detection**: Let `mf check --strict` compare `source_fingerprint` with the current anchor set and report when regeneration is needed.
-- **Selective Listing**: Include only anchor files that facilitate navigation rather than listing every source file.
+- **Selective Listing**: Include only anchor files that help agents navigate rather than listing every source file.
 - **Behavioral Context**: Prioritize configuration files required for agent behavior interpretation (e.g., `preferences.toml`).
 - **Context Awareness**: Include `.mustflow/context/INDEX.md` and `PROJECT.md` by default, but avoid automatically expanding domain-specific context files.
 - **Optional Root Anchors**: Include project-owned root Markdown files such as `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, and `API.md` when present; however, the generation tool must not create them.

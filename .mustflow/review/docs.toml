@@ -1235,6 +1235,14 @@ first_seen_at = "2026-07-25T06:17:15.869Z"
 last_touched_at = "2026-07-25T14:21:50.649Z"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/design/manifest-lock-decision.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T10:56:10.547Z"
+last_touched_at = "2026-09-02T10:56:10.547Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/design/release-checks.md"
 status = "pending"
 origin = "llm_modified"
@@ -1269,6 +1277,14 @@ last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
 
 [[documents]]
+path = "docs-site/src/content/docs/en/files/manifest-lock-toml.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T10:56:10.576Z"
+last_touched_at = "2026-09-02T10:56:10.576Z"
+
+[[documents]]
 path = "docs-site/src/content/docs/en/files/mustflow-toml.md"
 status = "pending"
 origin = "llm_modified"
@@ -1277,6 +1293,14 @@ first_seen_at = "2026-06-18T05:54:58.611Z"
 last_touched_at = "2026-07-25T14:21:50.664Z"
 last_touched_by_kind = "llm"
 last_touched_by_id = "codex"
+
+[[documents]]
+path = "docs-site/src/content/docs/en/files/project-context.md"
+status = "pending"
+origin = "llm_modified"
+reason = "LLM-created or LLM-modified documentation requires review"
+first_seen_at = "2026-09-02T10:56:10.594Z"
+last_touched_at = "2026-09-02T10:56:10.594Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/files/repo-flow.md"
@@ -1292,7 +1316,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-29T02:24:49.757Z"
-last_touched_at = "2026-07-05T05:47:37.812Z"
+last_touched_at = "2026-09-02T10:56:10.612Z"
 
 [[documents]]
 path = "docs-site/src/content/docs/en/index.md"
@@ -1654,7 +1678,7 @@ status = "pending"
 origin = "llm_modified"
 reason = "LLM-created or LLM-modified documentation requires review"
 first_seen_at = "2026-06-23T08:37:36.956Z"
-last_touched_at = "2026-09-02T10:34:49.543Z"
+last_touched_at = "2026-09-02T10:56:10.631Z"
 
 [[documents]]
 path = "schemas/README.md"

@@ -5,7 +5,7 @@ description: Documents project goals, non-goals, terminology, and repository-wid
 
 `.mustflow/context/PROJECT.md` is the default project context file provided by `mf init`.
 
-It is intended to remain concise. It does not serve as a comprehensive architecture document, roadmap, API reference, meeting log, or archive for generated summaries.
+Keep it concise. It is not a full architecture document, roadmap, API reference, meeting log, or archive for generated summaries.
 
 ## Usage
 
@@ -30,4 +30,3 @@ In the event of a conflict with the current repository state, agents should repo
 - `Extra Care Areas`: Specific paths, APIs, generated files, or secrets that require special attention or caution.
 - `Read Next`: References to documents that should be processed after this context file.
 - `Staleness Check`: Guidelines for identifying when this document is outdated.
-

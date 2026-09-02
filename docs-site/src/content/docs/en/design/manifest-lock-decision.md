@@ -64,4 +64,4 @@ The schema version will be raised and fields added later if mustflow needs:
 - Reproducible update planning without the mustflow package installed.
 - Signed templates or supply-chain verification.
 
-Until then, a single `content_hash` as the installation baseline is simpler and more robust.
+Until then, a single `content_hash` keeps the installation baseline simple and reliable.

@@ -117,44 +117,30 @@ Deno `npm:` execution is experimental until separately verified.
 
 mustflow installs and validates an agent workflow for user projects.
 
-- Installs `AGENTS.md` and `.mustflow/**` workflow files.
-- Declares runnable command rules in `.mustflow/config/commands.toml`.
-- Checks installation health and configuration structure with `mf check` and `mf doctor`.
-- Reports host adapter compatibility with `mf adapters status` without generating host-specific files or treating them as command authority.
-- Classifies changed files, public surfaces, and validation reasons with `mf classify`.
-- Inspects changed files for quality-gaming patterns such as line stuffing, suppressions, test bypass markers, type escapes, and placeholder implementations with `mf quality check`.
-- Prints execution-free verification plans with `mf verify --plan-only --json`, including a risk-priced evidence assessment, machine-readable verification decision graph, and read-only local-index lock explanations when available.
-- Runs verification with an explicit `edit`, `commit`, or `release` profile. The default `edit`
-  profile targets fast feedback, `commit` allows a wider bounded check set, and `release` keeps all
-  applicable checks. Security, privacy, data, migration, package, and release reasons retain full
-  verification even when a faster profile was requested.
-- Reports a read-only complexity budget in `mf api diff-risk --changed --json`, `mf verify`
-  evidence, and dashboard exports so agents justify new dependencies, helper-style surfaces,
-  config/schema churn, and broad structural changes before treating added complexity as free.
-- Lists, suggests, and runs bundled read-only utility scripts through `mf script-pack`, including
-  `code/outline` for source symbol maps, `code/dependency-graph` for bounded relative import graphs,
-  `code/module-boundary` for configured import-boundary guardrails,
-  `code/change-impact` for git-diff impact and verification hints, `code/symbol-read` for focused source snippets,
-  `code/route-outline` for Hono, Elysia, Axum, and NestJS route maps, `docs/reference-drift` for stale
-  documentation references, `repo/config-chain` for nearby config inheritance,
-  `repo/env-contract` for environment-variable contract drift,
-  `repo/secret-risk-scan` for plausible hardcoded-secret findings without printing values,
-  `repo/generated-boundary` for candidate path safety checks, and `core/text-budget`
-  for exact file and JSON-field length budgets, so future checks do not sprawl into top-level
-  commands.
-- Prints context trust metadata in `mf context --json` and prompt-cache bundles so agents can distinguish binding instructions, command contracts, contextual hints, generated evidence, and volatile runtime data before using them.
-- Runs only allowed one-shot commands within a timeout via `mf run <intent>` or `mf verify` when the selected intent is runnable.
-- Records blockers, contradictions, verification gaps, and remaining risks as a structured conflict ledger in verify, evidence, and dashboard reports.
-- Stores bounded failure replay capsules for failed `mf verify` runs so future agents can reproduce the intent, receipt, command fingerprint, and changed-file state without copying raw command output.
-- Writes bounded command receipts under `.mustflow/state/runs/run-*`, atomically updates `.mustflow/state/runs/latest.json`, and rebuilds `.mustflow/state/runs/latest.index.json` for recent retained runs.
-- Generates a concise repository navigation map, `REPO_MAP.md`, with `mf map`, and a design-flow map, `REPO_FLOW.md`, with `mf flow`.
-- Indexes and searches mustflow docs, skills, skill routes, command rules, command-effect locks, file fingerprints, and opt-in source anchor metadata with SQLite via `mf index` and `mf search`. The local SQLite file is a rebuildable lookup cache, not a memory store, audit log, command transcript store, command-authority source, or source-content database.
-- Tracks agent-created or agent-modified documentation needing prose review with `mf docs review`.
-- Validates restricted work-item or handoff JSON records with `mf handoff validate` without creating backlog files, storing transcripts, or granting command authority.
-- Exports bounded static dashboard reports with `mf dashboard --export-json <path>` or `mf dashboard --export <path>` for pull requests and continuous integration artifacts. The export includes a `harness_report` summary for install state, changed surfaces, verification decisions, latest receipt metadata, document-review status, and remaining risks without raw command-output tails or mutation controls.
-- Previews and applies bundled template updates safely with `mf update`.
-- Publishes JSON Schemas for automation-facing reports and command contracts in `schemas/`.
-- Builds selective, vendor-neutral Agent Plugins from canonical Mustflow skills with `mf plugin build`.
+- Installs `AGENTS.md` and the `.mustflow/**` workflow files.
+- Registers runnable commands in `.mustflow/config/commands.toml` and runs eligible ones with `mf run <intent>`.
+- Checks installation and configuration health with `mf check` and `mf doctor`.
+- Classifies changed files and suggests matching checks with `mf classify` and `mf verify --plan-only`.
+- Runs verification at `edit`, `commit`, or `release` depth while keeping high-risk checks intact.
+- Flags suspicious shortcuts in changed code with `mf quality check`.
+- Shows host adapter compatibility with `mf adapters status`.
+- Records command receipts, failed-run replay data, blockers, and remaining verification gaps under `.mustflow/state/`.
+- Builds `REPO_MAP.md` and `REPO_FLOW.md`, then indexes workflow files for local search.
+- Tracks documentation that still needs prose review and validates restricted handoff records.
+- Previews and applies bundled template updates with `mf update`.
+- Exports static dashboard reports and publishes JSON Schemas for automation.
+- Builds vendor-neutral Agent Plugins from selected Mustflow skills.
+
+<details>
+<summary>Verification and helper details</summary>
+
+`mf api diff-risk`, `mf verify`, and dashboard exports report complexity and evidence gaps before broad changes are accepted. `mf context --json` labels instructions, command contracts, contextual hints, generated evidence, and volatile state so consumers can distinguish their roles.
+
+`mf script-pack` provides optional read-only helpers for source outlines, import graphs, module boundaries, route maps, change impact, focused snippets, documentation drift, configuration chains, environment contracts, secret-risk checks, generated-file boundaries, and text budgets.
+
+Verification profiles trade speed for breadth: `edit` favors fast feedback, `commit` widens related checks, and `release` keeps every applicable check. Security, privacy, data, migration, package, and release reasons keep their full checks in every profile.
+
+</details>
 
 ## What it does not do
 

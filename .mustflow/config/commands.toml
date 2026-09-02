@@ -1733,7 +1733,7 @@ approval_actions = ["git_commit"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Stage only the reviewed human-facing README and documentation landing-page copy with its workflow metadata."
+description = "Stage only the reviewed human-facing README and documentation copy with its workflow metadata."
 argv = [
   "git", "add", "--",
   ".mustflow/config/commands.toml",
@@ -1743,6 +1743,10 @@ argv = [
   "REPO_FLOW.md",
   "docs/i18n/ko/README.md",
   "docs-site/src/content/docs/ko/index.md",
+  "docs-site/src/content/docs/en/design/manifest-lock-decision.md",
+  "docs-site/src/content/docs/en/files/manifest-lock-toml.md",
+  "docs-site/src/content/docs/en/files/project-context.md",
+  "docs-site/src/content/docs/en/files/repo-map.md",
 ]
 cwd = "."
 timeout_seconds = 60
@@ -1759,11 +1763,11 @@ approval_actions = ["git_commit"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Commit the reviewed human-facing Mustflow introduction and Korean command descriptions."
+description = "Commit the reviewed public documentation readability improvements."
 argv = [
   "git", "commit",
-  "-m", "📝 docs: make the introduction easier to read",
-  "-m", "Rewrite the Korean README command table and documentation landing page in direct language, simplify the English introduction, and preserve Mustflow contract keys and specification wording.\n\nValidation: mf run docs_validate_fast; mf run mustflow_check",
+  "-m", "📝 docs: simplify public documentation copy",
+  "-m", "Shorten the README feature overview and replace inflated wording in the English documentation while preserving contract keys, specifications, and agent-facing procedures.\n\nValidation: mf run docs_validate_fast; mf run mustflow_check",
 ]
 cwd = "."
 timeout_seconds = 120
