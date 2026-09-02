@@ -123,21 +123,12 @@ test('route metadata can declare checked skill dependencies', () => {
 		'signal = "machine_output_changed"',
 		'skill = "cli-output-contract-review"',
 	].join('[\\s\\S]*?');
-	const completionEvidenceDependenciesPattern = [
-		'\\[routes\\."completion-evidence-gate"\\.dependencies\\]',
-		'suggests_adjuncts = \\["next-action-menu"\\]',
-		'signal = "concrete_followup_exists"',
-		'skill = "next-action-menu"',
-	].join('[\\s\\S]*?');
 
 	assert.match(
 		routes,
 		new RegExp(publicJsonDependenciesPattern, 'u'),
 	);
-	assert.match(
-		routes,
-		new RegExp(completionEvidenceDependenciesPattern, 'u'),
-	);
+	assert.doesNotMatch(routes, /next-action-menu/u);
 	assert.match(
 		routes,
 		/\[routes\."state-machine-pattern"\.dependencies\][\s\S]*?conflicts_with = \["strategy-pattern"\]/u,
@@ -463,14 +454,10 @@ test('skill route metadata covers declared trigger axes for integration and fram
 	}
 });
 
-test('completion evidence gate explicitly hands off useful follow-ups to next action menu', () => {
+test('completion evidence gate stops without inventing follow-up work', () => {
 	const localSkill = readText('.mustflow/skills/completion-evidence-gate/SKILL.md');
 	const templateSkill = readText(
 		'templates/default/locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md',
-	);
-	const nextActionSkill = readText('.mustflow/skills/next-action-menu/SKILL.md');
-	const templateNextActionSkill = readText(
-		'templates/default/locales/en/.mustflow/skills/next-action-menu/SKILL.md',
 	);
 	const workflow = readText('.mustflow/docs/agent-workflow.md');
 	const templateWorkflow = readText('templates/default/locales/en/.mustflow/docs/agent-workflow.md');
@@ -478,13 +465,11 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	const routes = readText('.mustflow/skills/routes.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.equal(nextActionSkill, templateNextActionSkill);
 	assert.equal(workflow, templateWorkflow);
-	assert.match(localSkill, /revision: 9/u);
-	assert.match(nextActionSkill, /revision: 5/u);
+	assert.match(localSkill, /revision: 10/u);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
-	assert.match(workflow, /apply `next-action-menu` and include the bounded table/u);
+	assert.match(workflow, /Do not invent follow-up work or force a\s+menu when the task is complete/u);
 	assert.match(workflow, /### Script-Pack Selection/u);
 	assert.match(workflow, /Script-pack suggestions are optional evidence helpers/u);
 	assert.match(workflow, /Skills remain the primary procedure owner/u);
@@ -497,65 +482,20 @@ test('completion evidence gate explicitly hands off useful follow-ups to next ac
 	assert.match(workflow, /`mutates` is true/u);
 	assert.match(workflow, /does not replace reading `SKILL\.md`/u);
 	assert.match(workflow, /Suggested helpers are not mandatory/u);
-	assert.match(localSkill, /Concrete follow-up candidates/u);
-	assert.match(localSkill, /Decide whether a next-action menu is required/u);
-	assert.match(localSkill, /For a non-trivial final report, read and apply `next-action-menu`/u);
-	assert.match(localSkill, /read and apply `next-action-menu` before final reporting/u);
-	assert.match(localSkill, /created commit, push or release readiness, deploy preparation/u);
-	assert.match(localSkill, /Do not omit the menu merely because the remaining useful actions are approval-gated/u);
-	assert.match(localSkill, /omits `next-action-menu` despite concrete\s+follow-ups as incomplete final-report routing/u);
-	assert.match(localSkill, /useful follow-up tasks appear through `next-action-menu` whenever\s+at least one concrete next action remains/u);
-	assert.match(nextActionSkill, /Use especially after non-trivial code, behavior, test, docs/u);
-	assert.match(nextActionSkill, /A code, behavior, test, public API, config, workflow, docs/u);
-	assert.match(nextActionSkill, /treat the menu as required when\s+any concrete next action exists/u);
-	assert.match(nextActionSkill, /선택&nbsp;번호 \| 다음 작업 \| 설명 \| 추천&nbsp;등급/u);
-	assert.match(
-		nextActionSkill,
-		/Select&nbsp;No\. \| Next task \| Description \| Recommendation&nbsp;grade/u,
-	);
-	assert.match(nextActionSkill, /A gated item in the table is only a visible next-action option/u);
-	assert.match(localSkill, /Next-action menu included or omitted, with reason/u);
+	assert.match(localSkill, /Keep remaining-work reporting bounded/u);
+	assert.match(localSkill, /Do not generate a menu, recommendation score, speculative backlog/u);
+	assert.match(localSkill, /stop without inventing another task/u);
+	assert.doesNotMatch(localSkill, /next-action-menu/u);
 	assert.match(
 		i18n,
-		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 31/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 32/u,
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 9/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 10/u,
 	);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.next-action-menu"\][\s\S]*?revision = 5/u,
-	);
-	assert.match(
-		routes,
-		/\[routes\."next-action-menu"\][\s\S]*?route_type = "adjunct"[\s\S]*?priority = 84/u,
-	);
-	assert.deepEqual(
-		routeReasons(routes, 'next-action-menu'),
-		[
-			'unknown_change',
-			'code_change',
-			'behavior_change',
-			'public_api_change',
-			'test_change',
-			'docs_change',
-			'copy_change',
-			'i18n_change',
-			'workflow_change',
-			'mustflow_docs_change',
-			'mustflow_config_change',
-			'package_metadata_change',
-			'security_change',
-			'privacy_change',
-			'data_change',
-			'migration_change',
-			'performance_change',
-			'ui_change',
-			'release_risk',
-		],
-		'next-action-menu should route after ordinary code, behavior, and test completion reports',
-	);
+	assert.doesNotMatch(i18n, /skill\.next-action-menu/u);
+	assert.doesNotMatch(routes, /next-action-menu/u);
 });
 
 test('design implementation handoff separates public specs from private agent state', () => {

@@ -25,17 +25,6 @@ import {
 	test,
 } from './helpers/package-contracts.js';
 
-test('default template installs the next action menu skill across profiles', () => {
-	assert.ok(templateCreates.includes('.mustflow/skills/next-action-menu/SKILL.md'));
-
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
-		assert.ok(
-			readTemplateSkillProfile(profile).includes('next-action-menu'),
-			`${profile} profile should include next-action-menu`,
-		);
-	}
-});
-
 test('default template installs the API failure triage skill across profiles', () => {
 	assert.ok(templateCreates.includes('.mustflow/skills/api-failure-triage/SKILL.md'));
 

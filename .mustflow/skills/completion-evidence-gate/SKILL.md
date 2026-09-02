@@ -2,11 +2,11 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 9
+revision: 10
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
-description: Apply this skill before a final report or completion claim after non-trivial changed-file work, verification, commit, push, release readiness, paused implementation, or any report where changed files, skipped checks, concrete next actions, remote check-suite state, or remaining risks must be tied to repository evidence.
+description: Apply this skill before a final report or completion claim after non-trivial changed-file work, verification, commit, push, release readiness, paused implementation, or any report where changed files, skipped checks, remote check-suite state, or remaining risks must be tied to repository evidence.
 metadata:
   mustflow_schema: "1"
   mustflow_kind: procedure
@@ -44,7 +44,7 @@ missing, blocked, failed, stale, or only partially relevant.
 - A task is ready for final reporting after files were created, modified, deleted, or intentionally left unchanged.
 - The user asks whether work is complete, safe to merge, ready to commit, verified, released, installed, or done.
 - A non-trivial task, commit, push, release preparation, deploy preparation, verification run, or
-  paused implementation is being reported and at least one concrete next action remains.
+  paused implementation is being reported.
 - A change touched more than one surface, such as source, tests, schemas, templates, workflow files, package metadata, documentation, or generated output.
 - Verification was skipped, failed, manual-only, unavailable, or chosen from multiple plausible command intents.
 - A previous verification failure, repeated-failure warning, write-drift risk, scope-drift risk, or external evidence risk could make a completion claim misleading.
@@ -77,9 +77,7 @@ missing, blocked, failed, stale, or only partially relevant.
 - Optional script-pack discovery evidence when the command contract exposes `script_pack_list`.
 - Synchronized surfaces expected by the changed contract: source, tests, fixtures, schemas, templates, manifests, docs, release metadata, generated output, and localized copies.
 - Known remaining risks, unverified assumptions, blocked decisions, and rollback notes.
-- Concrete follow-up candidates, including gated actions such as commit, push, release, deploy,
-  dependency upgrade, migration, or manual verification when they are plausible next steps.
-- Whether a bounded `next-action-menu` must be included or intentionally omitted.
+- Concrete remaining work only when it affects the requested outcome or its immediate delivery.
 
 <!-- mustflow-section: preconditions -->
 ## Preconditions
@@ -139,19 +137,13 @@ missing, blocked, failed, stale, or only partially relevant.
    - Use `not complete` when a required acceptance criterion is not implemented or verification contradicts the claim.
    - Do not downgrade a verified child-only result because an unrelated parent worktree has local
      changes, an active lock, stale receipts, or manifest drift.
-7. Decide whether a next-action menu is required.
-   - For a non-trivial final report, read and apply `next-action-menu` before final reporting when
-     at least one concrete, evidence-backed follow-up task remains.
-   - Treat changed-file work, a created commit, push or release readiness, deploy preparation,
-     completed verification, paused implementation, or unresolved manual gate as non-trivial for
-     this decision.
-   - Do not omit the menu merely because the remaining useful actions are approval-gated. Include
-     gated actions such as push, publish, deploy, dependency upgrade, migration, or manual release
-     verification as menu rows with the gate stated plainly.
-   - If no useful follow-up exists, the user asked not to include recommendations, or the only next
-     actions are speculative, omit the menu and keep the final report concise.
-   - Treat route selection that reaches this gate but omits `next-action-menu` despite concrete
-     follow-ups as incomplete final-report routing, not as permission to silently drop the menu.
+7. Keep remaining-work reporting bounded.
+   - Report a remaining action only when current evidence shows that it affects the requested
+     outcome or its immediate commit, release, deploy, migration, or manual verification boundary.
+   - Do not generate a menu, recommendation score, speculative backlog, or optional cleanup list
+     merely because changed-file work occurred.
+   - When the locked acceptance criteria are complete and no blocking delivery action remains,
+     stop without inventing another task.
 8. Write the final report from evidence, not confidence.
    - Name changed files, command intents run, skipped checks with reasons, synchronized or deferred surfaces, and remaining risks.
    - Do not imply that skipped, manual-only, or missing command intents passed.
@@ -170,10 +162,8 @@ missing, blocked, failed, stale, or only partially relevant.
 - Push, tag, release, and deploy completion claims name the relevant remote check-suite state, or
   explicitly say that it was not checked.
 - Contract, template, schema, docs, test, and release drift is either resolved or named as remaining risk.
-- For non-trivial final reports, useful follow-up tasks appear through `next-action-menu` whenever
-  at least one concrete next action remains, including approval-gated next actions.
-- Omitted menus state a clear reason grounded in no concrete next action, user opt-out, or
-  speculative-only follow-ups.
+- Remaining work is reported only when it is concrete and relevant to the requested outcome or its
+  immediate delivery boundary.
 - No unconfigured command, hidden transcript, broad log, or invented tool result is treated as proof.
 
 <!-- mustflow-section: verification -->
@@ -227,5 +217,5 @@ instead of replacing it with an inferred command.
 - Lower-confidence evidence, if any
 - Stalled or repeated observations, if any
 - Remaining risks
-- Next-action menu included or omitted, with reason
+- Concrete remaining work, when relevant
 - Final wording boundary

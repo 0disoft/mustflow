@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 343
+anchor_count: 342
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:2006d509f722c2bd39f5888e0b00a448cbff0cbbceac94d6e96456910f5ebd0f"
+source_fingerprint: "sha256:8bc72ccf6a60af170c68486151a204372e985dff7c589ca431a6f82feb6e76a4"
 ---
 
 # REPO_MAP.md
@@ -788,10 +788,6 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/nestjs-code-change/
 
 - `.mustflow/skills/nestjs-code-change/SKILL.md`: Procedural skill document for a repeatable agent task.
-
-### .mustflow/skills/next-action-menu/
-
-- `.mustflow/skills/next-action-menu/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/node-code-change/
 

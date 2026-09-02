@@ -33,9 +33,13 @@ function toPosixRelative(value) {
 }
 
 const args = process.argv.slice(2);
-const action = args[0] === 'plan' || args[0] === 'apply' ? args[0] : 'accept';
+const action = args[0] === 'plan' || args[0] === 'apply' || args[0] === 'remove' ? args[0] : 'accept';
 const planPath = action === 'plan' || action === 'apply' ? toPosixRelative(args[1] ?? '') : null;
-const requestedPaths = (action === 'plan' ? args.slice(2) : action === 'accept' ? args : []).map(toPosixRelative);
+const requestedPaths = (
+	action === 'plan' ? args.slice(2) :
+		action === 'remove' ? args.slice(1) :
+			action === 'accept' ? args : []
+).map(toPosixRelative);
 
 if ((action !== 'apply' && requestedPaths.length === 0) || ((action === 'plan' || action === 'apply') && !planPath)) {
 	console.error('Usage: node scripts/accept-manifest-lock-baseline.mjs [plan <plan-path> <relative-path>... | apply <plan-path> | <relative-path>...]');
@@ -84,6 +88,12 @@ if (action === 'apply') {
 	const updated = manifestLockModule.applyManifestLockCustomizationPlan(projectRoot, plan);
 	rmSync(resolvedPlanPath, { force: true });
 	console.log(JSON.stringify({ schema_version: '1', command: 'accept-manifest-lock-baseline', plan_path: planPath, updated }, null, 2));
+	process.exit(0);
+}
+
+if (action === 'remove') {
+	const updated = manifestLockModule.removeMissingManifestLockEntries(projectRoot, requestedPaths);
+	console.log(JSON.stringify({ schema_version: '1', command: 'remove-manifest-lock-baseline', updated }, null, 2));
 	process.exit(0);
 }
 

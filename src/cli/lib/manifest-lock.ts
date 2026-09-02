@@ -379,6 +379,48 @@ export function applyManifestLockCustomizationPlan(
 	}
 }
 
+export function removeMissingManifestLockEntries(
+	projectRoot: string,
+	relativePaths: readonly string[],
+): readonly string[] {
+	if (!ensureManifestLockTargetSafe(projectRoot)) {
+		throw new Error(`Cannot remove entries without ${MANIFEST_LOCK_RELATIVE_PATH}`);
+	}
+	const normalizedPaths = [...new Set(relativePaths.map(normalizeManifestPlanPath))];
+	if (normalizedPaths.length === 0) {
+		throw new Error('Manifest lock entry removal requires at least one file');
+	}
+	for (const relativePath of normalizedPaths) {
+		const filePath = path.join(projectRoot, relativePath);
+		ensureInside(projectRoot, filePath);
+		ensureFileTargetInsideWithoutSymlinks(projectRoot, filePath, { allowMissingLeaf: true });
+		if (existsSync(filePath)) {
+			throw new Error(`Refusing to remove manifest lock entry for existing file: ${relativePath}`);
+		}
+	}
+
+	const release = acquireManifestLockCas(projectRoot);
+	try {
+		const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
+		const parsed = parseTomlText(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath));
+		if (!isRecord(parsed)) {
+			throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);
+		}
+		const filesTable = isRecord(parsed.files) ? parsed.files : {};
+		for (const relativePath of normalizedPaths) {
+			if (filesTable[relativePath] === undefined) {
+				throw new Error(`Manifest lock entry does not exist: ${relativePath}`);
+			}
+			delete filesTable[relativePath];
+		}
+		parsed.files = filesTable;
+		writeManifestLockAtomically(projectRoot, stringifyToml(parsed));
+		return normalizedPaths;
+	} finally {
+		release();
+	}
+}
+
 export function ensureManifestLockTargetSafe(projectRoot: string): boolean {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	ensureInside(projectRoot, lockPath);

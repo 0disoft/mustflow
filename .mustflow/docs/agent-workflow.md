@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 31
+revision: 32
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -421,9 +421,9 @@ Do not store raw full logs, secrets, customer data, or long transcripts in `.mus
 
 Before a final report after changed files, verification, paused implementation, commit readiness,
 release readiness, deploy preparation, or any completion/readiness claim, apply
-`completion-evidence-gate` when available. If at least one concrete, evidence-backed follow-up action
-remains, apply `next-action-menu` and include the bounded table. If the menu is omitted, state the
-reason plainly: no concrete next action, user opt-out, or speculative-only follow-ups.
+`completion-evidence-gate` when available. Report only concrete evidence-backed remaining work that
+affects the requested outcome or its immediate delivery. Do not invent follow-up work or force a
+menu when the task is complete.
 
 Final reports should include:
 

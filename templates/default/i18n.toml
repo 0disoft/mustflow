@@ -40,7 +40,7 @@ translations.hi = { path = "locales/hi/.mustflow/context/PROJECT.md", source_rev
 [documents."docs.agent-workflow"]
 source = "locales/en/.mustflow/docs/agent-workflow.md"
 source_locale = "en"
-revision = 31
+revision = 32
 translations.ko = { path = "locales/ko/.mustflow/docs/agent-workflow.md", source_revision = 23, status = "needs_review" }
 translations.zh = { path = "locales/zh/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
 translations.es = { path = "locales/es/.mustflow/docs/agent-workflow.md", source_revision = 18, status = "needs_review" }
@@ -1249,13 +1249,7 @@ translations = {}
 [documents."skill.completion-evidence-gate"]
 source = "locales/en/.mustflow/skills/completion-evidence-gate/SKILL.md"
 source_locale = "en"
-revision = 9
-translations = {}
-
-[documents."skill.next-action-menu"]
-source = "locales/en/.mustflow/skills/next-action-menu/SKILL.md"
-source_locale = "en"
-revision = 5
+revision = 10
 translations = {}
 
 [documents."skill.evidence-stall-breaker"]

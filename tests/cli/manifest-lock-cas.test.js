@@ -37,6 +37,24 @@ test('manifest lock customization plan applies only to its reviewed snapshots', 
 	}
 });
 
+test('manifest lock removal deletes only entries whose files are already absent', async () => {
+	const root = createFixture();
+	try {
+		const module = await loadManifestLockModule();
+		rmSync(path.join(root, 'README.md'));
+		assert.deepEqual(module.removeMissingManifestLockEntries(root, ['README.md']), ['README.md']);
+		const lock = readFileSync(path.join(root, '.mustflow', 'config', 'manifest.lock.toml'), 'utf8');
+		assert.doesNotMatch(lock, /\[files\."README\.md"\]/u);
+		assert.match(lock, /\[files\."AGENTS\.md"\]/u);
+		assert.throws(
+			() => module.removeMissingManifestLockEntries(root, ['AGENTS.md']),
+			/Refusing to remove manifest lock entry for existing file: AGENTS\.md/u,
+		);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test('manifest lock customization rejects target drift after planning', async () => {
 	const root = createFixture();
 	try {

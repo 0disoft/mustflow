@@ -1183,14 +1183,6 @@ function collectDependencySignals(
 	}
 
 	if (
-		inputTerms.has('followup') ||
-		(inputTerms.has('follow') && inputTerms.has('up')) ||
-		(inputTerms.has('next') && inputTerms.has('action'))
-	) {
-		dependencySignals.add('concrete_followup_exists');
-	}
-
-	if (
 		hasAnyInputTerm('commit', 'committed') &&
 		hasAnyInputTerm('publish', 'published', 'publisher') &&
 		hasAnyInputTerm('split', 'outbox', 'reconcile', 'reconciliation')

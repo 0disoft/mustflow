@@ -376,7 +376,7 @@ test('keeps weakly related adjuncts out of low-risk selected skill reads', () =>
 			taskText: 'Fix a typo in the installation guide',
 			paths: ['docs/installation.md'],
 			reasons: ['docs_change'],
-			forbidden: ['cache-friendly-context-design-review', 'css-code-change', 'security-privacy-review'],
+			forbidden: ['cache-friendly-context-design-review', 'security-privacy-review'],
 		},
 	];
 
