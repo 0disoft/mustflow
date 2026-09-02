@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.3 - 2026-09-02
+
+- Aligned specialist automation, browser, agent-runtime, and memory skill profile tests with the
+  reduced minimal profile while retaining those skills in every expanded profile.
+
 ## 2.137.2 - 2026-09-02
 
 - Kept the generated route catalog synchronized with profile-filtered routes and updated route
