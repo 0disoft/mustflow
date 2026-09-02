@@ -250,7 +250,7 @@ test('strict check fails skill route metadata drift', async () => {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath)
 			.replace(
-				/\n\[routes\."code-review"\]\ncategory = "general_code"\nroute_type = "primary"\npriority = 50\nselection_axis = "task"\napplies_to_reasons = \["code_change", "behavior_change"\]\n\n\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]\n/u,
+				/\n\[routes\."code-review"\][\s\S]*?(?=\n\[routes\."[^"]+"\]\n)/u,
 				'\n',
 			)
 			.concat(
@@ -388,12 +388,12 @@ test('strict check fails invalid skill route dependency semantics', async () => 
 	try {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath).replace(
-			/\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \["bug-claim-evidence-gate"\]\nunlocks_on = \[\n  \{ signal = "candidate_defect", skill = "bug-claim-evidence-gate" \},\n\]/u,
+			/\[routes\."code-review"\.dependencies\]\nsuggests_adjuncts = \[\]\nunlocks_on = \[\n\]/u,
 			[
 				'[routes."code-review".dependencies]',
-				'suggests_adjuncts = ["small-service-platform-architecture-review"]',
-				'conflicts_with = ["small-service-platform-architecture-review"]',
-				'unlocks_on = [{ signal = "semantic_drift", skill = "small-service-platform-architecture-review" }]',
+				'suggests_adjuncts = ["api-contract-change"]',
+				'conflicts_with = ["api-contract-change"]',
+				'unlocks_on = [{ signal = "semantic_drift", skill = "api-contract-change" }]',
 			].join('\n'),
 		);
 		writeFileSync(routesPath, routes);
@@ -403,17 +403,17 @@ test('strict check fails invalid skill route dependency semantics', async () => 
 		const check = JSON.parse(result.stdout);
 		const expectedSuggestIssue = [
 			'Strict: .mustflow/skills/routes.toml route "code-review"',
-			' suggests adjunct route "small-service-platform-architecture-review"',
+			' suggests adjunct route "api-contract-change"',
 			' must point to an adjunct route, found "primary"',
 		].join('');
 		const expectedUnlockIssue = [
 			'Strict: .mustflow/skills/routes.toml route "code-review"',
-			' unlocks on signal "semantic_drift" route "small-service-platform-architecture-review"',
+			' unlocks on signal "semantic_drift" route "api-contract-change"',
 			' must point to an adjunct route, found "primary"',
 		].join('');
 		const expectedConflictWarning = [
 			'Strict warning: .mustflow/skills/routes.toml route "code-review"',
-			' conflicts with "small-service-platform-architecture-review"',
+			' conflicts with "api-contract-change"',
 			' but the reverse route does not',
 		].join('');
 

@@ -82,7 +82,7 @@ test('explains a single skill route as json', async () => {
 		assert.deepEqual(report.decision.selectionEvidence.matchedBy, ['frontmatter.skill_id:mustflow.core.code-review']);
 		assert.deepEqual(report.decision.selectionEvidence.requiredInputs, ['Diff and task goal']);
 		assert.deepEqual(report.decision.selectionEvidence.missingInputs, []);
-		assert.ok(report.decision.selectionEvidence.candidateAdjuncts.includes('diff-risk-review'));
+		assert.ok(report.decision.selectionEvidence.candidateAdjuncts.includes('change-blast-radius-review'));
 		assert.deepEqual(report.decision.selectionEvidence.unmatchedPaths, []);
 		assert.match(report.decision.selectionEvidence.gapNotes.join('\n'), /no task paths/);
 	} finally {
@@ -100,7 +100,7 @@ test('explains single skill route selection evidence as text', async () => {
 		assert.match(result.stdout, /Skill selection evidence/);
 		assert.match(result.stdout, /matched_by: skill_name:code-review, frontmatter.name:code-review/);
 		assert.match(result.stdout, /required_inputs: Diff and task goal/);
-		assert.match(result.stdout, /candidate_adjuncts: .*diff-risk-review/);
+		assert.match(result.stdout, /candidate_adjuncts: .*change-blast-radius-review/);
 		assert.match(result.stdout, /unmatched_paths: none/);
 	} finally {
 		removeTempProject(projectPath);

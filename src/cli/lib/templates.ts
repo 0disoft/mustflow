@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -350,7 +351,7 @@ function filterSkillRouteMetadataContent(content: string, selectedSkills: readon
 	let filteringUnlockRules = false;
 
 	for (const line of lines) {
-		const dependencyList = /^(\s*)(requires_skills|suggests_adjuncts|conflicts_with)\s*=\s*\[(.*)\]\s*$/u.exec(line);
+		const dependencyList = /^(\s*)(requires_skills|suggests_adjuncts|conflicts_with|mutually_exclusive_with)\s*=\s*\[(.*)\]\s*$/u.exec(line);
 
 		if (dependencyList) {
 			const [, indent, key, listContent] = dependencyList;
@@ -385,6 +386,42 @@ function filterSkillRouteMetadataContent(content: string, selectedSkills: readon
 	}
 
 	return filteredLines.join('\n');
+}
+
+function filterSkillRouteCatalogContent(content: string, selectedSkills: readonly string[]): string {
+	const selectedSkillSet = new Set(selectedSkills);
+	const catalog = JSON.parse(content) as {
+		schema_version: string;
+		kind: string;
+		entries: Array<{
+			skill: string;
+			mutually_exclusive_with: string[];
+			dependencies: {
+				requires_skills: string[];
+				suggests_adjuncts: string[];
+				conflicts_with: string[];
+				unlocks_on: Array<{ signal: string; skill: string }>;
+			};
+		}>;
+	};
+	const entries = catalog.entries
+		.filter((entry) => selectedSkillSet.has(entry.skill))
+		.map((entry) => ({
+			...entry,
+			mutually_exclusive_with: entry.mutually_exclusive_with.filter((skillName) => selectedSkillSet.has(skillName)),
+			dependencies: {
+				requires_skills: entry.dependencies.requires_skills.filter((skillName) => selectedSkillSet.has(skillName)),
+				suggests_adjuncts: entry.dependencies.suggests_adjuncts.filter((skillName) => selectedSkillSet.has(skillName)),
+				conflicts_with: entry.dependencies.conflicts_with.filter((skillName) => selectedSkillSet.has(skillName)),
+				unlocks_on: entry.dependencies.unlocks_on.filter((rule) => selectedSkillSet.has(rule.skill)),
+			},
+		}));
+
+	return `${JSON.stringify({
+		...catalog,
+		source_fingerprint: `sha256:${createHash('sha256').update(JSON.stringify(entries)).digest('hex')}`,
+		entries,
+	}, null, 2)}\n`;
 }
 
 function isAllowedTemplateCreateTarget(relativePath: string): boolean {
@@ -532,6 +569,11 @@ export function getTemplateFiles(
 							readFileSync(selectedSourcePath, 'utf8'),
 							selectedSkills,
 						)
+					: selectedSourcePath && relativePath === '.mustflow/skills/catalog.v2.json'
+						? filterSkillRouteCatalogContent(
+								readFileSync(selectedSourcePath, 'utf8'),
+								selectedSkills,
+							)
 					: undefined;
 		const content =
 			selectedSourcePath && relativePath === '.mustflow/skills/INDEX.md'

@@ -1838,6 +1838,8 @@ argv = [
   ".mustflow/config/manifest.lock.toml",
   "REPO_FLOW.md",
   "src/cli/lib/templates.ts",
+  "tests/cli/check-skill-contracts.test.js",
+  "tests/cli/explain-skills.test.js",
   "tests/cli/package-template.test.js",
 ]
 cwd = "."
@@ -1907,6 +1909,53 @@ argv = [
   "git", "commit",
   "-m", "🔖 chore(release): prepare 2.137.1",
   "-m", "Publish the template route dependency filtering fix after the immutable 2.137.0 tag failed its release check.\n\nValidation: mf run test_release; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.fix_profile_route_catalog_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed profile-filtered route catalog fix and its regression test."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "REPO_FLOW.md",
+  "src/cli/lib/templates.ts",
+  "tests/cli/check-skill-contracts.test.js",
+  "tests/cli/explain-skills.test.js",
+  "tests/cli/package-template.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.fix_profile_route_catalog_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed profile-filtered route catalog fix."
+argv = [
+  "git", "commit",
+  "-m", "🐛 fix(templates): sync filtered route catalogs",
+  "-m", "Filter catalog entries and dependency references alongside routes.toml so profile installations retain a valid source fingerprint and pass strict validation.\n\nValidation: mf run test_related; mf run test; mf run mustflow_check",
 ]
 cwd = "."
 timeout_seconds = 120

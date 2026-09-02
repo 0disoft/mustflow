@@ -267,15 +267,30 @@ test('profile-filtered route metadata does not reference unavailable skills', as
 
 		assert.ok(routeFile?.content, `${profile} should include filtered route metadata`);
 		const routeReferences = [
-			...routeFile.content.matchAll(/(?:requires_skills|suggests_adjuncts|conflicts_with)\s*=\s*\[([^\]]*)\]/gu),
+			...routeFile.content.matchAll(/(?:requires_skills|suggests_adjuncts|conflicts_with|mutually_exclusive_with)\s*=\s*\[([^\]]*)\]/gu),
 			...routeFile.content.matchAll(/\bskill\s*=\s*"([a-z][a-z0-9-]+)"/gu),
 		].flatMap((match) => Array.from(match[1].matchAll(/"([a-z][a-z0-9-]+)"/gu), (skillMatch) => skillMatch[1]));
 		const unavailableReferences = routeReferences.filter((skillName) => !selectedSkillNames.has(skillName));
+		const catalogFile = selectedFiles.find((file) => file.relativePath === '.mustflow/skills/catalog.v2.json');
+		const catalog = JSON.parse(catalogFile?.content ?? 'null');
+		const catalogReferences = catalog.entries.flatMap((entry) => [
+			...entry.mutually_exclusive_with,
+			...entry.dependencies.requires_skills,
+			...entry.dependencies.suggests_adjuncts,
+			...entry.dependencies.conflicts_with,
+			...entry.dependencies.unlocks_on.map((rule) => rule.skill),
+		]);
 
 		assert.deepEqual(
 			[...new Set(unavailableReferences)],
 			[],
 			`${profile} route metadata should not reference unavailable skills`,
+		);
+		assert.deepEqual(catalog.entries.map((entry) => entry.skill), [...selectedSkillNames].sort());
+		assert.deepEqual(
+			[...new Set(catalogReferences.filter((skillName) => !selectedSkillNames.has(skillName)))],
+			[],
+			`${profile} route catalog should not reference unavailable skills`,
 		);
 	}
 });
