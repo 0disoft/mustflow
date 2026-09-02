@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.1 - 2026-09-02
+
+- Fixed profile-filtered template installs so route dependency lists and conditional unlocks no
+  longer reference specialist skills omitted from the selected profile.
+
 ## 2.137.0 - 2026-09-02
 
 - Reduced the default `minimal` profile from 231 skills to 64 while retaining common web and CLI
