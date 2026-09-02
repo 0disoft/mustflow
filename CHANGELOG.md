@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.2 - 2026-09-02
+
+- Kept the generated route catalog synchronized with profile-filtered routes and updated route
+  validation fixtures so reduced profiles pass the full npm release gate.
+
 ## 2.137.1 - 2026-09-02
 
 - Fixed profile-filtered template installs so route dependency lists and conditional unlocks no
