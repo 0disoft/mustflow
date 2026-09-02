@@ -2,9 +2,9 @@
 
 언어: [English](../../../README.md) · [한국어](README.md) · [中文](../zh/README.md) · [Español](../es/README.md) · [Français](../fr/README.md) · [हिन्दी](../hi/README.md)
 
-mustflow는 LLM 코딩 에이전트를 위한 저장소 로컬 작업 계약이자 검증 CLI입니다. 호스트 에이전트의 샌드박스, 승인 절차, 체크포인트, 모델, 도구 정책을 대체하지 않고, 에이전트가 저장소 안에서 명시된 읽기, 명령, 검증 경계를 따르도록 돕습니다.
+mustflow는 에이전트가 이 저장소에서 무엇을 먼저 읽고 어떤 명령을 실행할 수 있는지 정해 두는 CLI입니다. 샌드박스, 승인 절차, 체크포인트, 모델, 도구 정책은 에이전트를 실행하는 호스트가 계속 맡습니다.
 
-핵심 개념은 단순합니다. 사용자 프로젝트 루트에 `AGENTS.md`를 두고, 세부 작업 흐름은 `.mustflow/` 폴더 아래에 모읍니다. 에이전트는 `AGENTS.md`에서 시작해 저장소 명령 계약, 작업 스킬, 프로젝트 맥락, 검증 절차를 순차적으로 확인합니다.
+프로젝트 루트에는 `AGENTS.md`를 두고 자세한 작업 규칙은 `.mustflow/` 아래에 모읍니다. 에이전트는 `AGENTS.md`부터 읽은 뒤 등록된 명령, 필요한 스킬과 프로젝트 설명을 확인하고 검증 방법을 고릅니다.
 
 ## 에이전트 읽기 흐름
 
@@ -25,7 +25,7 @@ flowchart TD
 
 `read_order`는 필수 읽기 순서를 지정하며, `optional_read_order`와 `[context]`는 작업별 맥락 로딩을 관리합니다. `[refresh]`는 동일 지침을 언제 다시 읽을지 결정합니다.
 
-스킬 색인은 능동적인 작업 분기 단계입니다. 에이전트는 현재 작업을 `.mustflow/skills/INDEX.md`와 비교하고, 해당 범위를 수정하기 전에 적합한 `SKILL.md`를 읽습니다. 스킬은 절차만 안내하며, 명령 실행은 계속 `.mustflow/config/commands.toml`을 따릅니다.
+스킬 목록은 작업에 맞는 절차를 찾는 데 씁니다. 에이전트는 수정 전에 관련 `SKILL.md`를 읽습니다. 스킬·검색·지도는 참고용이고, 실제로 실행되는 명령은 `.mustflow/config/commands.toml`에 등록된 것뿐입니다.
 
 - 문서 사이트: <https://0disoft.github.io/mustflow/>
 - 저장소: <https://github.com/0disoft/mustflow>
@@ -54,7 +54,7 @@ mustflow는 프로젝트 자동 수정 도구나 특정 에이전트 제품 전�
 - 빌드 시스템, 테스트 실행기, 패키지 관리자, CI/CD 설정을 대체하지 않습니다.
 - GitHub, GitLab 등 플랫폼별 설정 파일을 기본 템플릿에 포함하지 않습니다.
 - `justfile`, `Makefile`, `Taskfile.yml`을 기본 생성하지 않습니다.
-- `mf dashboard`는 `.mustflow/config/preferences.toml`의 안전한 설정을 확인하고 수정하는 로컬 브라우저 UI를 실행하며, 기본 브라우저에서 엽니다. 화면 언어는 영어, 한국어, 중국어, 스페인어, 프랑스어, 힌디어 중 선택할 수 있습니다. 검증 옵션과 테스트 작성 선호값도 포함하며, 설정 저장 시 잠금 파일이 있으면 해당 항목을 맞춤 기준선으로 갱신합니다.
+- `mf dashboard`는 `.mustflow/config/preferences.toml` 설정을 확인하고 수정하는 로컬 화면을 기본 브라우저에서 엽니다. 화면 언어는 영어, 한국어, 중국어, 스페인어, 프랑스어, 힌디어 중 선택할 수 있습니다. 검증 옵션과 테스트 작성 선호값도 있으며, 잠금 파일이 있으면 저장한 설정을 새 기준값으로 기록합니다.
 
 ## 검토 중인 기능
 
@@ -151,7 +151,7 @@ your-project/
 
 `REPO_MAP.md`는 템플릿에서 복사하지 않으며, 필요할 때 `mf map --write`로 생성합니다. `.mustflow/cache/mustflow.sqlite` 역시 `mf index`로 생성 가능한 재생성 가능한 로컬 색인입니다.
 
-프로젝트에 이미 `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, `API.md` 같은 선택적 루트 Markdown 문서가 있다면, 저장소 맵은 이를 탐색 앵커로 활용할 수 있습니다. `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, `schema.prisma`처럼 용도가 명확한 기계 판독 계약 파일도 인식할 수 있습니다. `SSOT.json`처럼 모든 내용을 담는 이름은 기본 앵커로 보지 않습니다. 그럼에도 `mf init`은 프로젝트가 소유한 이러한 파일을 기본으로 생성하거나 덮어쓰지 않습니다.
+프로젝트에 `README.md`, `PROJECT.md`, `ROADMAP.md`, `DESIGN.md`, `GOVERNANCE.md`, `TESTING.md`, `DEPLOYMENT.md`, `ARCHITECTURE.md`, `API.md` 같은 루트 문서가 이미 있다면 저장소 맵은 파일을 찾을 때 이 문서부터 살펴봅니다. `project.contract.json`, `project.constants.json`, `design-tokens.json`, `openapi.yaml`, `asyncapi.yaml`, `schema.graphql`, `schema.prisma`처럼 용도가 분명한 JSON이나 스키마 파일도 인식합니다. `SSOT.json`처럼 모든 내용을 한데 담는 이름은 기본 출발점으로 삼지 않습니다. `mf init`은 프로젝트가 소유한 파일을 새로 만들거나 덮어쓰지 않습니다.
 
 ## 기본 흐름
 
@@ -195,21 +195,21 @@ mf run mustflow_update_apply
 | `mf init --merge` | 기존 `AGENTS.md`에 mustflow 관리 블록을 병합합니다. |
 | `mf init --force` | 충돌하는 파일을 백업 후 덮어씁니다. |
 | `mf check` | mustflow 파일, TOML 설정, 스킬 문서 형식을 검사합니다. |
-| `mf check --strict` | 문서 정체성, 스킬 메타데이터, 명령 경계, 보존 정책, 실행 출력 제한, 원본 로그, 비밀정보 흔적 등 추가 안전 조건까지 검사합니다. |
+| `mf check --strict` | 문서 메타데이터, 스킬 설정, 명령 제한, 파일 보존, 로그와 비밀정보 처리 같은 추가 조건까지 검사합니다. |
 | `mf check --strict --repo <path>` | 위임된 작업공간 저장소 하나와 해당 명령 조각만 엄격히 검사하며, 관련 없는 manifest 변경은 실패 대신 경고로 남깁니다. |
 | `mf doctor` | 현재 mustflow 루트를 읽기 전용으로 진단합니다. |
 | `mf api workspace-summary --json` | 코딩 에이전트와 외부 하네스가 쓰는 안정적인 읽기 전용 JSON 요약을 출력합니다. |
 | `mf api command-catalog --json` | 원본 실행 문자열을 노출하지 않고 command intent 가능 여부와 안전한 `mf run` 진입점을 출력합니다. |
 | `mf api serve --stdio` | 같은 읽기 전용 API 보고서를 stdin/stdout의 줄 단위 JSON 응답으로 제공합니다. |
-| `mf api verification-plan --changed --json` | 명령을 실행하지 않고 변경 파일에 대한 안정적인 읽기 전용 verification plan을 출력합니다. |
-| `mf api latest-evidence --json` | 원본 명령 출력 없이 bounded 최신 run 또는 verify evidence를 출력합니다. |
-| `mf api diff-risk --changed --json` | 변경 파일 risk, verification 요약, 읽기 전용 residual correction 신호를 작게 출력합니다. |
-| `mf api health --json` | 빠른 agent gate용 workspace health 보고서를 작게 출력합니다. |
+| `mf api verification-plan --changed --json` | 명령을 실행하지 않고 바뀐 파일에 필요한 검사를 JSON으로 보여줍니다. |
+| `mf api latest-evidence --json` | 원본 명령 출력은 빼고 가장 최근 `run` 또는 `verify` 결과를 JSON으로 보여줍니다. |
+| `mf api diff-risk --changed --json` | 변경 위험, 필요한 검사, 아직 남은 보완점을 짧게 보여줍니다. |
+| `mf api health --json` | 에이전트가 현재 작업공간의 통과·실패 상태를 바로 판단할 수 있는 짧은 보고서를 출력합니다. |
 | `mf evidence --changed` | 명령을 실행하지 않고 changed-file 검증 요구사항, 최신 evidence, receipt, 남은 gap을 요약합니다. |
-| `mf workspace status` | configured workspace root와 nested repository contract 준비 상태를 확인하며 부모가 자식에게 명령 권한을 부여하지 않습니다. |
-| `mf workspace command-catalog` | repository별 command intent 사용 가능 상태와 안전한 `mf run` 진입점을 원본 command string 없이 출력합니다. |
-| `mf workspace command-fragments` | repo farm orchestration용 repo별 `.mustflow/config/commands/*.toml` fragment를 파일 쓰기나 부모-자식 명령 권한 부여 없이 제안합니다. |
-| `mf workspace verify --changed --plan-only` | repository별 changed-file verification plan을 명령 실행 없이 출력합니다. |
+| `mf workspace status` | 설정된 작업공간과 하위 저장소가 명령을 받을 준비가 됐는지 확인합니다. 부모 설정이 자식 저장소의 명령을 대신 허용하지는 않습니다. |
+| `mf workspace command-catalog` | 저장소마다 사용할 수 있는 `intent`와 안전한 `mf run` 호출 방법을 보여줍니다. 원본 명령 문자열은 출력하지 않습니다. |
+| `mf workspace command-fragments` | 여러 저장소를 함께 관리할 때 저장소별 `.mustflow/config/commands/*.toml` 조각을 제안합니다. 파일을 쓰거나 자식 저장소의 명령을 허용하지는 않습니다. |
+| `mf workspace verify --changed --plan-only` | 명령을 실행하지 않고 저장소별로 바뀐 파일에 필요한 검사를 보여줍니다. |
 | `mf api locks --json` | 여러 세션 조율용 활성 `mf run` 잠금을 출력합니다. |
 | `mf context --json` | 읽기 순서, 명령 규칙, 제공 기능, 최근 실행 요약을 JSON으로 출력합니다. |
 | `mf map --stdout` | 현재 mustflow 루트의 탐색 지도를 터미널에 출력합니다. |
@@ -222,7 +222,7 @@ mf run mustflow_update_apply
 | `mf update --dry-run` | 템플릿 갱신 계획을 계산하며 파일은 쓰지 않습니다. |
 | `mf update --apply` | 차단 항목이 없을 때 템플릿 갱신을 적용합니다. |
 | `mf help <topic>` | 설치된 mustflow 도움말을 보여줍니다. |
-| `mf dashboard` | 안전한 mustflow 설정을 위한 로컬 대시보드를 실행하고 기본 브라우저에서 엽니다. 설정 저장 시 잠금 파일이 있으면 맞춤 기준선으로 갱신합니다. |
+| `mf dashboard` | mustflow 설정을 확인하고 수정하는 로컬 화면을 기본 브라우저에서 엽니다. 잠금 파일이 있으면 저장한 설정을 새 기준값으로 기록합니다. |
 | `mf version` | 설치된 mustflow 패키지 버전을 출력합니다. |
 | `mf version --check` | 설치된 버전을 npm 최신 게시 버전과 비교하고, 업데이트 명령을 출력합니다. |
 | `mf version-sources` | 감지된 패키지, 템플릿, 선언된 버전 기준 원본을 파일 수정 없이 확인합니다. |

@@ -3,7 +3,7 @@ title: mustflow
 description: mustflow가 관리하는 에이전트 작업 흐름을 설명하는 기술 문서입니다.
 ---
 
-mustflow는 LLM 코딩 에이전트를 위한 저장소 로컬 작업 계약이자 검증 계층입니다. 호스트 에이전트의 샌드박스, 승인 절차, 체크포인트, 모델, 도구 정책을 대체하지 않고, 필수 읽기 순서, 명령 계약, 변경 분류, 실행 없는 검증 계획, 명령 실행 기록을 함께 설치합니다.
+mustflow는 에이전트가 이 저장소에서 무엇을 먼저 읽고 어떤 명령을 실행할 수 있는지 정해 두는 도구입니다. 작업 규칙과 명령 목록, 변경에 맞는 검사 방법, 실행 결과를 프로젝트 안에 함께 보관합니다. 샌드박스와 승인 절차 같은 호스트 정책은 그대로 따릅니다.
 
 ## 첫 흐름
 
@@ -33,16 +33,16 @@ npx mf verify --from-classification .mustflow/state/change-classification.json -
 npx mf verify --from-classification .mustflow/state/change-classification.json --json
 ```
 
-`mf classify`는 변경된 경로를 공개 표면과 검증 사유로 분류합니다. `mf verify --plan-only --json`은 그 사유를 `.mustflow/config/commands.toml`의 `required_after` 메타데이터와 연결하되 명령은 실행하지 않습니다. 실제로 실행 가능한 명령은 여전히 선언된 명령 계약을 통과해야 합니다. 즉 구성 완료 상태(`configured`), 일회성 실행(`oneshot`), 에이전트 실행 허용(`agent_allowed`), 닫힌 표준 입력(`stdin = "closed"`), 제한 시간, 명시적인 명령 소스가 필요합니다.
+`mf classify`는 바뀐 파일이 문서인지 코드인지 가르고 어떤 검사가 필요한지 찾습니다. `mf verify --plan-only --json`은 그 결과를 `.mustflow/config/commands.toml`의 `required_after`와 연결해 실행할 검사만 보여줍니다. 명령을 실제로 실행하려면 `configured`, `oneshot`, `agent_allowed`, `stdin = "closed"`, 제한 시간, 명시적인 명령 소스가 모두 있어야 합니다.
 
 ## 계약 구성
 
-- 필수 읽기 순서: 에이전트는 `AGENTS.md`에서 시작해 설정된 작업 흐름 파일을 순서대로 읽습니다.
-- 명령 계약: 실행 가능한 명령 권한은 `commands.toml`에서만 나옵니다.
-- 변경 수용: `classify`와 `verify --plan-only`는 명령 실행 전에 왜 검증이 필요한지 설명합니다.
-- 실행 기록: `mf run`과 실행형 `mf verify` 흐름은 `.mustflow/state/` 아래에 최신 실행 기록을 남깁니다.
-- 탐색 힌트: `REPO_MAP.md`, SQLite 검색 결과, 소스 앵커는 파일을 찾는 데만 쓰입니다. 명령 권한을 주거나, 검증을 생략하거나, 작업 흐름 규칙을 바꾸지 않습니다.
-- 대시보드: 대시보드는 상태 확인, 복사, 설명을 위한 화면입니다. 명령 실행, 수정 적용, 에이전트 시작, 병합, 푸시, 자동 파일 갱신은 하지 않습니다.
+- 읽는 순서: 에이전트는 `AGENTS.md`부터 시작해 필요한 작업 규칙을 차례로 확인합니다.
+- 등록된 명령: 실제로 실행되는 명령은 `commands.toml`에 있는 것뿐입니다.
+- 검사 선택: `classify`와 `verify --plan-only`는 바뀐 파일에 어떤 검사가 필요한지 설명합니다.
+- 실행 결과: `mf run`과 실행형 `mf verify`는 최근 결과를 `.mustflow/state/` 아래에 남깁니다.
+- 파일 찾기: `REPO_MAP.md`, SQLite 검색 결과, 소스 앵커는 관련 파일을 찾는 데 씁니다.
+- 대시보드: 상태와 설정을 확인하는 화면입니다. 명령 실행, 수정 적용, 에이전트 시작, 병합, 푸시는 하지 않습니다.
 
 ## 기본 구조
 

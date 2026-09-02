@@ -1728,3 +1728,50 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.human_facing_docs_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage only the reviewed human-facing README and documentation landing-page copy with its workflow metadata."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  ".mustflow/review/docs.toml",
+  "README.md",
+  "REPO_FLOW.md",
+  "docs/i18n/ko/README.md",
+  "docs-site/src/content/docs/ko/index.md",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.human_facing_docs_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed human-facing Mustflow introduction and Korean command descriptions."
+argv = [
+  "git", "commit",
+  "-m", "📝 docs: make the introduction easier to read",
+  "-m", "Rewrite the Korean README command table and documentation landing page in direct language, simplify the English introduction, and preserve Mustflow contract keys and specification wording.\n\nValidation: mf run docs_validate_fast; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
