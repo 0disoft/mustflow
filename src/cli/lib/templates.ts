@@ -332,8 +332,7 @@ function filterUnavailableSkillReferences(
 function filterSkillRouteMetadataContent(content: string, selectedSkills: readonly string[]): string {
 	const selectedSkillSet = new Set(selectedSkills);
 	let keepCurrentRoute = true;
-
-	return content
+	const selectedRouteContent = content
 		.split(/\r?\n/u)
 		.filter((line) => {
 			const match = /^\[routes\."([^"]+)"\]\s*$/u.exec(line.trim());
@@ -346,6 +345,46 @@ function filterSkillRouteMetadataContent(content: string, selectedSkills: readon
 			return keepCurrentRoute;
 		})
 		.join('\n');
+	const lines = selectedRouteContent.split('\n');
+	const filteredLines: string[] = [];
+	let filteringUnlockRules = false;
+
+	for (const line of lines) {
+		const dependencyList = /^(\s*)(requires_skills|suggests_adjuncts|conflicts_with)\s*=\s*\[(.*)\]\s*$/u.exec(line);
+
+		if (dependencyList) {
+			const [, indent, key, listContent] = dependencyList;
+			const availableSkills = Array.from(listContent.matchAll(/"([a-z][a-z0-9-]+)"/gu), (match) => match[1])
+				.filter((skillName) => selectedSkillSet.has(skillName));
+
+			filteredLines.push(`${indent}${key} = [${availableSkills.map((skillName) => `"${skillName}"`).join(', ')}]`);
+			continue;
+		}
+
+		if (/^\s*unlocks_on\s*=\s*\[\s*$/u.test(line)) {
+			filteringUnlockRules = true;
+			filteredLines.push(line);
+			continue;
+		}
+
+		if (filteringUnlockRules) {
+			if (/^\s*\]\s*$/u.test(line)) {
+				filteringUnlockRules = false;
+				filteredLines.push(line);
+				continue;
+			}
+
+			const referencedSkill = /\bskill\s*=\s*"([a-z][a-z0-9-]+)"/u.exec(line)?.[1];
+
+			if (referencedSkill && !selectedSkillSet.has(referencedSkill)) {
+				continue;
+			}
+		}
+
+		filteredLines.push(line);
+	}
+
+	return filteredLines.join('\n');
 }
 
 function isAllowedTemplateCreateTarget(relativePath: string): boolean {

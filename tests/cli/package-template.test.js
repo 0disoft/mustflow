@@ -252,6 +252,34 @@ test('profile-filtered skill documents do not point agents at unavailable skill 
 	assert.match(structuredConfigSkill.content, /the closest installed route for this scope/u);
 });
 
+test('profile-filtered route metadata does not reference unavailable skills', async () => {
+	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
+	const template = templatesModule.getDefaultTemplate();
+
+	for (const profile of template.manifest.profiles) {
+		const selectedSkillNames = new Set(template.manifest.skillProfiles[profile]);
+		const selectedFiles = templatesModule.getTemplateFiles(
+			template,
+			template.manifest.defaultLocale,
+			profile,
+		);
+		const routeFile = selectedFiles.find((file) => file.relativePath === '.mustflow/skills/routes.toml');
+
+		assert.ok(routeFile?.content, `${profile} should include filtered route metadata`);
+		const routeReferences = [
+			...routeFile.content.matchAll(/(?:requires_skills|suggests_adjuncts|conflicts_with)\s*=\s*\[([^\]]*)\]/gu),
+			...routeFile.content.matchAll(/\bskill\s*=\s*"([a-z][a-z0-9-]+)"/gu),
+		].flatMap((match) => Array.from(match[1].matchAll(/"([a-z][a-z0-9-]+)"/gu), (skillMatch) => skillMatch[1]));
+		const unavailableReferences = routeReferences.filter((skillName) => !selectedSkillNames.has(skillName));
+
+		assert.deepEqual(
+			[...new Set(unavailableReferences)],
+			[],
+			`${profile} route metadata should not reference unavailable skills`,
+		);
+	}
+});
+
 test('default template locales use localized workflow docs and canonical English skills', async () => {
 	const templatesModule = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'templates.js')).href);
 	const template = templatesModule.getDefaultTemplate();
