@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.4 - 2026-09-02
+
+- Finished synchronizing every authoring-skill contract with the reduced minimal profile so the
+  Linux npm release gate no longer expects opt-in specialist skills in the default installation.
+
 ## 2.137.3 - 2026-09-02
 
 - Aligned specialist automation, browser, agent-runtime, and memory skill profile tests with the
