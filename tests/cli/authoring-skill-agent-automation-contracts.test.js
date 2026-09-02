@@ -104,11 +104,12 @@ test('agent runtime multi-worker review requires independent work and central ad
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-runtime-multi-worker-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."agent-runtime-multi-worker-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 77/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-runtime-multi-worker-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"agent-runtime-multi-worker-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-runtime-multi-worker-review"/u);
 	assert.match(i18n, /\[documents\."skill\.agent-runtime-multi-worker-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -139,11 +140,12 @@ test('agent runtime isolation keeps durable state outside short-lived authority'
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-runtime-isolation-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."agent-runtime-isolation-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 78/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-runtime-isolation-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"agent-runtime-isolation-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-runtime-isolation-review"/u);
 	assert.match(i18n, /\[documents\."skill\.agent-runtime-isolation-review"\][\s\S]*?revision = 1/u);
 });
 
@@ -361,11 +363,12 @@ test('browser automation reliability review rejects click scripts without state 
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/browser-automation-reliability-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"browser-automation-reliability-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"browser-automation-reliability-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.browser-automation-reliability-review"\][\s\S]*?revision = 2/u);
 });
@@ -532,11 +535,12 @@ test('agent memory and context governance keeps derived memory scoped, fresh, an
 	assert.match(routes, /\[routes\."agent-memory-context-governance-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 74/u);
 	assert.match(routes, /"persistent-memory"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-memory-context-governance-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"agent-memory-context-governance-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-memory-context-governance-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.agent-memory-context-governance-review"\][\s\S]*?revision = 1/u);
 });
