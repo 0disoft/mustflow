@@ -49,79 +49,36 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'router.toml')));
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'routes.toml')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'code-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-change-safety', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'source-anchor-authoring', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-design-guard', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-maintenance', 'SKILL.md')));
-		assert.ok(
-			existsSync(path.join(projectPath, '.mustflow', 'skills', 'test-suite-value-pruning-review', 'SKILL.md')),
-		);
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'vertical-slice-tdd', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'version-freshness-check', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'security-flow-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'module-boundary-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'change-blast-radius-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'business-rule-leakage-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'payment-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'credit-ledger-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-misuse-resistance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'third-party-api-integration-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'http-api-semantics-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-access-control-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'file-upload-security-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'error-message-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'memory-lifetime-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'desktop-memory-footprint-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'hot-path-performance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'api-request-performance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'web-render-performance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'core-web-vitals-field-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'image-delivery-performance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'client-bundle-pruning-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frame-render-performance-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'motion-system-contract-review', 'SKILL.md')));
-		assert.ok(
-			existsSync(
-				path.join(projectPath, '.mustflow', 'skills', 'desktop-background-process-stability-review', 'SKILL.md'),
-			),
-		);
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'desktop-auto-update-safety-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'split-refactor-residual-path-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-state-ownership-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-state-resurrection-review', 'SKILL.md')));
-		assert.ok(
-			existsSync(
-				path.join(projectPath, '.mustflow', 'skills', 'information-visualization-integrity-review', 'SKILL.md'),
-			),
-		);
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-stress-layout-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-accessibility-tree-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-localization-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'website-task-friction-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'cache-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'quadratic-scan-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'type-state-modeling-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'race-condition-review', 'SKILL.md')));
-		assert.ok(
-			existsSync(path.join(projectPath, '.mustflow', 'skills', 'native-crash-forensics-review', 'SKILL.md')),
-		);
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'concurrency-invariant-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'failure-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'idempotency-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'observability-debuggability-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'incident-triage-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'deployment-rollout-safety-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'retry-policy-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'queue-processing-integrity-review', 'SKILL.md')));
-		assert.ok(
-			existsSync(path.join(projectPath, '.mustflow', 'skills', 'transaction-boundary-integrity-review', 'SKILL.md')),
-		);
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'testability-boundary-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-query-bottleneck-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-json-modeling-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'deletion-lifecycle-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'database-lock-contention-review', 'SKILL.md')));
+		for (const skillName of [
+			'code-review',
+			'database-change-safety',
+			'source-anchor-authoring',
+			'test-maintenance',
+			'security-flow-review',
+			'change-blast-radius-review',
+			'payment-integrity-review',
+			'credit-ledger-integrity-review',
+			'file-upload-security-review',
+			'idempotency-integrity-review',
+			'retry-policy-integrity-review',
+			'queue-processing-integrity-review',
+			'transaction-boundary-integrity-review',
+			'deletion-lifecycle-review',
+		]) {
+			assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', skillName, 'SKILL.md')));
+		}
+		for (const skillName of [
+			'test-design-guard',
+			'vertical-slice-tdd',
+			'module-boundary-review',
+			'api-misuse-resistance-review',
+			'memory-lifetime-review',
+			'frontend-state-ownership-review',
+			'native-crash-forensics-review',
+			'database-query-bottleneck-review',
+		]) {
+			assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', skillName, 'SKILL.md')), false);
+		}
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'docs-prose-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'external-skill-intake', 'SKILL.md')), false);
 		assert.equal(
@@ -137,7 +94,7 @@ test('copies the default agent workflow into an empty project', () => {
 			existsSync(path.join(projectPath, '.mustflow', 'skills', 'search-ad-content-authoring', 'SKILL.md')),
 			false,
 		);
-		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')), false);
+		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'skill-authoring', 'SKILL.md')));
 		assert.equal(
 			existsSync(path.join(projectPath, '.mustflow', 'skills', 'frontend-render-stability', 'SKILL.md')),
 			false,
@@ -147,14 +104,18 @@ test('copies the default agent workflow into an empty project', () => {
 			false,
 		);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-reliability-change', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'backend-log-evidence-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'prompt-contract-quality-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-hallucination-control-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-token-cost-control-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-response-latency-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'agent-execution-control-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'agent-eval-integrity-review', 'SKILL.md')));
-		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'skills', 'support-surface-advisor', 'SKILL.md')));
+		for (const skillName of [
+			'backend-log-evidence-review',
+			'prompt-contract-quality-review',
+			'llm-hallucination-control-review',
+			'llm-token-cost-control-review',
+			'llm-response-latency-review',
+			'agent-execution-control-review',
+			'agent-eval-integrity-review',
+			'support-surface-advisor',
+		]) {
+			assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', skillName, 'SKILL.md')), false);
+		}
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'llm-service-ux-review', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'ui-quality-gate', 'SKILL.md')), false);
 		assert.equal(existsSync(path.join(projectPath, '.mustflow', 'skills', 'visual-review-artifact', 'SKILL.md')), false);
@@ -246,93 +207,44 @@ test('copies the default agent workflow into an empty project', () => {
 		assert.match(skillsIndex, /### Architecture Patterns/);
 		assert.match(skillsIndex, /\| UI and Assets \|/);
 		assert.match(skillsIndex, /### UI and Assets/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/code-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/database-change-safety\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/database-json-modeling-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/deletion-lifecycle-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/database-lock-contention-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/cache-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/security-flow-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/module-boundary-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/change-blast-radius-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/business-rule-leakage-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/payment-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/third-party-api-integration-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/api-access-control-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/file-upload-security-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-memory-footprint-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/api-request-performance-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/race-condition-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/failure-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/idempotency-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/backend-log-evidence-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/incident-triage-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/deployment-rollout-safety-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/testability-boundary-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/test-design-guard\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/test-suite-value-pruning-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/web-render-performance-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/motion-system-contract-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-background-process-stability-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/desktop-auto-update-safety-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/split-refactor-residual-path-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/ui-state-resurrection-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/information-visualization-integrity-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/frontend-localization-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/website-task-friction-review\/SKILL\.md/);
-		assert.match(skillsIndex, /\.mustflow\/skills\/vertical-slice-tdd\/SKILL\.md/);
+		for (const skillName of [
+			'code-review',
+			'database-change-safety',
+			'deletion-lifecycle-review',
+			'security-flow-review',
+			'change-blast-radius-review',
+			'payment-integrity-review',
+			'credit-ledger-integrity-review',
+			'file-upload-security-review',
+			'idempotency-integrity-review',
+			'retry-policy-integrity-review',
+			'queue-processing-integrity-review',
+			'transaction-boundary-integrity-review',
+		]) {
+			assert.match(skillsIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+		}
+		for (const skillName of [
+			'database-query-bottleneck-review',
+			'module-boundary-review',
+			'api-misuse-resistance-review',
+			'native-crash-forensics-review',
+			'test-design-guard',
+			'web-render-performance-review',
+			'frontend-state-ownership-review',
+		]) {
+			assert.doesNotMatch(skillsIndex, new RegExp(`\\.mustflow/skills/${skillName}/SKILL\\.md`, 'u'));
+		}
 
 		const skillRoutes = readText(path.join(projectPath, '.mustflow', 'skills', 'routes.toml'));
 		assert.match(skillRoutes, /\[routes\."code-review"\]/);
 		assert.match(skillRoutes, /category = "general_code"/);
-		assert.match(skillRoutes, /\[routes\."desktop-memory-footprint-review"\]/);
-		assert.match(skillRoutes, /\[routes\."api-request-performance-review"\]/);
-		assert.match(skillRoutes, /\[routes\."web-render-performance-review"\]/);
-		assert.match(skillRoutes, /\[routes\."core-web-vitals-field-review"\]/);
-		assert.match(skillRoutes, /\[routes\."image-delivery-performance-review"\]/);
-		assert.match(skillRoutes, /\[routes\."client-bundle-pruning-review"\]/);
-		assert.match(skillRoutes, /\[routes\."frame-render-performance-review"\]/);
-		assert.match(skillRoutes, /\[routes\."motion-system-contract-review"\]/);
-		assert.match(skillRoutes, /\[routes\."desktop-background-process-stability-review"\]/);
-		assert.match(skillRoutes, /\[routes\."desktop-auto-update-safety-review"\]/);
-		assert.match(skillRoutes, /\[routes\."split-refactor-residual-path-review"\]/);
-		assert.match(skillRoutes, /\[routes\."frontend-state-ownership-review"\]/);
-		assert.match(skillRoutes, /\[routes\."ui-state-resurrection-review"\]/);
-		assert.match(skillRoutes, /\[routes\."information-visualization-integrity-review"\]/);
-		assert.match(skillRoutes, /\[routes\."native-crash-forensics-review"\]/);
-		assert.match(skillRoutes, /\[routes\."frontend-stress-layout-review"\]/);
-		assert.match(skillRoutes, /\[routes\."frontend-accessibility-tree-review"\]/);
-		assert.match(skillRoutes, /\[routes\."frontend-localization-review"\]/);
-		assert.match(skillRoutes, /\[routes\."website-task-friction-review"\]/);
 		assert.match(skillRoutes, /\[routes\."idempotency-integrity-review"\]/);
-		assert.match(skillRoutes, /\[routes\."backend-log-evidence-review"\]/);
-		assert.match(skillRoutes, /\[routes\."observability-debuggability-review"\]/);
-		assert.match(skillRoutes, /\[routes\."incident-triage-review"\]/);
-		assert.match(skillRoutes, /\[routes\."deployment-rollout-safety-review"\]/);
 		assert.match(skillRoutes, /\[routes\."retry-policy-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."queue-processing-integrity-review"\]/);
 		assert.match(skillRoutes, /\[routes\."transaction-boundary-integrity-review"\]/);
-		assert.match(skillRoutes, /\[routes\."database-json-modeling-review"\]/);
 		assert.match(skillRoutes, /\[routes\."deletion-lifecycle-review"\]/);
-		assert.match(skillRoutes, /\[routes\."database-lock-contention-review"\]/);
+		assert.doesNotMatch(skillRoutes, /\[routes\."native-crash-forensics-review"\]/);
+		assert.doesNotMatch(skillRoutes, /\[routes\."frontend-state-ownership-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."architecture-deepening-review"\]/);
 		assert.doesNotMatch(skillRoutes, /\[routes\."web-asset-optimization"\]/);
 

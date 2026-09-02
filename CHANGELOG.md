@@ -6,6 +6,11 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.5 - 2026-09-02
+
+- Corrected the final Linux-only operations-skill profile counts exposed by the full npm publish
+  gate after the minimal profile reduction.
+
 ## 2.137.4 - 2026-09-02
 
 - Finished synchronizing every authoring-skill contract with the reduced minimal profile so the

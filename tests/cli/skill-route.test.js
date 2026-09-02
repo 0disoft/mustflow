@@ -826,7 +826,7 @@ test('keeps LLM token cost routes discoverable without reading the full index in
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		initProject(projectPath, 'patterns');
 
 		const result = runCli(projectPath, [
 			'skill',

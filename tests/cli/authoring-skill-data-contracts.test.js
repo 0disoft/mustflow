@@ -458,7 +458,7 @@ test('ubuntu server operations review keeps host state owners and LTS gates expl
 		manifest,
 		/"\.mustflow\/skills\/ubuntu-server-operations-review\/references\/ubuntu-lts-operations-checklist\.md"/u,
 	);
-	assert.equal((manifest.match(/"ubuntu-server-operations-review"/gu) ?? []).length, 6);
+	assert.equal((manifest.match(/"ubuntu-server-operations-review"/gu) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, 'ubuntu-server-operations-review', 1);
 	assert.match(
@@ -544,7 +544,7 @@ test('coolify operations review keeps control-plane status separate from product
 		manifest,
 		/"\.mustflow\/skills\/coolify-operations-review\/references\/coolify-production-checklist\.md"/u,
 	);
-	assert.equal((manifest.match(/"coolify-operations-review"/gu) ?? []).length, 6);
+	assert.equal((manifest.match(/"coolify-operations-review"/gu) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, 'coolify-operations-review', 1);
 	assert.match(
