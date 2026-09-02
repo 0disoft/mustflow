@@ -104,11 +104,12 @@ test('jurisdictional product compliance review binds behavior, policy, enforceme
 		'release_risk',
 	]);
 	assert.match(manifest, new RegExp(`"\\.mustflow/skills/${skillName}/SKILL\\.md"`, 'u'));
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], new RegExp(`"${skillName}"`, 'u'));
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', new RegExp(`"${skillName}"`, 'u'));
 	assertSkillsIndexRevision(i18n);
 	assert.match(
 		i18n,
@@ -179,7 +180,7 @@ test('payment provider underwriting review binds truthful facts, approved scope,
 		'release_risk',
 	]);
 	assert.match(manifest, new RegExp(`"\\.mustflow/skills/${skillName}/SKILL\\.md"`, 'u'));
-	assert.equal((manifest.match(new RegExp(`"${skillName}"`, 'gu')) ?? []).length, 6);
+	assert.equal((manifest.match(new RegExp(`"${skillName}"`, 'gu')) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 1);
 });
@@ -241,11 +242,12 @@ test('admin control plane safety review treats backoffice tools as production co
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/admin-control-plane-safety-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"admin-control-plane-safety-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"admin-control-plane-safety-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 4/u);
 });

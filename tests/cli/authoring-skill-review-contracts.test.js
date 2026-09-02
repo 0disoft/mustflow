@@ -75,11 +75,12 @@ test('bug claim evidence gate keeps defect adjudication bounded and orthogonal',
 	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/SKILL\.md"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/references\/classification\.md"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/bug-claim-evidence-gate\/references\/domain-extensions\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"bug-claim-evidence-gate"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"bug-claim-evidence-gate"/u);
 	assertI18nSkillDocument(i18n, skill, 1);
 	assertSkillsIndexRevision(i18n);
 
@@ -611,11 +612,12 @@ test('notification delivery integrity review keeps message intent delivery and s
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/notification-delivery-integrity-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"notification-delivery-integrity-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"notification-delivery-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.notification-delivery-integrity-review"\][\s\S]*?revision = 1/u);
 });
@@ -667,11 +669,12 @@ test('agent operational hygiene review keeps merge, shell, encoding, and residue
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-operational-hygiene-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"agent-operational-hygiene-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-operational-hygiene-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.agent-operational-hygiene-review"\][\s\S]*?revision = 3/u);
 });

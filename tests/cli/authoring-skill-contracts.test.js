@@ -605,12 +605,13 @@ test('support surface advisor scopes product support contracts', () => {
 		new RegExp(`applies_to_reasons = \\[${supportSurfaceRouteReasons}\\]`, 'u'),
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/support-surface-advisor\/SKILL\.md"/u);
-	for (const profileName of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profileName of ['patterns', 'oss', 'team', 'product', 'library']) {
 		assert.match(
 			manifest,
 			new RegExp(`${profileName} = \\[[\\s\\S]*?"support-surface-advisor"`, 'u'),
 		);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"support-surface-advisor"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.support-surface-advisor"\][\s\S]*?revision = 1/u);
 });

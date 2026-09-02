@@ -598,12 +598,13 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 		],
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/async-timing-boundary-review\/SKILL\.md"/u);
-	for (const profileName of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profileName of ['patterns', 'oss', 'team', 'product', 'library']) {
 		assert.match(
 			manifest,
 			new RegExp(`${profileName} = \\[[\\s\\S]*?"async-timing-boundary-review"`, 'u'),
 		);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"async-timing-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 3/u);
 });

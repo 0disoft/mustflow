@@ -104,9 +104,10 @@ test('connection lifecycle integrity skill keeps transport, request, body, and s
 		manifest,
 		/"\.mustflow\/skills\/connection-lifecycle-integrity-review\/references\/node-stream-transport-lifecycle-checklist\.md"/u,
 	);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		assert.match(profileBlock(profile), /"connection-lifecycle-integrity-review"/u);
 	}
+	assert.doesNotMatch(profileBlock('minimal'), /"connection-lifecycle-integrity-review"/u);
 	assertI18nSkillDocument(i18n, skillName, 2);
 	assertSkillsIndexRevision(i18n);
 });
@@ -152,7 +153,7 @@ test('native crash forensics separates detection site from exact artifact and ca
 	);
 	assert.match(routes, /"코어-덤프"/u);
 	assert.match(routes, /"crash-consistency-only"/u);
-	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 7);
+	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 6);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 3);
 });

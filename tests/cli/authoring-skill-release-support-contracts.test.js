@@ -609,9 +609,10 @@ test('vendor portability exit readiness proves reconstruction instead of banning
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/vendor-portability-exit-readiness-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		assert.ok(profileBlock(profile).includes(`"${skillName}"`), `${profile} profile missing skill`);
 	}
+	assert.ok(!profileBlock('minimal').includes(`"${skillName}"`), 'minimal profile unexpectedly includes skill');
 	assertSkillsIndexRevision(i18n);
 	assert.match(
 		i18n,

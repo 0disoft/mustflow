@@ -104,11 +104,12 @@ test('small service platform architecture review keeps product factories registr
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/small-service-platform-architecture-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"small-service-platform-architecture-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"small-service-platform-architecture-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.small-service-platform-architecture-review"\][\s\S]*?revision = 1/u);
 });
@@ -194,11 +195,12 @@ test('AI product readiness review gates AI features before specialist LLM skills
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/ai-product-readiness-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"ai-product-readiness-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"ai-product-readiness-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.ai-product-readiness-review"\][\s\S]*?revision = 1/u);
 });
@@ -485,11 +487,12 @@ test('LLM model routing review prices accepted outcomes and fails safe on unsupp
 	assert.match(skillIndex, /\.mustflow\/skills\/llm-model-routing-integrity-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."llm-model-routing-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 72/u);
 	assert.match(manifest, /"\.mustflow\/skills\/llm-model-routing-integrity-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"llm-model-routing-integrity-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"llm-model-routing-integrity-review"/u);
 	assert.match(i18n, /\[documents\."skill\.llm-model-routing-integrity-review"\][\s\S]*?revision = 2/u);
 });
 

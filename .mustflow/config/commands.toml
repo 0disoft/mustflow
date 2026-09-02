@@ -2105,3 +2105,55 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.fix_all_minimal_profile_contracts_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Stage the reviewed minimal-profile contract synchronization tests."
+argv = [
+  "git", "add", "--",
+  ".mustflow/config/commands.toml",
+  ".mustflow/config/manifest.lock.toml",
+  "REPO_FLOW.md",
+  "tests/cli/authoring-skill-actionable-feedback-contracts.test.js",
+  "tests/cli/authoring-skill-architecture-ai-contracts.test.js",
+  "tests/cli/authoring-skill-concurrency-contracts.test.js",
+  "tests/cli/authoring-skill-contracts.test.js",
+  "tests/cli/authoring-skill-frontend-contracts.test.js",
+  "tests/cli/authoring-skill-release-support-contracts.test.js",
+  "tests/cli/authoring-skill-review-contracts.test.js",
+  "tests/cli/authoring-skill-security-integrity-contracts.test.js",
+  "tests/cli/authoring-skill-systems-contracts.test.js",
+]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]
+
+[intents.fix_all_minimal_profile_contracts_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Commit the reviewed minimal-profile contract synchronization tests."
+argv = [
+  "git", "commit",
+  "-m", "✅ test(templates): finish minimal profile contract sync",
+  "-m", "Align specialist-skill expectations with the intentionally slim minimal profile across every authoring contract suite.\n\nValidation: mf run test_related; mf run mustflow_check",
+]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit"]

@@ -235,11 +235,12 @@ test('async operation UX review keeps progress, control, and completion truthful
 	]);
 	assert.match(routes, /suggests_adjuncts = \["cache-integrity-review", "frontend-state-ownership-review"\]/u);
 	assert.match(manifest, /"\.mustflow\/skills\/async-operation-ux-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"async-operation-ux-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"async-operation-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 2);
 });
@@ -292,11 +293,12 @@ test('mobile interaction UX review preserves native platform semantics and lifec
 	]);
 	assert.match(routes, /positive_terms = \["android", "deep-link", "dismiss", "flutter", "ios"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/mobile-interaction-ux-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"mobile-interaction-ux-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"mobile-interaction-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 2);
 });
@@ -347,11 +349,12 @@ test('large-screen adaptive UX review preserves workspace continuity across pane
 	assert.match(routes, /positive_terms = \["adaptive-layout", "desktop-windowed-mobile"/u);
 	assert.match(routes, /"대화면", "멀티윈도", "분할화면", "태블릿"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/large-screen-adaptive-ux-review\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"large-screen-adaptive-ux-review"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"large-screen-adaptive-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName, 1);
 });
@@ -400,12 +403,16 @@ test('split refactor residual path review catches old execution paths after file
 		'data_change',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/split-refactor-residual-path-review\/SKILL\.md"/u);
-	for (const profileName of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profileName of ['patterns', 'oss', 'team', 'product', 'library']) {
 		assert.match(
 			manifest,
 			new RegExp(`${profileName} = \\[[\\s\\S]*?"split-refactor-residual-path-review"`, 'u'),
 		);
 	}
+	assert.doesNotMatch(
+		/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '',
+		/"split-refactor-residual-path-review"/u,
+	);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.split-refactor-residual-path-review"\][\s\S]*?revision = 1/u);
 });
@@ -546,7 +553,7 @@ test('information visualization integrity review keeps visual form tied to reade
 		'web_asset_change',
 	]);
 	assert.match(routes, /"차트"/u);
-	assert.equal((manifest.match(/information-visualization-integrity-review/gu) ?? []).length, 7);
+	assert.equal((manifest.match(/information-visualization-integrity-review/gu) ?? []).length, 6);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.information-visualization-integrity-review"\][\s\S]*?revision = 2/u);
 });
@@ -796,11 +803,15 @@ test('frontend component library review treats design systems as public API plat
 		'release_risk',
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-component-library-review\/SKILL\.md"/u);
-	for (const profileName of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profileName of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`${profileName} = \\[([\\s\\S]*?)\\]`, 'u').exec(manifest);
 		assert.ok(profileMatch, `missing ${profileName} profile`);
 		assert.match(profileMatch[1], /"frontend-component-library-review"/u);
 	}
+	assert.doesNotMatch(
+		/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '',
+		/"frontend-component-library-review"/u,
+	);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.frontend-component-library-review"\][\s\S]*?revision = 1/u);
 });

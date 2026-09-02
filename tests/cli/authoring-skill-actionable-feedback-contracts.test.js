@@ -46,11 +46,12 @@ test('actionable feedback keeps judgment, evidence, correction, and completion c
 		/\[routes\."evidence-backed-actionable-feedback"\]\r?\ncategory = "docs_release"\r?\nroute_type = "primary"\r?\npriority = 72/u,
 	);
 	assert.match(manifest, /"\.mustflow\/skills\/evidence-backed-actionable-feedback\/SKILL\.md"/u);
-	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+	for (const profile of ['patterns', 'oss', 'team', 'product', 'library']) {
 		const profileMatch = new RegExp(`^${profile} = \\[([\\s\\S]*?)^\\]`, 'mu').exec(manifest);
 		assert.ok(profileMatch, `missing ${profile} profile`);
 		assert.match(profileMatch[1], /"evidence-backed-actionable-feedback"/u);
 	}
+	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"evidence-backed-actionable-feedback"/u);
 	const fixtureIds = new Set(routeFixtures.cases.map((entry) => entry.id));
 	assert.ok(fixtureIds.has('evidence-backed-actionable-feedback-korean'));
 	assert.ok(fixtureIds.has('consequence-driven-document-review-korean'));
