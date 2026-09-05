@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -232,15 +232,7 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 
 function writeManifestLockAtomically(projectRoot: string, content: string): void {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
-	const tempRelativePath = `.mustflow/config/.manifest.lock.${process.pid}.${randomUUID()}.tmp`;
-	const tempPath = path.join(projectRoot, tempRelativePath);
-	ensureFileTargetInsideWithoutSymlinks(projectRoot, tempPath, { allowMissingLeaf: true });
-	try {
-		writeUtf8FileInsideWithoutSymlinks(projectRoot, tempPath, content);
-		renameSync(tempPath, lockPath);
-	} finally {
-		rmSync(tempPath, { force: true });
-	}
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, content);
 }
 
 export function parseManifestLockCustomizationPlan(value: unknown): ManifestLockCustomizationPlan {

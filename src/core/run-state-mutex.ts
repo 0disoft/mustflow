@@ -304,6 +304,12 @@ function acquireRunStateMutex(
 				throw error;
 			}
 
+			const observedOwner = readMutexOwner(ownerPath);
+			if (observedOwner && !isProcessLive(observedOwner.pid) &&
+				recoverStaleMutexWithOwner(mutex, ownerPath, observedOwner)) {
+				continue;
+			}
+
 			if (Date.now() - startedAt >= waitMs) {
 				const owner = readMutexOwner(ownerPath);
 				if (owner) {

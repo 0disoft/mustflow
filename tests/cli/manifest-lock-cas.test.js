@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,6 +14,33 @@ import { projectRoot } from './helpers/cli-harness.js';
 async function loadManifestLockModule() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock.js')).href);
 }
+
+test('manifest publication retries transient Windows sharing violations without deleting the old file', { skip: process.platform !== 'win32' }, async (t) => {
+	const root = createFixture();
+	const module = await loadManifestLockModule();
+	const target = path.join(root, '.mustflow', 'config', 'manifest.lock.toml');
+	const original = readFileSync(target, 'utf8');
+	const rename = fs.renameSync;
+	let attempts = 0;
+	const mocked = t.mock.method(fs, 'renameSync', (source, destination) => {
+		if (destination === target && ++attempts < 3) {
+			assert.equal(readFileSync(target, 'utf8'), original);
+			throw Object.assign(new Error('sharing violation'), { code: 'EPERM' });
+		}
+		return rename(source, destination);
+	});
+	syncBuiltinESMExports();
+	try {
+		module.applyManifestLockCustomizationPlan(root, module.createManifestLockCustomizationPlan(root, ['AGENTS.md']));
+		assert.equal(attempts, 3);
+		assert.notEqual(readFileSync(target, 'utf8'), original);
+		assert.equal(fs.readdirSync(path.dirname(target)).some(name => name.endsWith('.tmp')), false);
+	} finally {
+		mocked.mock.restore();
+		syncBuiltinESMExports();
+		rmSync(root, { recursive: true, force: true });
+	}
+});
 
 function createFixture() {
 	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-manifest-cas-'));

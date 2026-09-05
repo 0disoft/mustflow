@@ -159,7 +159,7 @@ withRunStateUpdateMutex(process.argv[1], process.argv[4], () => {
 	}
 });
 
-test('run state mutex lanes recover stale owners independently', async () => {
+test('run state mutex lanes recover dead owners without polling through the wait budget', async (t) => {
 	const projectPath = createTempProject('mustflow-run-state-stale-');
 	const { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } = await importRunStateMutex();
 	const scope = RUN_STATE_MUTEX_SCOPES.performanceHistory;
@@ -183,15 +183,18 @@ test('run state mutex lanes recover stale owners independently', async () => {
 
 	try {
 		let entered = false;
+		const originalWait = Atomics.wait;
+		const wait = t.mock.method(Atomics, 'wait', (...args) => originalWait(...args));
 		withRunStateUpdateMutex(
 			projectPath,
 			scope,
 			() => {
 				entered = true;
 			},
-			{ waitMs: 0 },
+			{ waitMs: 100 },
 		);
 		assert.equal(entered, true);
+		assert.equal(wait.mock.callCount(), 0);
 		assert.equal(existsSync(directory), false);
 	} finally {
 		removeTempProject(projectPath);
