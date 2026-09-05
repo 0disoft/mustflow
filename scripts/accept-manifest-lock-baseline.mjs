@@ -13,6 +13,7 @@ const allowedPaths = new Set([
 	'.mustflow/skills/INDEX.md',
 	'.mustflow/skills/routes.toml',
 	'.mustflow/skills/router.toml',
+	'.mustflow/skills/catalog.v2.json',
 	'.mustflow/skills/dependency-upgrade-review/SKILL.md',
 	'.mustflow/skills/native-crash-forensics-review/SKILL.md',
 	'.mustflow/skills/security-privacy-review/SKILL.md',

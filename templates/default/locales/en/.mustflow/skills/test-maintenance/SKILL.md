@@ -2,7 +2,7 @@
 mustflow_doc: skill.test-maintenance
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: test-maintenance
@@ -110,6 +110,8 @@ Use configured oneshot command intents when available:
 - `lint`
 - `build`
 
+Choose the relevant test intent, not every listed intent. A passing related suite does not require
+another full suite, audit, build, or static check unless a distinct changed contract needs it.
 Do not infer missing test commands.
 
 <!-- mustflow-section: failure-handling -->

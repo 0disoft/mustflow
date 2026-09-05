@@ -2,7 +2,7 @@
 mustflow_doc: skill.delivery-verification-budget
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: delivery-verification-budget
@@ -116,8 +116,11 @@ data, destructive writes, durable state, migrations, queues, or other changes wi
    - `R2`: public API or file-format contract, shared package, persistent but recoverable data,
      external integration, multiple packages, or a user flow whose failure crosses one boundary.
    - `R3`: authentication, authorization, payments, credits, secrets, personal data, destructive or
-     irreversible writes, schema migration, queue completion, retry idempotency, file overwrite,
+     irreversible writes, schema migration, queue completion, retry idempotency, destructive overwrite,
      deployment control, or another failure that is difficult to detect or recover.
+   - Classify the changed behavior, not the directory or vocabulary. Editing a label on an
+     authentication screen or overwriting a reproducible build artifact is not itself `R3`.
+     Require a reachable effect on a sensitive invariant before activating its specialist checks.
    - When evidence spans tiers, use the highest applicable tier. Easy rollback may narrow optional
      evidence, but it does not demote money, permission, privacy, secret, or integrity obligations.
 3. Set the verification budget before implementation.
@@ -208,7 +211,8 @@ instead of inventing a raw command.
 
 - If acceptance criteria are ambiguous, stop before broad implementation and ask for the smallest
   product decision that changes the result.
-- If risk cannot be classified, choose the higher plausible tier until the missing evidence narrows it.
+- If risk cannot be classified, inspect the changed entry point and its immediate effects first.
+  Escalate for a concrete unresolved sensitive boundary, not hypothetical risks elsewhere.
 - If a low-tier task reveals an applicable `R3` hazard caused or exposed by the change, reclassify the
   task and apply the owning integrity skill before continuing.
 - If the budget is exhausted by a blocking, change-related failure, diagnose the first wrong state;

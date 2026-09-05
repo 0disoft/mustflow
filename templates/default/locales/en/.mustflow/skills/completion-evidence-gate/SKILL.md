@@ -2,7 +2,7 @@
 mustflow_doc: skill.completion-evidence-gate
 locale: en
 canonical: true
-revision: 10
+revision: 11
 lifecycle: mustflow-owned
 authority: procedure
 name: completion-evidence-gate
@@ -70,7 +70,7 @@ missing, blocked, failed, stale, or only partially relevant.
 - The skills used, main route chosen, and any supporting or event skills activated.
 - Requirement, bug, issue, or external-advice sources that influenced the work.
 - Command intents run, exit status, and whether the evidence came from `mf run` receipts or lower-confidence direct shell output.
-- Remote check-suite evidence when the task includes commit, push, tag, release, deploy, or a
+- Remote check-suite evidence when the task includes push, tag, release, deploy, or a
   GitHub/GitLab/CI status claim: ref, commit SHA, workflow names, required checks, failed checks,
   pending checks, skipped checks, and the timestamp or run id of the evidence.
 - Command intents skipped, missing, unknown, manual-only, failed, timed out, or judged not applicable.
@@ -117,7 +117,7 @@ missing, blocked, failed, stale, or only partially relevant.
    - Treat parent-root verification as relevant only when parent-owned files or orchestration
      changed, or when the child result explicitly depends on a named parent artifact or contract.
      Do not list unrelated parent checks as skipped child verification.
-   - For commit, push, tag, release, or deploy claims, classify remote checks separately from
+   - For push, tag, release, or deploy claims, classify remote checks separately from
      artifact publication. A successful package registry lookup, GitHub Release, uploaded asset,
      or deployment artifact does not prove branch CI or same-commit checks passed.
    - Treat stale receipts, missing latest receipts, failed intents, timed-out intents, repeated failure fingerprints, write-drift risks, validation-ratchet risks, scope-drift risks, and external-evidence risks as completion limitations.
@@ -126,7 +126,7 @@ missing, blocked, failed, stale, or only partially relevant.
      `evidence-stall-breaker` when that pattern affected the task.
 5. Check synchronization coverage.
    - For behavior or contract changes, verify whether code, tests, schemas, templates, manifests, docs, fixtures, examples, package metadata, release notes, and localized copies agree.
-   - When `.mustflow/config/commands.toml` exposes `script_pack_list`, use it as read-only discovery before choosing optional script-pack checks for the changed surfaces.
+   - Use `script_pack_list` only when a named evidence gap needs helper discovery. Availability alone does not require running it.
    - Treat `repo/generated-boundary` as a useful candidate before or after path-sensitive edits, but run any selected script only when the repository command contract and script metadata allow it.
    - Use `contract-sync-check`, `cli-output-contract-review`, `api-contract-change`, `release-publish-change`, or a narrower skill when a missing surface needs real follow-up work.
 6. Calibrate completion language.
@@ -184,6 +184,8 @@ Use configured oneshot command intents when available:
 - `test_release`
 
 Choose the narrowest configured intents that cover the changed surfaces and the completion claim.
+Reuse checks already passed for the current relevant inputs; this gate is a reporting pass, not
+another test phase. A local commit needs local Git evidence, not a remote CI run.
 If a relevant intent is missing, unknown, manual-only, failed, or skipped, report that limitation
 instead of replacing it with an inferred command.
 

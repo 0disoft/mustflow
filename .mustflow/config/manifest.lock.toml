@@ -14,7 +14,7 @@ content_hash = "sha256:224d03ed2e2c6d990b6fda7d6be57e43a7da26da070cb69692452258b
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:b194172b51f3afe21fcd792cf6148df73118bc37c0a9d7523d510497b0db44b2"
+content_hash = "sha256:6a19f4a194138ba65823110d1251056eba919cb1317249db2497f1f826fa1ea8"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -24,7 +24,7 @@ content_hash = "sha256:44f23b831b574960f64ec170c19520709ae5c1169853854d3df66175a
 [files.".mustflow/docs/agent-workflow.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:99afd927f65ba68ef160163efc78c1209dc4143890ef818ac1350dd391702c07"
+content_hash = "sha256:b76892a8e1be0808f73737655c9d2836dd4091420fdd3376677ae0734b3e7ad8"
 
 [files.".mustflow/config/mustflow.toml"]
 source = "template_common"
@@ -349,9 +349,24 @@ content_hash = "sha256:9d46b43d2f1b73a35f10a1e00aefd13893e6c31c437807f54f8e0444c
 [files.".mustflow/skills/delivery-verification-budget/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:c20251094867efcb4edd7622a465a5d3ea85b66f5cd6ed0899c48520e2ed29b5"
+content_hash = "sha256:6588cd9eaacab23c1b472904b9bbc3e57b37353b6be1fe8a39a3a7e9600509ee"
 
 [files.".mustflow/skills/completion-evidence-gate/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:146b5e6b073fe1f145ad3b3f2677b56a53236b47913dcca6c7cc486b961d3210"
+content_hash = "sha256:ebcbae41789a44acdeffd8e0200a960d91c5e5c62f7fb323588c1e8d3357147c"
+
+[files.".mustflow/skills/contract-sync-check/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b81599e648f7de59826fce6fcfa529cea0bcc777770aba2589210515d62bccb2"
+
+[files.".mustflow/skills/test-maintenance/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b99cdf153d3c51d694a0f5b0f8eb97aa1c47e593db0ffda4d550d57304922c27"
+
+[files.".mustflow/skills/catalog.v2.json"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f219b2dd222681d02c8bf072e4a64d36d5ec49d1afbfe4c6084395ae6e9dd7c7"

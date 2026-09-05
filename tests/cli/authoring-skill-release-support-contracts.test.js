@@ -147,10 +147,10 @@ test('nested repository verification stays local unless the child result depends
 		assert.match(agents, /Do not run a parent-root intent merely to\s+satisfy a child task/u);
 		assert.match(agents, /Unrelated parent worktree changes, locks, or manifest drift do not block a child-only/u);
 	}
-	assert.match(localWorkflow, /revision: 32/u);
+	assert.match(localWorkflow, /revision: 33/u);
 	assert.match(localWorkflow, /current command contract is the selected child repository's\s+contract/u);
 	assert.match(localWorkflow, /should not be listed as skipped child checks/u);
-	assert.match(localCompletionSkill, /revision: 10/u);
+	assert.match(localCompletionSkill, /revision: 11/u);
 	assert.match(localCompletionSkill, /shared parent skill does not make a parent-root intent required or runnable/u);
 	assert.match(localCompletionSkill, /Do not list unrelated parent checks as skipped child verification/u);
 	assert.match(localCompletionSkill, /Do not downgrade a verified child-only result/u);
@@ -158,9 +158,9 @@ test('nested repository verification stays local unless the child result depends
 	assert.match(skillIndex, /unrelated parent blocker/u);
 	assert.match(i18n, /\[documents\."agents\.root"\][\s\S]*?revision = 24/u);
 	assert.match(i18n, /translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = 22, status = "needs_review" \}/u);
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 32/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 10);
+	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 11);
 });
 
 test('date number audit classifies release version impact from public contracts', () => {
@@ -472,7 +472,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	}
 	assert.ok(profileBlock('team').includes('"complex-decision-analysis"'));
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
-	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 32/u);
+	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u);
 	assertSkillsIndexRevision(i18n);
 	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 2/u);
 });

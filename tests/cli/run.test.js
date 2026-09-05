@@ -1836,7 +1836,7 @@ approval_actions = ["git_commit"]
 status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
-description = "Infer commit approval for an existing Git staging intent."
+description = "Stage configured paths without inferring a history-changing action."
 argv = ["git", "-C", ".", "add", "--", "README.md"]
 cwd = "."
 timeout_seconds = 10
@@ -1850,9 +1850,8 @@ destructive = false
 
 		const legacyBlockedResult = runCli(projectPath, ['run', 'legacy_git_add', '--plan-only', '--json']);
 		const legacyBlockedPlan = JSON.parse(legacyBlockedResult.stdout);
-		assert.equal(legacyBlockedResult.status, 1);
-		assert.equal(legacyBlockedPlan.reason_code, 'explicit_approval_required');
-		assert.match(legacyBlockedPlan.detail, /git_commit/u);
+		assert.equal(legacyBlockedResult.status, 0, legacyBlockedResult.stderr);
+		assert.equal(legacyBlockedPlan.runnable, true);
 
 		const legacyApprovedResult = runCli(projectPath, [
 			'run',
@@ -4463,4 +4462,3 @@ destructive = false
 		removeTempProject(projectPath);
 	}
 });
-

@@ -12,7 +12,7 @@ export interface VerificationProfilePolicy {
 
 const FULL_VERIFICATION_REASONS = new Set([
 	'security_change', 'privacy_change', 'data_change', 'migration_change',
-	'package_metadata_change', 'packaging_change', 'release_risk', 'before_publish',
+	'packaging_change', 'release_risk', 'before_publish',
 ]);
 
 export function resolveVerificationProfile(profile: VerificationProfile): VerificationProfilePolicy {

@@ -17,6 +17,13 @@ When `[workspace].authority_mode = "delegated_scoped"`, the command instead reso
 
 ## Execution Conditions
 
+Configured Git staging does not automatically require commit approval. An intent can still
+explicitly declare `approval_actions = ["git_commit"]` when the repository wants that gate.
+Git commits and pushes retain their inferred approval actions.
+
+When the user has already authorized an action and target, pass its matching
+`--allow-approval <action>` flag. Do not ask for the same authorization again.
+
 The intent must satisfy all of these conditions:
 
 - `status = "configured"`

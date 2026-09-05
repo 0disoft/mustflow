@@ -38,7 +38,7 @@ function readGitSubcommand(argv: readonly string[]): string | null {
 
 export function inferCommandApprovalActions(argv: readonly string[]): readonly ApprovalActionType[] {
 	const gitSubcommand = readGitSubcommand(argv);
-	if (gitSubcommand === 'add' || gitSubcommand === 'commit') {
+	if (gitSubcommand === 'commit') {
 		return ['git_commit'];
 	}
 	if (gitSubcommand === 'push') {

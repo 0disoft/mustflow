@@ -631,7 +631,7 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
-required_after = ["profile_verify", "security_change"]
+required_after = ["profile_verify", "security_change", "package_metadata_change"]
 
 [intents.fast_profile_check.cost]
 expected_seconds = 5
@@ -649,7 +649,7 @@ success_exit_codes = [0]
 writes = []
 network = false
 destructive = false
-required_after = ["profile_verify", "security_change"]
+required_after = ["profile_verify", "security_change", "package_metadata_change"]
 
 [intents.slow_profile_check.cost]
 expected_seconds = 90
@@ -665,6 +665,8 @@ expected_seconds = 90
 		assert.deepEqual(release.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
 		assert.deepEqual(security.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
 		assert.equal(edit.verification_profile.budgetSeconds, 15);
+		const metadata = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'package_metadata_change', '--profile', 'edit', '--plan-only', '--json'])).stdout);
+		assert.deepEqual(metadata.schedule.entries.map((entry) => entry.intent), ['fast_profile_check']);
 		assert.equal(release.verification_profile.budgetSeconds, null);
 	} finally {
 		removeTempProject(projectPath);

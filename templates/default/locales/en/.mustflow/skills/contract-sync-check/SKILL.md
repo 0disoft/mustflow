@@ -2,7 +2,7 @@
 mustflow_doc: skill.contract-sync-check
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: contract-sync-check
@@ -107,7 +107,10 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Also run a narrower configured test or build intent if the contract affects executable behavior.
+Choose from this list; do not run it in full. Use a focused contract check for routine changes.
+Run `test_release` only when release or installation behavior changed and focused checks cannot
+cover it, or when release verification is explicitly requested. Reuse passing evidence from the
+implementation phase. Check executable behavior with the relevant focused test when needed.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

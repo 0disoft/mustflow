@@ -466,7 +466,7 @@ test('completion evidence gate stops without inventing follow-up work', () => {
 
 	assert.equal(localSkill, templateSkill);
 	assert.equal(workflow, templateWorkflow);
-	assert.match(localSkill, /revision: 10/u);
+	assert.match(localSkill, /revision: 11/u);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
 	assert.match(workflow, /Do not invent follow-up work or force a\s+menu when the task is complete/u);
@@ -488,11 +488,11 @@ test('completion evidence gate stops without inventing follow-up work', () => {
 	assert.doesNotMatch(localSkill, /next-action-menu/u);
 	assert.match(
 		i18n,
-		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 32/u,
+		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u,
 	);
 	assert.match(
 		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 10/u,
+		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 11/u,
 	);
 	assert.doesNotMatch(i18n, /skill\.next-action-menu/u);
 	assert.doesNotMatch(routes, /next-action-menu/u);

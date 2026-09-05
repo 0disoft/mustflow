@@ -2,7 +2,7 @@
 mustflow_doc: docs.agent-workflow
 locale: en
 canonical: true
-revision: 32
+revision: 33
 lifecycle: mustflow-owned
 authority: workflow-policy
 ---
@@ -59,7 +59,7 @@ At task start and before the first edit:
 2. Match the current task against category signals, user intent, expected paths, discovered technology, and event signals.
 3. Read `.mustflow/skills/routes.toml` when the compact router is insufficient, the task edits skill routing, detailed route metadata is needed, or route confidence is ambiguous.
 4. Read `.mustflow/skills/INDEX.md` when full route metadata is insufficient, the task edits the expanded route table, or human-readable trigger evidence is needed.
-5. Read every matching `SKILL.md` before editing that part of the work.
+5. Read the selected main skill and evidence-backed adjuncts before editing their scope. A keyword match alone does not require another skill.
 6. If no skill applies, proceed with the smallest safe change under `AGENTS.md` and `.mustflow/config/commands.toml`.
 
 Activate a skill later if new evidence changes the task type. For example, a failing configured command activates failure triage; a test contract change activates test maintenance; and a documentation or workflow change activates documentation update.
@@ -149,29 +149,30 @@ Allowed action sets narrow by intersection. Denied actions, approval requirement
 
 ## Instruction Refresh
 
-Long sessions may cause instruction drift. Treat instruction refresh as a mandatory checkpoint, not a project-file counter.
+Reuse instructions already loaded for the current task. Refresh only changed instruction files,
+after switching repository roots, or after compaction. A task-start read also covers the first edit
+and first command; counters and routine status output do not require another full read.
 
 Refresh mustflow instructions at these points:
 
 - session start
 - new task start
-- before the first edit
-- before command execution when the current task and command intent do not already have a fresh command refresh
-- after editing `AGENTS.md` or `.mustflow/**`
+- before the first edit or command only if its applicable instructions have not been loaded
+- after editing instruction files under `AGENTS.md` or `.mustflow/**`; generated run records and caches do not count
 - after switching roots or entering a nested repository
 - after context compaction or summarization
-- after the configured turn, tool-call, or output-size threshold
+- after a configured threshold only if context is missing or an instruction hash changed
 
 Use `.mustflow/config/mustflow.toml` `[refresh]` to determine the refresh level:
 
-- `light`: reread `AGENTS.md`
-- `command`: reread `AGENTS.md` and `.mustflow/config/commands.toml`
+- `light`: reuse `AGENTS.md` unless changed or missing from context
+- `command`: read the selected intent and its defaults/includes; reuse unchanged instructions
 - `edit`: reread `AGENTS.md` and `.mustflow/config/mustflow.toml` before sensitive edits
 - `report`: reread `AGENTS.md` before the final report only when the task is security, payment,
   data, release, or failed or partial work; ordinary low-risk final reports start from the
   instructions already loaded at task start
-- `skill`: reread `AGENTS.md` and `.mustflow/skills/router.toml`
-- `full`: reread the full mustflow read sequence
+- `skill`: read only newly selected skills and changed routing metadata
+- `full`: restore missing context using the mustflow read sequence
 
 `before_command_run` is a freshness checkpoint for the current command intent, not a requirement to reread every file before every repeated command when the command contract has not changed.
 
@@ -339,6 +340,19 @@ whole-root audit; do not run both by habit.
 
 ## Verification Selection
 
+These rules apply to every skill's Verification and Output Format sections:
+
+- Listed command intents are a menu, not a requirement to run every available command.
+  Select the smallest set that covers the changed behavior and any explicitly required invariant.
+- Reuse a successful result while its code, configuration, inputs, and relevant environment remain
+  unchanged. Reporting, staging, committing, or selecting another skill does not invalidate it.
+- Expand verification only for a named uncovered behavior, actual failure, or explicit release
+  requirement. A file path or the words security, data, or package alone do not prove broad impact.
+- Output fields are prompts for relevant information, not mandatory empty ledgers. Routine work
+  needs the result, meaningful verification, and concrete limitations.
+- Stop once the requested outcome and relevant checks pass. Optional helpers, unrelated failures,
+  hypothetical edge cases, and speculative cleanup do not reopen completion.
+
 Use `.mustflow/config/preferences.toml` `[verification.selection]` to choose verification breadth. These preferences do not grant command execution permission; they only guide which configured command intents to consider.
 
 `mf verify` exposes three explicit time/risk profiles: `edit` is the default rapid feedback loop,
@@ -400,6 +414,11 @@ Use `.mustflow/config/mustflow.toml` for long-running safety policy.
 - `[budget]` limits iterations, wall-clock time, command runs, output volume, and repeated failures.
 - `[approval]` lists actions requiring human approval before proceeding.
 - `[isolation]` describes the preferred worktree or sandbox boundary for long-running tasks.
+
+First check the current conversation for an explicit request or standing instruction covering the
+action and target. Reuse that authorization with the matching `--allow-approval <action>` option;
+do not ask the user to repeat it. Approval flags record existing authorization, not self-approval.
+Ask only when the proposed effect or target exceeds that authorization. Host restrictions still apply.
 
 When a budget limit or approval gate is reached, stop and report. Use handoff only when this repository explicitly enables a handoff workflow. Do not keep looping.  
 Do not run long-running autonomous work in a dirty primary worktree when the isolation policy requires a separate worktree or sandbox.

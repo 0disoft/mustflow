@@ -60,6 +60,20 @@ concurrency = "exclusive_writer"
 description = "Remote GitHub Release and npm publication channel for mustflow."
 concurrency = "exclusive_writer"
 
+[intents.test_agent_bottlenecks]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Check approval inference and verification profiles against the current compiled CLI."
+argv = ["node", "--test", "tests/cli/run.test.js", "tests/cli/verify-plan-scheduler.test.js"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+
 [intents.build]
 status = "configured"
 lifecycle = "oneshot"
@@ -828,7 +842,7 @@ kind = "mustflow_builtin"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Accept reviewed local workflow baseline changes for AGENTS.md, the source workflow reference, the source command contract, and the compact skill router."
-argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "AGENTS.md", ".mustflow/docs/agent-workflow.md", ".mustflow/config/commands.toml", ".mustflow/skills/router.toml"]
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "AGENTS.md", ".mustflow/docs/agent-workflow.md", ".mustflow/config/commands.toml", ".mustflow/skills/router.toml", ".mustflow/skills/contract-sync-check/SKILL.md", ".mustflow/skills/completion-evidence-gate/SKILL.md", ".mustflow/skills/test-maintenance/SKILL.md", ".mustflow/skills/delivery-verification-budget/SKILL.md", ".mustflow/skills/catalog.v2.json"]
 cwd = "."
 timeout_seconds = 120
 stdin = "closed"
