@@ -6,6 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.6 - 2026-09-05
+
+- Prepare manifest baseline updates outside the publication lock and retry independent
+  concurrent changes up to three times, while preserving target-entry conflicts, target-file
+  hash checks, and strict whole-file checks for legacy plans.
+
 ## 2.137.5 - 2026-09-02
 
 - Corrected the final Linux-only operations-skill profile counts exposed by the full npm publish
