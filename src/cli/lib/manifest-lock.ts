@@ -318,8 +318,8 @@ export function applyManifestLockCustomizationPlan(
 	rawPlan: unknown,
 ): readonly string[] {
 	const plan = parseManifestLockCustomizationPlan(rawPlan);
-	const release = acquireManifestLockCas(projectRoot);
-	try {
+	// Prepare without excluding other writers; publish only against the same snapshot.
+	for (let attempt = 0; attempt < 3; attempt += 1) {
 		const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 		const lockContent = readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath);
 		const mergeablePlan = plan.files.every((file) => file.baseline_lock_entry_hash !== undefined);
@@ -354,21 +354,27 @@ export function applyManifestLockCustomizationPlan(
 			};
 		}
 		parsed.files = filesTable;
+		const preparedContent = stringifyToml(parsed);
 
-		if (sha256Content(readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath)) !== sha256Content(lockContent)) {
-			throw new Error('Manifest lock CAS conflict: manifest.lock.toml changed during baseline acceptance');
-		}
-		for (const file of plan.files) {
-			if (sha256ProjectFile(projectRoot, path.join(projectRoot, file.relative_path)) !== file.content_hash) {
-				throw new Error(`Manifest lock CAS conflict: ${file.relative_path} changed during baseline acceptance`);
+		const release = acquireManifestLockCas(projectRoot);
+		try {
+			if (readUtf8FileInsideWithoutSymlinks(projectRoot, lockPath) !== lockContent) {
+				// finally releases ownership before rebuilding against the latest entries.
+				continue;
 			}
-		}
+			for (const file of plan.files) {
+				if (sha256ProjectFile(projectRoot, path.join(projectRoot, file.relative_path)) !== file.content_hash) {
+					throw new Error(`Manifest lock CAS conflict: ${file.relative_path} changed during baseline acceptance`);
+				}
+			}
 
-		writeManifestLockAtomically(projectRoot, stringifyToml(parsed));
-		return plan.files.map((file) => file.relative_path);
-	} finally {
-		release();
+			writeManifestLockAtomically(projectRoot, preparedContent);
+			return plan.files.map((file) => file.relative_path);
+		} finally {
+			release();
+		}
 	}
+	throw new Error('Manifest lock CAS conflict: manifest.lock.toml changed during baseline acceptance after 3 attempts');
 }
 
 export function removeMissingManifestLockEntries(

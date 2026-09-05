@@ -138,6 +138,72 @@ test('manifest lock customization rejects target-entry drift and plan replay', a
 	}
 });
 
+test('manifest preparation retries only independent changes and releases ownership between attempts', async (t) => {
+	const module = await loadManifestLockModule();
+	for (const scenario of ['independent', 'same-entry', 'target-file', 'legacy', 'continuous']) {
+		await t.test(scenario, () => {
+			const root = createFixture();
+			const target = path.join(root, '.mustflow', 'config', 'manifest.lock.toml');
+			const owner = path.join(root, '.mustflow', 'cache', 'manifest-lock-accept.owner.json');
+			const original = readFileSync(target, 'utf8');
+			const currentPlan = module.createManifestLockCustomizationPlan(root, ['AGENTS.md']);
+			const plan = scenario === 'legacy'
+				? { ...currentPlan, files: currentPlan.files.map(({ baseline_lock_entry_hash: _baseline, ...file }) => file) }
+				: currentPlan;
+			const competing = module.createManifestLockCustomizationPlan(root, [scenario === 'same-entry' ? 'AGENTS.md' : 'README.md']);
+			const open = fs.openSync;
+			let attempts = 0;
+			let injecting = false;
+			let competingContent = original;
+			const mocked = t.mock.method(fs, 'openSync', (file, flags, ...args) => {
+				if (file === owner && flags === 'wx' && !injecting) {
+					assert.equal(fs.existsSync(owner), false, 'retry must release its previous ownership');
+					attempts += 1;
+					injecting = true;
+					try {
+						if (scenario === 'continuous') {
+							writeFileSync(target, `${original}\n# competing generation ${attempts}\n`);
+						} else if (attempts === 1 && scenario === 'target-file') {
+							writeFileSync(path.join(root, 'AGENTS.md'), 'changed while preparing\n');
+						} else if (attempts === 1) {
+							module.applyManifestLockCustomizationPlan(root, competing);
+						}
+						competingContent = readFileSync(target, 'utf8');
+					} finally {
+						injecting = false;
+					}
+				}
+				return open(file, flags, ...args);
+			});
+			syncBuiltinESMExports();
+			try {
+				if (scenario === 'independent') {
+					assert.deepEqual(module.applyManifestLockCustomizationPlan(root, plan), ['AGENTS.md']);
+					assert.equal(attempts, 2);
+					const lock = module.readManifestLock(root);
+					assert.equal(lock.kind, 'present');
+					assert.equal(lock.lock.files.every(file => file.lastAction === 'customized'), true);
+				} else {
+					const expected = {
+						'same-entry': /AGENTS\.md lock entry changed after the plan was created/u,
+						'target-file': /AGENTS\.md changed during baseline acceptance/u,
+						legacy: /manifest\.lock\.toml changed after the plan was created/u,
+						continuous: /changed during baseline acceptance after 3 attempts/u,
+					}[scenario];
+					assert.throws(() => module.applyManifestLockCustomizationPlan(root, plan), expected);
+					assert.equal(attempts, scenario === 'continuous' ? 3 : 1);
+					assert.equal(readFileSync(target, 'utf8'), competingContent);
+				}
+				assert.equal(fs.existsSync(owner), false);
+			} finally {
+				mocked.mock.restore();
+				syncBuiltinESMExports();
+				rmSync(root, { recursive: true, force: true });
+			}
+		});
+	}
+});
+
 test('legacy manifest lock customization plans retain whole-lock CAS behavior', async () => {
 	const root = createFixture();
 	try {
