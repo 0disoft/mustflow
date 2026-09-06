@@ -2,7 +2,7 @@
 mustflow_doc: skill.session-management-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: session-management-review
@@ -172,6 +172,10 @@ actually forced?"
      user-to-admin, tenant switch, impersonation start and end, and recovery completion. Revoke the
      old id server-side and do not keep old and new ids valid in parallel; in distributed stores make
      revoke-and-create one atomic operation.
+   - Password-to-MFA or another assurance increase requires fresh authentication bound to the
+     current session and purpose. Account flags, authenticator registration, and token refresh alone
+     do not elevate a session. Preserve initial authentication history separately from verified
+     step-up method, time, assurance, and expiry; reject failed or expired elevation and old ids.
    - Use a host-only `__Host-session` cookie (`Secure`, `HttpOnly`, `SameSite=Lax`, `Path=/`, no
      `Domain`). Do not merge app, blog, and user-content subdomains into one cookie domain, and test
      which value a framework picks when duplicate cookie names exist across paths or domains.

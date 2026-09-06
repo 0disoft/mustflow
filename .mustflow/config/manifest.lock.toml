@@ -374,9 +374,14 @@ content_hash = "sha256:f219b2dd222681d02c8bf072e4a64d36d5ec49d1afbfe4c6084395ae6
 [files.".mustflow/skills/session-management-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:f1daeec244a1d499849681e915f68a3a5aa678dc16958ad8064042aa4ab7ae14"
+content_hash = "sha256:26b31d0effdeefeff50ac4be87892b985ae6d6ee8dbe46d8fd46deef0a5e1463"
 
 [files.".mustflow/skills/credential-token-lifecycle-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:90f66037174e22540a6d4b5bdb1ae771412f8972098e903ce3881c1a70091c05"
+
+[files.".mustflow/skills/authentication-design-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:c278fdfeb3d9c7a79d1acca5a895d685b5e81ff80dda66a4c1ac73a694e23151"

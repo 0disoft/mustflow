@@ -2,7 +2,7 @@
 mustflow_doc: skill.authentication-design-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: authentication-design-review
@@ -173,7 +173,16 @@ does every recovery path stay at least as strong as login?"
      adds no security; attackers simply attack the weaker path. Allow password or social login for
      ordinary reads, but require passkey reauthentication for email change, authenticator addition,
      payment change, API-key issuance, and personal-data export.
-   - A session's security level never exceeds its initial authentication.
+   - Refresh, authenticator registration, or an account's MFA-enabled flag must not raise session
+     assurance or refresh the authentication time. Preserve the initial authentication history and
+     separately record the method, verification time, assurance, and expiry of a verified step-up.
+   - Permit an explicit step-up only after fresh authentication bound to the current session and
+     intended action meets that action's requirements. Rotate the session id or issue a new session
+     and revoke the old credentials atomically, following `session-management-review`. A passkey
+     label alone does not establish an AAL; evaluate the actual authenticator and verification.
+   - Failed or expired step-up must not authorize the sensitive action or silently extend assurance.
+     Compare the latest verified evidence and its validity window with the action's required level;
+     retain only the permissions justified by the remaining valid authentication evidence.
 9. Protect authenticator addition and removal more strictly than login.
    - A stolen session used to add the attacker's passkey, social account, or recovery email outlives
      any later password change. Require the highest available authentication level to add a method,
@@ -240,6 +249,10 @@ Use configured oneshot command intents when available:
 Prefer the narrowest configured tests that prove state-machine transitions, step-up enforcement,
 recovery single-use and revocation, breached-password rejection, enumeration response parity, and
 social-login linking and PKCE behavior.
+
+Compare a password session followed by a valid session- and action-bound step-up with an account
+flag change or refresh alone: only the verified transition may raise assurance. Cover failed
+verification, expired step-up evidence, and reuse of the revoked pre-step-up session id.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
