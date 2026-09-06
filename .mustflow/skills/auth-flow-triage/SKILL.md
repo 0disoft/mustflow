@@ -2,7 +2,7 @@
 mustflow_doc: skill.auth-flow-triage
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: auth-flow-triage
@@ -73,7 +73,8 @@ validation, browser cookie behavior, external provider callbacks, MFA, and autho
 - Browser and proxy ledger: origin, host, forwarded proto and host, redirect URI, cookie domain and
   path, SameSite, Secure, HttpOnly, CORS credentials, CSRF token, and proxy trust boundary.
 - Provider ledger: IdP issuer, discovery metadata, JWKS URI, registered redirect URIs, client id,
-  PKCE method, state, nonce, passkey RP ID, WebAuthn origin, MFA method, and provider error class.
+  response mode, library and browser support, short-lived correlation/nonce cookie policy, PKCE
+  method, state, nonce, passkey RP ID, WebAuthn origin, MFA method, and provider error class.
 - Denial and privacy ledger: enumeration policy, lockout or rate-limit decision, internal result
   code, public error message, redaction boundary, and denial-case tests.
 
@@ -118,6 +119,14 @@ validation, browser cookie behavior, external provider callbacks, MFA, and autho
    detection, host allowlists, and callback URL generation. Do not trust arbitrary forwarded headers.
 7. For OAuth or OIDC, compare the exact registered and transmitted redirect URI, issuer, discovery
    metadata, client id, state, nonce, PKCE method, code-verifier binding, token endpoint, and JWKS.
+   - Separate ordinary cookie-auth API CSRF checks from dedicated protocol callbacks. For supported
+     OIDC `form_post`, cross-site POST is expected; use the library's browser- and transaction-bound
+     single-use state, PKCE, nonce, issuer, and token validation rather than blanket cross-site denial.
+     Do not bypass callback validation or exempt all `/auth/*` endpoints.
+   - A general `SameSite=Lax` session cookie may be absent on that POST. Inspect the library's separate
+     short-lived correlation/nonce cookies, supported browsers, expiry, and cleanup; use `Secure`
+     where correlation cookies need `SameSite=None`. Do not relax all session cookies. Reject an
+     unsupported response mode at configuration time.
 8. For token validation, check signature, algorithm allowlist, key id refresh, issuer, audience,
    authorized party when needed, subject, expiry, not-before, nonce, token type, and stale role or
    permission claims.
@@ -164,6 +173,10 @@ Use configured oneshot command intents when available:
 Prefer the narrowest configured tests that cover the failing auth stage and denial behavior. Report
 missing browser cookie, provider callback, JWKS rotation, MFA, passkey, refresh-token race, and
 session-store integration evidence instead of inventing live auth probes.
+
+For form_post, compare a validated callback with an ordinary cross-site API mutation (denied),
+missing/reused state, wrong browser binding, wrong issuer, and invalid nonce or PKCE (all denied).
+Use the declared test environment without real IdP accounts or production tokens.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

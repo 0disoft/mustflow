@@ -2,7 +2,7 @@
 mustflow_doc: skill.session-management-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: session-management-review
@@ -80,7 +80,8 @@ actually forced?"
   single-flight owner and coordination scope across tabs or BFF instances, bounded protected retry
   results, waiter delivery, and reuse detection.
 - Cookie and browser ledger: cookie names, domains, prefixes, flags, SameSite, duplicate-name
-  behavior, and where tokens live in the browser.
+  behavior, where tokens live in the browser, and separate short-lived OAuth/OIDC correlation
+  cookies and supported response modes when federation is used.
 - Risk ledger when monitoring is used: trusted proxy boundary, combined signals, proportionate
   actions and reason codes, legitimate-user recovery, and data minimization and retention.
 - Expiry ledger: idle and absolute expiry sources, server enforcement points, and restart behavior.
@@ -192,10 +193,22 @@ actually forced?"
 9. Do not rely on SameSite alone for CSRF.
    - Cookies are sent automatically, so cross-site requests can act with the victim's authority.
      `SameSite=Lax` or `Strict` is one layer, not a replacement for CSRF defense.
-   - Require a session-bound CSRF token and exact `Origin` verification on state-changing cookie-auth
+   - For ordinary application endpoints, require a session-bound CSRF token and exact `Origin`
+     verification on state-changing cookie-auth
      requests, reject cross-site requests where `Sec-Fetch-Site` is supported, and reject form-
      encodable content types on JSON APIs. Never implement state changes via GET. Login and logout
-     are not exceptions: login CSRF can put the victim into the attacker's account.
+     on these endpoints are not exceptions: login CSRF can put the victim into the attacker's account.
+   - Separate dedicated OAuth/OIDC protocol callbacks from that middleware. A supported OIDC
+     `response_mode=form_post` callback is a cross-site POST and must use the authentication library's
+     protocol validation path: single-use state bound to the starting browser and transaction, PKCE,
+     OIDC nonce, expected issuer, and signature/audience/expiry validation. Reject missing, expired,
+     reused, or mismatched transaction evidence before establishing a session. Never exempt all of
+     `/auth/*` or allow an unvalidated callback.
+   - Do not rely on a general `SameSite=Lax` session cookie being sent on a cross-site POST. Give
+     short-lived correlation/nonce cookies their own library- and supported-browser-specific policy,
+     including `Secure` when `SameSite=None` is required, narrow scope, and prompt cleanup. Keep
+     ordinary session-cookie protections; do not change them all to `SameSite=None`. Reject unsupported
+     response modes during configuration instead of weakening validation at runtime.
 10. Keep logout a server operation.
     - Deleting the browser cookie only removes the client's copy; the server session and refresh
       family stay alive and stolen credentials keep working.
@@ -245,6 +258,11 @@ owner failure and expired retry results without treating a different attempt id 
 For risk monitoring, reject access based only on a matching IP or device label; process a legitimate
 IP change under the declared policy; and permit proportionate step-up or denial for combined risk
 signals even with a valid secret. Include spoofed forwarded headers and a legitimate recovery path.
+
+In a declared test environment, reject ordinary cross-site API mutations while allowing a supported
+form_post callback only after its transaction and token checks. Reject absent or reused state,
+wrong browser binding, wrong issuer, invalid nonce/PKCE, and unsupported response modes. Use fixtures
+or a local test provider; real IdP accounts and production tokens are not required for this review.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
