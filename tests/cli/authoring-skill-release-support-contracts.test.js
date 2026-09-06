@@ -637,7 +637,7 @@ test('API, pipeline, auth, Docker, search, vector, and RAG triage skills stay te
 	for (const [skillName, revision] of [
 		['http-api-semantics-review', 1],
 		['api-failure-triage', 1],
-		['auth-flow-triage', 1],
+		['auth-flow-triage', 2],
 		['ci-pipeline-triage', 2],
 		['docker-runtime-triage', 1],
 		['search-index-integrity-review', 3],

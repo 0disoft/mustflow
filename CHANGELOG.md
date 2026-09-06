@@ -6,6 +6,18 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.137.7 - 2026-09-06
+
+- Correct cache invalidation ordering and document stale refill and failed invalidation cases (#30).
+- Coordinate refresh exchanges across shared token families and distinguish retries from reuse (#31).
+- Allow verified authentication step-up while rejecting elevation by account flags or refresh (#32).
+- Specify AEAD nonce ownership, per-key uniqueness, and key usage limits (#33).
+- Separate IP and device risk signals from authentication evidence (#34).
+- Distinguish OIDC form_post callbacks from ordinary API CSRF checks and cookie policy (#35).
+- Separate limited recovery grants from login sessions and revoke pre-recovery credentials (#36).
+- Synchronize installed skills, canonical templates, revisions, and metadata. Refresh Bun and
+  documentation dependencies; let Astro select its supported js-yaml major instead of forcing v5.
+
 ## 2.137.6 - 2026-09-05
 
 - Prepare manifest baseline updates outside the publication lock and retry independent

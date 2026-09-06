@@ -618,13 +618,13 @@ test('credential token lifecycle review covers issuance, storage, rotation, revo
 	assert.match(localSkill, /Split the public identifier from the secret/u);
 	assert.match(localSkill, /HMAC_SHA256/u);
 	assert.match(localSkill, /localStorage/u);
-	assert.match(localSkill, /revoke the whole\s+token\s+family/u);
+	assert.match(localSkill, /Unexplained reuse revokes the whole family and requires re-login/u);
 	assert.match(localSkill, /DPoP or\s+mTLS/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."credential-token-lifecycle-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credential-token-lifecycle-review"/u);
-	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 2);
+	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 4);
 });
 
 test('api version deprecation review treats versions as an attack-surface lifecycle', () => {
@@ -676,7 +676,7 @@ test('session management review covers multi-device sessions, logout operations,
 	assert.match(routes, /\[routes\."session-management-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/session-management-review\/SKILL\.md"/u);
 	assert.match(manifest, /"session-management-review"/u);
-	assertI18nSkillDocument(i18n, 'session-management-review', 1);
+	assertI18nSkillDocument(i18n, 'session-management-review', 6);
 });
 
 test('auth state resilience review keeps security state durable across cache and database failure', () => {
@@ -730,7 +730,7 @@ test('authentication design review separates accounts, identifiers, authenticato
 	assert.match(routes, /\[routes\."authentication-design-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/authentication-design-review\/SKILL\.md"/u);
 	assert.match(manifest, /"authentication-design-review"/u);
-	assertI18nSkillDocument(i18n, 'authentication-design-review', 2);
+	assertI18nSkillDocument(i18n, 'authentication-design-review', 5);
 });
 
 test('authorization model review grounds RBAC, ABAC, and ReBAC selection in the granting basis', () => {
@@ -811,7 +811,7 @@ test('cryptographic storage review separates at-rest, transport, and field encry
 	assert.match(routes, /\[routes\."cryptographic-storage-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/cryptographic-storage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cryptographic-storage-review"/u);
-	assertI18nSkillDocument(i18n, 'cryptographic-storage-review', 1);
+	assertI18nSkillDocument(i18n, 'cryptographic-storage-review', 2);
 });
 
 test('tenant key and secret isolation review separates keys, secrets, and credentials per tenant', () => {

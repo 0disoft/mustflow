@@ -48,8 +48,9 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(localSkill, /`403`/u);
 	assert.match(localSkill, /temporary failure/u);
 	assert.match(localSkill, /Delete-before-commit/u);
-	assert.match(localSkill, /outbox-driven invalidation/u);
-	assert.match(localSkill, /version compare/u);
+	assert.match(localSkill, /Commit the source-of-truth write, then invalidate the cache/u);
+	assert.match(localSkill, /bounded retry or durable outbox/u);
+	assert.match(localSkill, /version comparison/u);
 	assert.match(localSkill, /CAS/u);
 	assert.match(localSkill, /stale by the time the result applies/u);
 	assert.match(localSkill, /Request coalescing is not obsolete-request discard/u);
@@ -112,7 +113,7 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cache-integrity-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'cache-integrity-review', 6);
 });
 
 test('ui dispatch lifecycle review rejects stale queued work on the right thread', () => {
