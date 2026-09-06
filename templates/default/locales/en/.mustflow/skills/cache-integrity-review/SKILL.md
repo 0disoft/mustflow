@@ -2,7 +2,7 @@
 mustflow_doc: skill.cache-integrity-review
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: cache-integrity-review
@@ -170,8 +170,14 @@ and what happens to the source system when the cache misses or fails?"
 8. Check invalidation ordering.
    - Delete-before-commit can resurrect old values when another request refills from the old source
      value before the commit lands.
-   - Prefer commit-after-delete, outbox-driven invalidation, version compare, write-through, or a
-     local pattern that prevents old values from winning after the durable write.
+   - Commit the source-of-truth write, then invalidate the cache (delete-after-commit). Retry failed
+     invalidation through a bounded retry or durable outbox; a successful commit does not prove the
+     cache was invalidated.
+   - This ordering does not stop an already-running old read from filling the cache later. Use
+     version comparison, CAS, or an explicit bounded-staleness policy for that separate race.
+   - Review the counterexample: DB and cache contain v1; delete cache; a reader loads and caches v1;
+     commit v2. The cache remains stale. With commit v2 before invalidation, a new source read sees
+     v2; separately test a pre-commit read completing after invalidation and invalidation failure.
 9. Check update races.
    - Updating the cache after a write is not automatically safe. A slower older write can overwrite
      a newer value.

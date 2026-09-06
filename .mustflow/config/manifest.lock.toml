@@ -14,7 +14,7 @@ content_hash = "sha256:224d03ed2e2c6d990b6fda7d6be57e43a7da26da070cb69692452258b
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:6a19f4a194138ba65823110d1251056eba919cb1317249db2497f1f826fa1ea8"
+content_hash = "sha256:2b0ad0a3953bd43b5221032a1fdd7ed3ad86c5559eb5514136ae272de33adc13"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -184,7 +184,7 @@ content_hash = "sha256:4ffe75809df0724fe3e9faacfd84d961009020d52597c01400545d442
 [files.".mustflow/skills/cache-integrity-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:edb2747911c53a90e03f3a60fda359af89a6a25b1001d02a619d01e1a05ce8ed"
+content_hash = "sha256:cbb1b241bcaf6a1298b44ce1e1534b79c9a8bdbf1b1217c61126e565e4bc8635"
 
 [files.".mustflow/skills/quadratic-scan-review/SKILL.md"]
 source = "template_common"

@@ -2268,3 +2268,221 @@ network = false
 destructive = false
 env_policy = "minimal"
 approval_actions = ["git_commit"]
+
+[intents.issue_30_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 30 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-30.json",".mustflow/skills/cache-integrity-review/SKILL.md",".mustflow/config/commands.toml"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-30.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_30_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 30 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-30.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-30.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_31_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 31 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-31.json",".mustflow/skills/session-management-review/SKILL.md",".mustflow/skills/credential-token-lifecycle-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-31.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_31_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 31 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-31.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-31.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_32_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 32 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-32.json",".mustflow/skills/authentication-design-review/SKILL.md",".mustflow/skills/session-management-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-32.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_32_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 32 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-32.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-32.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_33_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 33 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-33.json",".mustflow/skills/cryptographic-storage-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-33.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_33_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 33 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-33.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-33.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_34_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 34 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-34.json",".mustflow/skills/session-management-review/SKILL.md",".mustflow/skills/authentication-design-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-34.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_34_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 34 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-34.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-34.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_35_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 35 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-35.json",".mustflow/skills/session-management-review/SKILL.md",".mustflow/skills/auth-flow-triage/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-35.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_35_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 35 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-35.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-35.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_36_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot only the reviewed issue 36 skill baseline."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/issue-36.json",".mustflow/skills/session-management-review/SKILL.md",".mustflow/skills/authentication-design-review/SKILL.md",".mustflow/skills/credential-token-lifecycle-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-36.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+[intents.issue_36_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed issue 36 baseline only while the snapshot still matches."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-36.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-36.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+
