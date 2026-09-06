@@ -385,3 +385,8 @@ content_hash = "sha256:90f66037174e22540a6d4b5bdb1ae771412f8972098e903ce3881c1a7
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:c278fdfeb3d9c7a79d1acca5a895d685b5e81ff80dda66a4c1ac73a694e23151"
+
+[files.".mustflow/skills/cryptographic-storage-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f5fba17b179f1b936780c2dd704e5064b7a01f655095e8a746937b01371e3a7d"

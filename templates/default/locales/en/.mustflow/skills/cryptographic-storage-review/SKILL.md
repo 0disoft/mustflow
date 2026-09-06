@@ -2,7 +2,7 @@
 mustflow_doc: skill.cryptographic-storage-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: cryptographic-storage-review
@@ -74,6 +74,9 @@ recovery?"
   must never be collected or stored.
 - Key-ownership ledger: who holds keys for each layer, how DEK and KEK are separated, where KEKs
   live, and how key version is recorded with ciphertext.
+- Nonce ledger: exact AEAD API and runtime, library-generated or caller-supplied nonce ownership,
+  uniqueness under each actual key across instances and restarts, encryption counts and data limits
+  per key, and the rotation or stop condition before those limits are reached.
 - Search and query ledger: which fields are indexed, range-searched, sorted, joined, or
   exact-matched, and what the query features require.
 - Rotation, failure, and recovery ledger: key rotation windows, lazy re-encryption, KMS outage
@@ -144,6 +147,18 @@ recovery?"
    - Field encryption should use an AEAD mode such as AES-GCM. Store the nonce, key version, and
      algorithm version with the ciphertext, and bind AAD such as `tenant_id`, `subject_id`, table,
      field name, and schema version so ciphertext cannot be swapped between users or fields.
+   - For AES-GCM and other nonce-unique AEADs, use a unique nonce for every encryption under the same
+     actual key, including repeated row updates, retried encryption, and lazy re-encryption. Merely
+     resending the same stored ciphertext is not a new encryption call. A key-version label change
+     does not reset the nonce domain if the underlying key is unchanged.
+   - Identify whether the installed library generates and stores nonces or requires the caller to
+     supply them. Prefer its established safe path and documented limits; do not build a new cipher
+     or universal distributed nonce service. A row id, timestamp, or resettable process counter alone
+     does not establish uniqueness across writers, restarts, snapshots, or retries.
+   - Account for every writer sharing the key and enforce the API's message and data usage limits
+     with rotation or a stop before exhaustion. Random nonce generation needs a documented collision
+     budget too. For example, supported Go runtimes offer `NewGCMWithRandomNonce` with a per-key
+     message limit; this is an optional API example, not a cross-runtime requirement.
    - TLS also provides integrity and server authentication in transit, but client identity needs
      mTLS or application-level authentication.
 7. Apply the layers to every replica and hop.
@@ -167,6 +182,8 @@ recovery?"
 
 - Threat-model, plaintext-flow, data-class, key-ownership, search-impact, and rotation, failure,
   and recovery decisions are explicit.
+- Nonce generation ownership, per-key uniqueness scope, usage accounting, and key rotation or stop
+  conditions agree with the installed AEAD API, including updates and recovery from restart.
 - Encrypt-everything-without-a-threat-model, decrypt-in-database functions, master keys in the
   application, plaintext fallback on KMS failure, and reversible password storage are fixed or
   reported.
@@ -191,6 +208,11 @@ Use configured oneshot command intents when available:
 
 Prefer the narrowest configured tests that prove ciphertext does not contain plaintext, AAD binding
 rejects swaps, lookup indexes use keyed HMAC, and KMS outage fails closed.
+
+Review repeated updates to one row, encryption after restart, multiple writers, retry versus
+resending unchanged ciphertext, and rotation at the key usage limit. Verify the generator and its
+state lifecycle against the API contract; a random sample without duplicates is not a proof of
+cryptographic safety. Never reuse a stored row nonce for a new encryption under the same key.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
