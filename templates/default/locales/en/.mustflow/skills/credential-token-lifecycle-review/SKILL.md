@@ -2,7 +2,7 @@
 mustflow_doc: skill.credential-token-lifecycle-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: credential-token-lifecycle-review
@@ -177,6 +177,11 @@ stage?"
       removal, and personal-data export must check recent `auth_time` and require passkey
       reauthentication. Express the policy with `max_age`, `auth_time`, `acr`, and `amr` in OIDC.
 11. Define which tokens each security event revokes.
+    - Distinguish a recovery transaction and password-change-only grant from ordinary sessions and
+      access/refresh tokens. On verified recovery or reset completion, consume the grant, end the
+      limited transaction, and revoke pre-recovery sessions and refresh families even in the current
+      browser. Grant expiry, cancellation, and replay must fail; only a fresh login may issue new
+      ordinary credentials under the default no-auto-login policy.
     - Password reset, account recovery, MFA removal, email or phone change, admin grant, account
       suspension, suspected login, and all-device logout revoke refresh families immediately;
       ordinary logout revokes the current session and family; all-device logout revokes every family

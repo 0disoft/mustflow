@@ -2,7 +2,7 @@
 mustflow_doc: skill.authentication-design-review
 locale: en
 canonical: true
-revision: 4
+revision: 5
 lifecycle: mustflow-owned
 authority: procedure
 name: authentication-design-review
@@ -74,7 +74,8 @@ does every recovery path stay at least as strong as login?"
 - Strength ledger: authentication methods per session, `auth_time`, AAL, AMR, authenticator ids,
   step-up requirements per sensitive action, and phishing resistance.
 - Recovery ledger: recovery-code generation, hashing, single-use handling, notifications, and which
-  sessions and token families are revoked on completion.
+  sessions and token families are revoked on completion; distinguish limited recovery transaction
+  state and purpose-bound grants from ordinary login sessions, with consumption and expiry rules.
 - Password ledger: minimum and maximum length, composition rules, breach-list checks, hashing
   parameters, rehash-on-login, and rotation policy.
 - Enumeration and throttling ledger: login, signup, and recovery response parity, status-code and
@@ -204,8 +205,11 @@ does every recovery path stay at least as strong as login?"
 11. Keep password reset from becoming a login or a privilege expansion.
     - A reset token grants changing one password, not a session or the right to change email, remove
       passkeys, or disable MFA. After verification, issue a password-change-only `reset_grant`,
-      block other APIs, revoke existing sessions, and send the user to a fresh login. Never
-      auto-login after reset.
+      block other APIs and access/refresh-token issuance. On completion, atomically consume the grant
+      with the password change and account revocation epoch update, terminate recovery state, and
+      revoke existing sessions and refresh families, including the current browser's pre-reset login.
+      Send the user to a fresh login; never auto-login after reset. Expired, canceled, or consumed
+      grants cannot continue recovery or become ordinary sessions.
 12. Treat email change as a verified multi-step flow.
     - Email is a login identifier and recovery channel, not a profile field. Store the new address
       as `pending_email`, require reauthentication with the current method, verify the new address,

@@ -2,7 +2,7 @@
 mustflow_doc: skill.session-management-review
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: session-management-review
@@ -85,6 +85,8 @@ actually forced?"
 - Risk ledger when monitoring is used: trusted proxy boundary, combined signals, proportionate
   actions and reason codes, legitimate-user recovery, and data minimization and retention.
 - Expiry ledger: idle and absolute expiry sources, server enforcement points, and restart behavior.
+- Recovery ledger: ordinary login session versus short-lived recovery transaction and purpose-bound
+  reset grant, allowed operations, grant consumption/expiry, and pre-recovery credential revocation.
 - Audit and notification ledger: session lifecycle events, safe identifiers, and user notifications.
 - Existing auth tests, session fixtures, security docs, and configured command intents.
 
@@ -149,7 +151,8 @@ actually forced?"
 5. Separate current-session, other-session, and all-session logout.
    - Current-session logout revokes one session row. Device termination revokes one ownership-verified
      row. Logout-all-others revokes rows except the current session id.
-   - For account-wide suspicion such as account recovery, password reset, or MFA reset, bump
+   - On verified account recovery, password reset, or MFA reset completion, or confirmed account-wide
+     compromise, bump
      `users.auth_epoch` and record the epoch on every session and token at issuance. Sessions or
      tokens with an older epoch are rejected without iterating all session rows.
 6. Do not misclassify concurrent refresh as theft.
@@ -175,12 +178,22 @@ actually forced?"
    - Log session creation, refresh rotation, reauthentication, privilege escalation, remote logout,
      reuse detection, and expiry. Never log raw tokens, cookies, or `Authorization` headers.
      Abbreviate or separately protect IP addresses when the product does not need full values.
-   - Notify the user of new-device login and remote logout. Password reset and account recovery
-     should revoke existing sessions except the current recovery session. Enforce idle and absolute
-     expiry on the server for every session.
+   - Notify the user of new-device login and remote logout. Separate ordinary login sessions from
+     short-lived recovery transactions and password-change-only `reset_grant` credentials. Recovery
+     state may continue only its declared recovery steps; it cannot authorize general APIs, MFA
+     removal, email change, or access/refresh-token issuance.
+   - On verified reset or recovery completion, consume the used grant and terminate its transaction;
+     revoke pre-recovery sessions and refresh families under the account epoch policy, including
+     the current browser's old login session. Require a fresh login; do not promote recovery state
+     into a login session. Expire or cancel abandoned recovery grants without granting new access.
+     Enforce idle and absolute expiry on ordinary sessions independently.
+   - A product choosing a different post-recovery login policy must explicitly redesign its
+     authentication requirements and new-session issuance with `authentication-design-review`,
+     replacing the no-auto-login policy consistently rather than keeping contradictory exceptions.
 8. Fix session fixation and cookie attributes.
    - Issue a new session id at every trust-level change: anonymous-to-login, password-to-MFA,
-     user-to-admin, tenant switch, impersonation start and end, and recovery completion. Revoke the
+     user-to-admin, tenant switch, and impersonation start and end. After recovery, issue a login
+     session only upon the required fresh login, not merely recovery completion. Revoke the
      old id server-side and do not keep old and new ids valid in parallel; in distributed stores make
      revoke-and-create one atomic operation.
    - Password-to-MFA or another assurance increase requires fresh authentication bound to the
@@ -263,6 +276,12 @@ In a declared test environment, reject ordinary cross-site API mutations while a
 form_post callback only after its transaction and token checks. Reject absent or reused state,
 wrong browser binding, wrong issuer, invalid nonce/PKCE, and unsupported response modes. Use fixtures
 or a local test provider; real IdP accounts and production tokens are not required for this review.
+
+Review recovery as explicit transitions: a valid limited grant permits its password-change step but
+denies general APIs and token issuance; completion consumes the grant and revokes all pre-recovery
+sessions and refresh families, including the current browser's; grant replay and old credentials
+fail; only a subsequent successful fresh login issues a new ordinary session. Expired or canceled
+grants fail without automatically granting access or treating a recovery request as verified proof.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
