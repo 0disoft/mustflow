@@ -60,6 +60,10 @@ concurrency = "exclusive_writer"
 description = "Remote GitHub Release and npm publication channel for mustflow."
 concurrency = "exclusive_writer"
 
+[resources.docs_dependency_graph]
+description = "Documentation package declarations, lockfile, and installed dependencies."
+concurrency = "exclusive_writer"
+
 [intents.test_agent_bottlenecks]
 status = "configured"
 lifecycle = "oneshot"
@@ -333,9 +337,10 @@ cwd = "."
 timeout_seconds = 900
 stdin = "closed"
 success_exit_codes = [0]
-writes = ["bun.lock"]
+writes = ["package.json", "bun.lock", "node_modules/**"]
 network = true
 destructive = false
+approval_actions = ["dependency_upgrade"]
 required_after = ["package_metadata_change"]
 
 [intents.docs_site_security_update]
@@ -349,6 +354,7 @@ timeout_seconds = 300
 stdin = "closed"
 success_exit_codes = [0]
 writes = ["docs-site/package.json", "docs-site/bun.lock", "docs-site/node_modules/**"]
+effects = [{ type = "write", mode = "replace", lock = "docs_dependency_graph", concurrency = "exclusive" }]
 network = true
 destructive = false
 approval_actions = ["dependency_upgrade"]
@@ -2485,4 +2491,50 @@ effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest
 network = false
 destructive = false
 env_policy = "minimal"
+
+
+[intents.docs_dependency_update]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Refresh the documentation dependency graph within reviewed package ranges."
+argv = ["bun", "update"]
+cwd = "docs-site"
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["docs-site/package.json", "docs-site/bun.lock", "docs-site/node_modules/**"]
+effects = [{ type = "write", mode = "replace", lock = "docs_dependency_graph", concurrency = "exclusive" }]
+network = true
+destructive = false
+approval_actions = ["dependency_upgrade"]
+
+[intents.issue_10_manifest_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Snapshot the reviewed dependency update command contract."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "plan", ".mustflow/cache/manifest-lock-plans/issue-10.json", ".mustflow/config/commands.toml"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/issue-10.json"]
+network = false
+destructive = false
+
+[intents.issue_10_manifest_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply the reviewed dependency command baseline with compare-and-swap."
+argv = ["node", "scripts/accept-manifest-lock-baseline.mjs", "apply", ".mustflow/cache/manifest-lock-plans/issue-10.json"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml", ".mustflow/cache/manifest-lock-plans/issue-10.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
 

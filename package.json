@@ -12,7 +12,7 @@
   "bugs": {
     "url": "https://github.com/0disoft/mustflow/issues"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.2",
   "bin": {
     "mf": "./dist/cli/index.js",
     "mustflow": "./dist/cli/index.js"
@@ -81,7 +81,7 @@
     "workflow"
   ],
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.1",
     "@types/sql.js": "^1.4.11",
     "fast-check": "^4.9.0",
     "typescript": "^7.0.2"

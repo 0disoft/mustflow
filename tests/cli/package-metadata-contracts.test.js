@@ -42,7 +42,7 @@ test('package metadata is ready for public npm publishing', () => {
 	assert.match(packageJson.description, /agent workflow/i);
 	assert.ok(packageJson.keywords.includes('agent-workflow'));
 	assert.ok(packageJson.keywords.includes('agents-md'));
-	assert.equal(packageJson.packageManager, 'bun@1.4.0');
+	assert.equal(packageJson.packageManager, 'bun@1.4.2');
 });
 
 test('default template manifest version stays synchronized with package version', () => {

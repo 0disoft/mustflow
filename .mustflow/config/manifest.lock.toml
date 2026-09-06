@@ -14,7 +14,7 @@ content_hash = "sha256:224d03ed2e2c6d990b6fda7d6be57e43a7da26da070cb69692452258b
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:2b0ad0a3953bd43b5221032a1fdd7ed3ad86c5559eb5514136ae272de33adc13"
+content_hash = "sha256:cb40c30463b267d6781dc7e8a7ffdb321a22445108d1ee1f43e4ca146caf131c"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
