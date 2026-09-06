@@ -370,3 +370,13 @@ content_hash = "sha256:b99cdf153d3c51d694a0f5b0f8eb97aa1c47e593db0ffda4d550d5730
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:f219b2dd222681d02c8bf072e4a64d36d5ec49d1afbfe4c6084395ae6e9dd7c7"
+
+[files.".mustflow/skills/session-management-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:f1daeec244a1d499849681e915f68a3a5aa678dc16958ad8064042aa4ab7ae14"
+
+[files.".mustflow/skills/credential-token-lifecycle-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:90f66037174e22540a6d4b5bdb1ae771412f8972098e903ce3881c1a70091c05"

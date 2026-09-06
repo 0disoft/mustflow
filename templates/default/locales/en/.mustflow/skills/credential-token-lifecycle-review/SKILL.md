@@ -2,7 +2,7 @@
 mustflow_doc: skill.credential-token-lifecycle-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: credential-token-lifecycle-review
@@ -118,8 +118,10 @@ stage?"
      `HMAC_SHA256(server_pepper, presented_secret)` with the key id, authority, owner, issuance,
      expiry, and revocation times, and compare in constant time.
    - Keep JWT signing private keys in KMS, HSM, or Secrets Manager; publish only public keys via
-     JWKS. Use reversible encryption only when a plaintext credential must be forwarded to an
-     external service.
+     JWKS. Reversible encryption is needed for credentials forwarded to an external service and,
+     when explicitly supported, a bounded retry-response envelope containing newly issued tokens.
+     Keep that envelope separate from the verifier store, tightly access-controlled, and erased on
+     expiry or revocation; do not retain plaintext tokens as the verification source.
 4. Fix JWT validation rules instead of trusting the library default.
    - Pin allowed algorithms per issuer; never let the token's `alg` choose the algorithm. Validate
      issuer, audience, expiry, not-before, token type, subject and scope shape, and a trusted `kid`
@@ -129,9 +131,16 @@ stage?"
 5. Pair short access tokens with rotating refresh tokens.
    - Issue access tokens in minutes (about 10 minutes is a reasonable SaaS start) so a leaked token
      has a short damage window.
-   - Rotate refresh tokens on every use, invalidate the previous token, and revoke the whole token
-     family plus require re-login when an already-used refresh token reappears. Rotate session ids on
-     login, privilege escalation, password change, and MFA change.
+   - Rotate refresh tokens on each successful exchange and invalidate the previous token. Name a
+     single-flight owner for the whole sharing scope (tabs or BFF instances) so independent requests
+     wait for the current generation instead of exchanging the same old token. A process-local mutex
+     does not cover multiple instances; follow `session-management-review` for coordination.
+   - Distinguish a verified retransmission of one request from independent concurrency and unexplained
+     consumed-token reuse. Only return an already-created response for a client-, family-, generation-,
+     and request-bound retry within protected retention; an attempt id alone is not identity evidence.
+     Unexplained reuse revokes the whole family and requires re-login. Do not accept old tokens for a
+     blanket grace period or create two successors. Rotate session ids on login and verified trust
+     changes, revoking the old credentials.
 6. Design revocation separately from key rotation.
    - Key rotation starts issuing with a new key and keeps old public keys valid for verification
      until outstanding tokens expire; it is not a logout feature.

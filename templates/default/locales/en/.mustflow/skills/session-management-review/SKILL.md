@@ -2,7 +2,7 @@
 mustflow_doc: skill.session-management-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: session-management-review
@@ -77,7 +77,8 @@ actually forced?"
 - Forced-logout latency ledger: which credential types are immediately revocable and which are
   self-validating, and where online session checks are required.
 - Refresh ledger: family id, generation, token hash, consumed and replaced state, attempt ids,
-  single-flight behavior, and reuse detection.
+  single-flight owner and coordination scope across tabs or BFF instances, bounded protected retry
+  results, waiter delivery, and reuse detection.
 - Cookie and browser ledger: cookie names, domains, prefixes, flags, SameSite, duplicate-name
   behavior, and where tokens live in the browser.
 - Expiry ledger: idle and absolute expiry sources, server enforcement points, and restart behavior.
@@ -144,10 +145,21 @@ actually forced?"
    - Multiple browser tabs or mobile retries can submit the same refresh token twice. Simple
      first-wins rotation plus theft verdict on the second request logs legitimate users out, while
      blindly accepting the old token for a window lets attackers reuse it.
+   - Name one refresh single-flight owner per shared token family. Coordinate all tabs or BFF
+     instances that share it before token exchange; an in-process mutex cannot coordinate other
+     processes. Waiters obtain the current generation through the owner instead of independently
+     exchanging the old token. Define owner failure, bounded waiting, and result delivery so a
+     delayed response cannot overwrite newer credentials.
    - Store per-session `refresh_generation` and the current token hash, and rotate with one
-     conditional update. Record the client's `refresh_attempt_id` so a retry of the same request
-     receives the already-created response. If the same old token reappears with a different attempt
-     id, revoke the whole token family. One refresh token must never fork into two live branches.
+     conditional update. A `refresh_attempt_id` identifies a retransmission, not whether two
+     independent requests are legitimate. For a verified retransmission, return only the previously
+     created result: bind it to the authenticated client, family, generation, and request; limit its
+     lifetime and access; protect any retained token material with encryption; and erase it on expiry
+     or revocation. Never log retry results or use an attempt id alone as authentication.
+   - After coordination, unexplained reuse of a consumed token still revokes the family and requires
+     a fresh login. If the provider cannot safely recover the same response, use its documented
+     failure policy. Do not introduce blanket old-token grace or mint another successor. One refresh
+     token must never fork into two live branches.
 7. Audit the session lifecycle and notify on security events.
    - Log session creation, refresh rotation, reauthentication, privilege escalation, remote logout,
      reuse detection, and expiry. Never log raw tokens, cookies, or `Authorization` headers.
@@ -210,6 +222,11 @@ Use configured oneshot command intents when available:
 Prefer the narrowest configured tests that prove terminate-one and logout-all ownership, session-id
 rotation at trust changes, concurrent refresh single-flight, forced-logout latency, and cookie or
 CSRF behavior.
+
+Review three distinct refresh cases: a verified same-id retransmission gets the same protected
+result within its retention limit; independent concurrent tabs or BFF requests are coalesced before
+exchange and receive one generation; unexplained old-token reuse revokes the family. Also cover
+owner failure and expired retry results without treating a different attempt id as proof of theft.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling
