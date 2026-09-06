@@ -2,7 +2,7 @@
 mustflow_doc: skill.authentication-design-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: authentication-design-review
@@ -155,6 +155,12 @@ does every recovery path stay at least as strong as login?"
      other users. Combine account identifier hash, IP or network range, device, network provider,
      failure rate, and password spraying across accounts, and escalate delay and additional
      verification as failures accumulate without permanent lockout by attacker requests alone.
+   - Distinguish risk evaluation from authentication evidence, following `session-management-review`.
+     Matching IP or device information cannot grant access. Combined risk may justify reauthentication,
+     a sensitive-action hold, request denial, or session termination even with a valid credential.
+     Accept IP evidence only across a trusted proxy boundary; include normal VPN, NAT, mobile-network,
+     and device changes, reasoned recovery, and minimal data retention. A changed IP alone must not
+     cause permanent lockout, and this policy does not mandate new fingerprint collection.
    - Hide account existence across login, signup, and recovery: unify message, HTTP status,
      response body, size, redirect, cookie issuance, and processing path; run dummy verification work
      for unknown accounts; and respond identically for registered and unregistered email in recovery

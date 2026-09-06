@@ -2,7 +2,7 @@
 mustflow_doc: skill.session-management-review
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: session-management-review
@@ -81,6 +81,8 @@ actually forced?"
   results, waiter delivery, and reuse detection.
 - Cookie and browser ledger: cookie names, domains, prefixes, flags, SameSite, duplicate-name
   behavior, and where tokens live in the browser.
+- Risk ledger when monitoring is used: trusted proxy boundary, combined signals, proportionate
+  actions and reason codes, legitimate-user recovery, and data minimization and retention.
 - Expiry ledger: idle and absolute expiry sources, server enforcement points, and restart behavior.
 - Audit and notification ledger: session lifecycle events, safe identifiers, and user notifications.
 - Existing auth tests, session fixtures, security docs, and configured command intents.
@@ -115,10 +117,18 @@ actually forced?"
    - Hand the client an unguessable random token and store only a hash or HMAC of it server-side.
      Generate session tokens with a CSPRNG at 128 bits minimum, 256 bits for new designs.
 2. Keep device identifiers out of authentication.
-   - User Agent, IP, install id, and browser fingerprints are descriptive and anomaly signals only.
-     They are spoofable, churn with VPN and carrier NAT, and must never allow or deny a request.
+   - User Agent, IP, install id, and browser fingerprints are descriptive and risk signals, not
+     authentication evidence. Matching them must not authenticate a user or grant access without a
+     valid session secret and server session state. They are spoofable and change during normal use.
    - Session lists may display "Chrome on Windows" or "Seoul about 2 hours ago" as labels; the actual
-     authentication decision comes only from the session secret and server session state.
+     authentication evidence comes from the session secret and server session state.
+   - A valid secret does not override a declared risk policy: combined evidence may require fresh
+     authentication, hold a sensitive action, deny a request, or terminate a session. Record the
+     evidence, reason, action, and legitimate-user recovery path. Do not permanently block someone
+     merely because their IP changed; include VPN, mobile-network, NAT, and device-change cases.
+   - Evaluate client IP only through a configured trusted proxy chain, never arbitrary forwarded
+     headers. Minimize collected signals and their retention. This does not require new fingerprint
+     collection or a risk engine in every product.
 3. Treat session list and termination APIs as sensitive account management.
    - Terminate with one ownership-bound query such as
      `UPDATE auth_sessions SET revoked_at = now() WHERE id = ? AND user_id = ? AND revoked_at IS NULL`.
@@ -231,6 +241,10 @@ Review three distinct refresh cases: a verified same-id retransmission gets the 
 result within its retention limit; independent concurrent tabs or BFF requests are coalesced before
 exchange and receive one generation; unexplained old-token reuse revokes the family. Also cover
 owner failure and expired retry results without treating a different attempt id as proof of theft.
+
+For risk monitoring, reject access based only on a matching IP or device label; process a legitimate
+IP change under the declared policy; and permit proportionate step-up or denial for combined risk
+signals even with a valid secret. Include spoofed forwarded headers and a legitimate recovery path.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

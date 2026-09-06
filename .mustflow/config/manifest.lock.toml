@@ -374,7 +374,7 @@ content_hash = "sha256:f219b2dd222681d02c8bf072e4a64d36d5ec49d1afbfe4c6084395ae6
 [files.".mustflow/skills/session-management-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:26b31d0effdeefeff50ac4be87892b985ae6d6ee8dbe46d8fd46deef0a5e1463"
+content_hash = "sha256:8a102361622ba6b030504d0a78e5159897764f8170d03026d98bd1a9ff651d25"
 
 [files.".mustflow/skills/credential-token-lifecycle-review/SKILL.md"]
 source = "template_common"
@@ -384,7 +384,7 @@ content_hash = "sha256:90f66037174e22540a6d4b5bdb1ae771412f8972098e903ce3881c1a7
 [files.".mustflow/skills/authentication-design-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:c278fdfeb3d9c7a79d1acca5a895d685b5e81ff80dda66a4c1ac73a694e23151"
+content_hash = "sha256:59714f12266534ed50ca574146aeab0bb9ecd5962ecfca5100855208b82dce56"
 
 [files.".mustflow/skills/cryptographic-storage-review/SKILL.md"]
 source = "template_common"
