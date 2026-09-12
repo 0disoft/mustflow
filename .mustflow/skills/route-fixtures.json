@@ -2,6 +2,402 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "framework-coverage-bun-en",
+      "mode": "exact",
+      "task": "Use Bun to run the build script with Bun.file and Bun.write.",
+      "paths": [
+        "scripts/build.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "bun-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-bun-ko",
+      "mode": "exact",
+      "task": "Bun 빌드 스크립트에서 Bun.file로 파일을 읽고 Bun.write로 결과를 저장해줘.",
+      "paths": [
+        "scripts/build.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "bun-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-hono-en",
+      "mode": "exact",
+      "task": "Add a Hono health route with Hono middleware and typed context.",
+      "paths": [
+        "src/routes/health.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "hono-code-change"
+      ],
+      "forbidden_candidates": [
+        "nestjs-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-hono-ko",
+      "mode": "exact",
+      "task": "Hono 앱에 상태 확인 라우트와 Hono 미들웨어를 추가해줘.",
+      "paths": [
+        "src/routes/health.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "hono-code-change"
+      ],
+      "forbidden_candidates": [
+        "nestjs-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-nestjs-en",
+      "mode": "exact",
+      "task": "Add a NestJS controller and injectable service to the health module.",
+      "paths": [
+        "src/health/health.controller.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "nestjs-code-change"
+      ],
+      "forbidden_candidates": [
+        "hono-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-nestjs-ko",
+      "mode": "exact",
+      "task": "NestJS 상태 확인 모듈에 controller와 injectable service를 추가해줘.",
+      "paths": [
+        "src/health/health.controller.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "nestjs-code-change"
+      ],
+      "forbidden_candidates": [
+        "hono-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-tauri-en",
+      "mode": "exact",
+      "task": "Add a Tauri invoke command and configure its capabilities.",
+      "paths": [
+        "src-tauri/src/lib.rs"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "tauri-code-change"
+      ],
+      "forbidden_candidates": [
+        "wails-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-tauri-ko",
+      "mode": "exact",
+      "task": "Tauri invoke 명령을 추가하고 필요한 capabilities를 설정해줘.",
+      "paths": [
+        "src-tauri/src/lib.rs"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "tauri-code-change"
+      ],
+      "forbidden_candidates": [
+        "wails-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-wails-en",
+      "mode": "exact",
+      "task": "Add a Wails Go binding for desktop file selection.",
+      "paths": [
+        "app.go"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "wails-code-change"
+      ],
+      "forbidden_candidates": [
+        "tauri-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-wails-ko",
+      "mode": "exact",
+      "task": "Wails 데스크톱 앱에서 파일을 선택하는 Go binding을 추가해줘.",
+      "paths": [
+        "app.go"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "wails-code-change"
+      ],
+      "forbidden_candidates": [
+        "tauri-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-vite-en",
+      "mode": "exact",
+      "task": "Configure Vite build aliases and asset handling in vite.config.ts.",
+      "paths": [
+        "vite.config.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "vite-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-vite-ko",
+      "mode": "exact",
+      "task": "vite.config.ts에서 Vite 빌드 별칭과 정적 자산 처리를 설정해줘.",
+      "paths": [
+        "vite.config.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "vite-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-svelte-en",
+      "mode": "exact",
+      "task": "Implement a Svelte counter component using reactive state.",
+      "paths": [
+        "src/Counter.svelte"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "svelte-code-change"
+      ],
+      "forbidden_candidates": [
+        "vue-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-svelte-ko",
+      "mode": "exact",
+      "task": "Svelte 반응형 상태를 이용해 Counter.svelte의 카운터를 구현해줘.",
+      "paths": [
+        "src/Counter.svelte"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "svelte-code-change"
+      ],
+      "forbidden_candidates": [
+        "vue-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-vue-en",
+      "mode": "exact",
+      "task": "Implement a Vue component using Vue computed properties and ref state.",
+      "paths": [
+        "src/Counter.vue"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "vue-code-change"
+      ],
+      "forbidden_candidates": [
+        "svelte-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-vue-ko",
+      "mode": "exact",
+      "task": "Vue ref 상태와 computed를 사용해 Counter.vue를 구현해줘.",
+      "paths": [
+        "src/Counter.vue"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "vue-code-change"
+      ],
+      "forbidden_candidates": [
+        "svelte-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-html-en",
+      "mode": "exact",
+      "task": "Build a semantic HTML contact form with labels and fieldsets.",
+      "paths": [
+        "public/contact.html"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "html-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-html-ko",
+      "mode": "exact",
+      "task": "시맨틱 HTML 연락 폼에 label과 fieldset을 연결해줘.",
+      "paths": [
+        "public/contact.html"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "html-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-tailwind-en",
+      "mode": "exact",
+      "task": "Update Tailwind CSS utility classes and theme tokens for responsive spacing.",
+      "paths": [
+        "src/styles.css"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "tailwind-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-tailwind-ko",
+      "mode": "exact",
+      "task": "Tailwind CSS 유틸리티와 테마 토큰으로 반응형 간격을 적용해줘.",
+      "paths": [
+        "src/styles.css"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "tailwind-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-unocss-en",
+      "mode": "exact",
+      "task": "Configure UnoCSS presets and shortcuts in uno.config.ts.",
+      "paths": [
+        "uno.config.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "unocss-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-unocss-ko",
+      "mode": "exact",
+      "task": "uno.config.ts에서 UnoCSS presets와 shortcuts를 구성해줘.",
+      "paths": [
+        "uno.config.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "unocss-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-astro-en",
+      "mode": "exact",
+      "task": "Build an Astro page with an Astro component and hydrated island.",
+      "paths": [
+        "src/pages/index.astro"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "astro-code-change"
+      ]
+    },
+    {
+      "id": "framework-coverage-astro-ko",
+      "mode": "exact",
+      "task": "Astro 페이지에 컴포넌트와 선택적으로 hydrate하는 island를 추가해줘.",
+      "paths": [
+        "src/pages/index.astro"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "astro-code-change"
+      ]
+    },
+    {
       "id": "workflow-boundary-refactor-excluded-en",
       "mode": "exact",
       "task": "Refactoring excluded: review code changes for risks without changing behavior.",

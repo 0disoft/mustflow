@@ -74,7 +74,7 @@ content_hash = "sha256:b5e020c36aa8b3fb31813ec2ec9fb8532043c189081e87041751cfcdf
 [files.".mustflow/skills/routes.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:f826d6e41cfd3a3ecef71367b8127e0b39e8e755ae4f797cced350970b96e395"
+content_hash = "sha256:701c91a3d42ad0ffea96873df43bd12fcd9653db8ade8a27d85be042b2dc4cf9"
 
 [files.".mustflow/skills/backend-reliability-change/SKILL.md"]
 source = "template_common"
@@ -369,7 +369,7 @@ content_hash = "sha256:b99cdf153d3c51d694a0f5b0f8eb97aa1c47e593db0ffda4d550d5730
 [files.".mustflow/skills/catalog.v2.json"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:12ae02f2641f8bac7536a5cff19d675dd47ea846541646bcfe214a3ade9971a3"
+content_hash = "sha256:1f76edb646a023fe37c6857391a1cca5f1b79973840015e45efc1990c62ffaa2"
 
 [files.".mustflow/skills/session-management-review/SKILL.md"]
 source = "template_common"

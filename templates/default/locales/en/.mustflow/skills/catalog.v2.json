@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:147435e6727c5fcfd1b396fa63c23070f14dd831d390e2162dd7cf48454a7336",
+  "source_fingerprint": "sha256:57edf0b228725068d6b38ce9bb8afaf79b9b05fb7972d11079ec13dc1004308c",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2196,7 +2196,12 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "bun file",
+        "bun runtime",
+        "bun write",
+        "bun 빌드 스크립트"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -6819,7 +6824,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "hono health route",
+        "hono middleware",
+        "hono 미들웨어"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -9275,7 +9284,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "nestjs controller",
+        "nestjs injectable",
+        "nestjs 상태 확인"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
