@@ -6,6 +6,15 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.138.0 - 2026-09-12
+
+- Expand built-in interface design, Sui SDK and Sui Move procedures.
+- Strengthen bilingual routing and explicit exclusions; cover 190 skills with 341 routing cases.
+- Preserve detached routing context tables when installing a selected skill profile.
+- Bound dashboard requests, reject stale responses and separate browser panel responsibilities.
+- Separate verification scheduling, completion evidence and configuration/skill validators.
+- Avoid duplicate document parsing during index freshness checks and expose database size and failure-stage diagnostics.
+
 ## 2.137.7 - 2026-09-06
 
 - Correct cache invalidation ordering and document stale refill and failed invalidation cases (#30).

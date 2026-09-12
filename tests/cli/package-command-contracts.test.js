@@ -1,3 +1,4 @@
+import { isAllowedManifestCustomizationPath } from '../../dist/cli/lib/manifest-lock-scope.js';
 import {
 	assert,
 	ciWorkflow,
@@ -240,10 +241,10 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineIntent, /lock = "manifest_lock_baseline"/u);
 	assert.match(baselineIntent, /network = false/u);
 	assert.match(baselineIntent, /destructive = false/u);
-	assert.match(baselineScript, /const allowedPaths = new Set/u);
-	assert.match(baselineScript, /'AGENTS\.md'/u);
-	assert.match(baselineScript, /'\.mustflow\/docs\/agent-workflow\.md'/u);
-	assert.match(baselineScript, /'\.mustflow\/config\/commands\.toml'/u);
+	assert.match(baselineScript, /isAllowedManifestCustomizationPath/u);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, 'AGENTS.md'), true);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.mustflow/docs/agent-workflow.md'), true);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.mustflow/config/commands.toml'), true);
 	const planIntent = /\[intents\.manifest_lock_plan_workspace_routing\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 	const applyIntent = /\[intents\.manifest_lock_apply_workspace_routing\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
 	assert.match(planIntent, /"plan"/u);
@@ -256,20 +257,17 @@ test('source repository exposes reviewed manifest lock baseline acceptance as a 
 	assert.match(baselineScript, /applyManifestLockCustomizationPlan/u);
 });
 
-test('entry-scoped manifest lock fix commit stays bounded to reviewed implementation surfaces', () => {
-	const stageIntent = /\[intents\.manifest_lock_stage_entry_merge_fix\][\s\S]*?(?=\n\[intents\.)/u.exec(sourceCommandContract)?.[0] ?? '';
-	const commitIntent = /\[intents\.manifest_lock_commit_entry_merge_fix\][\s\S]*?(?=\n\[intents\.|$)/u.exec(sourceCommandContract)?.[0] ?? '';
-
-	assert.notEqual(stageIntent, '');
-	assert.match(stageIntent, /"src\/cli\/lib\/manifest-lock\.ts"/u);
-	assert.match(stageIntent, /"tests\/cli\/manifest-lock-cas\.test\.js"/u);
-	assert.match(stageIntent, /"docs-site\/src\/content\/docs\/en\/design\/manifest-lock-decision\.md"/u);
-	assert.match(stageIntent, /"package\.json"/u);
-	assert.match(stageIntent, /writes = \["\.git\/index"\]/u);
-	assert.match(stageIntent, /approval_actions = \["git_commit"\]/u);
-	assert.notEqual(commitIntent, '');
-	assert.match(commitIntent, /merge independent lock entries/u);
-	assert.match(commitIntent, /approval_actions = \["git_commit"\]/u);
+test('release plans guard exact staged paths and the base commit', () => {
+ const contract = readProjectText('.mustflow/config/commands.d/release-plan.toml');
+ const script = readProjectText('scripts/release-plan.mjs');
+ assert.match(contract, /\[intents\.release_plan_stage\]/u);
+ assert.match(contract, /\[intents\.release_plan_commit\]/u);
+ assert.match(contract, /approval_actions = \["git_commit"\]/u);
+ assert.match(script, /Release plan base_head does not match HEAD/);
+ assert.match(script, /JSON\.stringify\(staged\) !== JSON\.stringify\(expected\)/);
+ assert.match(script, /Staged paths do not exactly match the release plan/);
+ assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.env'), false);
+ assert.equal(isAllowedManifestCustomizationPath(projectRoot, '../AGENTS.md'), false);
 });
 
 test('source repository bounds security skill manifest baseline acceptance to reviewed files', () => {
@@ -284,8 +282,8 @@ test('source repository bounds security skill manifest baseline acceptance to re
 	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
 	assert.match(baselineIntent, /network = false/u);
 	assert.match(baselineIntent, /destructive = false/u);
-	assert.match(baselineScript, /'\.mustflow\/skills\/dependency-upgrade-review\/SKILL\.md'/u);
-	assert.match(baselineScript, /'\.mustflow\/skills\/security-privacy-review\/SKILL\.md'/u);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.mustflow/skills/dependency-upgrade-review/SKILL.md'), true);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.mustflow/skills/security-privacy-review/SKILL.md'), true);
 });
 
 test('source repository bounds native crash skill manifest baseline acceptance to one reviewed file', () => {
@@ -299,7 +297,7 @@ test('source repository bounds native crash skill manifest baseline acceptance t
 	assert.match(baselineIntent, /writes = \["\.mustflow\/config\/manifest\.lock\.toml"\]/u);
 	assert.match(baselineIntent, /network = false/u);
 	assert.match(baselineIntent, /destructive = false/u);
-	assert.match(baselineScript, /'\.mustflow\/skills\/native-crash-forensics-review\/SKILL\.md'/u);
+	assert.equal(isAllowedManifestCustomizationPath(projectRoot, '.mustflow/skills/native-crash-forensics-review/SKILL.md'), true);
 });
 
 test('Git write contracts require explicit approval', () => {
