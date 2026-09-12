@@ -1,3 +1,5 @@
+import type { VerificationReceipt, VerificationResult, VerificationResultStatus, VerificationSummary } from './verify/result-types.js';
+import { summarizeResults, countUndeclaredWriteDrift, stringField, objectField, createFailureFingerprintForVerify, riskCodesForFailureFingerprint } from './verify/result-analysis.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -28,7 +30,6 @@ import {
 } from '../../core/failure-replay-capsule.js';
 import {
 	createRepeatedFailureRisks,
-	createVerificationFailureFingerprint,
 	updateRepeatedFailureState,
 	type RepeatedFailureSummary,
 	type RepeatedFailureRisk,
@@ -143,50 +144,10 @@ function readReusableVerificationResults(projectRoot: string, verificationPlanId
 }
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
-type VerificationResultStatus =
-	| 'passed'
-	| 'failed'
-	| 'timed_out'
-	| 'start_failed'
-	| 'output_limit_exceeded'
-	| 'skipped';
-
-type VerificationReceipt = Record<string, unknown> & {
-	readonly status?: RunReceipt['status'];
-	readonly write_drift?: RunReceipt['write_drift'];
-	readonly performance?: RunReceipt['performance'];
-	readonly receipt_path?: string;
-	readonly verification_plan_id?: string;
-	readonly head_tree_hash?: string;
-	readonly changed_files_hash?: string;
-	readonly current_state_hash?: string;
-};
-
 interface BufferedOutput {
 	readonly reporter: Reporter;
 	readonly stdout: () => string;
 	readonly stderr: () => string;
-}
-
-interface VerificationResult {
-	readonly intent: string | null;
-	readonly status: VerificationResultStatus;
-	readonly skipped: boolean;
-	readonly reason: string | null;
-	readonly detail: string | null;
-	readonly exit_code: number | null;
-	readonly verification_plan_id: string | null;
-	readonly receipt_path: string | null;
-	readonly receipt_sha256: string | null;
-	readonly receipt: VerificationReceipt | null;
-}
-
-interface VerificationSummary {
-	readonly matched: number;
-	readonly ran: number;
-	readonly passed: number;
-	readonly failed: number;
-	readonly skipped: number;
 }
 
 interface VerificationParallelismReport {
@@ -695,136 +656,6 @@ async function runScheduledVerificationIntents(
 	}
 
 	return results;
-}
-
-function summarizeResults(results: readonly VerificationResult[]): VerificationSummary {
-	const ran = results.filter((result) => !result.skipped).length;
-	const passed = results.filter((result) => result.status === 'passed').length;
-	const skipped = results.filter((result) => result.skipped).length;
-	const failed = results.filter(
-		(result) =>
-			!result.skipped &&
-			(result.status === 'failed' ||
-				result.status === 'timed_out' ||
-				result.status === 'start_failed' ||
-				result.status === 'output_limit_exceeded'),
-	).length;
-
-	return {
-		matched: results.filter((result) => result.intent !== null).length,
-		ran,
-		passed,
-		failed,
-		skipped,
-	};
-}
-
-function countUndeclaredWriteDrift(results: readonly VerificationResult[]): number {
-	return results.filter((result) => {
-		const writeDrift = result.receipt?.write_drift;
-		if (typeof writeDrift !== 'object' || writeDrift === null) {
-			return false;
-		}
-		return (writeDrift as { readonly has_undeclared_changes?: unknown }).has_undeclared_changes === true;
-	}).length;
-}
-
-function stringField(value: unknown): string | null {
-	return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function objectField(value: unknown): Record<string, unknown> | null {
-	return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null;
-}
-
-function performanceForResult(result: VerificationResult): Record<string, unknown> | null {
-	return objectField(result.receipt?.performance);
-}
-
-function resultSummaryForResult(result: VerificationResult): Record<string, unknown> | null {
-	return objectField(performanceForResult(result)?.result_summary);
-}
-
-function commandFingerprintForResult(result: VerificationResult): string | null {
-	return stringField(performanceForResult(result)?.command_fingerprint);
-}
-
-function exitCodeClassForResult(result: VerificationResult): string | null {
-	const resultSummary = resultSummaryForResult(result);
-	const explicitClass = stringField(resultSummary?.exit_code_class);
-	if (explicitClass) {
-		return explicitClass;
-	}
-
-	if (result.exit_code === null) {
-		return 'no_exit_code';
-	}
-
-	return result.exit_code === 0 ? 'success' : 'failure';
-}
-
-function timedOutForResult(result: VerificationResult): boolean {
-	const resultSummary = resultSummaryForResult(result);
-	return result.status === 'timed_out' || resultSummary?.timed_out === true;
-}
-
-function errorKindForResult(result: VerificationResult): string | null {
-	return (
-		stringField(resultSummaryForResult(result)?.error_kind) ??
-		(result.status === 'start_failed' || result.status === 'output_limit_exceeded' ? result.status : null)
-	);
-}
-
-function failedResults(results: readonly VerificationResult[]): readonly VerificationResult[] {
-	return results.filter(
-		(result) =>
-			!result.skipped &&
-			(result.status === 'failed' ||
-				result.status === 'timed_out' ||
-				result.status === 'start_failed' ||
-				result.status === 'output_limit_exceeded'),
-	);
-}
-
-function createFailureFingerprintForVerify(input: {
-	readonly verificationPlanId: string;
-	readonly report: ChangeVerificationReport;
-	readonly results: readonly VerificationResult[];
-	readonly riskCodes: readonly string[];
-}): VerificationFailureFingerprint | null {
-	const failures = failedResults(input.results);
-
-	return createVerificationFailureFingerprint({
-		verificationPlanId: input.verificationPlanId,
-		failedIntents: failures.map((result) => result.intent).filter((intent): intent is string => intent !== null),
-		exitCodeClasses: failures.map(exitCodeClassForResult).filter((value): value is string => value !== null),
-		timeoutFlags: failures.map(timedOutForResult),
-		errorKinds: failures.map(errorKindForResult).filter((value): value is string => value !== null),
-		riskCodes: input.riskCodes,
-		affectedSurfaces: input.report.requirements.flatMap((requirement) => requirement.surfaces),
-		commandFingerprints: failures.map(commandFingerprintForResult).filter((value): value is string => value !== null),
-	});
-}
-
-function riskCodesForFailureFingerprint(input: {
-	readonly sourceAnchorRisks: readonly LocalSourceAnchorVerdictRisk[];
-	readonly scopeDiffRisks: readonly ScopeDiffRisk[];
-	readonly validationRatchetRisks: readonly ValidationRatchetRisk[];
-	readonly reproEvidenceRisks: readonly { readonly code: string }[];
-	readonly externalEvidenceRisks: readonly { readonly code: string }[];
-	readonly results: readonly VerificationResult[];
-}): readonly string[] {
-	const writeDriftRiskCodes =
-		countUndeclaredWriteDrift(input.results) > 0 ? ['undeclared_write_drift'] : [];
-
-	return [
-		...input.sourceAnchorRisks.map(() => 'source_anchor_invariant_review_required'),
-		...input.scopeDiffRisks.map((risk) => risk.code),
-		...input.validationRatchetRisks.map((risk) => risk.code),
-		...input.reproEvidenceRisks.map((risk) => risk.code),
-		...input.externalEvidenceRisks.map((risk) => risk.code),
-		...writeDriftRiskCodes,
-	];
 }
 
 function createReceiptBindingEvidence(
