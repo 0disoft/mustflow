@@ -4,6 +4,97 @@ import vm from 'node:vm';
 import { dashboardRequestScript } from '../../dist/cli/lib/dashboard-html/request-script.js';
 import { renderDashboardClientScript } from '../../dist/cli/lib/dashboard-html/client-script.js';
 import { dashboardDocumentsScript, dashboardDocumentEventsScript } from '../../dist/cli/lib/dashboard-html/documents-script.js';
+import { dashboardSettingsScript, dashboardSettingsEventsScript } from '../../dist/cli/lib/dashboard-html/settings-script.js';
+
+test('settings controls preserve pending edits, unload warning, reset and save outcomes after extraction', async () => {
+	const h = harness(), nodes = new Map(), jobs = [], windowEvents = {};
+	function element() {
+		return {
+			children: [], listeners: {},
+			set textContent(value) { this.text = value; this.children = []; },
+			get textContent() { return this.text; },
+			appendChild(child) { this.children.push(child); },
+			setAttribute() {},
+			addEventListener(name, callback) { (this.listeners[name] ??= []).push(callback); },
+			focus() {},
+		};
+	}
+	const get = id => {
+		if (!nodes.has(id)) nodes.set(id, element());
+		return nodes.get(id);
+	};
+	h.context.document = { getElementById: get, createElement: element };
+	h.context.window = { addEventListener(name, callback) { (windowEvents[name] ??= []).push(callback); } };
+	h.context.messageExists = () => false;
+	h.context.messageFormat = key => key;
+	h.context.messageWithCount = key => key;
+	h.context.statusKey = key => h.messages.push(key);
+	h.context.markDataUpdated = () => {};
+	h.context.snapshot = { settings: [
+		{ id: 'git.auto_stage', kind: 'boolean', value: false, editable: true },
+		{ id: 'refactoring.hotspots.large_file_candidate_kb', kind: 'number', value: 40, min: 1, max: 100, editable: true },
+		{ id: 'git.auto_push', kind: 'boolean', value: false, editable: false },
+	] };
+	h.context.pending = new Map();
+	const update = h.context.updateDashboardView;
+	h.context.updateDashboardView = (...args) => {
+		const job = update(...args);
+		jobs.push(job);
+		return job;
+	};
+	h.run(dashboardSettingsScript);
+	h.run(dashboardSettingsEventsScript);
+	assert.equal(get('save').listeners.click.length, 1);
+	assert.equal(windowEvents.beforeunload.length, 1);
+	const warning = () => {
+		const event = { prevented: false, preventDefault() { this.prevented = true; } };
+		windowEvents.beforeunload[0](event);
+		return event;
+	};
+	assert.equal(warning().prevented, false);
+	const checkbox = h.run('renderInput(snapshot.settings[0])');
+	checkbox.checked = true;
+	checkbox.listeners.change[0]();
+	assert.equal(h.context.pending.get('git.auto_stage'), true);
+	assert.equal(get('save').disabled, false);
+	assert.equal(warning().returnValue, '');
+	assert.equal(warning().prevented, true);
+	checkbox.checked = false;
+	checkbox.listeners.change[0]();
+	assert.equal(h.context.pending.size, 0);
+	assert.equal(get('save').disabled, true);
+	assert.equal(h.run('renderInput(snapshot.settings[2])').disabled, true);
+
+	const number = h.run('renderInput(snapshot.settings[1])');
+	assert.equal(number.min, '1');
+	assert.equal(number.max, '100');
+	number.value = '50';
+	number.listeners.input[0]();
+	assert.equal(h.context.pending.get('refactoring.hotspots.large_file_candidate_kb'), 50);
+	get('settings-pending-summary').children[0].children[1].listeners.click[0]();
+	assert.equal(h.context.pending.size, 0);
+	assert.equal(warning().prevented, false);
+
+	checkbox.checked = true;
+	checkbox.listeners.change[0]();
+	get('save').listeners.click[0]();
+	assert.equal(h.calls.length, 1);
+	assert.deepEqual(JSON.parse(h.calls[0].options.body), { updates: [{ id: 'git.auto_stage', value: true }] });
+	h.calls[0].reject(new Error('save unavailable'));
+	await jobs[0];
+	assert.equal(h.context.pending.size, 1);
+	assert.equal(warning().prevented, true);
+	get('save').listeners.click[0]();
+	const saved = { settings: h.context.snapshot.settings.map(setting =>
+		setting.id === 'git.auto_stage' ? { ...setting, value: true } : setting) };
+	h.calls[1].resolve(json(saved));
+	await jobs[1];
+	assert.equal(h.context.snapshot.settings[0].value, true);
+	assert.equal(h.run('pending.size'), 0);
+	assert.equal(get('save').disabled, true);
+	assert.equal(warning().prevented, false);
+});
+
 
 test('document review controls keep filtering, reviewer guards and single-action dispatch after extraction', async () => {
 	const h = harness(), elements = new Map(), jobs = [];

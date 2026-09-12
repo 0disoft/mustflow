@@ -5,6 +5,10 @@ This directory contains the build-free pieces used by `../dashboard-html.ts`.
 - `template.ts` owns the server-rendered HTML shell and public `renderDashboardHtml` function.
 - `styles.ts` owns the inline CSS string.
 - `client-script.ts` owns the inline browser script string.
+- `settings-script.ts` owns setting controls, pending-change summaries, reset,
+  preference loading/saving and save/unload event bindings. Its fragments share
+  `snapshot`, `pending`, locale/status helpers and `updateDashboardView` with the client;
+  the client inserts each fragment once and keeps cross-tab composition.
 - `documents-script.ts` owns document review loading, filtering, reviewer controls,
   actions and event bindings. Its inline fragments share the browser scope with the
   client script: `docReview`, locale/status helpers and `updateDashboardView` stay shared.
