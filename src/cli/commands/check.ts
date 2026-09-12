@@ -20,6 +20,7 @@ import { checkMustflowProjectReportWithGeneratedState } from '../lib/validation.
 const CHECK_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--strict', kind: 'boolean' },
+	{ name: '--progress', kind: 'boolean' },
 	{ name: '--repo', kind: 'string' },
 ] as const;
 
@@ -30,6 +31,7 @@ export function getCheckHelp(lang: CliLang = 'en'): string {
 			summary: t(lang, 'check.help.summary'),
 			options: [
 				{ label: '--json', description: t(lang, 'cli.option.json') },
+				{ label: '--progress', description: t(lang, 'check.help.option.progress') },
 				{
 					label: '--strict',
 					description: t(lang, 'check.help.option.strict'),
@@ -106,7 +108,13 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 	}
 
 	try {
-		const report = await checkMustflowProjectReportWithGeneratedState(projectRoot, { strict, scope });
+		const report = await checkMustflowProjectReportWithGeneratedState(projectRoot, {
+			strict,
+			scope,
+			onProgress: hasParsedCliOption(options, '--progress')
+				? event => reporter.stderr(`[check] ${event.phase}: ${event.state} (${event.elapsed_ms} ms)`)
+				: undefined,
+		});
 		const issues = report.issues;
 		const warnings = report.warnings;
 		const ok = issues.length === 0;

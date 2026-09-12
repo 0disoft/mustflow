@@ -75,6 +75,7 @@ export const frMessages = {
 
   "check.help.summary":
     "Valide les fichiers mustflow du dépôt actuel.",
+  "check.help.option.progress": "Affiche les étapes et leur durée sur stderr",
   "check.help.option.strict": "Exécute des vérifications strictes supplémentaires pour la sécurité des agents",
   "check.help.option.repo": "Valide un seul dépôt délégué et reporte les dérives de manifeste sans rapport",
   "check.help.exit.ok": "Tous les fichiers et paramètres mustflow requis sont valides",

@@ -1,6 +1,7 @@
 import type { CheckIssueId } from '../../../core/check-issues.js';
 import type { TomlTable } from '../command-contract.js';
 import type { SKILL_ROUTE_CATEGORY_LABELS } from './constants.js';
+import type { CheckProgressObserver } from '../check-progress.js';
 
 export interface CheckIssue {
 	readonly id?: CheckIssueId | null;
@@ -36,6 +37,7 @@ export interface SkillRouteMetadata {
 }
 
 export interface CheckOptions {
+	readonly onProgress?: CheckProgressObserver;
 	readonly strict?: boolean;
 	readonly scope?: CheckScope;
 }

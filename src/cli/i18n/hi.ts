@@ -75,6 +75,7 @@ export const hiMessages = {
 
   "check.help.summary":
     "वर्तमान रिपॉज़िटरी में mustflow फ़ाइलों की जाँच करें।",
+  "check.help.option.progress": "जाँच के चरण और बीता समय stderr पर दिखाएँ",
   "check.help.option.strict": "एजेंट सुरक्षा के लिए अतिरिक्त कठोर जाँच चलाएँ",
   "check.help.option.repo": "केवल एक प्रत्यायोजित रिपॉज़िटरी जाँचें और असंबंधित manifest बदलाव स्थगित करें",
   "check.help.exit.ok": "सभी आवश्यक mustflow फ़ाइलें और सेटिंग्स मान्य हैं",

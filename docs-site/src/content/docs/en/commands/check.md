@@ -57,6 +57,14 @@ npx mf check --strict
 
 Strict mode is optional to ensure the normal workflow remains lightweight. It is recommended after modifying mustflow documents, skills, command contracts, repository-map generation rules, or repository-flow generation rules.
 
+## Progress Output
+
+Use `mf check --strict --progress` to show each validation phase as it starts and
+finishes, with elapsed milliseconds. Progress is opt-in and goes to stderr, so
+`mf check --strict --json --progress` keeps stdout as a single JSON result.
+A completed phase has finished running; its validation issues still determine
+the final result and exit code. Progress does not estimate a percentage or remaining time.
+
 ## Repository-Scoped Checks
 
 ```sh

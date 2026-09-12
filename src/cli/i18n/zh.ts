@@ -75,6 +75,7 @@ export const zhMessages = {
 
   "check.help.summary":
     "验证当前仓库中的 mustflow 文件。",
+  "check.help.option.progress": "在 stderr 显示检查阶段和耗时",
   "check.help.option.strict": "运行额外的代理安全严格检查",
   "check.help.option.repo": "仅验证一个委派工作区仓库，并推迟无关的清单漂移",
   "check.help.exit.ok": "所有必需的 mustflow 文件和设置均有效",

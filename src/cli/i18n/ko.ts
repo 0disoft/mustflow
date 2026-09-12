@@ -74,6 +74,7 @@ export const koMessages = {
     "검증 문제 또는 잘못된 입력으로 인해 명령이 실패했습니다",
 
   "check.help.summary": "현재 저장소의 mustflow 파일을 검사합니다.",
+  "check.help.option.progress": "검사 단계와 소요 시간을 stderr에 표시합니다",
   "check.help.option.strict":
     "에이전트 안전성 엄격 검사를 추가로 실행합니다",
   "check.help.option.repo": "하나의 위임된 작업공간 저장소만 검사하고 관련 없는 manifest 변경은 보류합니다",

@@ -75,6 +75,7 @@ export const esMessages = {
 
   "check.help.summary":
     "Valida los archivos mustflow del repositorio actual.",
+  "check.help.option.progress": "Muestra las fases y el tiempo transcurrido en stderr",
   "check.help.option.strict": "Ejecuta comprobaciones estrictas adicionales de seguridad para agentes",
   "check.help.option.repo": "Valida solo un repositorio delegado y aplaza cambios de manifiesto no relacionados",
   "check.help.exit.ok": "Todos los archivos y ajustes mustflow requeridos son válidos",

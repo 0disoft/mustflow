@@ -3,6 +3,7 @@ import path from 'node:path';
 import { isSkillRouteSearchTerm } from '../../../core/skill-route-text.js';
 import { isSkillRoutePathHints } from '../../../core/skill-route-path-hints.js';
 import { withFileReadCache } from '../../../core/file-read-cache.js';
+import { runCheckStage, runAsyncCheckStage } from '../check-progress.js';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readScopedCommandContract } from '../../../core/config-loading.js';
@@ -2919,35 +2920,35 @@ function validateStrictStorage(projectRoot: string, limits: RetentionLimits, iss
 	}
 }
 
-function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
-	const retentionLimits = validateStrictRetentionPolicy(parsed.mustflowToml, issues);
-	validateStrictPromptCachePolicy(projectRoot, parsed.mustflowToml, issues);
-	validateStrictRefreshPolicy(parsed.mustflowToml, issues);
-	validateStrictHarnessPolicy(parsed.mustflowToml, issues);
-	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
-	validateStrictWorkspaceIntentAuthority(projectRoot, parsed.mustflowToml, parsed.commandsToml, issues);
-	validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
-	validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
-	validateStrictCandidateContractModelConfigs(projectRoot, issues);
-	validateStrictTestSelectionConfig(projectRoot, parsed.commandsToml, issues);
-	validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues);
-	validateStrictTemplateVersionSync(projectRoot, parsed.preferencesToml, issues);
-	validateStrictManagedMarkdownIdentities(projectRoot, issues);
-	validateStrictRouterIndexes(projectRoot, issues);
-	validateStrictSkillRouteFixtures(projectRoot, issues);
-	validateStrictSkills(projectRoot, parsed.commandsToml, issues);
-	validateStrictTemplateSkillProfiles(issues);
-	validateStrictRepoMap(projectRoot, issues);
-	validateStrictRepoFlow(projectRoot, issues);
-	validateStrictContextDocuments(projectRoot, retentionLimits, issues);
-	validateStrictSourceAnchors(projectRoot, issues);
-	validateStrictRunReceipt(projectRoot, issues);
-	validateStrictStorage(projectRoot, retentionLimits, issues);
+function validateStrict(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[], options: CheckOptions): void {
+	const retentionLimits = runCheckStage('strict_retention_policy', options.onProgress, () => validateStrictRetentionPolicy(parsed.mustflowToml, issues));
+	runCheckStage('strict_prompt_cache_policy', options.onProgress, () => validateStrictPromptCachePolicy(projectRoot, parsed.mustflowToml, issues));
+	runCheckStage('strict_refresh_policy', options.onProgress, () => validateStrictRefreshPolicy(parsed.mustflowToml, issues));
+	runCheckStage('strict_harness_policy', options.onProgress, () => validateStrictHarnessPolicy(parsed.mustflowToml, issues));
+	runCheckStage('strict_command_defaults', options.onProgress, () => validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues));
+	runCheckStage('strict_workspace_intent_authority', options.onProgress, () => validateStrictWorkspaceIntentAuthority(projectRoot, parsed.mustflowToml, parsed.commandsToml, issues));
+	runCheckStage('strict_release_versioning_authority', options.onProgress, () => validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues));
+	runCheckStage('strict_verification_selection_authority', options.onProgress, () => validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues));
+	runCheckStage('strict_candidate_contract_model_configs', options.onProgress, () => validateStrictCandidateContractModelConfigs(projectRoot, issues));
+	runCheckStage('strict_test_selection_config', options.onProgress, () => validateStrictTestSelectionConfig(projectRoot, parsed.commandsToml, issues));
+	runCheckStage('strict_version_sources', options.onProgress, () => validateStrictVersionSources(projectRoot, parsed.preferencesToml, parsed.versioningToml, issues));
+	runCheckStage('strict_template_version_sync', options.onProgress, () => validateStrictTemplateVersionSync(projectRoot, parsed.preferencesToml, issues));
+	runCheckStage('strict_managed_markdown_identities', options.onProgress, () => validateStrictManagedMarkdownIdentities(projectRoot, issues));
+	runCheckStage('strict_router_indexes', options.onProgress, () => validateStrictRouterIndexes(projectRoot, issues));
+	runCheckStage('strict_skill_route_fixtures', options.onProgress, () => validateStrictSkillRouteFixtures(projectRoot, issues));
+	runCheckStage('strict_skills', options.onProgress, () => validateStrictSkills(projectRoot, parsed.commandsToml, issues));
+	runCheckStage('strict_template_skill_profiles', options.onProgress, () => validateStrictTemplateSkillProfiles(issues));
+	runCheckStage('strict_repo_map', options.onProgress, () => validateStrictRepoMap(projectRoot, issues));
+	runCheckStage('strict_repo_flow', options.onProgress, () => validateStrictRepoFlow(projectRoot, issues));
+	runCheckStage('strict_context_documents', options.onProgress, () => validateStrictContextDocuments(projectRoot, retentionLimits, issues));
+	runCheckStage('strict_source_anchors', options.onProgress, () => validateStrictSourceAnchors(projectRoot, issues));
+	runCheckStage('strict_run_receipt', options.onProgress, () => validateStrictRunReceipt(projectRoot, issues));
+	runCheckStage('strict_storage', options.onProgress, () => validateStrictStorage(projectRoot, retentionLimits, issues));
 }
 
-function validateStrictScoped(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[]): void {
-	validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
-	validateStrictTestSelectionConfig(projectRoot, parsed.commandsToml, issues);
+function validateStrictScoped(projectRoot: string, parsed: ParsedConfigFiles, issues: CheckIssue[], options: CheckOptions): void {
+	runCheckStage('strict_command_defaults', options.onProgress, () => validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues));
+	runCheckStage('strict_test_selection_config', options.onProgress, () => validateStrictTestSelectionConfig(projectRoot, parsed.commandsToml, issues));
 }
 
 function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): CheckIssue[] {
@@ -2957,24 +2958,24 @@ function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): Ch
 function collectUncachedCheckIssues(projectRoot: string, options: CheckOptions): CheckIssue[] {
 	const issues: CheckIssue[] = [];
 
-	validateRequiredFiles(projectRoot, issues);
-	const parsed = validateToml(projectRoot, issues, options.scope?.commandsToml);
-	validateMustflowConfig(parsed.mustflowToml, issues);
-	validatePreferencesConfig(parsed.preferencesToml, issues);
-	validateTechnologyConfig(parsed.technologyToml, issues);
-	validateVersioningConfig(parsed.versioningToml, issues);
-	validateCommandIntents(parsed.commandsToml, issues);
+	runCheckStage('required_files', options.onProgress, () => validateRequiredFiles(projectRoot, issues));
+	const parsed = runCheckStage('toml', options.onProgress, () => validateToml(projectRoot, issues, options.scope?.commandsToml));
+	runCheckStage('mustflow_config', options.onProgress, () => validateMustflowConfig(parsed.mustflowToml, issues));
+	runCheckStage('preferences_config', options.onProgress, () => validatePreferencesConfig(parsed.preferencesToml, issues));
+	runCheckStage('technology_config', options.onProgress, () => validateTechnologyConfig(parsed.technologyToml, issues));
+	runCheckStage('versioning_config', options.onProgress, () => validateVersioningConfig(parsed.versioningToml, issues));
+	runCheckStage('command_intents', options.onProgress, () => validateCommandIntents(parsed.commandsToml, issues));
 	if (!options.scope) {
-		validateSkills(projectRoot, issues);
-		validateContextDocuments(projectRoot, issues);
+		runCheckStage('skills', options.onProgress, () => validateSkills(projectRoot, issues));
+		runCheckStage('context_documents', options.onProgress, () => validateContextDocuments(projectRoot, issues));
 	}
-	validateManifestLock(projectRoot, issues, options.scope?.manifestPaths);
+	runCheckStage('manifest_lock', options.onProgress, () => validateManifestLock(projectRoot, issues, options.scope?.manifestPaths));
 
 	if (options.strict) {
 		if (options.scope) {
-			validateStrictScoped(projectRoot, parsed, issues);
+			validateStrictScoped(projectRoot, parsed, issues, options);
 		} else {
-			validateStrict(projectRoot, parsed, issues);
+			validateStrict(projectRoot, parsed, issues, options);
 		}
 	}
 
@@ -3021,7 +3022,8 @@ async function collectGeneratedSourceAnchorIndexWarnings(projectRoot: string, op
 
 export async function checkMustflowProjectReportWithGeneratedState(projectRoot: string, options: CheckOptions = {}): Promise<CheckProjectReport> {
 	const issues = collectCheckIssues(projectRoot, options);
-	issues.push(...(await collectGeneratedSourceAnchorIndexWarnings(projectRoot, options)));
+	issues.push(...(await runAsyncCheckStage('generated_source_anchor_index', options.onProgress,
+		() => collectGeneratedSourceAnchorIndexWarnings(projectRoot, options))));
 	return checkProjectReportFromIssues(issues);
 }
 

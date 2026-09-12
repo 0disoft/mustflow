@@ -73,6 +73,7 @@ export const enMessages = {
 
   "check.help.summary":
     "Validate the mustflow files in the current repository.",
+  "check.help.option.progress": "Show validation phases and elapsed time on stderr",
   "check.help.option.strict": "Run additional strict checks for agent safety",
   "check.help.option.repo": "Validate only one delegated workspace repository and defer unrelated manifest drift",
   "check.help.exit.ok": "All required mustflow files and settings are valid",
