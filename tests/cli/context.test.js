@@ -402,6 +402,40 @@ test('compares prompt bundle manifests against a previous context report', () =>
 	}
 });
 
+test('rejects incomplete prompt baselines without losing context output', () => {
+	const projectPath = createTempProject();
+	try {
+		initProject(projectPath);
+		const baseline = runCli(projectPath, ['context', '--json', '--cache-profile', 'all']);
+		assert.equal(baseline.status, 0, baseline.stderr);
+		const original = JSON.parse(baseline.stdout);
+		const baselinePath = path.join(projectPath, '.mustflow', 'cache', 'baseline-context.json');
+		mkdirSync(path.dirname(baselinePath), { recursive: true });
+		const mutations = [
+			(bundle) => { delete bundle.layers[0].blocks[0].reload_on; },
+			(bundle) => { bundle.layers[0].blocks[0].reload_on = 'changed'; },
+			(bundle) => { bundle.layers[0].blocks[0].reload_on = [false]; },
+			(bundle) => { bundle.layers[0].blocks[0].order = 0.5; },
+			(bundle) => { bundle.layers[0].blocks[0].rendered_bytes = -1; },
+			(bundle) => { bundle.layers[0].blocks[0].trust.notes = null; },
+			(bundle) => { bundle.layers[0].cache_layer = 'unknown'; },
+			(bundle) => { bundle.renderer = 'unsupported'; },
+			(bundle) => { delete bundle.issues; },
+		];
+		for (const mutate of mutations) {
+			const report = structuredClone(original);
+			mutate(report.prompt_bundle);
+			writeFileSync(baselinePath, JSON.stringify(report));
+			const result = runCli(projectPath, ['context', '--json', '--cache-profile', 'all', '--cache-compare', '.mustflow/cache/baseline-context.json']);
+			assert.equal(result.status, 0, result.stderr);
+			assert.equal(JSON.parse(result.stdout).prompt_bundle_diff.status, 'baseline_invalid');
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+
 test('reports missing prompt bundle comparison baselines without failing context output', () => {
 	const projectPath = createTempProject();
 

@@ -1467,22 +1467,69 @@ function readPromptBundle(
 	};
 }
 
+function isStringList(value: unknown): value is string[] {
+	return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+}
+
+function isOneOf(value: unknown, choices: readonly string[]): boolean {
+	return typeof value === 'string' && choices.includes(value);
+}
+
+function isNullableString(value: unknown): boolean {
+	return value === null || typeof value === 'string';
+}
+
+function isNullableCount(value: unknown): boolean {
+	return value === null || (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0);
+}
+
+function isPromptBundleTrust(value: unknown): boolean {
+	// Older context reports omit trust; the diff deliberately compares that as absent.
+	if (value === undefined) return true;
+	return isRecord(value)
+		&& isOneOf(value.source_kind, ['workflow_file', 'command_contract', 'skill_file', 'context_file', 'generated_cache', 'generated_state', 'source_placeholder', 'runtime_volatile', 'unknown_file'])
+		&& isOneOf(value.authority, ['binding', 'workflow_policy', 'configuration', 'command_contract', 'procedure', 'contextual', 'hint', 'generated', 'evidence_only', 'volatile', 'unknown'])
+		&& (value.cache_layer === null || isOneOf(value.cache_layer, ['stable', 'task', 'volatile']))
+		&& isOneOf(value.freshness, ['hash_verified', 'missing', 'dynamic', 'runtime_volatile', 'unchecked'])
+		&& isNullableString(value.content_hash)
+		&& typeof value.can_instruct_agent === 'boolean'
+		&& typeof value.grants_command_authority === 'boolean'
+		&& isStringList(value.notes);
+}
+
 function isPromptBundleBlock(value: unknown): value is PromptBundleBlockContext {
-	return isRecord(value) && typeof value.id === 'string' && typeof value.cache_layer === 'string' && typeof value.order === 'number';
+	return isRecord(value)
+		&& typeof value.id === 'string'
+		&& isOneOf(value.cache_layer, ['stable', 'task', 'volatile'])
+		&& typeof value.order === 'number' && Number.isSafeInteger(value.order) && value.order >= 1
+		&& isOneOf(value.kind, ['file', 'source_placeholder'])
+		&& isNullableString(value.path) && isNullableString(value.source)
+		&& isOneOf(value.source_kind, ['file_reference', 'dynamic_selection', 'runtime_volatile'])
+		&& isOneOf(value.selection_policy, ['always_rendered', 'read_when_selected', 'fallback_when_needed', 'selected_at_runtime', 'volatile_runtime'])
+		&& value.content_included === false
+		&& isNullableString(value.content_hash) && isNullableString(value.rendered_digest)
+		&& isNullableCount(value.rendered_bytes) && isNullableCount(value.estimated_tokens)
+		&& isOneOf(value.cacheability, ['provider_prefix_candidate', 'task_selective', 'task_fallback', 'runtime_selection', 'volatile_suffix'])
+		&& isStringList(value.reload_on)
+		&& isPromptBundleTrust(value.trust)
+		&& isNullableString(value.issue);
 }
 
 function isPromptBundleLayer(value: unknown): value is PromptBundleLayerContext {
-	return isRecord(value) && typeof value.cache_layer === 'string' && Array.isArray(value.blocks) && value.blocks.every(isPromptBundleBlock);
+	if (!isRecord(value) || !isOneOf(value.cache_layer, ['stable', 'task', 'volatile']) || !Array.isArray(value.blocks)) return false;
+	return value.blocks.every((block) => isPromptBundleBlock(block) && block.cache_layer === value.cache_layer);
 }
 
 function isPromptBundleContext(value: unknown): value is PromptBundleContext {
-	return (
-		isRecord(value) &&
-		typeof value.request_shape_hash === 'string' &&
-		typeof value.bundle_hash === 'string' &&
-		Array.isArray(value.layers) &&
-		value.layers.every(isPromptBundleLayer)
-	);
+	return isRecord(value)
+		&& value.schema_version === '1'
+		&& value.renderer === 'reference_bundle_utf8_lf_v1'
+		&& value.content_included === false
+		&& typeof value.request_shape_hash === 'string'
+		&& typeof value.bundle_hash === 'string'
+		&& isStringList(value.issues)
+		&& Array.isArray(value.layers)
+		&& value.layers.every(isPromptBundleLayer);
 }
 
 function readBaselinePromptBundle(projectRoot: string, baselinePath: string): {
