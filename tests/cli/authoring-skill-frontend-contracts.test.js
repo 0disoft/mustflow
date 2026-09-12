@@ -614,7 +614,7 @@ test('frontend stress layout review catches hostile content and container breaka
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-stress-layout-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-stress-layout-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-stress-layout-review"\][\s\S]*?revision = 2/u);
 });
 
 test('frontend accessibility tree review catches semantic, keyboard, and name drift', () => {
@@ -678,7 +678,7 @@ test('frontend accessibility tree review catches semantic, keyboard, and name dr
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-accessibility-tree-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-accessibility-tree-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.frontend-accessibility-tree-review"\][\s\S]*?revision = 2/u);
 });
 
 test('frontend localization review catches hidden strings, locale formatting, and export drift', () => {

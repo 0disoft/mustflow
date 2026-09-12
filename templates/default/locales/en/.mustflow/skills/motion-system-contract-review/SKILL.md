@@ -2,7 +2,7 @@
 mustflow_doc: skill.motion-system-contract-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: motion-system-contract-review
@@ -104,6 +104,12 @@ async result, permission, selection, route, or persisted value must be owned out
 15. Prefer role/ref binding over brittle selectors. Recipes should bind to component slots, refs, semantic roles, or stable data hooks, not `nth-child`, layout-depth selectors, or visual-only class chains.
 16. Define lifecycle and failure behavior. Development may throw on impossible recipes, but production should skip-effect-and-report animation failures while preserving the core UI action.
 17. Separate contract review from runtime proof. Report whether evidence is static, test-backed, story-backed, browser-observed, or missing.
+
+18. Decide whether motion helps before choosing parameters. Name its feedback, orientation, continuity, or explanation purpose and the action frequency and latency. Repeated interactions often benefit from less motion; keyboard input does not categorically prohibit animation. Keep input feedback and task completion independent of decorative duration.
+19. Derive timing from existing tokens, travel distance, gesture velocity, and the target platform. Compare entrance, exit, and retargeting instead of imposing a universal duration, easing, spring, or initial scale. Trigger-anchored overlays should preserve their perceived origin after collision repositioning; centered dialogs have a different spatial relationship.
+20. Continue interrupted movement from the current presentation state where supported. Check rapid open-close-open, reversal midway, drag release, pointer cancellation, and repeated async results. Preserve velocity when useful for direct manipulation, without preventing reliable target settlement.
+21. Measure rendering cost on the target. Transform and opacity are often cheaper, not guarantees of GPU execution or zero cost; layer area, rasterization, shadows, blur, and device limits still matter. Allow measured layout-animation exceptions. For native or cross-runtime UI, verify the installed API and thread ownership instead of mandating a library.
+22. Keep essential status visible without motion. Instant settlement is valid reduced-motion behavior; opacity is optional. Avoid replaying entrance effects on hydration, unrelated rerenders, or theme changes unless they serve the task.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

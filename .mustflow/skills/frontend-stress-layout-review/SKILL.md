@@ -2,7 +2,7 @@
 mustflow_doc: skill.frontend-stress-layout-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: frontend-stress-layout-review
@@ -144,6 +144,10 @@ The core question is: "What exact parent size, content shape, loading order, per
 21. Name the reproducible break condition.
     - A review comment should include the triggering data, parent size, state, role, device condition, zoom, or loading order.
     - "Looks off" is weak; "In a 320px parent with a 64-character order ID and two permission actions, the row action group overlaps the amount" is actionable.
+
+22. Build only the stress surface needed for the selected component. Prefer existing stories or fixtures using the real component; copied implementations can hide the defect. Cover representative states and risky combinations rather than claiming exhaustive coverage of an unbounded state space.
+23. Keep preview data synthetic and identified as fixtures; do not persist it through production APIs. Temporary routes, query switches, hooks, and screenshots need a task-scoped lifecycle. Remove only task-created artifacts when retention is no longer requested, and preserve user-owned stories.
+24. Compare before and after with the same content and parent constraints. Capture the failure state when rendering is available and retest it after the fix. Name missing device or browser evidence; a static harness file is not proof of a successful render.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

@@ -1,5 +1,72 @@
 schema_version = "1"
 
+[intents.ui_skill_update_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded UI skill update plan for the reviewed September intake."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/ui-skill-update-20260912.json",".mustflow/config/commands.toml",".mustflow/skills/catalog.v2.json",".mustflow/skills/ui-quality-gate/SKILL.md",".mustflow/skills/motion-system-contract-review/SKILL.md",".mustflow/skills/frontend-accessibility-tree-review/SKILL.md",".mustflow/skills/frontend-stress-layout-review/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/ui-skill-update-20260912.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+
+[intents.ui_skill_update_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded UI skill update apply for the reviewed September intake."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","apply",".mustflow/cache/manifest-lock-plans/ui-skill-update-20260912.json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml",".mustflow/cache/manifest-lock-plans/ui-skill-update-20260912.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+
+[intents.ui_skill_update_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded UI skill update stage for the reviewed September intake."
+argv = ["git","add","--",".mustflow/config/commands.toml",".mustflow/config/manifest.lock.toml","templates/default/i18n.toml",".mustflow/skills/catalog.v2.json","templates/default/locales/en/.mustflow/skills/catalog.v2.json","tests/cli/authoring-skill-performance-contracts.test.js","tests/cli/authoring-skill-frontend-contracts.test.js",".mustflow/skills/ui-quality-gate/SKILL.md","templates/default/locales/en/.mustflow/skills/ui-quality-gate/SKILL.md",".mustflow/skills/motion-system-contract-review/SKILL.md","templates/default/locales/en/.mustflow/skills/motion-system-contract-review/SKILL.md",".mustflow/skills/frontend-accessibility-tree-review/SKILL.md","templates/default/locales/en/.mustflow/skills/frontend-accessibility-tree-review/SKILL.md",".mustflow/skills/frontend-stress-layout-review/SKILL.md","templates/default/locales/en/.mustflow/skills/frontend-stress-layout-review/SKILL.md","REPO_FLOW.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+approval_actions = ["git_commit"]
+
+[intents.ui_skill_update_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded UI skill update commit for the reviewed September intake."
+argv = ["git","commit","--only","-m","✨ feat(skills): strengthen interface review and motion contracts","-m","Clarify scoped UI evidence, accessible interaction, bounded stress fixtures, and interruptible motion. Synchronize canonical template revisions.","--",".mustflow/config/commands.toml",".mustflow/config/manifest.lock.toml","templates/default/i18n.toml",".mustflow/skills/catalog.v2.json","templates/default/locales/en/.mustflow/skills/catalog.v2.json","tests/cli/authoring-skill-performance-contracts.test.js","tests/cli/authoring-skill-frontend-contracts.test.js",".mustflow/skills/ui-quality-gate/SKILL.md","templates/default/locales/en/.mustflow/skills/ui-quality-gate/SKILL.md",".mustflow/skills/motion-system-contract-review/SKILL.md","templates/default/locales/en/.mustflow/skills/motion-system-contract-review/SKILL.md",".mustflow/skills/frontend-accessibility-tree-review/SKILL.md","templates/default/locales/en/.mustflow/skills/frontend-accessibility-tree-review/SKILL.md",".mustflow/skills/frontend-stress-layout-review/SKILL.md","templates/default/locales/en/.mustflow/skills/frontend-stress-layout-review/SKILL.md","REPO_FLOW.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+approval_actions = ["git_commit"]
+
+
 [include]
 files = ["commands.d/release-plan.toml", "commands.d/scoped-check.toml", "commands.d/command-contract-scaling.toml"]
 

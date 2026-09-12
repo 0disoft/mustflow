@@ -788,5 +788,5 @@ test('motion system contract review catches animation state and settlement risks
 	assert.match(manifest, /"\.mustflow\/skills\/motion-system-contract-review\/SKILL\.md"/u);
 	assert.match(manifest, /"motion-system-contract-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.motion-system-contract-review"\][\s\S]*?revision = 1/u);
+	assert.match(i18n, /\[documents\."skill\.motion-system-contract-review"\][\s\S]*?revision = 2/u);
 });

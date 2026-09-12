@@ -2,7 +2,7 @@
 mustflow_doc: skill.frontend-accessibility-tree-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: frontend-accessibility-tree-review
@@ -153,6 +153,10 @@ The core question is: "Does the accessibility tree, keyboard path, visible label
 21. Report the evidence honestly.
     - Separate static markup evidence, automated rule evidence, accessibility-tree evidence, keyboard walkthrough evidence, and manual screen-reader evidence.
     - If a finding is based on code inspection only, say so and name the missing runtime proof.
+
+22. Check actual hit geometry. Expanded hit areas must stay within the intended control, avoid overlapping neighbors, and preserve focus visibility. Record the applicable platform or accessibility target and exceptions instead of treating one pixel size as universal.
+23. Test user overrides when content can be lost: text resizing, browser zoom, increased text spacing, forced colors, and reduced motion. Preserve meaning beyond color, animation, or icon shape. A screenshot cannot establish keyboard or screen-reader behavior.
+24. Review transient and modal lifecycles. Persistent errors should not exist only in a disappearing toast. Choose announcement urgency by interruption need, avoid duplicate live regions, and restore focus to a useful surviving control when the opener is removed. Contain focus for genuinely modal interaction, not every popover.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

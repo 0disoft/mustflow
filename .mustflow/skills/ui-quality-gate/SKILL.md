@@ -2,7 +2,7 @@
 mustflow_doc: skill.ui-quality-gate
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: ui-quality-gate
@@ -129,6 +129,11 @@ Keep user-facing interfaces usable, minimal, accessible, responsive, localizatio
 25. Inspect responsive and localization-sensitive surfaces when the change affects layout or translated text.
 26. Use visual verification only when a configured one-shot command or approved browser workflow exists for the surface. Do not start development servers, watchers, or browser sessions directly from the skill.
 27. Run the narrowest configured verification that covers the changed UI, documentation, package, or mustflow contract.
+
+28. Establish the review baseline. Use the user-selected screen, component, or diff; distinguish introduced defects, regressions, and pre-existing issues. Read removed labels, focus styles, overflow cues, and recovery actions as well as additions. A clean working tree does not select the previous commit or whole product as review scope.
+29. Tie each finding to a user consequence, reproducible state, and evidence source. Consolidate repeated instances under the owning token or component. Separate task blockers, comprehension problems, and visual preferences; a preferred radius, shadow, font, or easing curve is not itself a defect.
+30. Inspect geometry in context. Nested rounded surfaces may need an inner radius adjusted for the actual inset; borders, clipping, and asymmetric padding can invalidate simple subtraction. Compare icon optical weight and baseline with adjacent text before applying offsets. Choose separators, borders, and elevation by grouping and layering needs.
+31. Match the requested outcome: review produces findings, while an authorized fix may change the owning component. Do not manufacture edits without an actionable issue or demand new approval for a fix the user already requested.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

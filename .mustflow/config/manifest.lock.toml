@@ -14,7 +14,7 @@ content_hash = "sha256:224d03ed2e2c6d990b6fda7d6be57e43a7da26da070cb69692452258b
 [files.".mustflow/config/commands.toml"]
 source = "repository"
 last_action = "customized"
-content_hash = "sha256:cb40c30463b267d6781dc7e8a7ffdb321a22445108d1ee1f43e4ca146caf131c"
+content_hash = "sha256:7037ed823fab753e41246c90afd0f9aef8c1bf7e9356a9beee649c9c65b9eebc"
 
 [files.".mustflow/config/commands.d/release-plan.toml"]
 source = "repository"
@@ -144,7 +144,7 @@ content_hash = "sha256:53c5529c94fd5b2a2a3d3124c2b8327187bdb16bfa5415a313ab301d4
 [files.".mustflow/skills/motion-system-contract-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:8b8dedfc78d5bdf96903ee66e393632a2a4b5a8cdd3626087c01ad11f7d4efdf"
+content_hash = "sha256:20ef31045c289cb6676a0d83ee9dd8ec9024f1af00a1a2bdc371c86fa0921b68"
 
 [files.".mustflow/skills/app-startup-performance-review/SKILL.md"]
 source = "template_common"
@@ -174,7 +174,7 @@ content_hash = "sha256:7d871919e2651866f80255085e4128d3487af509bb94a1da9ae8c5151
 [files.".mustflow/skills/frontend-accessibility-tree-review/SKILL.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:515b05d2a30b0b0a5807237b2db5d9e2faabe55447a84c308daa0e76622ac316"
+content_hash = "sha256:1175ec1d9b2bc3df359cea74a0cf612f4a578da6b7b4d512f8962116d5b9265c"
 
 [files.".mustflow/skills/website-task-friction-review/SKILL.md"]
 source = "template_common"
@@ -395,3 +395,13 @@ content_hash = "sha256:f5fba17b179f1b936780c2dd704e5064b7a01f655095e8a746937b013
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:d5d93c881e9318a69a75c21776524c866aef1d472f5041083f68da43b901dd6f"
+
+[files.".mustflow/skills/ui-quality-gate/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:d8c0b0c8ab46a19ca496d905d0dd7155a30bb8637c6b8586b1c55b50a9c13239"
+
+[files.".mustflow/skills/frontend-stress-layout-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:34953d1e96e18b51192891f32017075cfbc815c065d4c21cda7b5f111c6bb737"

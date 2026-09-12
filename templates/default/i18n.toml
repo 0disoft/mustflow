@@ -488,7 +488,7 @@ translations = {}
 [documents."skill.motion-system-contract-review"]
 source = "locales/en/.mustflow/skills/motion-system-contract-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.app-startup-performance-review"]
@@ -560,13 +560,13 @@ translations = {}
 [documents."skill.frontend-stress-layout-review"]
 source = "locales/en/.mustflow/skills/frontend-stress-layout-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.frontend-accessibility-tree-review"]
 source = "locales/en/.mustflow/skills/frontend-accessibility-tree-review/SKILL.md"
 source_locale = "en"
-revision = 1
+revision = 2
 translations = {}
 
 [documents."skill.frontend-component-library-review"]
@@ -1842,7 +1842,7 @@ translations = {}
 [documents."skill.ui-quality-gate"]
 source = "locales/en/.mustflow/skills/ui-quality-gate/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.visual-review-artifact"]
