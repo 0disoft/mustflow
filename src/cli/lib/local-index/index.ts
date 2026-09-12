@@ -627,20 +627,27 @@ export async function readLocalIndexPromptContext(projectRoot: string): Promise<
 	}
 
 	let database: SqlJsDatabase | undefined;
+	let databaseBytes: number | null = null;
+	let failureStage: LocalIndexPromptContext['failureStage'] = 'runtime_load';
 
 	try {
 		const SQL = await loadSqlJs();
-		database = new SQL.Database(readFileSync(databasePath));
+		failureStage = 'database_read';
+		const bytes = readFileSync(databasePath);
+		databaseBytes = bytes.byteLength;
+		failureStage = 'database_open';
+		database = new SQL.Database(bytes);
+		failureStage = 'freshness_check';
 		const capabilities = readStoredSearchCapabilities(database);
 		const stalePaths = getStalePaths(projectRoot, database, { includeState: false });
 
 		if (stalePaths.length > 0) {
-			return createLocalIndexPromptContextStatus(reportedDatabasePath, 'stale', stalePaths, capabilities);
+			return { ...createLocalIndexPromptContextStatus(reportedDatabasePath, 'stale', stalePaths, capabilities), databaseBytes, failureStage: null };
 		}
 
-		return createLocalIndexPromptContextStatus(reportedDatabasePath, 'fresh', [], capabilities);
+		return { ...createLocalIndexPromptContextStatus(reportedDatabasePath, 'fresh', [], capabilities), databaseBytes, failureStage: null };
 	} catch {
-		return createLocalIndexPromptContextStatus(reportedDatabasePath, 'unreadable');
+		return { ...createLocalIndexPromptContextStatus(reportedDatabasePath, 'unreadable'), databaseBytes, failureStage };
 	} finally {
 		database?.close();
 	}

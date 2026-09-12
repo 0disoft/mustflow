@@ -753,6 +753,8 @@ test('prints prompt-cache task local-index status when the index is fresh or sta
 		assert.ok(['fts5', 'table_scan'].includes(freshContext.task_context.local_index.search_backend));
 		assert.equal(typeof freshContext.task_context.local_index.search_fts5_available, 'boolean');
 		assert.equal(freshContext.task_context.local_index.refresh_hint, null);
+		assert.ok(freshContext.task_context.local_index.database_bytes > 0);
+		assert.equal(freshContext.task_context.local_index.failure_stage, null);
 
 		const stateRunPath = path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json');
 		mkdirSync(path.dirname(stateRunPath), { recursive: true });

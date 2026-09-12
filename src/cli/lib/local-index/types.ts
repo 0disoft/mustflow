@@ -235,6 +235,8 @@ export interface LocalPathSurfaceReadModel {
 }
 
 export interface LocalIndexPromptContext {
+	readonly databaseBytes?: number | null;
+	readonly failureStage?: 'runtime_load' | 'database_read' | 'database_open' | 'freshness_check' | null;
 	readonly source: 'local_index';
 	readonly status: LocalIndexPromptContextStatus;
 	readonly databasePath: string;

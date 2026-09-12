@@ -272,6 +272,8 @@ export interface TaskPromptCacheRepoMapReadPlanContext {
 }
 
 export interface TaskPromptCacheLocalIndexContext {
+	readonly database_bytes: number | null;
+	readonly failure_stage: LocalIndexPromptContext['failureStage'];
 	readonly source: 'local_index';
 	readonly status: 'fresh' | 'missing' | 'stale' | 'unreadable';
 	readonly database_path: string;
@@ -1104,6 +1106,8 @@ function readStablePromptCacheLayer(projectRoot: string, mustflow: TomlTable | u
 
 function mapLocalIndexPromptContext(context: LocalIndexPromptContext): TaskPromptCacheLocalIndexContext {
 	return {
+		database_bytes: context.databaseBytes ?? null,
+		failure_stage: context.failureStage ?? null,
 		source: context.source,
 		status: context.status,
 		database_path: context.databasePath,

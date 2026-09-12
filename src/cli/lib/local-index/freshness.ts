@@ -8,7 +8,7 @@ import {
 	readIndexedFileRecord,
 	readLocalIndexSourceConfig,
 } from './source-index.js';
-import { collectDocuments } from './workflow-documents.js';
+import { getExistingIndexablePaths } from './workflow-documents.js';
 
 interface StalePathOptions {
 	readonly includeState?: boolean;
@@ -67,9 +67,9 @@ export function getStalePaths(projectRoot: string, database: SqlJsDatabase, opti
 		}
 	}
 
-	for (const document of collectDocuments(projectRoot)) {
-		if (!indexedPaths.has(document.path)) {
-			stalePaths.add(document.path);
+	for (const documentPath of getExistingIndexablePaths(projectRoot)) {
+		if (!indexedPaths.has(documentPath)) {
+			stalePaths.add(documentPath);
 		}
 	}
 

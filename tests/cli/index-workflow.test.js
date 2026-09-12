@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import {
 	appendFileSync,
 	existsSync,
@@ -39,6 +41,50 @@ import {
 	sourceAnchorStatusChangedSource,
 } from './index-support.js';
 import { searchLocalIndexDirect } from './helpers/local-index-fixtures.js';
+
+test('freshness opens each workflow document once and still detects added paths', async (t) => {
+	const root = await cloneWorkflowIndexedProject();
+	const SQL = await loadSqlJsCached();
+	const { getLocalIndexDatabasePath } = await importDistModule('cli/lib/local-index/database-path.js');
+	const { getStalePaths } = await importDistModule('cli/lib/local-index/freshness.js');
+	const database = new SQL.Database(readFileSync(getLocalIndexDatabasePath(root)));
+	const originalOpen = fs.openSync;
+	let agentReads = 0;
+	try {
+		writeFileSync(path.join(root, '.mustflow/docs/new.md'), '# Newly added document');
+		t.mock.method(fs, 'openSync', function (target, ...args) {
+			if (String(target) === path.join(root, 'AGENTS.md')) agentReads += 1;
+			return originalOpen.call(this, target, ...args);
+		});
+		syncBuiltinESMExports();
+		const stale = getStalePaths(root, database, { includeState: false });
+		assert.ok(stale.includes('.mustflow/docs/new.md'));
+		assert.equal(agentReads, 1);
+		t.diagnostic(`AGENTS.md opens per freshness check: ${agentReads}; previous path performed 2`);
+	} finally {
+		t.mock.restoreAll();
+		syncBuiltinESMExports();
+		database.close();
+		removeTempProject(root);
+	}
+});
+
+test('unreadable index context reports payload size and failing stage without raw errors', async () => {
+	const root = createMinimalWorkflowProject();
+	const { readLocalIndexPromptContext } = await importDistModule('cli/lib/local-index.js');
+	try {
+		mkdirSync(path.join(root, '.mustflow/cache'), { recursive: true });
+		const bytes = Buffer.from('invalid sqlite private-content');
+		writeFileSync(path.join(root, '.mustflow/cache/mustflow.sqlite'), bytes);
+		const result = await readLocalIndexPromptContext(root);
+		assert.equal(result.status, 'unreadable');
+		assert.equal(result.databaseBytes, bytes.length);
+		assert.ok(['database_open', 'freshness_check'].includes(result.failureStage));
+		assert.doesNotMatch(JSON.stringify(result), /private-content/);
+	} finally {
+		removeTempProject(root);
+	}
+});
 
 test('reuses loaded sql.js runtime within the current process', async () => {
 	const { loadSqlJs } = await importDistModule('cli/lib/local-index/sql.js');
