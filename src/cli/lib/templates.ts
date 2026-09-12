@@ -336,7 +336,7 @@ function filterSkillRouteMetadataContent(content: string, selectedSkills: readon
 	const selectedRouteContent = content
 		.split(/\r?\n/u)
 		.filter((line) => {
-			const match = /^\[routes\."([^"]+)"\]\s*$/u.exec(line.trim());
+			const match = /^\[routes\."([^"]+)"(?:\.[^\]]+)?\]\s*$/u.exec(line.trim());
 
 			if (match) {
 				keepCurrentRoute = selectedSkillSet.has(match[1] ?? '');

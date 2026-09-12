@@ -220,6 +220,17 @@ test('missing and malformed corpora cannot claim complete route coverage', () =>
 	} finally { removeTempProject(root); }
 });
 
+test('installed default catalog matches installed routing metadata', () => {
+	const root = createTempProject();
+	try {
+		initProject(root);
+		const actual = JSON.parse(readFileSync(path.join(root, '.mustflow/skills/catalog.v2.json'), 'utf8'));
+		assert.deepEqual(actual, buildSkillRouteCatalog(root));
+	} finally {
+		removeTempProject(root);
+	}
+});
+
 test('keeps the generated route catalog synchronized with built-in skill frontmatter', () => {
 	const sourceCatalog = readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'catalog.v2.json'), 'utf8');
 	const templateCatalog = readFileSync(
