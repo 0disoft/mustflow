@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { isSkillRouteSearchTerm } from '../../../core/skill-route-text.js';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readScopedCommandContract } from '../../../core/config-loading.js';
@@ -1382,7 +1383,7 @@ function readOptionalSearchTermArray(value: unknown, label: string, issues: Chec
 	const values = readOptionalStringArray(value, label, issues);
 
 	for (const value of values) {
-		if (!/^[\p{L}\p{N}][\p{L}\p{M}\p{N}_-]*$/u.test(value) || value !== value.toLowerCase()) {
+		if (!isSkillRouteSearchTerm(value)) {
 			pushStrictIssue(issues, `${label} entry "${value}" must use lowercase Unicode search-term text`);
 		}
 	}

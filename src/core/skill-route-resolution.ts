@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { normalizeSkillRouteText as normalizeRouteText } from './skill-route-text.js';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
 import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
@@ -286,15 +287,6 @@ function skillNameFromPath(skillPath: string): string {
 	return match?.[1] ?? externalMatch?.[1] ?? skillPath;
 }
 
-function normalizeRouteText(value: string): string {
-	return value
-		.normalize('NFKC')
-		.toLocaleLowerCase('en-US')
-		.replace(/\.mustflow\/skills\/[^/\s]+\/skill\.md/giu, ' ')
-		.replace(/[^\p{L}\p{N}]+/gu, ' ')
-		.trim()
-		.replace(/\s+/gu, ' ');
-}
 
 function tokenize(value: string): string[] {
 	return [

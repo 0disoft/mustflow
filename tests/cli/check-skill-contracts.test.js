@@ -313,7 +313,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 			acceptedRoutesPath,
 			readText(acceptedRoutesPath).replace(
 				'[routes."code-review".dependencies]',
-				'[routes."code-review".contexts]\npositive_terms = ["코드-검토"]\nnegative_terms = ["문서_전용"]\n\n[routes."code-review".dependencies]',
+				'[routes."code-review".contexts]\npositive_terms = ["코드-검토", "font fallback", "텍스트 줄바꿈"]\nnegative_terms = ["문서_전용", "wording only"]\n\n[routes."code-review".dependencies]',
 			),
 		);
 		unlinkSync(path.join(acceptedProject, '.mustflow', 'config', 'manifest.lock.toml'));
@@ -321,7 +321,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 		const acceptedResult = await runCliInProcess(acceptedProject, ['check', '--strict', '--json']);
 		const acceptedCheck = JSON.parse(acceptedResult.stdout);
 		assert.ok(
-			!acceptedCheck.issues.some((issue) => issue.includes('코드-검토') || issue.includes('문서_전용')),
+			!acceptedCheck.issues.some((issue) => ['코드-검토', '문서_전용', 'font fallback', '텍스트 줄바꿈', 'wording only'].some((term) => issue.includes(term))),
 			`lowercase Unicode search terms should be valid: ${acceptedCheck.issues.join('\n')}`,
 		);
 

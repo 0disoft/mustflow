@@ -14,6 +14,7 @@ import {
 	resolveSkillRoutes,
 } from '../../dist/core/skill-route-resolution.js';
 import { evaluateSkillRouteFixtures } from '../../dist/core/skill-route-fixtures.js';
+import { isSkillRouteSearchTerm, normalizeSkillRouteText } from '../../dist/core/skill-route-text.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -41,6 +42,18 @@ function initProject(projectPath, profile = null) {
 	]);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
+
+test('route search phrases share validation and matching normalization', () => {
+	for (const phrase of ['font fallback', 'font-fallback', 'font_fallback', 'ｆｏｎｔ fallback']) {
+		assert.equal(isSkillRouteSearchTerm(phrase), true, phrase);
+		assert.equal(normalizeSkillRouteText(phrase), 'font fallback');
+	}
+	assert.equal(isSkillRouteSearchTerm('텍스트 줄바꿈'), true);
+	assert.equal(normalizeSkillRouteText('텍스트-줄바꿈'), '텍스트 줄바꿈');
+	for (const invalid of ['', 'Font fallback', 'font/fallback', '../outside', 'font;exit']) {
+		assert.equal(isSkillRouteSearchTerm(invalid), false, invalid);
+	}
+});
 
 test('resolves TypeScript skill routes from task, path, and reason signals', () => {
 	const projectPath = createTempProject();

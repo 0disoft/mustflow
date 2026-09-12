@@ -26,6 +26,11 @@ Pattern tie-break signals come from route metadata under `.mustflow/skills/route
 letting skill authors improve routing precision by editing metadata instead of changing resolver
 code.
 
+Search terms may contain lowercase Unicode words separated by spaces, hyphens, or underscores.
+For example, `font fallback`, `font-fallback`, and `font_fallback` match the same phrase.
+Validation and matching share the same normalization; uppercase terms and command/path punctuation
+remain invalid. Concept aliases continue to support natural-language phrases.
+
 Route cards also expose `route_dependencies` from route metadata. The resolver applies
 `requires_skills`, `suggests_adjuncts`, `conflicts_with`, and matching `unlocks_on` rules when
 building `selected.adjuncts` and `read_plan.selected_skill_paths`, so hosts can add bounded adjunct
