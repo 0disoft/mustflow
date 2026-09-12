@@ -874,6 +874,12 @@ function countMatches(needles: readonly string[], haystack: readonly string[]): 
 	return needles.filter((needle) => haystackSet.has(needle)).length;
 }
 
+// Shared instruction wording is not evidence of a skill's subject.
+// Explicit phrase signals and path hints are evaluated separately.
+const ROUTE_BOILERPLATE_TERMS = new Set([
+	'apply', 'this', 'skill', 'when',
+]);
+
 function routeTextTerms(route: SkillIndexRoute, skillName: string): string[] {
 	return tokenize([
 		skillName,
@@ -882,8 +888,7 @@ function routeTextTerms(route: SkillIndexRoute, skillName: string): string[] {
 		route.editScope,
 		route.risk,
 		route.expectedOutput,
-		route.skillPath,
-	].join(' '));
+	].join(' ')).filter(term => !ROUTE_BOILERPLATE_TERMS.has(term));
 }
 
 function createExcerptReference(skillPath: string, section: 'use-when' | 'do-not-use-when'): SkillRouteExcerptReference {

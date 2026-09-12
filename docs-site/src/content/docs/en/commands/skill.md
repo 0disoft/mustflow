@@ -26,6 +26,11 @@ Pattern tie-break signals come from route metadata under `.mustflow/skills/route
 letting skill authors improve routing precision by editing metadata instead of changing resolver
 code.
 
+Generic token scoring ignores common English instruction words such as "apply this skill when"
+and does not use the internal skill document path as subject evidence. Domain words still
+contribute normally. Explicit phrase signals and declared path hints are evaluated separately,
+so they can still match phrases containing those words.
+
 Search terms may contain lowercase Unicode words separated by spaces, hyphens, or underscores.
 For example, `font fallback`, `font-fallback`, and `font_fallback` match the same phrase.
 Validation and matching share the same normalization; uppercase terms and command/path punctuation
