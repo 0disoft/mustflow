@@ -1,5 +1,66 @@
 schema_version = "1"
 
+[routes."interface-typography-review"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "web_asset_change", "code_change", "copy_change", "docs_change"]
+
+[routes."interface-typography-review".contexts]
+positive_terms = ["type-scale","font-fallback","text-wrapping","typography"]
+concept_aliases = ["타이포그래피","글꼴 대체","텍스트 줄바꿈"]
+negative_terms = ["wording-only","색상만","color-only","microcopy-only","reference-analysis-only","variants-only","문구만","레퍼런스-분석만","대안-비교만"]
+
+[routes."interface-color-system-review"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "web_asset_change", "code_change", "copy_change", "docs_change"]
+
+[routes."interface-color-system-review".contexts]
+positive_terms = ["semantic-color","color-palette","contrast-pair","color-tokens"]
+concept_aliases = ["색상 체계","색상 토큰","대비 측정"]
+negative_terms = ["animation-only","문구만","typography-only","microcopy-only","reference-analysis-only","variants-only","타이포그래피만","레퍼런스-분석만","대안-비교만"]
+
+[routes."interface-copy-review"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "web_asset_change", "code_change", "copy_change", "docs_change"]
+
+[routes."interface-copy-review".contexts]
+positive_terms = ["microcopy","button-labels","empty-state-copy","interface-wording"]
+concept_aliases = ["제품 문구","버튼 문구","오류 안내 문구"]
+negative_terms = ["marketing-copy-only","readme-only","typography-only","color-only","reference-analysis-only","variants-only","타이포그래피만","색상만","레퍼런스-분석만","대안-비교만"]
+
+[routes."interface-reference-analysis"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "web_asset_change", "code_change", "copy_change", "docs_change"]
+
+[routes."interface-reference-analysis".contexts]
+positive_terms = ["reference-reconstruction","explain-this-interface","screenshot-reconstruction","visual-mechanism"]
+concept_aliases = ["레퍼런스 분석","스크린샷 재현","인터페이스 원리"]
+negative_terms = ["no-reference","새-디자인-대안만","typography-only","color-only","microcopy-only","variants-only","타이포그래피만","색상만","문구만","대안-비교만"]
+
+[routes."interface-variant-exploration"]
+category = "ui_assets"
+route_type = "primary"
+priority = 84
+selection_axis = "task"
+applies_to_reasons = ["ui_change", "web_asset_change", "code_change", "copy_change", "docs_change"]
+
+[routes."interface-variant-exploration".contexts]
+positive_terms = ["design-variants","compare-prototypes","interface-alternatives","variant-exploration"]
+concept_aliases = ["디자인 대안","시안 비교","인터페이스 변형"]
+negative_terms = ["implement-selected-design","선택한-시안-구현","typography-only","color-only","microcopy-only","reference-analysis-only","타이포그래피만","색상만","문구만","레퍼런스-분석만","no-variant-exploration"]
+
+
 [routes."artifact-integrity-check"]
 category = "ui_assets"
 route_type = "primary"

@@ -20,6 +20,25 @@ function skillRevision(skillText, skillName) {
 	return Number(revision);
 }
 
+test('design skill profiles keep specialist exploration out of the minimal install', () => {
+	const manifest = readText('templates/default/manifest.toml');
+	const designSkills = [
+		'interface-typography-review',
+		'interface-color-system-review',
+		'interface-copy-review',
+		'interface-reference-analysis',
+		'interface-variant-exploration',
+	];
+	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
+		const installed = new Set(readTomlStringArrayBlock(manifest, profile));
+		for (const skill of designSkills) {
+			const expected = profile === 'team' || profile === 'product'
+				|| (profile === 'library' && !['interface-reference-analysis', 'interface-variant-exploration'].includes(skill));
+			assert.equal(installed.has(skill), expected, `${profile}: ${skill}`);
+		}
+	}
+});
+
 test('installed skill sources, routes, index, i18n, manifest, and profiles stay synchronized', () => {
 	const sourceSkillNames = readSkillDirectoryNames('.mustflow/skills');
 	const templateSkillNames = readSkillDirectoryNames('templates/default/locales/en/.mustflow/skills');

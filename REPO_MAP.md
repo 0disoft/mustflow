@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 341
+anchor_count: 346
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:23ae3fea301f4aafcaf9c47f4b68c0cfd05c27a4a19c69f4ee47d6734127335d"
+source_fingerprint: "sha256:7e5954a235bd7f4dc9aa6b60c01d9b7e1ee9493870b8d9308e417386816f1d61"
 ---
 
 # REPO_MAP.md
@@ -676,6 +676,26 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/instruction-conflict-scope-check/
 
 - `.mustflow/skills/instruction-conflict-scope-check/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/interface-color-system-review/
+
+- `.mustflow/skills/interface-color-system-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/interface-copy-review/
+
+- `.mustflow/skills/interface-copy-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/interface-reference-analysis/
+
+- `.mustflow/skills/interface-reference-analysis/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/interface-typography-review/
+
+- `.mustflow/skills/interface-typography-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/interface-variant-exploration/
+
+- `.mustflow/skills/interface-variant-exploration/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/interpreter-engineering-review/
 

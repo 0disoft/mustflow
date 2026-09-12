@@ -2,6 +2,300 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "design-foundations-combined-request",
+      "task": "Review typography font fallback and semantic color tokens with contrast pairs",
+      "paths": [
+        "design/foundations.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "interface-typography-review",
+        "interface-color-system-review"
+      ]
+    },
+    {
+      "id": "design-variants-natural-request",
+      "task": "대시보드 카드의 디자인 대안을 만들어 시안 비교를 해줘",
+      "paths": [
+        "design/card.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-variant-exploration"
+    },
+    {
+      "id": "interface-typography-review-en",
+      "task": "typography only: Review the type scale and font fallback for multilingual labels",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-typography-review",
+      "required_candidates": [
+        "interface-typography-review"
+      ],
+      "forbidden_candidates": [
+        "interface-color-system-review"
+      ]
+    },
+    {
+      "id": "interface-typography-review-ko",
+      "task": "타이포그래피만: 타이포그래피와 글꼴 대체, 텍스트 줄바꿈을 개선해줘",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-typography-review",
+      "required_candidates": [
+        "interface-typography-review"
+      ],
+      "forbidden_candidates": [
+        "interface-color-system-review"
+      ]
+    },
+    {
+      "id": "interface-color-system-review-en",
+      "task": "color only: Review semantic color tokens and contrast pairs across themes",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-color-system-review",
+      "required_candidates": [
+        "interface-color-system-review"
+      ],
+      "forbidden_candidates": [
+        "interface-copy-review"
+      ]
+    },
+    {
+      "id": "interface-color-system-review-ko",
+      "task": "색상만: 색상 체계와 색상 토큰의 대비 측정을 해줘",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-color-system-review",
+      "required_candidates": [
+        "interface-color-system-review"
+      ],
+      "forbidden_candidates": [
+        "interface-copy-review"
+      ]
+    },
+    {
+      "id": "interface-copy-review-en",
+      "task": "microcopy only: Rewrite microcopy and empty state copy for the form",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-copy-review",
+      "required_candidates": [
+        "interface-copy-review"
+      ],
+      "forbidden_candidates": [
+        "interface-reference-analysis"
+      ]
+    },
+    {
+      "id": "interface-copy-review-ko",
+      "task": "문구만: 버튼 문구와 오류 안내 문구를 다듬어줘",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-copy-review",
+      "required_candidates": [
+        "interface-copy-review"
+      ],
+      "forbidden_candidates": [
+        "interface-reference-analysis"
+      ]
+    },
+    {
+      "id": "interface-reference-analysis-en",
+      "task": "reference analysis only: Explain this interface using screenshot reconstruction evidence",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-reference-analysis",
+      "required_candidates": [
+        "interface-reference-analysis"
+      ],
+      "forbidden_candidates": [
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "interface-reference-analysis-ko",
+      "task": "레퍼런스 분석만: 레퍼런스 분석으로 스크린샷 재현 방법을 설명해줘",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-reference-analysis",
+      "required_candidates": [
+        "interface-reference-analysis"
+      ],
+      "forbidden_candidates": [
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "interface-variant-exploration-en",
+      "task": "variants only: Compare design variants on one density axis",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-variant-exploration",
+      "required_candidates": [
+        "interface-variant-exploration"
+      ],
+      "forbidden_candidates": [
+        "interface-typography-review"
+      ]
+    },
+    {
+      "id": "interface-variant-exploration-ko",
+      "task": "대안 비교만: 디자인 대안을 만들어 시안 비교를 해줘",
+      "paths": [
+        "design/settings-panel.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_main": "interface-variant-exploration",
+      "required_candidates": [
+        "interface-variant-exploration"
+      ],
+      "forbidden_candidates": [
+        "interface-typography-review"
+      ]
+    },
+    {
+      "id": "design-skills-unrelated-backend",
+      "task": "Fix Go transaction retry handling",
+      "paths": [
+        "internal/store.go"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "go-code-change"
+      ],
+      "forbidden_candidates": [
+        "interface-typography-review",
+        "interface-color-system-review",
+        "interface-copy-review",
+        "interface-reference-analysis",
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "design-skills-empty-task",
+      "task": null,
+      "paths": [
+        "notes.txt"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "interface-typography-review",
+        "interface-color-system-review",
+        "interface-copy-review",
+        "interface-reference-analysis",
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "design-skills-common-words",
+      "task": "Update the state and value",
+      "paths": [
+        "data/record.json"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "interface-typography-review",
+        "interface-color-system-review",
+        "interface-copy-review",
+        "interface-reference-analysis",
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "design-variants-selected-implementation",
+      "task": "Implement selected design, no variant exploration",
+      "paths": [
+        "design/selected.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "interface-variant-exploration"
+      ]
+    },
+    {
+      "id": "typography-language-coexistence",
+      "task": "Change CSS type scale and font fallback for the interface",
+      "paths": [
+        "src/styles/typography.css"
+      ],
+      "reasons": [
+        "ui_change",
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "interface-typography-review",
+        "css-code-change"
+      ]
+    },
+    {
       "id": "typescript-public-cli-json",
       "mode": "invariant",
       "task": "Change TypeScript CLI JSON output and tests",

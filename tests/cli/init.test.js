@@ -216,6 +216,18 @@ test('applies profile locale agent language and product locale preferences', asy
 		const preferences = readFileSync(path.join(projectPath, '.mustflow', 'config', 'preferences.toml'), 'utf8');
 		const skillsIndex = readText(path.join(projectPath, '.mustflow', 'skills', 'INDEX.md'));
 		assert.match(preferences, /profile = "product"/);
+		for (const skill of [
+			'interface-typography-review',
+			'interface-color-system-review',
+			'interface-copy-review',
+			'interface-reference-analysis',
+			'interface-variant-exploration',
+		]) {
+			const installedPath = path.join(projectPath, '.mustflow', 'skills', skill, 'SKILL.md');
+			assert.ok(existsSync(installedPath), `product should install ${skill}`);
+			assert.match(readText(installedPath), /locale: en/u, 'Korean install should use the canonical fallback');
+			assert.ok(skillsIndex.includes(`.mustflow/skills/${skill}/SKILL.md`));
+		}
 		assert.match(preferences, /agent_response = "en"/);
 		assert.match(preferences, /docs = "ko"/);
 		assert.match(preferences, /\[product_i18n\]/);

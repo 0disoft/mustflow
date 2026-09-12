@@ -6,6 +6,11 @@ common_root = "common"
 locales_root = "locales"
 
 creates = [
+  ".mustflow/skills/interface-typography-review/SKILL.md",
+  ".mustflow/skills/interface-color-system-review/SKILL.md",
+  ".mustflow/skills/interface-copy-review/SKILL.md",
+  ".mustflow/skills/interface-reference-analysis/SKILL.md",
+  ".mustflow/skills/interface-variant-exploration/SKILL.md",
   "AGENTS.md",
   ".mustflow/context/INDEX.md",
   ".mustflow/context/PROJECT.md",
@@ -971,6 +976,11 @@ oss = [
   "vertical-slice-tdd",
 ]
 team = [
+  "interface-typography-review",
+  "interface-color-system-review",
+  "interface-copy-review",
+  "interface-reference-analysis",
+  "interface-variant-exploration",
   "adapter-boundary",
   "architecture-deepening-review",
   "service-boundary-architecture",
@@ -1235,6 +1245,11 @@ team = [
   "vertical-slice-tdd",
 ]
 product = [
+  "interface-typography-review",
+  "interface-color-system-review",
+  "interface-copy-review",
+  "interface-reference-analysis",
+  "interface-variant-exploration",
   "adapter-boundary",
   "api-contract-change",
   "http-api-semantics-review",
@@ -1513,6 +1528,9 @@ product = [
   "web-asset-optimization",
 ]
 library = [
+  "interface-typography-review",
+  "interface-color-system-review",
+  "interface-copy-review",
   "adapter-boundary",
   "api-contract-change",
   "http-api-semantics-review",

@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:4c17e8387e154ccb63a0902b3c7c341b9ecb4f178d2b8b83ae59d3243e50211d",
+  "source_fingerprint": "sha256:ab6d5b657a2e3aa25e43e17f0b1c493fcf03fd4ea655d8c4c57f87818b56a14c",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -7392,6 +7392,260 @@
         "changes_diff_summary",
         "docs_validate_fast",
         "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "interface-color-system-review",
+      "skill_path": ".mustflow/skills/interface-color-system-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "web_asset_change",
+        "code_change",
+        "copy_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "color palette",
+        "color tokens",
+        "contrast pair",
+        "semantic color",
+        "대비 측정",
+        "색상 체계",
+        "색상 토큰"
+      ],
+      "negative_signals": [
+        "animation only",
+        "microcopy only",
+        "reference analysis only",
+        "typography only",
+        "variants only",
+        "대안 비교만",
+        "레퍼런스 분석만",
+        "문구만",
+        "타이포그래피만"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Design or review semantic color tokens, palette roles, rendered contrast pairs, themes, and color-dependent interface states.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "interface-copy-review",
+      "skill_path": ".mustflow/skills/interface-copy-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "web_asset_change",
+        "code_change",
+        "copy_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "button labels",
+        "empty state copy",
+        "interface wording",
+        "microcopy",
+        "버튼 문구",
+        "오류 안내 문구",
+        "제품 문구"
+      ],
+      "negative_signals": [
+        "color only",
+        "marketing copy only",
+        "readme only",
+        "reference analysis only",
+        "typography only",
+        "variants only",
+        "대안 비교만",
+        "레퍼런스 분석만",
+        "색상만",
+        "타이포그래피만"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Write or review product microcopy for controls, forms, empty states, errors, confirmations, settings, and recovery actions.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "interface-reference-analysis",
+      "skill_path": ".mustflow/skills/interface-reference-analysis/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "web_asset_change",
+        "code_change",
+        "copy_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "explain this interface",
+        "reference reconstruction",
+        "screenshot reconstruction",
+        "visual mechanism",
+        "레퍼런스 분석",
+        "스크린샷 재현",
+        "인터페이스 원리"
+      ],
+      "negative_signals": [
+        "color only",
+        "microcopy only",
+        "no reference",
+        "typography only",
+        "variants only",
+        "대안 비교만",
+        "문구만",
+        "새 디자인 대안만",
+        "색상만",
+        "타이포그래피만"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Analyze a supplied interface screenshot, recording, or live reference to explain its visual mechanism or guide an explicitly requested reconstruction.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "interface-typography-review",
+      "skill_path": ".mustflow/skills/interface-typography-review/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "web_asset_change",
+        "code_change",
+        "copy_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "font fallback",
+        "text wrapping",
+        "type scale",
+        "typography",
+        "글꼴 대체",
+        "타이포그래피",
+        "텍스트 줄바꿈"
+      ],
+      "negative_signals": [
+        "color only",
+        "microcopy only",
+        "reference analysis only",
+        "variants only",
+        "wording only",
+        "대안 비교만",
+        "레퍼런스 분석만",
+        "문구만",
+        "색상만"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Review interface typography, type scales, font fallback, text wrapping, truncation, and multilingual text rendering in a selected screen or component.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "docs_validate_fast",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "interface-variant-exploration",
+      "skill_path": ".mustflow/skills/interface-variant-exploration/SKILL.md",
+      "category": "ui_assets",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 84,
+      "applies_to_reasons": [
+        "ui_change",
+        "web_asset_change",
+        "code_change",
+        "copy_change",
+        "docs_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "compare prototypes",
+        "design variants",
+        "interface alternatives",
+        "variant exploration",
+        "디자인 대안",
+        "시안 비교",
+        "인터페이스 변형"
+      ],
+      "negative_signals": [
+        "color only",
+        "implement selected design",
+        "microcopy only",
+        "no variant exploration",
+        "reference analysis only",
+        "typography only",
+        "레퍼런스 분석만",
+        "문구만",
+        "색상만",
+        "선택한 시안 구현",
+        "타이포그래피만"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Create and compare meaningfully different UI design alternatives for a selected component or flow while preserving shared tasks, content, and accessibility requirements.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "test_related",
+        "docs_validate_fast",
         "mustflow_check"
       ]
     },

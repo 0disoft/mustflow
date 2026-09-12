@@ -7,6 +7,37 @@ source_locale = "en"
 # Compare the source document revision with each translation's source_revision.
 status_values = ["current", "stale", "needs_review", "missing"]
 
+[documents."skill.interface-typography-review"]
+source = "locales/en/.mustflow/skills/interface-typography-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.interface-color-system-review"]
+source = "locales/en/.mustflow/skills/interface-color-system-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.interface-copy-review"]
+source = "locales/en/.mustflow/skills/interface-copy-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.interface-reference-analysis"]
+source = "locales/en/.mustflow/skills/interface-reference-analysis/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.interface-variant-exploration"]
+source = "locales/en/.mustflow/skills/interface-variant-exploration/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+
 [documents."agents.root"]
 source = "locales/en/AGENTS.md"
 source_locale = "en"
@@ -62,7 +93,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 344
+revision = 345
 translations = {}
 
 [documents."skill.delivery-verification-budget"]

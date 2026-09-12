@@ -1,5 +1,104 @@
 schema_version = "1"
 
+[intents.ui_design_skills_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake plan for the reviewed interface procedures."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","plan",".mustflow/cache/manifest-lock-plans/ui-design-skills-20260912.json",".mustflow/config/commands.toml",".mustflow/skills/INDEX.md",".mustflow/skills/routes.toml",".mustflow/skills/catalog.v2.json",".mustflow/skills/interface-typography-review/SKILL.md",".mustflow/skills/interface-color-system-review/SKILL.md",".mustflow/skills/interface-copy-review/SKILL.md",".mustflow/skills/interface-reference-analysis/SKILL.md",".mustflow/skills/interface-variant-exploration/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/cache/manifest-lock-plans/ui-design-skills-20260912.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
+
+[intents.ui_design_skills_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake apply for the reviewed interface procedures."
+argv = ["node","scripts/accept-manifest-lock-baseline.mjs","apply",".mustflow/cache/manifest-lock-plans/ui-design-skills-20260912.json"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml",".mustflow/cache/manifest-lock-plans/ui-design-skills-20260912.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+
+[intents.ui_design_skills_install_test]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake test for the reviewed interface procedures."
+argv = ["node","--test","tests/cli/init.test.js","tests/cli/init-default-template.test.js","tests/cli/skill-install-surface-contracts.test.js"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+
+[intents.ui_design_skills_diff]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake diff for the reviewed interface procedures."
+argv = ["git","diff","--",".mustflow/config/commands.toml",".mustflow/config/manifest.lock.toml",".mustflow/skills/INDEX.md",".mustflow/skills/routes.toml",".mustflow/skills/catalog.v2.json",".mustflow/skills/route-fixtures.json","templates/default/manifest.toml","templates/default/i18n.toml","templates/default/locales/en/.mustflow/skills/INDEX.md","templates/default/locales/en/.mustflow/skills/routes.toml","templates/default/locales/en/.mustflow/skills/catalog.v2.json","tests/cli/skill-install-surface-contracts.test.js","tests/cli/init.test.js","docs/interface-skill-sources.md","REPO_MAP.md","REPO_FLOW.md",".mustflow/skills/interface-typography-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-typography-review/SKILL.md",".mustflow/skills/interface-color-system-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-color-system-review/SKILL.md",".mustflow/skills/interface-copy-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-copy-review/SKILL.md",".mustflow/skills/interface-reference-analysis/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-reference-analysis/SKILL.md",".mustflow/skills/interface-variant-exploration/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-variant-exploration/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+
+
+[intents.ui_design_skills_stage]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake stage for the reviewed interface procedures."
+argv = ["git","add","--",".mustflow/config/commands.toml",".mustflow/config/manifest.lock.toml",".mustflow/skills/INDEX.md",".mustflow/skills/routes.toml",".mustflow/skills/catalog.v2.json",".mustflow/skills/route-fixtures.json","templates/default/manifest.toml","templates/default/i18n.toml","templates/default/locales/en/.mustflow/skills/INDEX.md","templates/default/locales/en/.mustflow/skills/routes.toml","templates/default/locales/en/.mustflow/skills/catalog.v2.json","tests/cli/skill-install-surface-contracts.test.js","tests/cli/init.test.js","docs/interface-skill-sources.md","REPO_MAP.md","REPO_FLOW.md",".mustflow/skills/interface-typography-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-typography-review/SKILL.md",".mustflow/skills/interface-color-system-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-color-system-review/SKILL.md",".mustflow/skills/interface-copy-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-copy-review/SKILL.md",".mustflow/skills/interface-reference-analysis/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-reference-analysis/SKILL.md",".mustflow/skills/interface-variant-exploration/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-variant-exploration/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/index"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", path = ".git/index", lock = "git_index", concurrency = "exclusive" }]
+approval_actions = ["git_commit"]
+
+[intents.ui_design_skills_commit]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Bounded design skill intake commit for the reviewed interface procedures."
+argv = ["git","commit","--only","-m","✨ feat(skills): add focused interface design procedures","-m","Add typography, color, microcopy, reference analysis, and comparable design variants with scoped profiles, bilingual routing fixtures, and installation coverage.","--",".mustflow/config/commands.toml",".mustflow/config/manifest.lock.toml",".mustflow/skills/INDEX.md",".mustflow/skills/routes.toml",".mustflow/skills/catalog.v2.json",".mustflow/skills/route-fixtures.json","templates/default/manifest.toml","templates/default/i18n.toml","templates/default/locales/en/.mustflow/skills/INDEX.md","templates/default/locales/en/.mustflow/skills/routes.toml","templates/default/locales/en/.mustflow/skills/catalog.v2.json","tests/cli/skill-install-surface-contracts.test.js","tests/cli/init.test.js","docs/interface-skill-sources.md","REPO_MAP.md","REPO_FLOW.md",".mustflow/skills/interface-typography-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-typography-review/SKILL.md",".mustflow/skills/interface-color-system-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-color-system-review/SKILL.md",".mustflow/skills/interface-copy-review/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-copy-review/SKILL.md",".mustflow/skills/interface-reference-analysis/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-reference-analysis/SKILL.md",".mustflow/skills/interface-variant-exploration/SKILL.md","templates/default/locales/en/.mustflow/skills/interface-variant-exploration/SKILL.md"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".git/**"]
+network = false
+destructive = false
+env_policy = "minimal"
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }]
+approval_actions = ["git_commit"]
+
+
 [intents.ui_skill_update_plan]
 status = "configured"
 lifecycle = "oneshot"
