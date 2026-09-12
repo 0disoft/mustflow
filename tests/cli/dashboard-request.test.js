@@ -5,6 +5,77 @@ import { dashboardRequestScript } from '../../dist/cli/lib/dashboard-html/reques
 import { renderDashboardClientScript } from '../../dist/cli/lib/dashboard-html/client-script.js';
 import { dashboardDocumentsScript, dashboardDocumentEventsScript } from '../../dist/cli/lib/dashboard-html/documents-script.js';
 import { dashboardSettingsScript, dashboardSettingsEventsScript } from '../../dist/cli/lib/dashboard-html/settings-script.js';
+import { dashboardReleaseUpdateScript } from '../../dist/cli/lib/dashboard-html/release-update-script.js';
+
+test('release and update tabs preserve readiness gates, preview evidence and copy-only actions', async () => {
+	const h = harness(), nodes = new Map(), copied = [], feedback = deferred();
+	function element() {
+		return {
+			children: [], listeners: {}, attributes: {},
+			set textContent(value) { this.text = value; this.children = []; },
+			get textContent() { return this.text; },
+			appendChild(child) { this.children.push(child); },
+			setAttribute(key, value) { this.attributes[key] = value; },
+			addEventListener(name, callback) { (this.listeners[name] ??= []).push(callback); },
+		};
+	}
+	const get = id => {
+		if (!nodes.has(id)) nodes.set(id, element());
+		return nodes.get(id);
+	};
+	const flatten = node => [node, ...node.children.flatMap(flatten)];
+	const buttons = id => flatten(get(id)).filter(node => node.className === 'verification-copy');
+	h.context.document = { getElementById: get, createElement: element };
+	h.context.navigator = { clipboard: { async writeText(value) { copied.push(value); } } };
+	h.context.copyCommandLabel = command => 'Copy ' + command;
+	h.context.setButtonAccessibleLabel = (button, label) => { button.textContent = label; };
+	h.context.showCopyButtonFeedback = () => feedback.resolve();
+	h.context.statusKey = key => h.messages.push(key);
+	h.context.settingValue = () => false;
+	h.context.formatBoolean = value => String(value);
+	h.context.appendStatusItem = (root, key, value) => {
+		const row = element(); row.textContent = key + ':' + value; root.appendChild(row);
+	};
+	h.context.appendCommandMeta = h.context.appendStatusItem;
+	h.context.dashboardStatus = {
+		command_contract: { intents: [{ name: 'version_check', runnable: true }, { name: 'test_release', runnable: false }] },
+		template: { id: 'default', version: '2.0.0' },
+		release: { package_name: 'example', package_version: '2.0.0',
+			release_sensitive_changed_files: ['src/main.ts'], version_sources: [] },
+		update: { ok: true, apply_ready: false, dry_run_command: 'mf update --dry-run', apply_command: 'mf update',
+			summary: { wouldUpdate: 1, wouldCreate: 0, wouldRemove: 0, blockedLocalChanges: 1, manualReview: 0, unchanged: 2 },
+			error: 'local changes', changes: [],
+			blockers: [{ relativePath: 'AGENTS.md', action: 'blocked', sourceKind: 'template', reason: '<review first>' }] },
+	};
+	h.run(dashboardReleaseUpdateScript);
+	h.run('renderReleasePanel(); renderUpdatePanel()');
+	const releaseButtons = buttons('dashboard-release');
+	assert.deepEqual(releaseButtons.map(button => button.disabled), [false, true, true]);
+	assert.equal(releaseButtons[2].attributes['aria-disabled'], 'true');
+	assert.deepEqual(buttons('dashboard-update').map(button => button.disabled), [false, true]);
+	assert.ok(flatten(get('dashboard-release')).some(node => node.textContent === 'src/main.ts'));
+	assert.ok(flatten(get('dashboard-update')).some(node => node.textContent === 'dashboard.update.reason: <review first>'));
+	assert.ok(flatten(get('dashboard-update')).some(node => node.textContent === 'dashboard.update.error: local changes'));
+	assert.equal(releaseButtons[0].listeners.click.length, 1);
+	releaseButtons[0].listeners.click[0]();
+	await feedback.promise;
+	assert.deepEqual(copied, ['mf version --check']);
+	assert.equal(h.calls.length, 0);
+
+	h.context.dashboardStatus.update.apply_ready = true;
+	h.run('renderUpdatePanel()');
+	assert.deepEqual(buttons('dashboard-update').map(button => button.disabled), [false, false]);
+	const updateFeedback = deferred();
+	h.context.showCopyButtonFeedback = () => updateFeedback.resolve();
+	buttons('dashboard-update')[1].listeners.click[0]();
+	await updateFeedback.promise;
+	assert.deepEqual(copied, ['mf version --check', 'mf update']);
+	assert.equal(h.calls.length, 0);
+	h.context.dashboardStatus.update.ok = false;
+	h.run('renderUpdatePanel()');
+	assert.deepEqual(buttons('dashboard-update').map(button => button.disabled), [true, true]);
+});
+
 
 test('settings controls preserve pending edits, unload warning, reset and save outcomes after extraction', async () => {
 	const h = harness(), nodes = new Map(), jobs = [], windowEvents = {};
