@@ -2,6 +2,380 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "common-procedure-node-en",
+      "mode": "invariant",
+      "task": "Fix Node.js event-loop blocking in the server runtime without changing its module format.",
+      "paths": [
+        "src/server.mjs"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "node-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-node-ko",
+      "mode": "invariant",
+      "task": "Node.js 서버의 이벤트 루프를 막는 동기 처리를 고쳐줘.",
+      "paths": [
+        "src/server.mjs"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "node-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-python-en",
+      "mode": "invariant",
+      "task": "Refactor the Python CLI entry point and add pytest coverage for exception handling.",
+      "paths": [
+        "app/cli.py"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "python-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-python-ko",
+      "mode": "invariant",
+      "task": "Python CLI의 예외 처리를 고치고 pytest 회귀 테스트를 추가해줘.",
+      "paths": [
+        "app/cli.py"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "python-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-rust-en",
+      "mode": "invariant",
+      "task": "Fix Rust ownership and borrowing in the parser while preserving the public crate API.",
+      "paths": [
+        "src/parser.rs",
+        "Cargo.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "rust-code-change"
+      ],
+      "forbidden_candidates": [
+        "python-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-rust-ko",
+      "mode": "invariant",
+      "task": "Rust 파서의 소유권과 빌림 오류를 공개 API 변경 없이 고쳐줘.",
+      "paths": [
+        "src/parser.rs",
+        "Cargo.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "rust-code-change"
+      ],
+      "forbidden_candidates": [
+        "python-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-react-en",
+      "mode": "invariant",
+      "task": "Fix React Hooks and controlled form state in the account settings component.",
+      "paths": [
+        "src/components/Settings.tsx"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "react-code-change"
+      ],
+      "forbidden_candidates": [
+        "vue-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-react-ko",
+      "mode": "invariant",
+      "task": "React 설정 폼의 Hooks와 입력 상태 동기화를 고쳐줘.",
+      "paths": [
+        "src/components/Settings.tsx"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "react-code-change"
+      ],
+      "forbidden_candidates": [
+        "vue-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-powershell-en",
+      "mode": "invariant",
+      "task": "Fix PowerShell native-command argument quoting for paths containing spaces.",
+      "paths": [
+        "scripts/package.ps1"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "powershell-code-change"
+      ],
+      "forbidden_candidates": [
+        "python-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-powershell-ko",
+      "mode": "invariant",
+      "task": "PowerShell에서 공백이 있는 경로를 외부 명령 인자로 안전하게 넘기도록 고쳐줘.",
+      "paths": [
+        "scripts/package.ps1"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "powershell-code-change"
+      ],
+      "forbidden_candidates": [
+        "python-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-sqlite-en",
+      "mode": "invariant",
+      "task": "Review SQLite WAL transactions and indexing for the embedded cache database.",
+      "paths": [
+        "src/cache/storage.sql"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sqlite-code-change"
+      ],
+      "forbidden_candidates": [
+        "clickhouse-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-sqlite-ko",
+      "mode": "invariant",
+      "task": "SQLite 캐시의 WAL 트랜잭션과 인덱스를 검토해줘.",
+      "paths": [
+        "src/cache/storage.sql"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sqlite-code-change"
+      ],
+      "forbidden_candidates": [
+        "clickhouse-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-docker-en",
+      "mode": "invariant",
+      "task": "Fix Docker Compose health checks and the container entrypoint in the Dockerfile.",
+      "paths": [
+        "Dockerfile",
+        "compose.yaml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "docker-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-docker-ko",
+      "mode": "invariant",
+      "task": "Docker Compose의 헬스 체크와 Dockerfile의 컨테이너 진입점을 고쳐줘.",
+      "paths": [
+        "Dockerfile",
+        "compose.yaml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "docker-code-change"
+      ],
+      "forbidden_candidates": [
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "common-procedure-config-env-en",
+      "mode": "invariant",
+      "task": "Validate environment variables and prevent private config keys from leaking through public env prefixes.",
+      "paths": [
+        "src/config/env.ts",
+        ".env.example"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "config-env-change"
+      ]
+    },
+    {
+      "id": "common-procedure-config-env-ko",
+      "mode": "invariant",
+      "task": "환경 변수의 필수 값 검증을 추가하고 비밀 설정이 클라이언트에 노출되지 않도록 고쳐줘.",
+      "paths": [
+        "src/config/env.ts",
+        ".env.example"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "config-env-change"
+      ]
+    },
+    {
+      "id": "common-procedure-dependency-upgrade-en",
+      "mode": "invariant",
+      "task": "Review dependency versions and lockfiles for a package upgrade, checking peer dependency contracts and runtime engine constraints.",
+      "paths": [
+        "package.json",
+        "bun.lock"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "dependency-upgrade-review"
+      ]
+    },
+    {
+      "id": "common-procedure-dependency-upgrade-ko",
+      "mode": "invariant",
+      "task": "의존성 버전과 잠금 파일을 올리기 전에 호환성과 런타임 지원 범위를 검토해줘.",
+      "paths": [
+        "package.json",
+        "bun.lock"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "dependency-upgrade-review"
+      ]
+    },
+    {
+      "id": "common-procedure-async-timing-en",
+      "mode": "invariant",
+      "task": "Replace fixed delays and arbitrary sleeps with readiness signals, and guard response ordering when a newer request supersedes the old one.",
+      "paths": [
+        "src/ui/requests.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "async-timing-boundary-review"
+      ]
+    },
+    {
+      "id": "common-procedure-async-timing-ko",
+      "mode": "invariant",
+      "task": "고정 지연으로 기다리는 코드를 완료 신호 기반으로 바꾸고 늦은 응답이 최신 화면을 덮지 않도록 고쳐줘.",
+      "paths": [
+        "src/ui/requests.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "async-timing-boundary-review"
+      ]
+    },
+    {
+      "id": "common-procedures-unrelated-copy",
+      "mode": "invariant",
+      "task": "Correct the spelling of the company name in the contact paragraph.",
+      "paths": [
+        "docs/contact.md"
+      ],
+      "reasons": [
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "node-code-change",
+        "python-code-change",
+        "rust-code-change",
+        "react-code-change",
+        "powershell-code-change",
+        "sqlite-code-change",
+        "docker-code-change",
+        "config-env-change",
+        "dependency-upgrade-review",
+        "async-timing-boundary-review"
+      ]
+    },
+    {
       "id": "sui-move-resource-review-en",
       "mode": "invariant",
       "task": "Review sui move resources for the contract lifecycle.",

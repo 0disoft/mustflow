@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:6f46e108f3f483324e012ef68a8636afa3631a8416d521b92bb6600a3d05be80",
+  "source_fingerprint": "sha256:0f16a3582a1c83d2a9e6bc74f07efaaa5dcd1fa41269b2d7f2a1240592fd31aa",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1460,7 +1460,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "늦은 응답",
+        "완료 신호 기반",
+        "준비 상태 확인"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -4594,7 +4598,11 @@
         "unknown_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "의존성 버전",
+        "잠금 파일 갱신",
+        "패키지 업그레이드"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],

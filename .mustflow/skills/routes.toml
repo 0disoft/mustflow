@@ -1125,6 +1125,9 @@ priority = 78
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "ui_change", "data_change", "migration_change", "package_metadata_change", "release_risk"]
 
+[routes."async-timing-boundary-review".contexts]
+concept_aliases = ["늦은 응답", "완료 신호 기반", "준비 상태 확인"]
+
 [routes."concurrency-invariant-review"]
 category = "general_code"
 route_type = "adjunct"
@@ -1932,6 +1935,9 @@ route_type = "primary"
 priority = 75
 selection_axis = "task"
 applies_to_reasons = ["code_change", "docs_change", "security_change", "package_metadata_change", "release_risk", "unknown_change"]
+
+[routes."dependency-upgrade-review".contexts]
+concept_aliases = ["의존성 버전", "패키지 업그레이드", "잠금 파일 갱신"]
 
 [routes."dependency-reality-check"]
 category = "data_external"
