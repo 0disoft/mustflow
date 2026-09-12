@@ -5,6 +5,8 @@ This directory contains the validation implementation behind the stable
 
 - `index.ts` keeps the public validation API and coordinates domain validators.
 - `config.ts` validates mustflow, preferences, technology, and version-source configuration shapes.
+- `policies.ts` validates retention, instruction refresh, harness prerequisites,
+  candidate contract models and preference boundaries around command/release authority.
 - `skill-routes.ts` validates routing indexes, metadata, fixtures, and template skill profiles.
 - `constants.ts` owns allowed values, paths, patterns, and static rule sets.
 - `types.ts` owns shared report and issue shapes.
