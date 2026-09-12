@@ -164,13 +164,13 @@ test('reports aggregate skill route quality metrics from the versioned corpus', 
 
 	const corpus = JSON.parse(readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'route-fixtures.json'), 'utf8'));
 	assert.ok(corpus.cases.length > 0);
+	assert.deepEqual(report.issues, [], 'Route fixture mismatches must identify the request and expected skill');
 	assert.equal(report.case_count, corpus.cases.length);
 	assert.equal(report.passed_case_count, report.case_count);
 	assert.equal(report.main_accuracy.rate, 1);
 	assert.equal(report.candidate_recall.rate, 1);
 	assert.equal(report.adjunct_recall.rate, 1);
 	assert.equal(report.forbidden_violation_rate.rate, 0);
-	assert.deepEqual(report.issues, []);
 	const installed = buildSkillRouteCatalog(projectRoot).entries;
 	const asserted = new Set(corpus.cases.flatMap(fixture => [
 		...(fixture.required_main ? [fixture.required_main] : []),
