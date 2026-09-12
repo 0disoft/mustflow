@@ -182,6 +182,16 @@ Machine-readable import output uses these fields:
 
 The published JSON Schema is `schemas/skill-import-report.schema.json`.
 
+## Category Index
+
+Use `mf skill index` to list installed built-in categories and counts, then
+`mf skill index --category ui_assets` to generate only that category's compact
+Markdown index. Each row contains the skill, its trigger, and its procedure path.
+The index is generated from current installed source files, respects the installed
+profile, and needs no persistent copy or regeneration step. It is navigation;
+read the selected procedure before acting. Unknown categories and unsupported
+options fail instead of returning the full index. This action emits text only.
+
 ## Path-Based Route Hints
 
 Declare path evidence on a route without adding a skill-name branch to the resolver:

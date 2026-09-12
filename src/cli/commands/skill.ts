@@ -17,6 +17,7 @@ import {
 	type ScriptPackSuggestionReport,
 } from '../../core/script-pack-suggestions.js';
 import { resolveSkillRoutes } from '../../core/skill-route-resolution.js';
+import { renderSkillCategoryIndex } from '../../core/skill-category-index.js';
 import {
 	createExternalSkillImportReport,
 	createExternalSkillUpdateReminder,
@@ -76,6 +77,7 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 			summary: t(lang, 'command.skill.summary'),
 			options: [
 				{ label: 'route', description: 'Resolve installed skill route candidates' },
+				{ label: 'index [--category <name>]', description: 'Generate a compact index from installed built-in skills' },
 				{ label: 'import <github-url>', description: 'Preview or install an external SKILL.md under .mustflow/external-skills/' },
 				{ label: 'outdated [skill-name...]', description: 'Check installed external skills for upstream file changes' },
 				{ label: 'update <skill-name>|--all', description: 'Refresh installed external skills from their saved provenance source' },
@@ -373,6 +375,20 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		return 0;
 	}
 
+	if (args[0] === 'index') {
+		const indexOptions = parseCliOptions(args.slice(1), [{ name: '--category', kind: 'string' }]);
+		if (indexOptions.error) {
+			printUsageError(reporter, formatCliOptionParseError(indexOptions.error, lang), 'mf skill --help', getSkillHelp(lang), lang);
+			return 1;
+		}
+		try {
+			reporter.stdout(renderSkillCategoryIndex(resolveMustflowRoot(), getParsedCliStringOption(indexOptions, '--category') ?? undefined));
+			return 0;
+		} catch (error) {
+			reporter.stderr(error instanceof Error ? error.message : String(error));
+			return 1;
+		}
+	}
 	const parsed = parseSkillArgs(args);
 
 	if (parsed.error) {
