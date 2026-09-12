@@ -6,6 +6,79 @@ import { renderDashboardClientScript } from '../../dist/cli/lib/dashboard-html/c
 import { dashboardDocumentsScript, dashboardDocumentEventsScript } from '../../dist/cli/lib/dashboard-html/documents-script.js';
 import { dashboardSettingsScript, dashboardSettingsEventsScript } from '../../dist/cli/lib/dashboard-html/settings-script.js';
 import { dashboardReleaseUpdateScript } from '../../dist/cli/lib/dashboard-html/release-update-script.js';
+import { dashboardListUiScript } from '../../dist/cli/lib/dashboard-html/list-ui-script.js';
+import { dashboardVerificationCommandsScript } from '../../dist/cli/lib/dashboard-html/verification-commands-script.js';
+
+test('verification and command tabs preserve filters, focus and filtered plan copying', async () => {
+	const h = harness(), nodes = new Map(), copied = [], copiedFeedback = deferred();
+	function element() {
+		return {
+			children: [], listeners: {},
+			set id(value) { this.nodeId = value; nodes.set(value, this); },
+			get id() { return this.nodeId; },
+			set textContent(value) { this.text = value; this.children = []; },
+			get textContent() { return this.text; },
+			appendChild(child) { this.children.push(child); },
+			setAttribute() {},
+			addEventListener(name, callback) { this.listeners[name] = callback; },
+			focus() { this.focused = true; },
+			setSelectionRange(start, end) { this.selection = [start, end]; },
+		};
+	}
+	const get = id => {
+		if (!nodes.has(id)) nodes.set(id, element());
+		return nodes.get(id);
+	};
+	const flat = node => [node, ...node.children.flatMap(flat)];
+	h.context.document = { getElementById: get, createElement: element };
+	h.context.messageFormat = key => key;
+	h.context.statusKey = key => h.messages.push(key);
+	h.context.navigator = { clipboard: { async writeText(text) { copied.push(text); } } };
+	h.context.listFilters = { verification: { query: '', state: 'all' }, commands: { query: '', state: 'all' } };
+	h.context.dashboardStatus = {
+		verification: {
+			changed_files: ['src/a.ts'], skipped: [],
+			recommendations: [
+				{ intent: 'test', command: 'mf run test', runnable: true, reason_key: 'test-reason', files: ['src/a.ts'] },
+				{ intent: 'lint', command: 'mf run lint', runnable: false, reason_key: 'lint-reason', files: ['src/a.ts'] },
+			],
+			schedule: { entries: [], batches: [{ index: 1, locks: [], intents: ['test', 'lint'], commands: ['mf run test', 'mf run lint'] }] },
+		},
+		command_contract: { exists: true, intents: [
+			{ name: 'test', runnable: true, writes: [], required_after: [] },
+			{ name: 'lint', runnable: false, writes: [], required_after: [] },
+		] },
+	};
+	h.run(dashboardListUiScript);
+	h.run(dashboardVerificationCommandsScript);
+	h.context.showCopyButtonFeedback = () => copiedFeedback.resolve();
+	h.run('renderVerificationPanel(); renderCommandPanel()');
+	let buttons = flat(get('dashboard-verification')).filter(node => node.className === 'verification-copy');
+	assert.equal(buttons[1].disabled, true);
+	const search = get('dashboard-verification-filter-search');
+	search.value = 'test';
+	search.selectionStart = 4;
+	search.listeners.input();
+	const restored = get('dashboard-verification-filter-search');
+	assert.equal(restored.focused, true);
+	assert.deepEqual(restored.selection, [4, 4]);
+	buttons = flat(get('dashboard-verification')).filter(node => node.className === 'verification-copy');
+	assert.equal(buttons.length, 2);
+	buttons[1].listeners.click();
+	await copiedFeedback.promise;
+	assert.deepEqual(copied, ['mf run test']);
+	assert.equal(h.calls.length, 0);
+
+	const state = get('dashboard-commands-filter-state');
+	state.value = 'unavailable';
+	state.listeners.change();
+	const names = flat(get('dashboard-commands')).filter(node => node.className === 'command-name').map(node => node.textContent);
+	assert.deepEqual(names, ['lint']);
+	h.context.listFilters.commands.query = 'missing';
+	h.run('renderCommandPanel()');
+	assert.ok(flat(get('dashboard-commands')).some(node => node.textContent === 'dashboard.filter.noMatches'));
+});
+
 
 test('release and update tabs preserve readiness gates, preview evidence and copy-only actions', async () => {
 	const h = harness(), nodes = new Map(), copied = [], feedback = deferred();

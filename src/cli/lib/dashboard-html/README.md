@@ -5,6 +5,10 @@ This directory contains the build-free pieces used by `../dashboard-html.ts`.
 - `template.ts` owns the server-rendered HTML shell and public `renderDashboardHtml` function.
 - `styles.ts` owns the inline CSS string.
 - `client-script.ts` owns the inline browser script string.
+- `verification-commands-script.ts` owns verification recommendations, command
+  listings, their state filters and verification command/plan copying.
+- `list-ui-script.ts` owns shared list filtering, focus restoration, copy-button
+  feedback, collapsible sections and command metadata rendering across tabs.
 - `release-update-script.ts` owns release/update tab rendering and command copying.
   It shares `dashboardStatus`, setting values, locale and presentation helpers with
   the client. Buttons preserve runnable/apply-readiness gates and only copy commands.
