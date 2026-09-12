@@ -2,6 +2,412 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "sui-move-resource-review-en",
+      "mode": "invariant",
+      "task": "Review sui move resources for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-resource-review"
+      ]
+    },
+    {
+      "id": "sui-move-resource-review-ko",
+      "mode": "invariant",
+      "task": "Sui Move 리소스와 ability 설계를 검토해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-resource-review"
+      ]
+    },
+    {
+      "id": "sui-move-resource-review-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move resources.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-resource-review"
+      ]
+    },
+    {
+      "id": "sui-move-object-design-en",
+      "mode": "invariant",
+      "task": "Review sui move object design for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-object-design"
+      ]
+    },
+    {
+      "id": "sui-move-object-design-ko",
+      "mode": "invariant",
+      "task": "Sui Move 객체 구조와 공유 부모 경합을 설계해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-object-design"
+      ]
+    },
+    {
+      "id": "sui-move-object-design-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move object design.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-object-design"
+      ]
+    },
+    {
+      "id": "sui-move-module-design-en",
+      "mode": "invariant",
+      "task": "Review sui move module design for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-module-design"
+      ]
+    },
+    {
+      "id": "sui-move-module-design-ko",
+      "mode": "invariant",
+      "task": "Sui Move 모듈 경계와 패키지 API를 설계해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-module-design"
+      ]
+    },
+    {
+      "id": "sui-move-module-design-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move module design.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-module-design"
+      ]
+    },
+    {
+      "id": "sui-move-authorization-review-en",
+      "mode": "invariant",
+      "task": "Review sui move authorization for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-authorization-review"
+      ]
+    },
+    {
+      "id": "sui-move-authorization-review-ko",
+      "mode": "invariant",
+      "task": "Sui Move 권한 증서의 대상 연결과 보상 재사용을 검토해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-authorization-review"
+      ]
+    },
+    {
+      "id": "sui-move-authorization-review-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move authorization.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-authorization-review"
+      ]
+    },
+    {
+      "id": "sui-move-upgrade-review-en",
+      "mode": "invariant",
+      "task": "Review sui move package upgrade for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-upgrade-review"
+      ]
+    },
+    {
+      "id": "sui-move-upgrade-review-ko",
+      "mode": "invariant",
+      "task": "Sui Move 패키지 업그레이드에서 구버전 차단과 자산 이전을 검토해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-upgrade-review"
+      ]
+    },
+    {
+      "id": "sui-move-upgrade-review-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move package upgrade.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-upgrade-review"
+      ]
+    },
+    {
+      "id": "sui-move-adversarial-testing-en",
+      "mode": "invariant",
+      "task": "Review sui move adversarial testing for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-adversarial-testing"
+      ]
+    },
+    {
+      "id": "sui-move-adversarial-testing-ko",
+      "mode": "invariant",
+      "task": "Sui Move 공격 시나리오 테스트와 실패 후 자산 보존을 검증해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-adversarial-testing"
+      ]
+    },
+    {
+      "id": "sui-move-adversarial-testing-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move adversarial testing.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-adversarial-testing"
+      ]
+    },
+    {
+      "id": "sui-move-storage-optimization-en",
+      "mode": "invariant",
+      "task": "Review sui move storage optimization for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-storage-optimization"
+      ]
+    },
+    {
+      "id": "sui-move-storage-optimization-ko",
+      "mode": "invariant",
+      "task": "Sui Move 저장 비용과 동적 필드 정리를 최적화해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-move-storage-optimization"
+      ]
+    },
+    {
+      "id": "sui-move-storage-optimization-exclude",
+      "mode": "invariant",
+      "task": "Not Sui: review sui move storage optimization.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-storage-optimization"
+      ]
+    },
+    {
+      "id": "move-chain-selection-en",
+      "mode": "invariant",
+      "task": "Review sui aptos selection for the contract lifecycle.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "move-chain-selection"
+      ]
+    },
+    {
+      "id": "move-chain-selection-ko",
+      "mode": "invariant",
+      "task": "Sui와 Aptos 선택 기준을 자산 수명주기로 비교해줘",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "move-chain-selection"
+      ]
+    },
+    {
+      "id": "move-chain-selection-exclude",
+      "mode": "invariant",
+      "task": "No chain comparison: review sui aptos selection.",
+      "paths": [
+        "contracts/sources/vault.move"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "move-chain-selection"
+      ]
+    },
+    {
+      "id": "sui-move-sdk-only-boundary",
+      "mode": "invariant",
+      "task": "SDK only: perform Sui SDK migration without changing contracts.",
+      "paths": [
+        "src/sui/client.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "sui-sdk-migration-review"
+      ],
+      "forbidden_candidates": [
+        "sui-move-resource-review",
+        "sui-move-object-design",
+        "sui-move-module-design",
+        "sui-move-authorization-review",
+        "sui-move-upgrade-review",
+        "sui-move-adversarial-testing",
+        "sui-move-storage-optimization"
+      ]
+    },
+    {
+      "id": "sui-move-unrelated-motion",
+      "mode": "invariant",
+      "task": "Move the interface panel and its icons smoothly.",
+      "paths": [
+        "src/components/Panel.tsx"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "sui-move-resource-review",
+        "sui-move-object-design",
+        "sui-move-module-design",
+        "sui-move-authorization-review",
+        "sui-move-upgrade-review",
+        "sui-move-adversarial-testing",
+        "sui-move-storage-optimization",
+        "move-chain-selection"
+      ]
+    },
+    {
       "id": "sui-read-only-boundary-en",
       "task": "Sui read only queries: inspect dynamic fields, BCS type identity and partial batch errors.",
       "paths": [

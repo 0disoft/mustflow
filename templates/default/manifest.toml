@@ -6,6 +6,14 @@ common_root = "common"
 locales_root = "locales"
 
 creates = [
+  ".mustflow/skills/sui-move-resource-review/SKILL.md",
+  ".mustflow/skills/sui-move-object-design/SKILL.md",
+  ".mustflow/skills/sui-move-module-design/SKILL.md",
+  ".mustflow/skills/sui-move-authorization-review/SKILL.md",
+  ".mustflow/skills/sui-move-upgrade-review/SKILL.md",
+  ".mustflow/skills/sui-move-adversarial-testing/SKILL.md",
+  ".mustflow/skills/sui-move-storage-optimization/SKILL.md",
+  ".mustflow/skills/move-chain-selection/SKILL.md",
   ".mustflow/skills/sui-wallet-signing-review/SKILL.md",
   ".mustflow/skills/sui-ptb-composition-review/SKILL.md",
   ".mustflow/skills/sui-gas-concurrency-review/SKILL.md",
@@ -983,6 +991,14 @@ oss = [
   "vertical-slice-tdd",
 ]
 team = [
+  "sui-move-resource-review",
+  "sui-move-object-design",
+  "sui-move-module-design",
+  "sui-move-authorization-review",
+  "sui-move-upgrade-review",
+  "sui-move-adversarial-testing",
+  "sui-move-storage-optimization",
+  "move-chain-selection",
   "sui-wallet-signing-review",
   "sui-ptb-composition-review",
   "sui-gas-concurrency-review",
@@ -1259,6 +1275,14 @@ team = [
   "vertical-slice-tdd",
 ]
 product = [
+  "sui-move-resource-review",
+  "sui-move-object-design",
+  "sui-move-module-design",
+  "sui-move-authorization-review",
+  "sui-move-upgrade-review",
+  "sui-move-adversarial-testing",
+  "sui-move-storage-optimization",
+  "move-chain-selection",
   "sui-wallet-signing-review",
   "sui-ptb-composition-review",
   "sui-gas-concurrency-review",
@@ -1549,6 +1573,14 @@ product = [
   "web-asset-optimization",
 ]
 library = [
+  "sui-move-resource-review",
+  "sui-move-object-design",
+  "sui-move-module-design",
+  "sui-move-authorization-review",
+  "sui-move-upgrade-review",
+  "sui-move-adversarial-testing",
+  "sui-move-storage-optimization",
+  "move-chain-selection",
   "sui-wallet-signing-review",
   "sui-ptb-composition-review",
   "sui-gas-concurrency-review",

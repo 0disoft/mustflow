@@ -3023,3 +3023,99 @@ applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_a
 positive_terms = ["sui sdk migration","sui sdk upgrade","mysten migration"]
 concept_aliases = ["sui sdk 업그레이드","sui sdk 마이그레이션","sui json rpc 전환"]
 exclusion_terms = ["not sui", "sui 제외"]
+
+[routes."sui-move-resource-review"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-resource-review".contexts]
+positive_terms = ["sui move resources"]
+concept_aliases = ["sui move 리소스"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-object-design"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-object-design".contexts]
+positive_terms = ["sui move object design"]
+concept_aliases = ["sui move 객체 구조"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-module-design"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-module-design".contexts]
+positive_terms = ["sui move module design"]
+concept_aliases = ["sui move 모듈 경계"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-authorization-review"]
+category = "security_privacy"
+route_type = "primary"
+priority = 68
+selection_axis = "risk"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-authorization-review".contexts]
+positive_terms = ["sui move authorization"]
+concept_aliases = ["sui move 권한 증서"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-upgrade-review"]
+category = "data_external"
+route_type = "primary"
+priority = 68
+selection_axis = "risk"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-upgrade-review".contexts]
+positive_terms = ["sui move package upgrade"]
+concept_aliases = ["sui move 패키지 업그레이드"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-adversarial-testing"]
+category = "tests"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-adversarial-testing".contexts]
+positive_terms = ["sui move adversarial testing"]
+concept_aliases = ["sui move 공격 시나리오"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."sui-move-storage-optimization"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-move-storage-optimization".contexts]
+positive_terms = ["sui move storage optimization"]
+concept_aliases = ["sui move 저장 비용"]
+exclusion_terms = ["not sui","sui 제외","sdk only","sdk만"]
+
+[routes."move-chain-selection"]
+category = "architecture_patterns"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."move-chain-selection".contexts]
+positive_terms = ["sui aptos selection"]
+concept_aliases = ["sui와 aptos 선택"]
+exclusion_terms = ["no chain comparison","체인 비교 제외"]

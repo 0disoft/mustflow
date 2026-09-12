@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 353
+anchor_count: 361
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:629c71cb70f55dc594342bb10c42abcbe0431ba7213f75ef20007b7af4fcd67b"
+source_fingerprint: "sha256:70c1dd79c5d11aa8a86ca741485496476c18ba3ee3ff1d4e65aaadedaa4df21d"
 ---
 
 # REPO_MAP.md
@@ -789,6 +789,10 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 
 - `.mustflow/skills/motion-system-contract-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
+### .mustflow/skills/move-chain-selection/
+
+- `.mustflow/skills/move-chain-selection/SKILL.md`: Procedural skill document for a repeatable agent task.
+
 ### .mustflow/skills/multi-agent-work-coordination/
 
 - `.mustflow/skills/multi-agent-work-coordination/SKILL.md`: Procedural skill document for a repeatable agent task.
@@ -1112,6 +1116,34 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/sui-gas-concurrency-review/
 
 - `.mustflow/skills/sui-gas-concurrency-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-adversarial-testing/
+
+- `.mustflow/skills/sui-move-adversarial-testing/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-authorization-review/
+
+- `.mustflow/skills/sui-move-authorization-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-module-design/
+
+- `.mustflow/skills/sui-move-module-design/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-object-design/
+
+- `.mustflow/skills/sui-move-object-design/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-resource-review/
+
+- `.mustflow/skills/sui-move-resource-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-storage-optimization/
+
+- `.mustflow/skills/sui-move-storage-optimization/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-move-upgrade-review/
+
+- `.mustflow/skills/sui-move-upgrade-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/sui-ptb-composition-review/
 

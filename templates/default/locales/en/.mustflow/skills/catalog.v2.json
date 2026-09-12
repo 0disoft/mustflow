@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:0ca9fa5b06d8cbf31ea689c54f642fd4b85f4db51a75c1ef42836ddb017e8f30",
+  "source_fingerprint": "sha256:6f46e108f3f483324e012ef68a8636afa3631a8416d521b92bb6600a3d05be80",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -8911,6 +8911,42 @@
       ]
     },
     {
+      "skill": "move-chain-selection",
+      "skill_path": ".mustflow/skills/move-chain-selection/SKILL.md",
+      "category": "architecture_patterns",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui aptos selection",
+        "sui와 aptos 선택"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "no chain comparison",
+        "체인 비교 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Compare Sui and Aptos Move for a concrete asset lifecycle, storage authority, composition and upgrade operating model.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
       "skill": "multi-agent-work-coordination",
       "skill_path": ".mustflow/skills/multi-agent-work-coordination/SKILL.md",
       "category": "workflow_contracts",
@@ -12596,6 +12632,272 @@
         "unlocks_on": []
       },
       "trigger": "Review Sui gas coin selection, address balances, coin splitting and smashing, object reservations, and executor concurrency.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-adversarial-testing",
+      "skill_path": ".mustflow/skills/sui-move-adversarial-testing/SKILL.md",
+      "category": "tests",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move adversarial testing",
+        "sui move 공격 시나리오"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Test Sui Move authorization, rollback, conflicting transactions, adversarial composition and lived-in upgrade state.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-authorization-review",
+      "skill_path": ".mustflow/skills/sui-move-authorization-review/SKILL.md",
+      "category": "security_privacy",
+      "route_type": "primary",
+      "selection_axis": "risk",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move authorization",
+        "sui move 권한 증서"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Review Sui Move capability target binding, asset authorization, signed claims, revocation and onchain replay prevention.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-module-design",
+      "skill_path": ".mustflow/skills/sui-move-module-design/SKILL.md",
+      "category": "architecture_patterns",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move module design",
+        "sui move 모듈 경계"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Design Sui Move module invariants, package boundaries, public composable APIs and typed extension interfaces.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-object-design",
+      "skill_path": ".mustflow/skills/sui-move-object-design/SKILL.md",
+      "category": "architecture_patterns",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move object design",
+        "sui move 객체 구조"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Design Sui Move owned/shared objects, UID relationships, dynamic object fields, Receiving and independent mutation boundaries.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-resource-review",
+      "skill_path": ".mustflow/skills/sui-move-resource-review/SKILL.md",
+      "category": "general_code",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move resources",
+        "sui move 리소스"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Review Sui Move resource ownership, copy/drop/store/key abilities, phantom types and hot-potato obligations.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-storage-optimization",
+      "skill_path": ".mustflow/skills/sui-move-storage-optimization/SKILL.md",
+      "category": "general_code",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move storage optimization",
+        "sui move 저장 비용"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Measure and optimize Sui Move object storage, dynamic collection cleanup, BCS representation and execution gas costs.",
+      "command_intents": [
+        "build",
+        "test_related",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "sui-move-upgrade-review",
+      "skill_path": ".mustflow/skills/sui-move-upgrade-review/SKILL.md",
+      "category": "data_external",
+      "route_type": "primary",
+      "selection_axis": "risk",
+      "priority": 68,
+      "applies_to_reasons": [
+        "code_change",
+        "behavior_change",
+        "test_change",
+        "public_api_change"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "sui move package upgrade",
+        "sui move 패키지 업그레이드"
+      ],
+      "negative_signals": [],
+      "exclusion_signals": [
+        "not sui",
+        "sdk only",
+        "sdk만",
+        "sui 제외"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Review Sui Move package upgrade compatibility, type origins, old-version access and resumable asset migration.",
       "command_intents": [
         "build",
         "test_related",

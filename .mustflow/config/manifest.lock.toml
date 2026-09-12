@@ -69,12 +69,12 @@ content_hash = "sha256:4a44720ec9d20bfe9bb84a06fe109911c64d27ee4a922ef610a925e53
 [files.".mustflow/skills/INDEX.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:05a5342b761828c0aeb1b7c41dae660e0eb54a48e7481e4f2e7159029d12efd6"
+content_hash = "sha256:b5e020c36aa8b3fb31813ec2ec9fb8532043c189081e87041751cfcdfd727995"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:7d5f0c3462a56f7c613b4fb9f70977b7439394b1a2becd1f3dad004fa8bc30c1"
+content_hash = "sha256:0ce26403987326bf22d3a95c51be83ff42deb9aa072675aa2d79228b38d8fe0c"
 
 [files.".mustflow/skills/backend-reliability-change/SKILL.md"]
 source = "template_common"
@@ -369,7 +369,7 @@ content_hash = "sha256:b99cdf153d3c51d694a0f5b0f8eb97aa1c47e593db0ffda4d550d5730
 [files.".mustflow/skills/catalog.v2.json"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:b80f7119ad348e60c3dc82676760feb56eb4466c520e1ecd42fa3cde4ee8c459"
+content_hash = "sha256:48d8f9f0c0ac65891165a2a6d626af8f2c3e4421ead32b2a50da68bc7c8a426e"
 
 [files.".mustflow/skills/session-management-review/SKILL.md"]
 source = "template_common"
@@ -470,3 +470,43 @@ content_hash = "sha256:aa4a13b3230fc000d8f71de51f1cd00af98897c5ed00a1f80edb98389
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:415a14f165ce55034b37e6d116139570d7676ee003216dec88435620fcc46037"
+
+[files.".mustflow/skills/sui-move-resource-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:66193ff2e8f4487bc4bfd68b4f2c1ca79c363fe3fabe9b43ab9dc6ab11ef89fd"
+
+[files.".mustflow/skills/sui-move-object-design/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:8d03cd450a9777f7372c85d0559a4a62ce59755d46be882af364d27597364c72"
+
+[files.".mustflow/skills/sui-move-module-design/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:0a9ff847b86c841b6fa39f91ccbf899058d79e6e00d2193a67425e9b20feffe0"
+
+[files.".mustflow/skills/sui-move-authorization-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:24daf53a2a6032ff188d6db486a21e5547714b3023253593c518c736c1881440"
+
+[files.".mustflow/skills/sui-move-upgrade-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:3cff63fed6d3e4d16f271a0d0aca811215d062270ce30fe0f578e8c719629203"
+
+[files.".mustflow/skills/sui-move-adversarial-testing/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:1a84025e9119578b2982e34c1a294b600b50653dabf1ebe52bcac02881fc6ee8"
+
+[files.".mustflow/skills/sui-move-storage-optimization/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:b25bdb8dcde5a5f2f3cb129438fa2e7ec6dc41e70376db7d25ac02ee0f1eba10"
+
+[files.".mustflow/skills/move-chain-selection/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:98c90084a16687dcbb5d2f1320846be1fda682877448a1fd054f9c088cbdd2c7"

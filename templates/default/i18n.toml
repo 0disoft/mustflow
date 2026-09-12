@@ -132,10 +132,58 @@ source_locale = "en"
 revision = 1
 translations = {}
 
+[documents."skill.sui-move-resource-review"]
+source = "locales/en/.mustflow/skills/sui-move-resource-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-object-design"]
+source = "locales/en/.mustflow/skills/sui-move-object-design/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-module-design"]
+source = "locales/en/.mustflow/skills/sui-move-module-design/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-authorization-review"]
+source = "locales/en/.mustflow/skills/sui-move-authorization-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-upgrade-review"]
+source = "locales/en/.mustflow/skills/sui-move-upgrade-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-adversarial-testing"]
+source = "locales/en/.mustflow/skills/sui-move-adversarial-testing/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-move-storage-optimization"]
+source = "locales/en/.mustflow/skills/sui-move-storage-optimization/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.move-chain-selection"]
+source = "locales/en/.mustflow/skills/move-chain-selection/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 346
+revision = 347
 translations = {}
 
 [documents."skill.delivery-verification-budget"]
