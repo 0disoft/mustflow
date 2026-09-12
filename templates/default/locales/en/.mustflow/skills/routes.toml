@@ -2501,12 +2501,18 @@ priority = 83
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "test_change", "docs_change", "web_asset_change"]
 
+[routes."motion-system-contract-review".contexts]
+exclusion_terms = ["static layout only","without motion changes","모션 변경 없이"]
+
 [routes."frontend-state-ownership-review"]
 category = "ui_assets"
 route_type = "adjunct"
 priority = 80
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "performance_change", "data_change", "test_change", "public_api_change"]
+
+[routes."frontend-state-ownership-review".contexts]
+exclusion_terms = ["purely visual polish only","상태 변경 없이 색상만"]
 
 [routes."async-operation-ux-review"]
 category = "ui_assets"
@@ -2602,6 +2608,9 @@ priority = 84
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "behavior_change", "code_change", "test_change", "docs_change", "i18n_change", "web_asset_change"]
 
+[routes."frontend-localization-review".contexts]
+exclusion_terms = ["single language copy only","한 언어의 문구만"]
+
 [routes."website-task-friction-review"]
 category = "ui_assets"
 route_type = "adjunct"
@@ -2617,6 +2626,7 @@ selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change"]
 
 [routes."frontend-render-stability".contexts]
+exclusion_terms = ["backend latency only","브라우저 렌더링과 무관한 백엔드 지연만"]
 positive_terms = ["theme flash", "hydration flicker", "first paint"]
 concept_aliases = ["다크모드 깜빡임", "하이드레이션 불일치", "화면 전환 중 번쩍임"]
 

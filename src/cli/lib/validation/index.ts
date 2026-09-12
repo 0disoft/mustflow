@@ -1409,6 +1409,7 @@ function readSkillRouteMetadataContexts(
 		patternCategories: readOptionalSlugArray(contexts.pattern_categories, `${label}.contexts.pattern_categories`, issues),
 		positiveTerms: readOptionalSearchTermArray(contexts.positive_terms, `${label}.contexts.positive_terms`, issues),
 		negativeTerms: readOptionalSearchTermArray(contexts.negative_terms, `${label}.contexts.negative_terms`, issues),
+		exclusionTerms: readOptionalSearchTermArray(contexts.exclusion_terms, `${label}.contexts.exclusion_terms`, issues),
 	};
 }
 

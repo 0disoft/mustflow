@@ -2,6 +2,71 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "motion-static-only-boundary",
+      "task": "Review animation transition motion duration and easing documentation for static layout only; do not change motion behavior.",
+      "paths": [
+        "design/motion.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "forbidden_candidates": [
+        "motion-system-contract-review"
+      ]
+    },
+    {
+      "id": "motion-static-only-boundary-ko",
+      "task": "모션 변경 없이 정적인 화면 배치만 검토해줘.",
+      "paths": [
+        "design/motion.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "forbidden_candidates": [
+        "motion-system-contract-review"
+      ]
+    },
+    {
+      "id": "localization-single-language-boundary",
+      "task": "Review frontend localization terminology in single language copy only, without changing locale switching or message formatting.",
+      "paths": [
+        "ui/messages.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "forbidden_candidates": [
+        "frontend-localization-review"
+      ]
+    },
+    {
+      "id": "state-visual-only-boundary",
+      "task": "Review client state ownership terminology in purely visual polish only; the data and URL state behavior is unchanged.",
+      "paths": [
+        "ui/state.ts"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "forbidden_candidates": [
+        "frontend-state-ownership-review"
+      ]
+    },
+    {
+      "id": "render-backend-only-boundary",
+      "task": "Investigate rendering performance context but measure backend latency only; no browser rendering or hydration behavior is affected.",
+      "paths": [
+        "server/latency.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "forbidden_candidates": [
+        "frontend-render-stability"
+      ]
+    },
+    {
       "id": "motion-system-contract-review-natural-en",
       "task": "Review transition durations, easing curves, interrupted animations, and reduced motion behavior.",
       "paths": [

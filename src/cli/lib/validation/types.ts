@@ -22,6 +22,7 @@ export interface SkillRouteMetadata {
 		readonly patternCategories: readonly string[];
 		readonly positiveTerms: readonly string[];
 		readonly negativeTerms: readonly string[];
+		readonly exclusionTerms: readonly string[];
 	};
 	readonly dependencies: {
 		readonly requiresSkills: readonly string[];

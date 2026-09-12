@@ -182,6 +182,20 @@ Machine-readable import output uses these fields:
 
 The published JSON Schema is `schemas/skill-import-report.schema.json`.
 
+## Explicit Exclusion Boundaries
+
+Route contexts may declare `exclusion_terms` for explicit task boundaries, such as
+`["static layout only", "모션 변경 없이"]`. Matching a complete normalized phrase
+removes that skill before candidate scoring, axis selection, and dependency expansion.
+Only task text is checked; matching folder names do not exclude a skill. Unicode
+normalization and separator folding apply, but substrings within a longer word do not.
+
+Use `negative_terms` for a ranking penalty and `exclusion_terms` only for a definite
+non-use boundary from the skill procedure. This is literal phrase matching, not
+natural-language negation reasoning. Review ambiguous or contradictory requests.
+Catalogs retain optional `exclusion_signals`; older catalogs without that field
+continue to load. Regenerate both catalog copies after editing the route source.
+
 ## Route Evaluation Coverage
 
 For built-in route maintenance, this repository's `skill_route_eval` intent also

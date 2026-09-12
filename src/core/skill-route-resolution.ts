@@ -203,6 +203,7 @@ interface SkillRouteCatalogEntry {
 	readonly mutually_exclusive_with: readonly string[];
 	readonly positive_signals: readonly string[];
 	readonly negative_signals: readonly string[];
+	readonly exclusion_signals?: readonly string[];
 	readonly dependencies: SkillRouteDependencies;
 	readonly trigger: string;
 	readonly command_intents: readonly string[];
@@ -218,6 +219,7 @@ export interface SkillRouteCatalog {
 interface RouteSignalProfile {
 	readonly positiveSignals: readonly string[];
 	readonly negativeSignals: readonly string[];
+	readonly exclusionSignals: readonly string[];
 }
 
 const EMPTY_ROUTE_DEPENDENCIES: SkillRouteDependencies = {
@@ -366,6 +368,7 @@ function readRouteSignalProfile(route: TomlTable): RouteSignalProfile {
 		return {
 			positiveSignals: [],
 			negativeSignals: [],
+			exclusionSignals: [],
 		};
 	}
 
@@ -375,6 +378,7 @@ function readRouteSignalProfile(route: TomlTable): RouteSignalProfile {
 			...readStringArrayFromTable(contexts, 'concept_aliases'),
 		]),
 		negativeSignals: normalizeSignals(readStringArrayFromTable(contexts, 'negative_terms')),
+		exclusionSignals: normalizeSignals(readStringArrayFromTable(contexts, 'exclusion_terms')),
 	};
 }
 
@@ -575,6 +579,9 @@ function createSkillRouteCatalog(
 				mutually_exclusive_with: [...routeMetadata.mutuallyExclusiveWith],
 				positive_signals: [...routeMetadata.signalProfile.positiveSignals],
 				negative_signals: [...routeMetadata.signalProfile.negativeSignals],
+				...(routeMetadata.signalProfile.exclusionSignals.length > 0
+					? { exclusion_signals: [...routeMetadata.signalProfile.exclusionSignals] }
+					: {}),
 				dependencies: routeMetadata.dependencies,
 				trigger: route.trigger,
 				command_intents: [...route.commandIntents],
@@ -653,6 +660,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			!isCatalogStringArray(entry.mutually_exclusive_with) ||
 			!isCatalogStringArray(entry.positive_signals) ||
 			!isCatalogStringArray(entry.negative_signals) ||
+			(entry.exclusion_signals !== undefined && !isCatalogStringArray(entry.exclusion_signals)) ||
 			!isCatalogDependencies(entry.dependencies) ||
 			typeof entry.trigger !== 'string' ||
 			entry.trigger.trim().length === 0 ||
@@ -679,6 +687,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			mutually_exclusive_with: entry.mutually_exclusive_with as string[],
 			positive_signals: entry.positive_signals as string[],
 			negative_signals: entry.negative_signals as string[],
+			...(entry.exclusion_signals === undefined ? {} : { exclusion_signals: entry.exclusion_signals as string[] }),
 			dependencies: entry.dependencies as unknown as SkillRouteDependencies,
 			trigger: entry.trigger,
 			command_intents: entry.command_intents,
@@ -792,6 +801,7 @@ function readSkillRouteCatalog(projectRoot: string): InstalledSkillRouteCatalog 
 		signalProfile: {
 			positiveSignals: entry.positive_signals,
 			negativeSignals: entry.negative_signals,
+			exclusionSignals: entry.exclusion_signals ?? [],
 		},
 		dependencies: entry.dependencies,
 	}] satisfies [string, SkillRouteMetadata]));
@@ -1457,7 +1467,12 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const externalRoutes = readExternalSkillFrontmatterRoutes(projectRoot);
 	const routes = [...builtInRoutes, ...externalRoutes];
 	const metadata = installedCatalog?.metadata ?? readSkillRouteMetadata(projectRoot);
+	const normalizedTask = ` ${normalizeRouteText(input.taskText ?? '')} `;
 	const routeCandidates = routes
+		.filter((route) => {
+			const exclusions = metadata.get(skillNameFromPath(route.skillPath))?.signalProfile.exclusionSignals ?? [];
+			return !exclusions.some((signal) => normalizedTask.includes(` ${signal} `));
+		})
 		.map((route) => {
 			const skill = skillNameFromPath(route.skillPath);
 			return createCandidate(
@@ -1472,6 +1487,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 					signalProfile: {
 						positiveSignals: [],
 						negativeSignals: [],
+						exclusionSignals: [],
 					},
 					dependencies: EMPTY_ROUTE_DEPENDENCIES,
 				},

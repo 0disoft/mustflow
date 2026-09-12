@@ -698,6 +698,38 @@ test('matches negative route signals as phrases instead of token bags', () => {
 	assert.ok(negativeTypeContract.score_breakdown.negative_signal_penalty < 0);
 });
 
+test('hard exclusions override positive scores and dependencies in catalog and fallback routing', () => {
+	const root = createTempProject();
+	try {
+		for (const [name, description] of [['entry', 'Entry anchor'], ['excluded', 'Target phrase visual animation review']]) {
+			const directory = path.join(root, '.mustflow', 'skills', name);
+			mkdirSync(directory, { recursive: true });
+			writeFileSync(path.join(directory, 'SKILL.md'), '---\nname: ' + name + '\ndescription: ' + description + '\n---\n');
+		}
+		writeFileSync(path.join(root, '.mustflow', 'skills', 'routes.toml'), [
+			'[routes."entry"]', 'category = "ui_assets"', 'route_type = "primary"', 'priority = 100', 'selection_axis = "task"', 'applies_to_reasons = ["ui_change"]',
+			'[routes."entry".contexts]', 'positive_terms = ["entry anchor"]',
+			'[routes."entry".dependencies]', 'requires_skills = ["excluded"]',
+			'[routes."excluded"]', 'category = "ui_assets"', 'route_type = "adjunct"', 'priority = 99', 'selection_axis = "task"', 'applies_to_reasons = ["ui_change"]',
+			'[routes."excluded".contexts]', 'positive_terms = ["target phrase", "visual animation", "animation review"]', 'exclusion_terms = ["exclude this scope", "대상 작업 제외"]',
+		].join('\n'));
+		for (const catalog of [false, true]) {
+			if (catalog) writeFileSync(path.join(root, '.mustflow', 'skills', 'catalog.v2.json'), JSON.stringify(buildSkillRouteCatalog(root)));
+			const resolve = (task, paths = []) => resolveSkillRoutes(root, { taskText: task, paths, reasons: ['ui_change'], maxCandidates: 10 });
+			const positive = resolve('entry anchor target phrase visual animation review');
+			assert.ok(positive.candidates.some(candidate => candidate.skill === 'excluded'));
+			for (const clause of ['exclude this scope', 'exclude-this-scope', '대상 작업 제외']) {
+				const report = resolve('entry anchor target phrase visual animation review ' + clause);
+				assert.equal(report.candidates.some(candidate => candidate.skill === 'excluded'), false);
+				assert.equal(report.selected.adjuncts.some(candidate => candidate.skill === 'excluded'), false);
+				assert.equal(Object.values(report.selected.axes).flat().some(candidate => candidate.skill === 'excluded'), false);
+			}
+			assert.ok(resolve('entry anchor target phrase visual animation review', ['exclude-this-scope/view.ts']).candidates.some(candidate => candidate.skill === 'excluded'));
+			assert.ok(resolve('entry anchor target phrase visual animation review 대상 작업 제외아님').candidates.some(candidate => candidate.skill === 'excluded'));
+		}
+	} finally { removeTempProject(root); }
+});
+
 test('marks accessibility-only chart work as a negative information visualization boundary', () => {
 	const result = runCli(projectRoot, [
 		'skill',

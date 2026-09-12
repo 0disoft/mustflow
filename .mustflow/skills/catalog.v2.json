@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:1e049aafd184678d0d7ffa54d596a85854a2409e8471e7f6eba71a0a7625bb05",
+  "source_fingerprint": "sha256:a61439b6cbf1ca5a974b2c138cbbd3fee971b3981212ad0e102a717a4747d131",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -6184,6 +6184,10 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "exclusion_signals": [
+        "single language copy only",
+        "한 언어의 문구만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -6226,6 +6230,10 @@
         "화면 전환 중 번쩍임"
       ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "backend latency only",
+        "브라우저 렌더링과 무관한 백엔드 지연만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -6262,6 +6270,10 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "exclusion_signals": [
+        "purely visual polish only",
+        "상태 변경 없이 색상만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -8846,6 +8858,11 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "exclusion_signals": [
+        "static layout only",
+        "without motion changes",
+        "모션 변경 없이"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
