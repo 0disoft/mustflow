@@ -2,6 +2,486 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "workflow-boundary-refactor-excluded-en",
+      "mode": "exact",
+      "task": "Refactoring excluded: review code changes for risks without changing behavior.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-boundary-refactor-excluded-ko",
+      "mode": "exact",
+      "task": "리팩터링 제외: 기존 동작을 유지하는 코드 변경의 범위와 위험만 리뷰해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-boundary-review-excluded-en",
+      "mode": "exact",
+      "task": "Code review excluded: map an unfamiliar codebase before planning edits.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "workflow-boundary-review-excluded-ko",
+      "mode": "exact",
+      "task": "코드 리뷰 제외: 낯선 코드베이스의 진입점과 구조만 파악해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "workflow-boundary-tests-excluded-en",
+      "mode": "exact",
+      "task": "Test changes excluded: correct prose that describes existing tests and snapshots.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "test-maintenance"
+      ]
+    },
+    {
+      "id": "workflow-boundary-tests-excluded-ko",
+      "mode": "exact",
+      "task": "테스트 변경 제외: 기존 테스트를 설명하는 문서의 오탈자만 고쳐줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "test-maintenance"
+      ]
+    },
+    {
+      "id": "workflow-boundary-completion-excluded-en",
+      "mode": "exact",
+      "task": "Completion report excluded: give a rough analysis without a completion claim.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "completion-evidence-gate"
+      ]
+    },
+    {
+      "id": "workflow-boundary-completion-excluded-ko",
+      "mode": "exact",
+      "task": "완료 보고 제외: 저장소 작업 완료를 주장하지 말고 아이디어만 간단히 설명해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "completion-evidence-gate"
+      ]
+    },
+    {
+      "id": "workflow-compound-refactor-en",
+      "mode": "exact",
+      "task": "Refactor TypeScript while preserving existing behavior and keeping behavior changes separate.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "typescript-code-change",
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-compound-refactor-ko",
+      "mode": "exact",
+      "task": "TypeScript 코드를 기존 동작을 유지하면서 리팩터링해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "typescript-code-change",
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-compound-boundary-en",
+      "mode": "exact",
+      "task": "Review TypeScript queue payload validation for untrusted JSON and strict decoding.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "typescript-code-change",
+        "input-boundary-validation-review"
+      ]
+    },
+    {
+      "id": "workflow-compound-boundary-ko",
+      "mode": "exact",
+      "task": "TypeScript에서 외부 JSON 입력과 큐 페이로드 검증을 보강해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "typescript-code-change",
+        "input-boundary-validation-review"
+      ]
+    },
+    {
+      "id": "workflow-batch-codebase-orientation-en",
+      "mode": "invariant",
+      "task": "Map the unfamiliar codebase area and its entry points before planning edits.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "codebase-orientation"
+      ]
+    },
+    {
+      "id": "workflow-batch-codebase-orientation-ko",
+      "mode": "invariant",
+      "task": "수정 전에 낯선 코드베이스의 진입점과 구조를 파악해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "codebase-orientation"
+      ]
+    },
+    {
+      "id": "workflow-batch-code-review-en",
+      "mode": "invariant",
+      "task": "Review code changes in this diff for scope, risks and verification gaps.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "workflow-batch-code-review-ko",
+      "mode": "invariant",
+      "task": "이 코드 변경의 범위와 위험, 빠진 검증을 리뷰해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "code-review"
+      ]
+    },
+    {
+      "id": "workflow-batch-behavior-preserving-refactor-en",
+      "mode": "invariant",
+      "task": "Refactor this module while preserving existing behavior and keeping behavior changes separate.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-batch-behavior-preserving-refactor-ko",
+      "mode": "invariant",
+      "task": "기존 동작을 유지하면서 이 모듈을 리팩터링해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "behavior-preserving-refactor"
+      ]
+    },
+    {
+      "id": "workflow-batch-test-maintenance-en",
+      "mode": "invariant",
+      "task": "Update obsolete tests and snapshots to match the intentionally changed API behavior.",
+      "paths": [
+        "tests/service.test.ts"
+      ],
+      "reasons": [
+        "test_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "test-maintenance"
+      ]
+    },
+    {
+      "id": "workflow-batch-test-maintenance-ko",
+      "mode": "invariant",
+      "task": "의도적으로 바뀐 API 동작에 맞게 기존 테스트와 스냅샷을 갱신해줘.",
+      "paths": [
+        "tests/service.test.ts"
+      ],
+      "reasons": [
+        "test_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "test-maintenance"
+      ]
+    },
+    {
+      "id": "workflow-batch-failure-triage-en",
+      "mode": "invariant",
+      "task": "The configured command intent test_related failed; analyze its exit code and first actionable error.",
+      "paths": [".mustflow/state/runs/current.json"],
+      "reasons": [
+        "command_failure"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "failure-triage"
+      ]
+    },
+    {
+      "id": "workflow-batch-failure-triage-ko",
+      "mode": "invariant",
+      "task": "설정된 명령 test_related가 실패했어. 종료 코드와 첫 오류를 분석해줘.",
+      "paths": [".mustflow/state/runs/current.json"],
+      "reasons": [
+        "command_failure"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "failure-triage"
+      ]
+    },
+    {
+      "id": "workflow-batch-repro-first-debug-en",
+      "mode": "invariant",
+      "task": "Investigate an intermittent reported bug with no clear reproduction before proposing a fix.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "repro-first-debug"
+      ]
+    },
+    {
+      "id": "workflow-batch-repro-first-debug-ko",
+      "mode": "invariant",
+      "task": "아직 재현하지 못한 간헐적 버그를 고치기 전에 재현 조건부터 찾아줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "repro-first-debug"
+      ]
+    },
+    {
+      "id": "workflow-batch-input-boundary-validation-review-en",
+      "mode": "invariant",
+      "task": "Validate untrusted JSON with strict decoding, duplicate handling and resource budgets before authorization handoff.",
+      "paths": [
+        "src/parser.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "input-boundary-validation-review"
+      ]
+    },
+    {
+      "id": "workflow-batch-input-boundary-validation-review-ko",
+      "mode": "invariant",
+      "task": "외부 JSON 입력을 엄격하게 파싱하고 중복 필드와 크기 제한을 검증해줘.",
+      "paths": [
+        "src/parser.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "input-boundary-validation-review"
+      ]
+    },
+    {
+      "id": "workflow-batch-cross-platform-filesystem-safety-en",
+      "mode": "invariant",
+      "task": "Review Windows/POSIX path traversal, symlinks and junctions before archive extraction and atomic file writes.",
+      "paths": [
+        "src/archive.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cross-platform-filesystem-safety"
+      ]
+    },
+    {
+      "id": "workflow-batch-cross-platform-filesystem-safety-ko",
+      "mode": "invariant",
+      "task": "압축 해제 경로에서 Windows와 POSIX의 심볼릭 링크와 정션, 경로 탈출을 검토해줘.",
+      "paths": [
+        "src/archive.ts"
+      ],
+      "reasons": [
+        "security_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cross-platform-filesystem-safety"
+      ]
+    },
+    {
+      "id": "workflow-batch-process-execution-safety-en",
+      "mode": "invariant",
+      "task": "Review child process argv handling, output limits, timeouts and process tree termination.",
+      "paths": [
+        "src/process.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "process-execution-safety"
+      ]
+    },
+    {
+      "id": "workflow-batch-process-execution-safety-ko",
+      "mode": "invariant",
+      "task": "자식 프로세스의 인자 전달, 출력 제한, 시간 초과와 프로세스 트리 종료를 검토해줘.",
+      "paths": [
+        "src/process.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "process-execution-safety"
+      ]
+    },
+    {
+      "id": "workflow-batch-completion-evidence-gate-en",
+      "mode": "invariant",
+      "task": "Before the final completion report, tie changed files, skipped checks and remaining risks to current repository evidence.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "completion-evidence-gate"
+      ]
+    },
+    {
+      "id": "workflow-batch-completion-evidence-gate-ko",
+      "mode": "invariant",
+      "task": "완료 보고 전에 변경 파일과 생략한 검사, 남은 위험을 실제 저장소 근거와 대조해줘.",
+      "paths": [
+        "src/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "completion-evidence-gate"
+      ]
+    },
+    {
       "id": "common-procedure-node-en",
       "mode": "invariant",
       "task": "Fix Node.js event-loop blocking in the server runtime without changing its module format.",

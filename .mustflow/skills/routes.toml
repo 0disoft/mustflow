@@ -2409,7 +2409,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "publi
 [routes."input-boundary-validation-review".contexts]
 positive_terms = ["consumer-side-revalidation", "consumer-side-validation", "partner-response-validation", "queue-payload-schema", "queue-payload-validation", "stored-json-revalidation", "webhook-payload-revalidation"]
 negative_terms = ["authorization-only", "gateway-only-validation"]
-concept_aliases = ["소비자측 재검증", "웹훅 페이로드 재검증", "저장 JSON 재검증", "큐 페이로드 검증", "파트너 응답 검증"]
+concept_aliases = ["소비자측 재검증", "웹훅 페이로드 재검증", "저장 JSON 재검증", "큐 페이로드 검증", "파트너 응답 검증", "외부 JSON 입력", "입력 크기 제한"]
 
 [routes."security-flow-review"]
 category = "security_privacy"
@@ -3125,3 +3125,30 @@ applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_a
 positive_terms = ["sui aptos selection"]
 concept_aliases = ["sui와 aptos 선택"]
 exclusion_terms = ["no chain comparison","체인 비교 제외"]
+
+[routes."codebase-orientation".contexts]
+concept_aliases = ["낯선 코드베이스","코드베이스 구조 파악"]
+
+[routes."code-review".contexts]
+exclusion_terms = ["code review excluded","코드 리뷰 제외"]
+concept_aliases = ["코드 변경의 범위","코드 리뷰"]
+
+[routes."behavior-preserving-refactor".contexts]
+positive_terms = ["preserving existing behavior", "behavior preserving refactor"]
+exclusion_terms = ["refactoring excluded","리팩터링 제외"]
+concept_aliases = ["기존 동작을 유지","동작 보존 리팩터링"]
+
+[routes."test-maintenance".contexts]
+exclusion_terms = ["test changes excluded","테스트 변경 제외"]
+concept_aliases = ["기존 테스트","스냅샷을 갱신"]
+
+[routes."failure-triage".contexts]
+positive_terms = ["configured command intent", "verification step fails"]
+concept_aliases = ["종료 코드와 첫 오류","명령 실행 실패"]
+
+[routes."repro-first-debug".contexts]
+concept_aliases = ["재현 조건","간헐적 버그"]
+
+[routes."completion-evidence-gate".contexts]
+exclusion_terms = ["completion report excluded","완료 보고 제외"]
+concept_aliases = ["완료 보고","실제 저장소 근거"]

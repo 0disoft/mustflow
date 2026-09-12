@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:0f16a3582a1c83d2a9e6bc74f07efaaa5dcd1fa41269b2d7f2a1240592fd31aa",
+  "source_fingerprint": "sha256:147435e6727c5fcfd1b396fa63c23070f14dd831d390e2162dd7cf48454a7336",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2069,8 +2069,17 @@
         "behavior_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "behavior preserving refactor",
+        "preserving existing behavior",
+        "기존 동작을 유지",
+        "동작 보존 리팩터링"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "refactoring excluded",
+        "리팩터링 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -2858,8 +2867,15 @@
         "behavior_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "코드 리뷰",
+        "코드 변경의 범위"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "code review excluded",
+        "코드 리뷰 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [
@@ -2893,7 +2909,10 @@
         "code_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "낯선 코드베이스",
+        "코드베이스 구조 파악"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -3209,8 +3228,15 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "실제 저장소 근거",
+        "완료 보고"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "completion report excluded",
+        "완료 보고 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -5670,7 +5696,12 @@
         "command_failure"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "configured command intent",
+        "verification step fails",
+        "명령 실행 실패",
+        "종료 코드와 첫 오류"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -7304,7 +7335,9 @@
         "stored json revalidation",
         "webhook payload revalidation",
         "소비자측 재검증",
+        "외부 json 입력",
         "웹훅 페이로드 재검증",
+        "입력 크기 제한",
         "저장 json 재검증",
         "큐 페이로드 검증",
         "파트너 응답 검증"
@@ -11096,7 +11129,10 @@
         "unknown_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "간헐적 버그",
+        "재현 조건"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -13540,8 +13576,15 @@
         "test_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "기존 테스트",
+        "스냅샷을 갱신"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "test changes excluded",
+        "테스트 변경 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
