@@ -90,10 +90,52 @@ source_locale = "en"
 revision = 2
 translations = {}
 
+[documents."skill.sui-wallet-signing-review"]
+source = "locales/en/.mustflow/skills/sui-wallet-signing-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-ptb-composition-review"]
+source = "locales/en/.mustflow/skills/sui-ptb-composition-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-gas-concurrency-review"]
+source = "locales/en/.mustflow/skills/sui-gas-concurrency-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-execution-recovery-review"]
+source = "locales/en/.mustflow/skills/sui-execution-recovery-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-data-access-review"]
+source = "locales/en/.mustflow/skills/sui-data-access-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-rpc-resilience-review"]
+source = "locales/en/.mustflow/skills/sui-rpc-resilience-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.sui-sdk-migration-review"]
+source = "locales/en/.mustflow/skills/sui-sdk-migration-review/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 345
+revision = 346
 translations = {}
 
 [documents."skill.delivery-verification-budget"]

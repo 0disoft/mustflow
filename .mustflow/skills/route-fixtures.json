@@ -2,6 +2,335 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "sui-read-only-boundary-en",
+      "task": "Sui read only queries: inspect dynamic fields, BCS type identity and partial batch errors.",
+      "paths": [
+        "src/sui/queries.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-data-access-review",
+        "typescript-code-change"
+      ],
+      "forbidden_candidates": [
+        "sui-wallet-signing-review",
+        "sui-ptb-composition-review",
+        "sui-gas-concurrency-review",
+        "sui-execution-recovery-review"
+      ],
+      "max_candidates": 10
+    },
+    {
+      "id": "sui-read-only-boundary-ko",
+      "task": "Sui 읽기 전용 조회에서 객체 조회와 동적 필드의 BCS 타입과 커서를 검토해줘.",
+      "paths": [
+        "src/sui/queries.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-data-access-review",
+        "typescript-code-change"
+      ],
+      "forbidden_candidates": [
+        "sui-wallet-signing-review",
+        "sui-ptb-composition-review",
+        "sui-gas-concurrency-review",
+        "sui-execution-recovery-review"
+      ],
+      "max_candidates": 10
+    },
+    {
+      "id": "sui-wallet-signing-review-en",
+      "task": "Review Sui wallet signing: prevent challenge replay, account-switch races and sponsor asset spending after an allowed Move call.",
+      "paths": [
+        "src/sui/wallet.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-wallet-signing-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-wallet-signing-review-ko",
+      "task": "Sui 지갑 서명에서 로그인 챌린지 재사용과 계정 전환, 가스 후원자의 자산 유출을 막아줘.",
+      "paths": [
+        "src/sui/wallet.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-wallet-signing-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-wallet-signing-review-excluded",
+      "task": "Not Sui: Review Sui wallet signing: prevent challenge replay, account-switch races and sponsor asset spending after an allowed Move call.",
+      "paths": [
+        "src/sui/wallet.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-wallet-signing-review"
+      ]
+    },
+    {
+      "id": "sui-ptb-composition-review-en",
+      "task": "Compose a Sui PTB with payment and reward Move calls; account for result references, zero change and consumed resources.",
+      "paths": [
+        "src/sui/purchase.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-ptb-composition-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-ptb-composition-review-ko",
+      "task": "Sui PTB 구성에서 결제와 보상을 묶고 반환 자산과 잔돈을 처리해줘.",
+      "paths": [
+        "src/sui/purchase.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-ptb-composition-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-ptb-composition-review-excluded",
+      "task": "Not Sui: Compose a Sui PTB with payment and reward Move calls; account for result references, zero change and consumed resources.",
+      "paths": [
+        "src/sui/purchase.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-ptb-composition-review"
+      ]
+    },
+    {
+      "id": "sui-gas-concurrency-review-en",
+      "task": "Review Sui gas coins and sourceCoins ownership across parallel workers, including failed-transaction gas smashing and reservation expiry.",
+      "paths": [
+        "src/sui/coin-pool.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-gas-concurrency-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-gas-concurrency-review-ko",
+      "task": "Sui 가스 코인을 여러 워커가 동시에 쓰지 않도록 객체 예약과 실패 후 코인 병합 상태를 검토해줘.",
+      "paths": [
+        "src/sui/coin-pool.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-gas-concurrency-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-gas-concurrency-review-excluded",
+      "task": "Not Sui: Review Sui gas coins and sourceCoins ownership across parallel workers, including failed-transaction gas smashing and reservation expiry.",
+      "paths": [
+        "src/sui/coin-pool.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-gas-concurrency-review"
+      ]
+    },
+    {
+      "id": "sui-execution-recovery-review-en",
+      "task": "Recover a Sui transaction after the provider accepted it but the response was lost; reconcile the saved digest and signatures without duplicate payout.",
+      "paths": [
+        "src/sui/recovery.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-execution-recovery-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-execution-recovery-review-ko",
+      "task": "Sui 미확정 거래에서 응답이 끊겨도 중복 지급하지 않도록 원래 digest와 서명 원본으로 복구해줘.",
+      "paths": [
+        "src/sui/recovery.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-execution-recovery-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-execution-recovery-review-excluded",
+      "task": "Not Sui: Recover a Sui transaction after the provider accepted it but the response was lost; reconcile the saved digest and signatures without duplicate payout.",
+      "paths": [
+        "src/sui/recovery.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-execution-recovery-review"
+      ]
+    },
+    {
+      "id": "sui-data-access-review-en",
+      "task": "Review Sui object queries and dynamic fields for BCS type identity, partial batch errors and empty pages with continuation.",
+      "paths": [
+        "src/sui/queries.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-data-access-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-data-access-review-ko",
+      "task": "Sui 객체 조회와 동적 필드에서 BCS 타입 검증, 개별 조회 오류, 빈 페이지의 다음 커서를 처리해줘.",
+      "paths": [
+        "src/sui/queries.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-data-access-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-data-access-review-excluded",
+      "task": "Not Sui: Review Sui object queries and dynamic fields for BCS type identity, partial batch errors and empty pages with continuation.",
+      "paths": [
+        "src/sui/queries.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-data-access-review"
+      ]
+    },
+    {
+      "id": "sui-rpc-resilience-review-en",
+      "task": "Review Sui RPC failover and subscription recovery with provider quotas, transport abort and durable replay to the reconnect watermark.",
+      "paths": [
+        "src/sui/subscriptions.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-rpc-resilience-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-rpc-resilience-review-ko",
+      "task": "Sui RPC 장애와 구독 복구에서 요청 한도와 취소를 전달하고 끊긴 동안의 누락 구간을 복원해줘.",
+      "paths": [
+        "src/sui/subscriptions.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-rpc-resilience-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-rpc-resilience-review-excluded",
+      "task": "Not Sui: Review Sui RPC failover and subscription recovery with provider quotas, transport abort and durable replay to the reconnect watermark.",
+      "paths": [
+        "src/sui/subscriptions.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-rpc-resilience-review"
+      ]
+    },
+    {
+      "id": "sui-sdk-migration-review-en",
+      "task": "Plan a Sui SDK migration from JSON-RPC while preserving signed transaction bytes, response meaning and single-writer payout ownership.",
+      "paths": [
+        "src/sui/adapter.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-sdk-migration-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-sdk-migration-review-ko",
+      "task": "Sui SDK 업그레이드에서 JSON-RPC를 전환하되 저장된 서명 원본과 실행 결과의 의미, 단일 지급 담당자를 유지해줘.",
+      "paths": [
+        "src/sui/adapter.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "required_candidates": [
+        "sui-sdk-migration-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "sui-sdk-migration-review-excluded",
+      "task": "Not Sui: Plan a Sui SDK migration from JSON-RPC while preserving signed transaction bytes, response meaning and single-writer payout ownership.",
+      "paths": [
+        "src/sui/adapter.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "forbidden_candidates": [
+        "sui-sdk-migration-review"
+      ]
+    },
+    {
       "id": "cli-options-output-only-en",
       "task": "Review command stdout, stderr and progress output formatting only; keep CLI flags and argument parsing unchanged.",
       "paths": [

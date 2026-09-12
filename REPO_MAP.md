@@ -5,10 +5,10 @@ generated_by: mustflow
 relative_root: "."
 source_policy: anchors_only
 privacy_mode: minimal
-anchor_count: 346
+anchor_count: 353
 degraded: false
 git_ls_files_status: ok
-source_fingerprint: "sha256:7e5954a235bd7f4dc9aa6b60c01d9b7e1ee9493870b8d9308e417386816f1d61"
+source_fingerprint: "sha256:629c71cb70f55dc594342bb10c42abcbe0431ba7213f75ef20007b7af4fcd67b"
 ---
 
 # REPO_MAP.md
@@ -1100,6 +1100,34 @@ Regenerate it with `mf map --write` instead of editing it by hand.
 ### .mustflow/skills/subscription-retention-profit-review/
 
 - `.mustflow/skills/subscription-retention-profit-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-data-access-review/
+
+- `.mustflow/skills/sui-data-access-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-execution-recovery-review/
+
+- `.mustflow/skills/sui-execution-recovery-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-gas-concurrency-review/
+
+- `.mustflow/skills/sui-gas-concurrency-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-ptb-composition-review/
+
+- `.mustflow/skills/sui-ptb-composition-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-rpc-resilience-review/
+
+- `.mustflow/skills/sui-rpc-resilience-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-sdk-migration-review/
+
+- `.mustflow/skills/sui-sdk-migration-review/SKILL.md`: Procedural skill document for a repeatable agent task.
+
+### .mustflow/skills/sui-wallet-signing-review/
+
+- `.mustflow/skills/sui-wallet-signing-review/SKILL.md`: Procedural skill document for a repeatable agent task.
 
 ### .mustflow/skills/support-surface-advisor/
 

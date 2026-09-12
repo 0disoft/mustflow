@@ -2939,3 +2939,87 @@ applies_to_reasons = ["docs_change", "copy_change", "i18n_change"]
 
 [routes."docs-update".path_hints]
 documentation = true
+
+[routes."sui-wallet-signing-review"]
+category = "security_privacy"
+route_type = "primary"
+priority = 68
+selection_axis = "risk"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-wallet-signing-review".contexts]
+positive_terms = ["sui wallet signing","sui signing","sponsored transaction","weighted multisig"]
+concept_aliases = ["sui 지갑 서명","sui 로그인 서명","sui 가스 후원"]
+exclusion_terms = ["not sui", "sui 제외", "sui read only queries", "sui 읽기 전용 조회", "sui 읽기 전용 조회에서", "sui 읽기 전용 조회만"]
+
+[routes."sui-ptb-composition-review"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-ptb-composition-review".contexts]
+positive_terms = ["sui ptb","programmable transaction","move result references"]
+concept_aliases = ["sui 트랜잭션 조립","sui ptb 구성","sui 반환 자산"]
+exclusion_terms = ["not sui", "sui 제외", "sui read only queries", "sui 읽기 전용 조회", "sui 읽기 전용 조회에서", "sui 읽기 전용 조회만"]
+
+[routes."sui-gas-concurrency-review"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+selection_axis = "risk"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-gas-concurrency-review".contexts]
+positive_terms = ["sui gas coins","sui object reservations","sourcecoins","gas smashing"]
+concept_aliases = ["sui 가스 코인","sui 코인 동시성","sui 객체 예약"]
+exclusion_terms = ["not sui", "sui 제외", "sui read only queries", "sui 읽기 전용 조회", "sui 읽기 전용 조회에서", "sui 읽기 전용 조회만"]
+
+[routes."sui-execution-recovery-review"]
+category = "data_external"
+route_type = "primary"
+priority = 68
+selection_axis = "risk"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-execution-recovery-review".contexts]
+positive_terms = ["sui digest recovery","sui transaction recovery","saved signatures","unknown submission"]
+concept_aliases = ["sui 거래 복구","sui 미확정 거래","sui 중복 지급"]
+exclusion_terms = ["not sui", "sui 제외", "sui read only queries", "sui 읽기 전용 조회", "sui 읽기 전용 조회에서", "sui 읽기 전용 조회만"]
+
+[routes."sui-data-access-review"]
+category = "data_external"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-data-access-review".contexts]
+positive_terms = ["sui dynamic fields","sui object queries","sui data access","clientwithcoreapi"]
+concept_aliases = ["sui 객체 조회","sui 동적 필드","sui 잔액 조회"]
+exclusion_terms = ["not sui", "sui 제외"]
+
+[routes."sui-rpc-resilience-review"]
+category = "data_external"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-rpc-resilience-review".contexts]
+positive_terms = ["sui rpc failover","sui subscription recovery","sui rpc resilience","cursor bound"]
+concept_aliases = ["sui rpc 장애","sui 구독 복구","sui 누락 구간"]
+exclusion_terms = ["not sui", "sui 제외"]
+
+[routes."sui-sdk-migration-review"]
+category = "general_code"
+route_type = "primary"
+priority = 68
+selection_axis = "task"
+applies_to_reasons = ["code_change", "behavior_change", "test_change", "public_api_change"]
+
+[routes."sui-sdk-migration-review".contexts]
+positive_terms = ["sui sdk migration","sui sdk upgrade","mysten migration"]
+concept_aliases = ["sui sdk 업그레이드","sui sdk 마이그레이션","sui json rpc 전환"]
+exclusion_terms = ["not sui", "sui 제외"]

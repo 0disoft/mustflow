@@ -6,6 +6,13 @@ common_root = "common"
 locales_root = "locales"
 
 creates = [
+  ".mustflow/skills/sui-wallet-signing-review/SKILL.md",
+  ".mustflow/skills/sui-ptb-composition-review/SKILL.md",
+  ".mustflow/skills/sui-gas-concurrency-review/SKILL.md",
+  ".mustflow/skills/sui-execution-recovery-review/SKILL.md",
+  ".mustflow/skills/sui-data-access-review/SKILL.md",
+  ".mustflow/skills/sui-rpc-resilience-review/SKILL.md",
+  ".mustflow/skills/sui-sdk-migration-review/SKILL.md",
   ".mustflow/skills/interface-typography-review/SKILL.md",
   ".mustflow/skills/interface-color-system-review/SKILL.md",
   ".mustflow/skills/interface-copy-review/SKILL.md",
@@ -976,6 +983,13 @@ oss = [
   "vertical-slice-tdd",
 ]
 team = [
+  "sui-wallet-signing-review",
+  "sui-ptb-composition-review",
+  "sui-gas-concurrency-review",
+  "sui-execution-recovery-review",
+  "sui-data-access-review",
+  "sui-rpc-resilience-review",
+  "sui-sdk-migration-review",
   "interface-typography-review",
   "interface-color-system-review",
   "interface-copy-review",
@@ -1245,6 +1259,13 @@ team = [
   "vertical-slice-tdd",
 ]
 product = [
+  "sui-wallet-signing-review",
+  "sui-ptb-composition-review",
+  "sui-gas-concurrency-review",
+  "sui-execution-recovery-review",
+  "sui-data-access-review",
+  "sui-rpc-resilience-review",
+  "sui-sdk-migration-review",
   "interface-typography-review",
   "interface-color-system-review",
   "interface-copy-review",
@@ -1528,6 +1549,13 @@ product = [
   "web-asset-optimization",
 ]
 library = [
+  "sui-wallet-signing-review",
+  "sui-ptb-composition-review",
+  "sui-gas-concurrency-review",
+  "sui-execution-recovery-review",
+  "sui-data-access-review",
+  "sui-rpc-resilience-review",
+  "sui-sdk-migration-review",
   "interface-typography-review",
   "interface-color-system-review",
   "interface-copy-review",

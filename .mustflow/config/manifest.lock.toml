@@ -69,12 +69,12 @@ content_hash = "sha256:4a44720ec9d20bfe9bb84a06fe109911c64d27ee4a922ef610a925e53
 [files.".mustflow/skills/INDEX.md"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:30d8c5be58077f2961a6eb5b535515e3f303080a9d3ad5f3fbbd099f3c0c50f4"
+content_hash = "sha256:05a5342b761828c0aeb1b7c41dae660e0eb54a48e7481e4f2e7159029d12efd6"
 
 [files.".mustflow/skills/routes.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:0e999fe2477ab114f0414155631f66abec33b57e4ae46f101b45f98d4dea7af3"
+content_hash = "sha256:7d5f0c3462a56f7c613b4fb9f70977b7439394b1a2becd1f3dad004fa8bc30c1"
 
 [files.".mustflow/skills/backend-reliability-change/SKILL.md"]
 source = "template_common"
@@ -369,7 +369,7 @@ content_hash = "sha256:b99cdf153d3c51d694a0f5b0f8eb97aa1c47e593db0ffda4d550d5730
 [files.".mustflow/skills/catalog.v2.json"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:98ce8a46fcb9d535423ce618b0670ad8a65c020f219fcacc1c845c2ecbda310e"
+content_hash = "sha256:b80f7119ad348e60c3dc82676760feb56eb4466c520e1ecd42fa3cde4ee8c459"
 
 [files.".mustflow/skills/session-management-review/SKILL.md"]
 source = "template_common"
@@ -435,3 +435,38 @@ content_hash = "sha256:256a5f4c21b03200cda8e0eadff3bbed7dff0ad14da1a986a07a0e5fa
 source = "template_common"
 last_action = "customized"
 content_hash = "sha256:d6af5df431e4a93259e6c9795a470aade9c3f39252ce959f78f58a19d5721d8b"
+
+[files.".mustflow/skills/sui-wallet-signing-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:6ac41ae9bb437f652705316f9a1ea5d007f4cc467003b741e038d337f911e6f4"
+
+[files.".mustflow/skills/sui-ptb-composition-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:ec03b23b324329f91eb337696a9f18736666cbb05e0ce5337d19f7041a6ac375"
+
+[files.".mustflow/skills/sui-gas-concurrency-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:6a2870bd0bf933c21b2144b8f6e17ebf46eeec43445b0bee983a9521459fd457"
+
+[files.".mustflow/skills/sui-execution-recovery-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:10c865407d5a02c617afe524a3eeb488d1428ed4cec18a343598b8119a679452"
+
+[files.".mustflow/skills/sui-data-access-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:904302c883f78476d6ac2cc8546d917454c8e1593b2ab882673c2b23f07363ca"
+
+[files.".mustflow/skills/sui-rpc-resilience-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:aa4a13b3230fc000d8f71de51f1cd00af98897c5ed00a1f80edb98389d26e2f2"
+
+[files.".mustflow/skills/sui-sdk-migration-review/SKILL.md"]
+source = "template_common"
+last_action = "customized"
+content_hash = "sha256:415a14f165ce55034b37e6d116139570d7676ee003216dec88435620fcc46037"
