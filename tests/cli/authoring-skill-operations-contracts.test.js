@@ -94,7 +94,7 @@ test('failure integrity review catches false-success error handling', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/failure-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"failure-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'failure-integrity-review', 3);
+	assertI18nSkillDocument(i18n, 'failure-integrity-review');
 });
 
 test('observability debuggability review catches incident evidence gaps', () => {
@@ -172,7 +172,7 @@ test('observability debuggability review catches incident evidence gaps', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/observability-debuggability-review\/SKILL\.md"/u);
 	assert.match(manifest, /"observability-debuggability-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.observability-debuggability-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'observability-debuggability-review');
 });
 
 test('incident triage review narrows outages by evidence elimination', () => {
@@ -237,7 +237,7 @@ test('incident triage review narrows outages by evidence elimination', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/incident-triage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"incident-triage-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.incident-triage-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'incident-triage-review');
 });
 
 test('deployment rollout safety review keeps deploys stoppable and observable', () => {
@@ -351,7 +351,7 @@ test('deployment rollout safety review keeps deploys stoppable and observable', 
 	assert.match(manifest, /"\.mustflow\/skills\/deployment-rollout-safety-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deployment-rollout-safety-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.deployment-rollout-safety-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'deployment-rollout-safety-review');
 });
 
 test('cloud cost guardrail review catches hidden spend channels', () => {
@@ -432,7 +432,7 @@ test('cloud cost guardrail review catches hidden spend channels', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/cloud-cost-guardrail-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cloud-cost-guardrail-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cloud-cost-guardrail-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'cloud-cost-guardrail-review');
 });
 
 test('rate limit integrity review protects scarce resources without counter drift', () => {
@@ -533,7 +533,7 @@ test('rate limit integrity review protects scarce resources without counter drif
 	assert.match(manifest, /"\.mustflow\/skills\/rate-limit-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"rate-limit-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.rate-limit-integrity-review"\][\s\S]*?revision = 7/u);
+	assertI18nSkillDocument(i18n, 'rate-limit-integrity-review');
 });
 
 test('backend log evidence review reconstructs backend request and job paths', () => {
@@ -606,7 +606,7 @@ test('backend log evidence review reconstructs backend request and job paths', (
 	assert.match(manifest, /"\.mustflow\/skills\/backend-log-evidence-review\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-log-evidence-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.backend-log-evidence-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'backend-log-evidence-review');
 });
 
 test('Hetzner Cloud changes preserve provider-specific failure and recovery boundaries', () => {
@@ -653,5 +653,5 @@ test('Hetzner Cloud changes preserve provider-specific failure and recovery boun
 	assert.match(manifest, /"\.mustflow\/skills\/hetzner-cloud-change\/SKILL\.md"/u);
 	assert.match(manifest, /"hetzner-cloud-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.hetzner-cloud-change"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'hetzner-cloud-change');
 });

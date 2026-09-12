@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -51,7 +52,7 @@ test('parser engineering review keeps source, recovery, incremental, Unicode, an
 	assert.equal(localSerializationChecklist, templateSerializationChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 4$/mu);
+	assertDocumentRevision(localSkill);
 	for (const signal of [
 		'lossless CST',
 		'UTF-16 offset',
@@ -180,7 +181,7 @@ test('parser engineering review keeps source, recovery, incremental, Unicode, an
 	);
 	assert.match(manifest, /"parser-engineering-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'parser-engineering-review', 4);
+	assertI18nSkillDocument(i18n, 'parser-engineering-review');
 });
 
 test('compiler engineering review localizes semantics and owns test, differential, generator, IR, ABI, and linker oracles', () => {
@@ -240,7 +241,7 @@ test('compiler engineering review localizes semantics and owns test, differentia
 	assert.equal(localGeneratorChecklist, templateGeneratorChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 6$/mu);
+	assertDocumentRevision(localSkill);
 	for (const signal of [
 		'stage-local semantic contracts',
 		'semantic-distance and oracle-cost',
@@ -473,7 +474,7 @@ test('compiler engineering review localizes semantics and owns test, differentia
 	);
 	assert.match(manifest, /"compiler-engineering-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'compiler-engineering-review', 6);
+	assertI18nSkillDocument(i18n, 'compiler-engineering-review');
 });
 
 test('name resolution integrity review traces DNS, language, module, package, loader, and cache identity', () => {
@@ -512,7 +513,7 @@ test('name resolution integrity review traces DNS, language, module, package, lo
 	assert.equal(localModuleChecklist, templateModuleChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	for (const signal of [
 		'Diagnose name-resolution defects as disagreements about the resolver',
 		'requester -> execution space -> input form',
@@ -631,7 +632,7 @@ test('name resolution integrity review traces DNS, language, module, package, lo
 	);
 	assert.match(manifest, /"name-resolution-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'name-resolution-integrity-review', 2);
+	assertI18nSkillDocument(i18n, 'name-resolution-integrity-review');
 });
 
 test('interpreter engineering review keeps semantics, diagnostics, GC, oracles, and execution explicit', () => {
@@ -677,7 +678,7 @@ test('interpreter engineering review keeps semantics, diagnostics, GC, oracles, 
 	assert.equal(localGcChecklist, templateGcChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	for (const signal of [
 		'explicit language-semantics and runtime system',
 		'Freeze semantics before implementation mechanics',
@@ -810,7 +811,7 @@ test('interpreter engineering review keeps semantics, diagnostics, GC, oracles, 
 	);
 	assert.match(manifest, /"interpreter-engineering-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'interpreter-engineering-review', 2);
+	assertI18nSkillDocument(i18n, 'interpreter-engineering-review');
 });
 
 test('formal verification review keeps claims, assumptions, bounds, trust, and proof CI explicit', () => {
@@ -849,7 +850,7 @@ test('formal verification review keeps claims, assumptions, bounds, trust, and p
 	assert.equal(localConcurrencyChecklist, templateConcurrencyChecklist);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	for (const signal of [
 		'scoped claim about an explicit model',
 		'State the theorem or counterexample claim precisely',
@@ -999,7 +1000,7 @@ test('formal verification review keeps claims, assumptions, bounds, trust, and p
 	);
 	assert.match(manifest, /"formal-verification-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'formal-verification-review', 2);
+	assertI18nSkillDocument(i18n, 'formal-verification-review');
 });
 
 test('fuzz harness review keeps reachability, oracles, corpus, feedback, and reproduction explicit', () => {
@@ -1101,7 +1102,7 @@ test('fuzz harness review keeps reachability, oracles, corpus, feedback, and rep
 	);
 	assert.match(manifest, /"fuzz-harness-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'fuzz-harness-review', 3);
+	assertI18nSkillDocument(i18n, 'fuzz-harness-review');
 });
 
 test('input boundary validation keeps representation, identity, parser, sink, and budget contracts explicit', () => {
@@ -1174,7 +1175,7 @@ test('input boundary validation keeps representation, identity, parser, sink, an
 	);
 	assert.match(manifest, /"input-boundary-validation-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'input-boundary-validation-review', 2);
+	assertI18nSkillDocument(i18n, 'input-boundary-validation-review');
 });
 
 test('performance measurement integrity keeps event semantics, comparison, and privacy explicit', () => {
@@ -1214,7 +1215,7 @@ test('performance measurement integrity keeps event semantics, comparison, and p
 	assert.match(manifest, /"\.mustflow\/skills\/performance-measurement-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"performance-measurement-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'performance-measurement-integrity-review', 2);
+	assertI18nSkillDocument(i18n, 'performance-measurement-integrity-review');
 });
 
 test('cpp code change keeps target identity and compatibility risk explicit', () => {
@@ -1292,7 +1293,7 @@ test('Ada code change separates language checks, runtime checks, SPARK proof, an
 	assert.match(manifest, /"\.mustflow\/skills\/ada-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"ada-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'ada-code-change', 2);
+	assertI18nSkillDocument(i18n, 'ada-code-change');
 });
 
 test('Pascal code change separates Delphi and FPC tracks, managed lifetimes, threading, and ABI', () => {
@@ -1336,7 +1337,7 @@ test('Pascal code change separates Delphi and FPC tracks, managed lifetimes, thr
 	assert.match(manifest, /"\.mustflow\/skills\/pascal-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"pascal-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'pascal-code-change', 2);
+	assertI18nSkillDocument(i18n, 'pascal-code-change');
 });
 
 test('Node, Bun, Docker, and JavaScript code change skills keep runtime and toolchain ownership explicit', () => {
@@ -1469,9 +1470,9 @@ test('Node, Bun, Docker, and JavaScript code change skills keep runtime and tool
 	assert.match(manifest, /"javascript-code-change"/u);
 	assert.match(manifest, /"bun-code-change"/u);
 	assert.match(manifest, /"docker-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.node-code-change"\][\s\S]*?revision = 5/u);
-	assert.match(i18n, /\[documents\."skill\.javascript-code-change"\][\s\S]*?revision = 6/u);
-	assert.match(i18n, /\[documents\."skill\.bun-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'node-code-change');
+	assertI18nSkillDocument(i18n, 'javascript-code-change');
+	assertI18nSkillDocument(i18n, 'bun-code-change');
 	assert.match(i18n, /\[documents\."skill\.docker-code-change"\]/u);
 });
 
@@ -1517,7 +1518,7 @@ test('Deno code change skill keeps runtime, permission, package, Worker, and Dep
 	assert.match(manifest, /"\.mustflow\/skills\/deno-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"deno-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.deno-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'deno-code-change');
 });
 
 test('PHP code change skill keeps request lifetime, ORM, security, FPM, and worker boundaries explicit', () => {
@@ -1561,7 +1562,7 @@ test('PHP code change skill keeps request lifetime, ORM, security, FPM, and work
 	assert.match(manifest, /"\.mustflow\/skills\/php-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"php-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.php-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'php-code-change');
 });
 
 test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () => {
@@ -1597,7 +1598,7 @@ test('Tauri code change skill covers CSP bootstrap and IPC WebView traps', () =>
 	assert.match(routes, /\[routes\."tauri-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/tauri-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"tauri-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.tauri-code-change"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'tauri-code-change');
 });
 
 test('Wails code change skill covers v3 app, bridge, WebView, and packaging traps', () => {
@@ -1629,7 +1630,7 @@ test('Wails code change skill covers v3 app, bridge, WebView, and packaging trap
 	assert.match(routes, /\[routes\."wails-code-change"\]\r?\ncategory = "data_external"\r?\nroute_type = "primary"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/wails-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"wails-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.wails-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'wails-code-change');
 });
 
 test('WebView2 code change skill covers runtime, profile, bridge, lifecycle, and deployment traps', () => {
@@ -1667,7 +1668,7 @@ test('WebView2 code change skill covers runtime, profile, bridge, lifecycle, and
 	assert.match(manifest, /"\.mustflow\/skills\/webview2-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"webview2-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.webview2-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'webview2-code-change');
 });
 
 test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain traps by Go version', () => {
@@ -1780,8 +1781,8 @@ test('Go code change skill gates runtime, concurrency, JSON, HTTP, and toolchain
 	assert.match(manifest, /"\.mustflow\/skills\/go-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"go-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.go-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
+	assertI18nSkillDocument(i18n, 'go-code-change');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
 });
 
 test('Java code change skill gates JDK tracks, JVM tuning, virtual threads, and reflection traps', () => {
@@ -1894,8 +1895,8 @@ test('Java code change skill gates JDK tracks, JVM tuning, virtual threads, and 
 	assert.match(manifest, /"\.mustflow\/skills\/java-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"java-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.java-code-change"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
+	assertI18nSkillDocument(i18n, 'java-code-change');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
 });
 
 test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-profile traps by Rust version', () => {
@@ -1983,6 +1984,6 @@ test('Rust code change skill gates MSRV, ownership, Cargo, unsafe, and release-p
 	assert.match(manifest, /"\.mustflow\/skills\/rust-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"rust-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.rust-code-change"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
+	assertI18nSkillDocument(i18n, 'rust-code-change');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
 });

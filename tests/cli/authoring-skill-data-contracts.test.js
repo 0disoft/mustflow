@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -61,7 +62,7 @@ test('database migration change review catches online rollout and DDL traps', ()
 	assert.match(manifest, /"\.mustflow\/skills\/database-migration-change\/SKILL\.md"/u);
 	assert.match(manifest, /"database-migration-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.database-migration-change"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'database-migration-change');
 });
 
 test('database query bottleneck review catches diff-visible query path risks', () => {
@@ -126,7 +127,7 @@ test('database query bottleneck review catches diff-visible query path risks', (
 	assert.match(manifest, /"\.mustflow\/skills\/database-query-bottleneck-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-query-bottleneck-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.database-query-bottleneck-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'database-query-bottleneck-review');
 });
 
 test('database JSON modeling review keeps flexible columns from hiding schema decisions', () => {
@@ -187,7 +188,7 @@ test('database JSON modeling review keeps flexible columns from hiding schema de
 	assert.match(manifest, /"\.mustflow\/skills\/database-json-modeling-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-json-modeling-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.database-json-modeling-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'database-json-modeling-review');
 });
 
 test('deletion lifecycle review keeps delete, restore, purge, and retention semantics explicit', () => {
@@ -242,7 +243,7 @@ test('deletion lifecycle review keeps delete, restore, purge, and retention sema
 	assert.match(manifest, /"\.mustflow\/skills\/deletion-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"deletion-lifecycle-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.deletion-lifecycle-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'deletion-lifecycle-review');
 });
 
 test('database lock contention review catches hot rows and blocking paths', () => {
@@ -296,7 +297,7 @@ test('database lock contention review catches hot rows and blocking paths', () =
 	assert.match(manifest, /"\.mustflow\/skills\/database-lock-contention-review\/SKILL\.md"/u);
 	assert.match(manifest, /"database-lock-contention-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.database-lock-contention-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'database-lock-contention-review');
 });
 
 test('postgresql code change carries the PostgreSQL 18 operations contract', () => {
@@ -321,7 +322,7 @@ test('postgresql code change carries the PostgreSQL 18 operations contract', () 
 	assert.match(localReference, /authority: reference/u);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 4/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /PostgreSQL 18 Operations Checklist/u);
 	assert.match(localReference, /snapshot verified on 2026-08-02 was PostgreSQL 18\.4/u);
 	assert.match(localReference, /Do not preserve `18\.4` as an undated permanent latest-version claim/u);
@@ -370,7 +371,7 @@ test('postgresql code change carries the PostgreSQL 18 operations contract', () 
 		/"\.mustflow\/skills\/postgresql-code-change\/references\/postgresql-18-operations-checklist\.md"/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'postgresql-code-change', 4);
+	assertI18nSkillDocument(i18n, 'postgresql-code-change');
 	assert.match(
 		i18n,
 		/\[documents\."skill\.postgresql-code-change\.postgresql-18-operations-checklist"\][\s\S]*?revision = 1/u,
@@ -401,7 +402,7 @@ test('ubuntu server operations review keeps host state owners and LTS gates expl
 	assert.match(localReference, /authority: reference/u);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 1/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Ubuntu LTS Operations Checklist/u);
 	for (const token of [
 		'Ubuntu 24.04.4',
@@ -460,7 +461,7 @@ test('ubuntu server operations review keeps host state owners and LTS gates expl
 	);
 	assert.equal((manifest.match(/"ubuntu-server-operations-review"/gu) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'ubuntu-server-operations-review', 1);
+	assertI18nSkillDocument(i18n, 'ubuntu-server-operations-review');
 	assert.match(
 		i18n,
 		/\[documents\."skill\.ubuntu-server-operations-review\.ubuntu-lts-operations-checklist"\][\s\S]*?revision = 1/u,
@@ -491,7 +492,7 @@ test('coolify operations review keeps control-plane status separate from product
 	assert.match(localReference, /authority: reference/u);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 1/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Coolify Production Operations Checklist/u);
 	for (const token of [
 		'management, execution, and build failure domains',
@@ -546,7 +547,7 @@ test('coolify operations review keeps control-plane status separate from product
 	);
 	assert.equal((manifest.match(/"coolify-operations-review"/gu) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'coolify-operations-review', 1);
+	assertI18nSkillDocument(i18n, 'coolify-operations-review');
 	assert.match(
 		i18n,
 		/\[documents\."skill\.coolify-operations-review\.coolify-production-checklist"\][\s\S]*?revision = 1/u,
@@ -604,7 +605,7 @@ test('clickhouse code change catches MergeTree, ingest, and query-plan traps', (
 	assert.match(manifest, /"\.mustflow\/skills\/clickhouse-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"clickhouse-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.clickhouse-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'clickhouse-code-change');
 });
 
 test('duckdb code change catches embedded OLAP, file-format, and profiling traps', () => {
@@ -662,7 +663,7 @@ test('duckdb code change catches embedded OLAP, file-format, and profiling traps
 	assert.match(manifest, /"\.mustflow\/skills\/duckdb-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"duckdb-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.duckdb-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'duckdb-code-change');
 });
 
 test('github contribution quality gate keeps maintainer-facing GitHub posts evidence-based', () => {
@@ -676,7 +677,7 @@ test('github contribution quality gate keeps maintainer-facing GitHub posts evid
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 3/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /repository templates/u);
 	assert.match(localSkill, /duplicate search/u);
 	assert.match(localSkill, /readable Markdown structure/u);
@@ -712,5 +713,5 @@ test('github contribution quality gate keeps maintainer-facing GitHub posts evid
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/github-contribution-quality-gate\/SKILL\.md"/u);
 	assert.match(manifest, /"github-contribution-quality-gate"/u);
-	assert.match(i18n, /\[documents\."skill\.github-contribution-quality-gate"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'github-contribution-quality-gate');
 });

@@ -52,7 +52,7 @@ test('reader-centered technical content keeps benefits evidence-bound and templa
 		assert.doesNotMatch(profileMatch[1], /"reader-centered-technical-content"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('nearby authoring skills route substantive reader-value work to the owning skill', () => {
@@ -67,7 +67,7 @@ test('nearby authoring skills route substantive reader-value work to the owning 
 	assert.match(writing, /after the factual structure is settled/u);
 	assert.match(search, /with no search-traffic or ad-layout goal/u);
 	assert.match(readme, /outside the repository README/u);
-	assertI18nSkillDocument(i18n, 'writing-elegance', 10);
-	assertI18nSkillDocument(i18n, 'search-ad-content-authoring', 4);
-	assertI18nSkillDocument(i18n, 'readme-authoring', 4);
+	assertI18nSkillDocument(i18n, 'writing-elegance');
+	assertI18nSkillDocument(i18n, 'search-ad-content-authoring');
+	assertI18nSkillDocument(i18n, 'readme-authoring');
 });

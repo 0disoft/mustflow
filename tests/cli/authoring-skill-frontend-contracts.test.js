@@ -86,7 +86,7 @@ test('Astro code change skill gates islands, rendering, content, and runtime ris
 	assert.match(manifest, /"\.mustflow\/skills\/astro-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"astro-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.astro-code-change"\][\s\S]*?revision = 6/u);
+	assertI18nSkillDocument(i18n, 'astro-code-change');
 });
 
 test('frontend render stability keeps flicker diagnosis symptom-first and template-synced', () => {
@@ -184,7 +184,7 @@ test('frontend state ownership review maps source-of-truth drift', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-state-ownership-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-state-ownership-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-state-ownership-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'frontend-state-ownership-review');
 });
 
 test('async operation UX review keeps progress, control, and completion truthful', () => {
@@ -242,7 +242,7 @@ test('async operation UX review keeps progress, control, and completion truthful
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"async-operation-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('mobile interaction UX review preserves native platform semantics and lifecycle', () => {
@@ -300,7 +300,7 @@ test('mobile interaction UX review preserves native platform semantics and lifec
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"mobile-interaction-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('large-screen adaptive UX review preserves workspace continuity across panes and inputs', () => {
@@ -356,7 +356,7 @@ test('large-screen adaptive UX review preserves workspace continuity across pane
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"large-screen-adaptive-ux-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 
@@ -414,7 +414,7 @@ test('split refactor residual path review catches old execution paths after file
 		/"split-refactor-residual-path-review"/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.split-refactor-residual-path-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'split-refactor-residual-path-review');
 });
 
 test('ui state resurrection review traces restored UI state after completion or restart', () => {
@@ -498,7 +498,7 @@ test('ui state resurrection review traces restored UI state after completion or 
 	assert.match(manifest, /"\.mustflow\/skills\/ui-state-resurrection-review\/SKILL\.md"/u);
 	assert.match(manifest, /"ui-state-resurrection-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.ui-state-resurrection-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'ui-state-resurrection-review');
 });
 
 test('information visualization integrity review keeps visual form tied to reader decisions and source claims', () => {
@@ -555,7 +555,7 @@ test('information visualization integrity review keeps visual form tied to reade
 	assert.match(routes, /"차트"/u);
 	assert.equal((manifest.match(/information-visualization-integrity-review/gu) ?? []).length, 6);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.information-visualization-integrity-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'information-visualization-integrity-review');
 });
 
 test('frontend stress layout review catches hostile content and container breakage', () => {
@@ -614,7 +614,7 @@ test('frontend stress layout review catches hostile content and container breaka
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-stress-layout-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-stress-layout-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-stress-layout-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'frontend-stress-layout-review');
 });
 
 test('frontend accessibility tree review catches semantic, keyboard, and name drift', () => {
@@ -678,7 +678,7 @@ test('frontend accessibility tree review catches semantic, keyboard, and name dr
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-accessibility-tree-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-accessibility-tree-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-accessibility-tree-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'frontend-accessibility-tree-review');
 });
 
 test('frontend localization review catches hidden strings, locale formatting, and export drift', () => {
@@ -743,7 +743,7 @@ test('frontend localization review catches hidden strings, locale formatting, an
 	assert.match(manifest, /"\.mustflow\/skills\/frontend-localization-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frontend-localization-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-localization-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'frontend-localization-review');
 });
 
 test('frontend component library review treats design systems as public API platforms', () => {
@@ -813,7 +813,7 @@ test('frontend component library review treats design systems as public API plat
 		/"frontend-component-library-review"/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frontend-component-library-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'frontend-component-library-review');
 });
 
 test('website task friction review catches common public website complaint traps', () => {
@@ -870,7 +870,7 @@ test('website task friction review catches common public website complaint traps
 	assert.match(manifest, /"\.mustflow\/skills\/website-task-friction-review\/SKILL\.md"/u);
 	assert.match(manifest, /"website-task-friction-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.website-task-friction-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'website-task-friction-review');
 });
 
 test('utility and browser-native styling skills cover modern extraction and platform traps', () => {
@@ -949,8 +949,8 @@ test('utility and browser-native styling skills cover modern extraction and plat
 	assert.match(htmlSkill, /Use real tables for tabular data/u);
 	assert.match(htmlSkill, /For responsive image markup, verify `width`, `height`, `srcset`, `sizes`, `picture` art direction/u);
 
-	assertI18nSkillDocument(i18n, 'tailwind-code-change', 4);
-	assertI18nSkillDocument(i18n, 'unocss-code-change', 4);
-	assertI18nSkillDocument(i18n, 'css-code-change', 4);
-	assertI18nSkillDocument(i18n, 'html-code-change', 4);
+	assertI18nSkillDocument(i18n, 'tailwind-code-change');
+	assertI18nSkillDocument(i18n, 'unocss-code-change');
+	assertI18nSkillDocument(i18n, 'css-code-change');
+	assertI18nSkillDocument(i18n, 'html-code-change');
 });

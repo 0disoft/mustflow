@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -75,7 +76,7 @@ test('agent execution control review keeps agent loops bounded and outcome-teste
 	assert.match(manifest, /"\.mustflow\/skills\/agent-execution-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-execution-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-execution-control-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'agent-execution-control-review');
 });
 
 test('agent runtime multi-worker review requires independent work and central admission', () => {
@@ -110,7 +111,7 @@ test('agent runtime multi-worker review requires independent work and central ad
 		assert.match(profileMatch[1], /"agent-runtime-multi-worker-review"/u);
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-runtime-multi-worker-review"/u);
-	assert.match(i18n, /\[documents\."skill\.agent-runtime-multi-worker-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'agent-runtime-multi-worker-review');
 });
 
 test('agent runtime isolation keeps durable state outside short-lived authority', () => {
@@ -146,7 +147,7 @@ test('agent runtime isolation keeps durable state outside short-lived authority'
 		assert.match(profileMatch[1], /"agent-runtime-isolation-review"/u);
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-runtime-isolation-review"/u);
-	assert.match(i18n, /\[documents\."skill\.agent-runtime-isolation-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'agent-runtime-isolation-review');
 });
 
 test('agent planning recovery keeps global intent stable and replay deterministic', () => {
@@ -182,7 +183,7 @@ test('agent planning recovery keeps global intent stable and replay deterministi
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."agent-planning-recovery-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 75/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-planning-recovery-review\/SKILL\.md"/u);
-	assert.match(i18n, /\[documents\."skill\.agent-planning-recovery-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'agent-planning-recovery-review');
 });
 
 test('agent release bundles remain immutable through shadow canary and rollback', () => {
@@ -209,7 +210,7 @@ test('agent release bundles remain immutable through shadow canary and rollback'
 	assert.match(skillIndex, /\.mustflow\/skills\/agent-release-bundle-rollout-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."agent-release-bundle-rollout-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "primary"\r?\npriority = 76/u);
 	assert.match(manifest, /"\.mustflow\/skills\/agent-release-bundle-rollout-review\/SKILL\.md"/u);
-	assert.match(i18n, /\[documents\."skill\.agent-release-bundle-rollout-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'agent-release-bundle-rollout-review');
 });
 
 test('automation investment cases price accepted outcomes and keep safety independent', () => {
@@ -240,7 +241,7 @@ test('automation investment cases price accepted outcomes and keep safety indepe
 	assert.match(skillIndex, /\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md/u);
 	assert.match(routes, /\[routes\."automation-investment-case-review"\]\r?\ncategory = "workflow_contracts"\r?\nroute_type = "primary"\r?\npriority = 47/u);
 	assert.match(manifest, /"\.mustflow\/skills\/automation-investment-case-review\/SKILL\.md"/u);
-	assert.match(i18n, /\[documents\."skill\.automation-investment-case-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'automation-investment-case-review');
 });
 
 test('automation operating model separates triggers authority observability cost and specialist ownership', () => {
@@ -295,7 +296,7 @@ test('automation operating model separates triggers authority observability cost
 	assert.ok(fixtureIds.has('automation-investment-only-boundary'));
 	assert.ok(fixtureIds.has('queue-settlement-only-boundary'));
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('browser automation reliability review rejects click scripts without state evidence', () => {
@@ -370,7 +371,7 @@ test('browser automation reliability review rejects click scripts without state 
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"browser-automation-reliability-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.browser-automation-reliability-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'browser-automation-reliability-review');
 });
 
 test('multi-agent work coordination maps shared state before parallel workers edit', () => {
@@ -388,7 +389,7 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 5/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /agent-runtime-multi-worker-review/u);
 	assert.match(localSkill, /agent-runtime-isolation-review/u);
 	assert.match(localSkill, /Define the Delegation Envelope/u);
@@ -423,7 +424,7 @@ test('multi-agent work coordination maps shared state before parallel workers ed
 	assert.match(manifest, /"\.mustflow\/skills\/multi-agent-work-coordination\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-agent-work-coordination"/u);
 	assert.match(skillIndex, /top-level thread UUID used as a subagent ID/u);
-	assert.match(i18n, /\[documents\."skill\.multi-agent-work-coordination"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'multi-agent-work-coordination');
 });
 
 test('agent eval integrity review grades outcomes, trajectories, and oracle layers', () => {
@@ -494,7 +495,7 @@ test('agent eval integrity review grades outcomes, trajectories, and oracle laye
 	assert.match(manifest, /"\.mustflow\/skills\/agent-eval-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-eval-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-eval-integrity-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'agent-eval-integrity-review');
 });
 
 test('agent memory and context governance keeps derived memory scoped, fresh, and deletable', () => {
@@ -542,7 +543,7 @@ test('agent memory and context governance keeps derived memory scoped, fresh, an
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-memory-context-governance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-memory-context-governance-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'agent-memory-context-governance-review');
 });
 
 test('search ad content authoring keeps monetized content reader-first', () => {
@@ -761,7 +762,7 @@ test('security skills cover AI-generated code and supply-chain boundaries', () =
 	assert.equal(regressionSkill, regressionTemplate);
 	assert.equal(dependencySkill, dependencyTemplate);
 	assert.equal(promptSkill, promptTemplate);
-	assert.match(promptSkill, /^revision: 7$/mu);
+	assertDocumentRevision(promptSkill);
 	assert.match(dependencySkill, /workspace package contract/u);
 	assert.match(dependencySkill, /package\.json` as that package's external contract/u);
 	assert.match(dependencySkill, /emitted JavaScript imports a package/u);

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -32,7 +33,7 @@ test('release publish change requires independent public-entrypoint smoke eviden
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 4/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /local tarball or workspace install does not prove/u);
 	assert.match(localSkill, /fresh consumer root outside the source checkout/u);
 	assert.match(localSkill, /cache-only success is not independent remote-channel evidence/u);
@@ -47,7 +48,7 @@ test('release publish change requires independent public-entrypoint smoke eviden
 	assert.match(skillIndex, /cache-only or internal-entrypoint-only smoke/u);
 	assert.match(skillIndex, /public-entrypoint user-path smoke and environment evidence/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'release-publish-change', 4);
+	assertI18nSkillDocument(i18n, 'release-publish-change');
 });
 
 test('security skill refinements bind policy receipts and bound upstream response resources', () => {
@@ -75,8 +76,8 @@ test('security skill refinements bind policy receipts and bound upstream respons
 	assert.match(integrationSkill, /limits accepted data, not memory or bandwidth use/u);
 	assert.match(integrationSkill, /private service bindings, internal gateways, signed\s+provider responses/u);
 	assert.match(integrationSkill, /cancellation near the boundary without reading to EOF/u);
-	assertI18nSkillDocument(i18n, 'policy-decision-integrity-review', 3);
-	assertI18nSkillDocument(i18n, 'third-party-api-integration-review', 3);
+	assertI18nSkillDocument(i18n, 'policy-decision-integrity-review');
+	assertI18nSkillDocument(i18n, 'third-party-api-integration-review');
 });
 
 test('skill authoring requires logically scoped and falsifiable procedure contracts', () => {
@@ -86,7 +87,7 @@ test('skill authoring requires logically scoped and falsifiable procedure contra
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 12/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Distinguish a necessary condition from a sufficient condition/u);
 	assert.match(localSkill, /Do not infer the converse/u);
 	assert.match(localSkill, /Name quantifier and scope when they matter/u);
@@ -103,7 +104,7 @@ test('skill authoring requires logically scoped and falsifiable procedure contra
 	assert.match(skillIndex, /cross-root verification inheritance/u);
 	assert.match(skillIndex, /logical consistency and repository-boundary result, counterexamples checked, and claims narrowed/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'skill-authoring', 12);
+	assertI18nSkillDocument(i18n, 'skill-authoring');
 });
 
 test('instruction conflict review separates authority dimensions from source priority', () => {
@@ -115,7 +116,7 @@ test('instruction conflict review separates authority dimensions from source pri
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 2/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Classify each instruction by authority dimension before comparing priority/u);
 	assert.match(localSkill, /Host safety and approval rules constrain how the goal may be executed/u);
 	assert.match(localSkill, /Build an action-specific constraint set instead of one flat source ranking/u);
@@ -125,7 +126,7 @@ test('instruction conflict review separates authority dimensions from source pri
 	assert.match(skillIndex, /flat authority ranking/u);
 	assert.match(skillIndex, /Conflicts reviewed by authority dimension/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'instruction-conflict-scope-check', 2);
+	assertI18nSkillDocument(i18n, 'instruction-conflict-scope-check');
 });
 
 test('nested repository verification stays local unless the child result depends on the parent', () => {
@@ -147,10 +148,10 @@ test('nested repository verification stays local unless the child result depends
 		assert.match(agents, /Do not run a parent-root intent merely to\s+satisfy a child task/u);
 		assert.match(agents, /Unrelated parent worktree changes, locks, or manifest drift do not block a child-only/u);
 	}
-	assert.match(localWorkflow, /revision: 33/u);
+	assertDocumentRevision(localWorkflow);
 	assert.match(localWorkflow, /current command contract is the selected child repository's\s+contract/u);
 	assert.match(localWorkflow, /should not be listed as skipped child checks/u);
-	assert.match(localCompletionSkill, /revision: 11/u);
+	assertDocumentRevision(localCompletionSkill);
 	assert.match(localCompletionSkill, /shared parent skill does not make a parent-root intent required or runnable/u);
 	assert.match(localCompletionSkill, /Do not list unrelated parent checks as skipped child verification/u);
 	assert.match(localCompletionSkill, /Do not downgrade a verified child-only result/u);
@@ -160,7 +161,7 @@ test('nested repository verification stays local unless the child result depends
 	assert.match(i18n, /translations\.ko = \{ path = "locales\/ko\/AGENTS\.md", source_revision = 22, status = "needs_review" \}/u);
 	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'completion-evidence-gate', 11);
+	assertI18nSkillDocument(i18n, 'completion-evidence-gate');
 });
 
 test('date number audit classifies release version impact from public contracts', () => {
@@ -206,13 +207,13 @@ test('skill refresh separates release freshness from per-feature stability', () 
 	const i18n = readText('templates/default/i18n.toml');
 
 	assert.equal(localSkill, templateSkill);
-	assert.match(localSkill, /revision: 3/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Record feature status separately from package or framework release status/u);
 	assert.match(localSkill, /Do not infer stability from presence in current docs/u);
 	assert.match(localSkill, /compatibility shims do not become\s+recommendations/u);
 	assert.match(localSkill, /Package or framework release track, per-feature status, and owning official source/u);
-	assert.match(i18n, /\[documents\."skill\.skill-refresh"\][\s\S]*?revision = 3/u);
-	assert.match(i18n, /\[documents\."skill\.source-freshness-check"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'skill-refresh');
+	assertI18nSkillDocument(i18n, 'source-freshness-check');
 });
 
 test('external skill intake defers web testing and handoff runtime boundaries', () => {
@@ -246,7 +247,7 @@ test('cross agent session reference separates top-level Codex threads from subag
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /revision: 4/u);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Codex or Hermes sessions/u);
 	assert.match(localSkill, /read, reference, message, or continue an existing top-level/u);
 	assert.match(localSkill, /read-only evidence/u);
@@ -300,7 +301,7 @@ test('cross agent session reference separates top-level Codex threads from subag
 	assert.match(manifest, /"\.mustflow\/skills\/cross-agent-session-reference\/SKILL\.md"/u);
 	assert.match(manifest, /"cross-agent-session-reference"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.cross-agent-session-reference"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'cross-agent-session-reference');
 });
 
 test('test suite performance review keeps fast verification honest', () => {
@@ -346,7 +347,7 @@ test('test suite performance review keeps fast verification honest', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/test-suite-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"test-suite-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.test-suite-performance-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'test-suite-performance-review');
 });
 
 test('test suite value pruning preserves unique defect evidence before retirement', () => {
@@ -396,7 +397,7 @@ test('test suite value pruning preserves unique defect evidence before retiremen
 	assert.match(manifest, /"\.mustflow\/skills\/test-suite-value-pruning-review\/SKILL\.md"/u);
 	assert.match(manifest, /"test-suite-value-pruning-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'test-suite-value-pruning-review', 1);
+	assertI18nSkillDocument(i18n, 'test-suite-value-pruning-review');
 	const positive = routeFixtures.cases.find((fixture) => fixture.id === 'test-suite-value-pruning-korean');
 	const performanceOnly = routeFixtures.cases.find(
 		(fixture) => fixture.id === 'test-suite-performance-shard-only',
@@ -474,7 +475,7 @@ test('complex decision analysis is narrow, falsifiable, and handoff-only before 
 	assert.ok(profileBlock('product').includes('"complex-decision-analysis"'));
 	assert.match(i18n, /\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.complex-decision-analysis"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'complex-decision-analysis');
 });
 
 test('technology stack selection gates survival-path choices by operability', () => {
@@ -537,7 +538,7 @@ test('technology stack selection gates survival-path choices by operability', ()
 	for (const profile of ['minimal', 'patterns', 'oss', 'team', 'product', 'library']) {
 		assert.ok(profileBlock(profile).includes('"technology-stack-selection"'), `${profile} profile missing skill`);
 	}
-	assert.match(i18n, /\[documents\."skill\.technology-stack-selection"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'technology-stack-selection');
 });
 
 test('vendor portability exit readiness proves reconstruction instead of banning provider features', () => {
@@ -614,13 +615,10 @@ test('vendor portability exit readiness proves reconstruction instead of banning
 	}
 	assert.ok(!profileBlock('minimal').includes(`"${skillName}"`), 'minimal profile unexpectedly includes skill');
 	assertSkillsIndexRevision(i18n);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.vendor-portability-exit-readiness-review"\][\s\S]*?revision = 2/u,
-	);
-	assert.match(i18n, /\[documents\."skill\.database-change-safety"\][\s\S]*?revision = 18/u);
-	assert.match(i18n, /\[documents\."skill\.migration-safety-check"\][\s\S]*?revision = 10/u);
-	assert.match(i18n, /\[documents\."skill\.structure-discovery-gate"\][\s\S]*?revision = 29/u);
+	assertI18nSkillDocument(i18n, 'vendor-portability-exit-readiness-review');
+	assertI18nSkillDocument(i18n, 'database-change-safety');
+	assertI18nSkillDocument(i18n, 'migration-safety-check');
+	assertI18nSkillDocument(i18n, 'structure-discovery-gate');
 });
 
 test('API, pipeline, auth, Docker, search, vector, and RAG triage skills stay template-synced and routeable', () => {

@@ -108,7 +108,7 @@ test('connection lifecycle integrity skill keeps transport, request, body, and s
 		assert.match(profileBlock(profile), /"connection-lifecycle-integrity-review"/u);
 	}
 	assert.doesNotMatch(profileBlock('minimal'), /"connection-lifecycle-integrity-review"/u);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 	assertSkillsIndexRevision(i18n);
 });
 
@@ -155,7 +155,7 @@ test('native crash forensics separates detection site from exact artifact and ca
 	assert.match(routes, /"crash-consistency-only"/u);
 	assert.equal((manifest.match(/native-crash-forensics-review/gu) ?? []).length, 6);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 3);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('Godot code change skill keeps scene, resource, save, rendering, and export risks explicit', () => {
@@ -204,7 +204,7 @@ test('Godot code change skill keeps scene, resource, save, rendering, and export
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/godot-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"godot-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.godot-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'godot-code-change');
 });
 
 test('C code change skill keeps C23, pointer, memory, and performance contracts explicit', () => {
@@ -269,7 +269,7 @@ test('C code change skill keeps C23, pointer, memory, and performance contracts 
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/c-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"c-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.c-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'c-code-change');
 });
 
 test('PowerShell code change skill keeps quoting, parser layers, and native argv explicit', () => {
@@ -326,7 +326,7 @@ test('PowerShell code change skill keeps quoting, parser layers, and native argv
 	assert.match(manifest, /"\.mustflow\/skills\/powershell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"powershell-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.powershell-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'powershell-code-change');
 });
 
 test('shell code change skill keeps dialect, expansion, CI, and filename boundaries explicit', () => {
@@ -380,7 +380,7 @@ test('shell code change skill keeps dialect, expansion, CI, and filename boundar
 	assert.match(manifest, /"\.mustflow\/skills\/shell-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"shell-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.shell-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'shell-code-change');
 });
 
 test('structured config change skill keeps YAML, TOML, workflow, and schema contracts explicit', () => {
@@ -437,5 +437,5 @@ test('structured config change skill keeps YAML, TOML, workflow, and schema cont
 		assert.ok(profileBlock(profile).includes('"structured-config-change"'), `${profile} profile missing skill`);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.structured-config-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'structured-config-change');
 });

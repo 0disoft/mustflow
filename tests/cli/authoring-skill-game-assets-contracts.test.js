@@ -57,7 +57,7 @@ test('AI game asset production skill owns a contract-driven engine asset pipelin
 	assert.match(fixtures, /"required_main": "ai-game-asset-production"/u);
 	assert.match(manifest, new RegExp(`"${skillPath}"`, 'u'));
 	assert.match(manifest, /product = \[[\s\S]*?"ai-game-asset-production"[\s\S]*?^\]/mu);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 	assertSkillsIndexRevision(i18n);
 
 	for (const referenceName of referenceNames) {

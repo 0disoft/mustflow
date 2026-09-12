@@ -37,7 +37,7 @@ test('docs prose review skill treats AI smell as concrete prose quality instead 
 	assert.match(skillIndex, /AI-slop signals, low-specificity boilerplate/u);
 	assert.match(skillIndex, /fake authorship attribution, invented evidence/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.docs-prose-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'docs-prose-review');
 });
 
 test('README evidence gate blocks unsupported README claims before prose polish', () => {
@@ -183,7 +183,7 @@ test('README evidence gate blocks unsupported README claims before prose polish'
 		);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'readme-evidence-gate', 5);
+	assertI18nSkillDocument(i18n, 'readme-evidence-gate');
 });
 
 test('writing elegance skill stores reusable phrase fragments outside the main procedure', () => {
@@ -247,7 +247,7 @@ test('writing elegance skill stores reusable phrase fragments outside the main p
 		assert.equal(profileBlock(profile).includes('"writing-elegance"'), false, `${profile} profile should not include skill`);
 	}
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.writing-elegance"\][\s\S]*?revision = 10/u);
+	assertI18nSkillDocument(i18n, 'writing-elegance');
 	assert.match(i18n, /\[documents\."skill\.writing-elegance\.phrase-bank"\][\s\S]*?revision = 1/u);
 });
 
@@ -376,12 +376,12 @@ test('HTTP delivery streaming skill keeps compression and browser transports exp
 	assert.match(manifest, /"\.mustflow\/skills\/http-delivery-streaming\/SKILL\.md"/u);
 	assert.match(manifest, /"http-delivery-streaming"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.http-delivery-streaming"\][\s\S]*?revision = 1/u);
-	assert.match(i18n, /\[documents\."skill\.api-contract-change"\][\s\S]*?revision = 4/u);
-	assert.match(i18n, /\[documents\."skill\.adapter-boundary"\][\s\S]*?revision = 14/u);
-	assert.match(i18n, /\[documents\."skill\.performance-budget-check"\][\s\S]*?revision = 24/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
-	assert.match(i18n, /\[documents\."skill\.auth-permission-change"\][\s\S]*?revision = 8/u);
+	assertI18nSkillDocument(i18n, 'http-delivery-streaming');
+	assertI18nSkillDocument(i18n, 'api-contract-change');
+	assertI18nSkillDocument(i18n, 'adapter-boundary');
+	assertI18nSkillDocument(i18n, 'performance-budget-check');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
+	assertI18nSkillDocument(i18n, 'auth-permission-change');
 });
 
 test('backend reliability skill keeps retry, idempotency, health, cache, and queue traps explicit', () => {
@@ -445,7 +445,7 @@ test('backend reliability skill keeps retry, idempotency, health, cache, and que
 	assert.match(manifest, /"\.mustflow\/skills\/backend-reliability-change\/SKILL\.md"/u);
 	assert.match(manifest, /"backend-reliability-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.backend-reliability-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'backend-reliability-change');
 });
 
 test('Python skills gate standard-library APIs and runtime upgrade defaults by supported version', () => {
@@ -525,9 +525,9 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(dependencySkill, /changed defaults/u);
 	assert.match(dependencySkill, /archive extraction, subprocess handling, async lifecycle/u);
 
-	assert.match(i18n, /\[documents\."skill\.python-code-change"\][\s\S]*?revision = 6/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
+	assertI18nSkillDocument(i18n, 'python-code-change');
+	assertI18nSkillDocument(i18n, 'dependency-upgrade-review');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
 });
 
 test('clarifying question gate keeps blocking questions evidence-based and bounded', () => {
@@ -598,7 +598,7 @@ test('clarifying question gate keeps blocking questions evidence-based and bound
 	]);
 	assert.match(manifest, /"\.mustflow\/skills\/clarifying-question-gate\/SKILL\.md"/u);
 	assert.match(manifest, /"clarifying-question-gate"/u);
-	assert.match(i18n, /\[documents\."skill\.clarifying-question-gate"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'clarifying-question-gate');
 });
 
 test('structure discovery gate keeps pre-implementation design questions bounded', () => {

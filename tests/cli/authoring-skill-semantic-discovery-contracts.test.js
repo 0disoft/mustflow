@@ -54,7 +54,7 @@ test('semantic repository discovery keeps multi-axis evidence and install surfac
 		assert.doesNotMatch(profileMatch[1], /"semantic-repository-discovery"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('neighbor skills keep local pattern, feature completeness, and post-change hardening ownership distinct', () => {
@@ -69,7 +69,7 @@ test('neighbor skills keep local pattern, feature completeness, and post-change 
 	assert.match(completeness, /semantic-repository-discovery/u);
 	assert.match(hardening, /pre-implementation discovery of existing assets/u);
 	assert.match(hardening, /post-change duplicate and hardening review/u);
-	assertI18nSkillDocument(i18n, 'pattern-scout', 4);
-	assertI18nSkillDocument(i18n, 'feature-surface-completeness-review', 2);
-	assertI18nSkillDocument(i18n, 'ai-generated-code-hardening', 4);
+	assertI18nSkillDocument(i18n, 'pattern-scout');
+	assertI18nSkillDocument(i18n, 'feature-surface-completeness-review');
+	assertI18nSkillDocument(i18n, 'ai-generated-code-hardening');
 });

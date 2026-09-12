@@ -117,9 +117,9 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 			'u',
 		),
 	);
-	assert.match(i18n, /\[documents\."skill\.typescript-code-change"\][\s\S]*?revision = 9/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 7/u);
-	assert.match(i18n, /\[documents\."skill\.version-freshness-check"\][\s\S]*?revision = 11/u);
+	assertI18nSkillDocument(i18n, 'typescript-code-change');
+	assertI18nSkillDocument(i18n, 'dependency-upgrade-review');
+	assertI18nSkillDocument(i18n, 'version-freshness-check');
 });
 
 test('React code change skill keeps modern React contribution boundaries explicit', () => {
@@ -188,7 +188,7 @@ test('React code change skill keeps modern React contribution boundaries explici
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/react-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"react-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.react-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'react-code-change');
 });
 
 test('Vue code change skill catches reactivity, component API, and hydration traps', () => {
@@ -241,7 +241,7 @@ test('Vue code change skill catches reactivity, component API, and hydration tra
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/vue-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"vue-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.vue-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'vue-code-change');
 });
 
 test('Vite code change skill catches toolchain, plugin, optimizer, and output traps', () => {
@@ -293,7 +293,7 @@ test('Vite code change skill catches toolchain, plugin, optimizer, and output tr
 	assert.match(manifest, /"\.mustflow\/skills\/vite-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"vite-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.vite-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'vite-code-change');
 });
 
 test('Babylon code change skill keeps engine, asset, material, physics, and lifecycle risks explicit', () => {
@@ -346,7 +346,7 @@ test('Babylon code change skill keeps engine, asset, material, physics, and life
 	assert.match(manifest, /"\.mustflow\/skills\/babylon-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"babylon-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.babylon-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'babylon-code-change');
 });
 
 test('Three.js code change skill keeps renderer, resource, picking, and GPU risks explicit', () => {
@@ -383,7 +383,7 @@ test('Three.js code change skill keeps renderer, resource, picking, and GPU risk
 	assert.match(manifest, /"\.mustflow\/skills\/threejs-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"threejs-code-change"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.threejs-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'threejs-code-change');
 });
 
 test('Svelte code change skill catches SvelteKit execution modes and runes traps', () => {
@@ -444,7 +444,7 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/svelte-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"svelte-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.svelte-code-change"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'svelte-code-change');
 });
 
 test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runtime risks explicit', () => {
@@ -497,7 +497,7 @@ test('Elysia code change skill keeps schema, OpenAPI, Eden, lifecycle, and runti
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/elysia-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"elysia-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.elysia-code-change"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'elysia-code-change');
 });
 
 test('Hono code change skill keeps routing, validation, typed client, and adapter risks explicit', () => {
@@ -544,7 +544,7 @@ test('Hono code change skill keeps routing, validation, typed client, and adapte
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/hono-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"hono-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.hono-code-change"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'hono-code-change');
 });
 
 test('NestJS code change skill keeps module, DI, pipeline, and adapter risks explicit', () => {
@@ -591,7 +591,7 @@ test('NestJS code change skill keeps module, DI, pipeline, and adapter risks exp
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/nestjs-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"nestjs-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.nestjs-code-change"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'nestjs-code-change');
 });
 
 test('Axum code change skill keeps route, extractor, Tower, Tokio, and SQLx risks explicit', () => {
@@ -648,5 +648,5 @@ test('Axum code change skill keeps route, extractor, Tower, Tokio, and SQLx risk
 	}
 	assert.match(manifest, /"\.mustflow\/skills\/axum-code-change\/SKILL\.md"/u);
 	assert.match(manifest, /"axum-code-change"/u);
-	assert.match(i18n, /\[documents\."skill\.axum-code-change"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'axum-code-change');
 });

@@ -50,7 +50,7 @@ test('SVG vector asset skill owns constrained generation, safety, and render val
 	assert.match(fixtures, /"id": "web-raster-image-optimization-only"/u);
 	assert.match(manifest, new RegExp(`"${skillPath}"`, 'u'));
 	assert.match(manifest, /product = \[[\s\S]*?"svg-vector-asset-production"[\s\S]*?^\]/mu);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 	assertSkillsIndexRevision(i18n);
 });
 

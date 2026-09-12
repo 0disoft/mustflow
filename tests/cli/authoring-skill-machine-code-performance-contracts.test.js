@@ -40,6 +40,6 @@ test('machine code performance skill joins compiler proof with measured native o
 	assert.match(fixtures, /"required_main": "machine-code-performance-review"/u);
 	assert.match(skill, /managed, interpreted, browser-rendered, database, network, or GPU bound/u);
 	assert.match(manifest, new RegExp(`"${skillPath}"`, 'u'));
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 	assertSkillsIndexRevision(i18n);
 });

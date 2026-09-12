@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -113,7 +114,7 @@ test('cache integrity review catches stale truth and source-protection risks', (
 	assert.match(manifest, /"\.mustflow\/skills\/cache-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'cache-integrity-review', 6);
+	assertI18nSkillDocument(i18n, 'cache-integrity-review');
 });
 
 test('ui dispatch lifecycle review rejects stale queued work on the right thread', () => {
@@ -145,7 +146,7 @@ test('ui dispatch lifecycle review rejects stale queued work on the right thread
 	assert.equal(localAffinityReference, templateAffinityReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /scheduling onto an affinity context/u);
 	assert.match(localSkill, /Distinguish process main thread from the toolkit's UI event thread/u);
 	assert.match(localSkill, /UI getters and bound models as affinity-sensitive/u);
@@ -193,10 +194,7 @@ test('ui dispatch lifecycle review rejects stale queued work on the right thread
 	);
 	assert.match(manifest, /"ui-dispatch-lifecycle-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.ui-dispatch-lifecycle-review"\][\s\S]*?revision = 2/u,
-	);
+	assertI18nSkillDocument(i18n, 'ui-dispatch-lifecycle-review');
 });
 
 
@@ -229,7 +227,7 @@ test('modal loop reentrancy review catches nested dispatch and stale continuatio
 	assert.equal(localLifetimeReference, templateLifetimeReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /synchronous call-stack reentrancy/u);
 	assert.match(localSkill, /Build a wait-for graph that includes delivery context/u);
 	assert.match(localSkill, /Deadlock has a closed wait cycle/u);
@@ -274,10 +272,7 @@ test('modal loop reentrancy review catches nested dispatch and stale continuatio
 	);
 	assert.match(manifest, /"modal-loop-reentrancy-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.modal-loop-reentrancy-review"\][\s\S]*?revision = 2/u,
-	);
+	assertI18nSkillDocument(i18n, 'modal-loop-reentrancy-review');
 });
 
 
@@ -351,7 +346,7 @@ test('quadratic scan review catches disguised pairwise scans and indexable joins
 	assert.match(manifest, /"\.mustflow\/skills\/quadratic-scan-review\/SKILL\.md"/u);
 	assert.match(manifest, /"quadratic-scan-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.quadratic-scan-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'quadratic-scan-review');
 });
 
 test('type state modeling review makes impossible states unrepresentable', () => {
@@ -408,7 +403,7 @@ test('type state modeling review makes impossible states unrepresentable', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/type-state-modeling-review\/SKILL\.md"/u);
 	assert.match(manifest, /"type-state-modeling-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.type-state-modeling-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'type-state-modeling-review');
 });
 
 test('race condition review traces stale shared-state interleavings', () => {
@@ -521,7 +516,7 @@ test('race condition review traces stale shared-state interleavings', () => {
 	);
 	assert.match(manifest, /"race-condition-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.race-condition-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'race-condition-review');
 });
 
 test('async timing boundary review replaces arbitrary waits with completion signals', () => {
@@ -607,7 +602,7 @@ test('async timing boundary review replaces arbitrary waits with completion sign
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"async-timing-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.async-timing-boundary-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'async-timing-boundary-review');
 });
 
 test('concurrency invariant review checks time-order ownership and primitive discipline', () => {
@@ -690,7 +685,7 @@ test('concurrency invariant review checks time-order ownership and primitive dis
 	assert.match(manifest, /"\.mustflow\/skills\/concurrency-invariant-review\/SKILL\.md"/u);
 	assert.match(manifest, /"concurrency-invariant-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.concurrency-invariant-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'concurrency-invariant-review');
 });
 
 test('input event synchronization review treats input as a lossy session protocol', () => {
@@ -722,7 +717,7 @@ test('input event synchronization review treats input as a lossy session protoco
 	assert.equal(localRemoteReference, templateRemoteReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 2$/mu);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /lossy, session-scoped state-reconstruction protocol/u);
 	assert.match(localSkill, /CancelAll\(reason, oldEpoch\)/u);
 	assert.match(localSkill, /per source and device/u);
@@ -770,8 +765,5 @@ test('input event synchronization review treats input as a lossy session protoco
 	);
 	assert.match(manifest, /"input-event-synchronization-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.input-event-synchronization-review"\][\s\S]*?revision = 2/u,
-	);
+	assertI18nSkillDocument(i18n, 'input-event-synchronization-review');
 });

@@ -59,5 +59,5 @@ test('actionable feedback keeps judgment, evidence, correction, and completion c
 	assert.ok(fixtureIds.has('actionable-feedback-code-discovery-only'));
 	assert.ok(fixtureIds.has('actionable-feedback-prose-cleanup-only'));
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });

@@ -64,7 +64,7 @@ test('product onboarding activation review keeps abandoners in the cohort and re
 		assert.doesNotMatch(readProfile(manifest, profile), /"product-onboarding-activation-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 3);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('subscription retention profit review rejects save-rate theater and protects cancellation', () => {
@@ -108,7 +108,7 @@ test('subscription retention profit review rejects save-rate theater and protect
 		assert.doesNotMatch(readProfile(manifest, profile), /"subscription-retention-profit-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('game economy monetization review protects failure, fairness, and content life', () => {
@@ -152,7 +152,7 @@ test('game economy monetization review protects failure, fairness, and content l
 		assert.doesNotMatch(readProfile(manifest, profile), /"game-economy-monetization-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('freemium ad monetization review preserves first value and natural transitions', () => {
@@ -197,7 +197,7 @@ test('freemium ad monetization review preserves first value and natural transiti
 		assert.doesNotMatch(readProfile(manifest, profile), /"freemium-ad-monetization-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('referral incentive integrity review separates direction, qualification, vesting, and tiers', () => {
@@ -242,7 +242,7 @@ test('referral incentive integrity review separates direction, qualification, ve
 		assert.doesNotMatch(readProfile(manifest, profile), /"referral-incentive-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('pricing model integrity review separates cash, rights, pricing, and retained contribution', () => {
@@ -297,7 +297,7 @@ test('pricing model integrity review separates cash, rights, pricing, and retain
 		assert.doesNotMatch(readProfile(manifest, profile), /"pricing-model-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('product engagement retention review separates value, streak, reward, and reminder causality', () => {
@@ -342,7 +342,7 @@ test('product engagement retention review separates value, streak, reward, and r
 		assert.doesNotMatch(readProfile(manifest, profile), /"product-engagement-retention-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('credit monetization integrity review protects economic equivalence and purchased rights', () => {
@@ -392,7 +392,7 @@ test('credit monetization integrity review protects economic equivalence and pur
 		assert.doesNotMatch(readProfile(manifest, profile), /"credit-monetization-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('LLM product monetization review separates value, queueing, recovery, transparency, and credentials', () => {
@@ -446,7 +446,7 @@ test('LLM product monetization review separates value, queueing, recovery, trans
 		assert.doesNotMatch(readProfile(manifest, profile), /"llm-product-monetization-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('game liveops commerce review prices content debt, fairness, and random-reward risk', () => {
@@ -492,7 +492,7 @@ test('game liveops commerce review prices content debt, fairness, and random-rew
 		assert.doesNotMatch(readProfile(manifest, profile), /"game-liveops-commerce-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('growth distribution integrity review protects artifacts, partner economics, and source products', () => {
@@ -538,7 +538,7 @@ test('growth distribution integrity review protects artifacts, partner economics
 		assert.doesNotMatch(readProfile(manifest, profile), /"growth-distribution-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('product portfolio integrity review separates convenience from rights and failure domains', () => {
@@ -581,7 +581,7 @@ test('product portfolio integrity review separates convenience from rights and f
 		assert.doesNotMatch(readProfile(manifest, profile), /"product-portfolio-integrity-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('localization market expansion review stages languages by support depth and contribution', () => {
@@ -625,7 +625,7 @@ test('localization market expansion review stages languages by support depth and
 		assert.doesNotMatch(readProfile(manifest, profile), /"localization-market-expansion-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('desktop commercial distribution review keeps one core across direct, store, and hybrid channels', () => {
@@ -668,7 +668,7 @@ test('desktop commercial distribution review keeps one core across direct, store
 		assert.doesNotMatch(readProfile(manifest, profile), /"desktop-commercial-distribution-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('client platform strategy review separates delivery surface from data authority', () => {
@@ -711,7 +711,7 @@ test('client platform strategy review separates delivery surface from data autho
 		assert.doesNotMatch(readProfile(manifest, profile), /"client-platform-strategy-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('service portfolio capital allocation review prices failure, closure, and founder time', () => {
@@ -755,5 +755,5 @@ test('service portfolio capital allocation review prices failure, closure, and f
 		assert.doesNotMatch(readProfile(manifest, profile), /"service-portfolio-capital-allocation-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });

@@ -94,7 +94,7 @@ test('mobile energy efficiency review catches phone wakeups and battery drains',
 	assert.match(manifest, /"\.mustflow\/skills\/mobile-energy-efficiency-review\/SKILL\.md"/u);
 	assert.match(manifest, /"mobile-energy-efficiency-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.mobile-energy-efficiency-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'mobile-energy-efficiency-review');
 });
 
 test('app startup performance review separates first frame from usable launch', () => {
@@ -193,7 +193,7 @@ test('app startup performance review separates first frame from usable launch', 
 	assert.match(manifest, /"\.mustflow\/skills\/app-startup-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"app-startup-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.app-startup-performance-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'app-startup-performance-review');
 });
 
 test('desktop background process stability review treats process death as normal', () => {
@@ -274,7 +274,7 @@ test('desktop background process stability review treats process death as normal
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-background-process-stability-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-background-process-stability-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.desktop-background-process-stability-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'desktop-background-process-stability-review');
 });
 
 test('desktop auto update safety review treats updater feeds as remote code execution', () => {
@@ -341,7 +341,7 @@ test('desktop auto update safety review treats updater feeds as remote code exec
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-auto-update-safety-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-auto-update-safety-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.desktop-auto-update-safety-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'desktop-auto-update-safety-review');
 });
 
 test('low-end device support review turns device constraints into budgets', () => {
@@ -437,5 +437,5 @@ test('low-end device support review turns device constraints into budgets', () =
 	assert.match(manifest, /"\.mustflow\/skills\/low-end-device-support-review\/SKILL\.md"/u);
 	assert.match(manifest, /"low-end-device-support-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.low-end-device-support-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'low-end-device-support-review');
 });

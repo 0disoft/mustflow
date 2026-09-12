@@ -50,7 +50,7 @@ test('feature surface completeness review keeps repository evidence and install 
 		assert.doesNotMatch(profileMatch[1], /"feature-surface-completeness-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('neighbor skills keep pattern, structure, and next-change ownership distinct', () => {
@@ -65,7 +65,7 @@ test('neighbor skills keep pattern, structure, and next-change ownership distinc
 	assert.match(structure, /feature-surface-completeness-review/u);
 	assert.match(blastRadius, /complete against mature siblings/u);
 	assert.match(blastRadius, /next-change and deletion-spread judgment/u);
-	assertI18nSkillDocument(i18n, 'pattern-scout', 4);
-	assertI18nSkillDocument(i18n, 'structure-first-engineering', 2);
-	assertI18nSkillDocument(i18n, 'change-blast-radius-review', 3);
+	assertI18nSkillDocument(i18n, 'pattern-scout');
+	assertI18nSkillDocument(i18n, 'structure-first-engineering');
+	assertI18nSkillDocument(i18n, 'change-blast-radius-review');
 });

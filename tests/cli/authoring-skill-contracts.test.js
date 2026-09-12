@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -109,7 +110,7 @@ test('state machine skill protects the initial state and first transition contra
 	assert.match(localSkill, /Model the first user or system action as a real transition/u);
 	assert.match(localSkill, /missing runtime prerequisites produce a visible failure or unavailable action instead of a silent no-op/u);
 	assert.match(localSkill, /Test the declared initial state and the first permitted transition/u);
-	assert.match(i18n, /\[documents\."skill\.state-machine-pattern"\][\s\S]*?revision = 6/u);
+	assertI18nSkillDocument(i18n, 'state-machine-pattern');
 });
 
 test('route metadata can declare checked skill dependencies', () => {
@@ -466,7 +467,7 @@ test('completion evidence gate stops without inventing follow-up work', () => {
 
 	assert.equal(localSkill, templateSkill);
 	assert.equal(workflow, templateWorkflow);
-	assert.match(localSkill, /revision: 11/u);
+	assertDocumentRevision(localSkill);
 	assert.match(workflow, /Before a final report after changed files, verification, paused implementation/u);
 	assert.match(workflow, /apply\s+`completion-evidence-gate` when available/u);
 	assert.match(workflow, /Do not invent follow-up work or force a\s+menu when the task is complete/u);
@@ -490,10 +491,7 @@ test('completion evidence gate stops without inventing follow-up work', () => {
 		i18n,
 		/\[documents\."docs\.agent-workflow"\][\s\S]*?revision = 33/u,
 	);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.completion-evidence-gate"\][\s\S]*?revision = 11/u,
-	);
+	assertI18nSkillDocument(i18n, 'completion-evidence-gate');
 	assert.doesNotMatch(i18n, /skill\.next-action-menu/u);
 	assert.doesNotMatch(routes, /next-action-menu/u);
 });
@@ -528,7 +526,7 @@ test('design implementation handoff separates public specs from private agent st
 	assert.match(manifest, /"\.mustflow\/skills\/design-implementation-handoff\/SKILL\.md"/u);
 	assert.match(manifest, /"design-implementation-handoff"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.design-implementation-handoff"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'design-implementation-handoff');
 });
 
 test('idea triage keeps brainstorming evidence-based and bounded', () => {
@@ -613,7 +611,7 @@ test('support surface advisor scopes product support contracts', () => {
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"support-surface-advisor"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.support-surface-advisor"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'support-surface-advisor');
 });
 
 test('pure core imperative shell keeps legacy effects visible and pure capabilities closed', () => {
@@ -651,7 +649,7 @@ test('pure core imperative shell keeps legacy effects visible and pure capabilit
 		/\[routes\."pure-core-imperative-shell"\.contexts\]\r?\npositive_terms = \["effect-plan", "effect-transcript", "imperative-shell", "pure-core", "purity-boundary", "shadow-plan"\]/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 8);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('CLI option contracts close parser config type and deployment surfaces', () => {
@@ -689,7 +687,7 @@ test('CLI option contracts close parser config type and deployment surfaces', ()
 	);
 	assert.match(routes, /suggests_adjuncts = \["contract-sync-check", "change-blast-radius-review"\]/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('type contract changes close inference runtime consumer and config surfaces', () => {
@@ -738,7 +736,7 @@ test('type contract changes close inference runtime consumer and config surfaces
 		assert.match(manifest, new RegExp(`${profileName} = \\[[\\s\\S]*?"type-contract-change"`, 'u'));
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('test design guard maps changed decisions to regression-sensitive evidence', () => {
@@ -779,7 +777,7 @@ test('test design guard maps changed decisions to regression-sensitive evidence'
 		/\[routes\."test-design-guard"\.contexts\]\r?\npositive_terms = \["boundary-test", "branch-to-test", "decision-ledger", "differential-test", "failure-injection", "forbidden-effect", "mcdc", "mutation-test", "regression-test", "test-design", "virtual-clock"\]/u,
 	);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 3);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('agent-facing interface review keeps CLI and API surfaces self-describing for agents', () => {
@@ -823,5 +821,5 @@ test('agent-facing interface review keeps CLI and API surfaces self-describing f
 	assert.match(manifest, /"\.mustflow\/skills\/agent-facing-interface-review\/SKILL\.md"/u);
 	assert.match(manifest, /"agent-facing-interface-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 2);
+	assertI18nSkillDocument(i18n, skillName);
 });

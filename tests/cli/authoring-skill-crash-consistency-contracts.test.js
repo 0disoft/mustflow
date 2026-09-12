@@ -54,7 +54,7 @@ test('crash consistency recovery keeps durable publication and restart evidence 
 		assert.doesNotMatch(profileMatch[1], /"crash-consistency-recovery-review"/u);
 	}
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('neighbor skills keep crash durability, workflow, security, and false-success ownership distinct', () => {
@@ -77,8 +77,8 @@ test('neighbor skills keep crash durability, workflow, security, and false-succe
 	assert.match(failure, /HTTP 200, exit code 0/u);
 	assert.match(failure, /forbids `SUCCEEDED`\s+without its required result or receipt/u);
 	assert.match(failure, /independently owned verifier or reconciliation/u);
-	assertI18nSkillDocument(i18n, 'cross-platform-filesystem-safety', 11);
-	assertI18nSkillDocument(i18n, 'file-upload-security-review', 5);
-	assertI18nSkillDocument(i18n, 'durable-workflow-orchestration', 3);
-	assertI18nSkillDocument(i18n, 'failure-integrity-review', 3);
+	assertI18nSkillDocument(i18n, 'cross-platform-filesystem-safety');
+	assertI18nSkillDocument(i18n, 'file-upload-security-review');
+	assertI18nSkillDocument(i18n, 'durable-workflow-orchestration');
+	assertI18nSkillDocument(i18n, 'failure-integrity-review');
 });

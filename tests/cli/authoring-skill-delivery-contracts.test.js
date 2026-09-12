@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -32,7 +33,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	assert.equal(localReference, templateReference);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 5$/mu);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /operation identity plus state-validity integrity/u);
 	assert.match(localSkill, /Operation identity ledger/u);
 	assert.match(localSkill, /Workflow identity ledger/u);
@@ -109,7 +110,7 @@ test('idempotency integrity review catches duplicate-intent side effects', () =>
 	);
 	assert.match(manifest, /"idempotency-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.idempotency-integrity-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'idempotency-integrity-review');
 });
 
 test('queue processing integrity review catches message settlement traps', () => {
@@ -188,7 +189,7 @@ test('queue processing integrity review catches message settlement traps', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/queue-processing-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"queue-processing-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.queue-processing-integrity-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'queue-processing-integrity-review');
 });
 
 test('retry policy integrity review catches amplification and unsafe replay', () => {
@@ -279,7 +280,7 @@ test('retry policy integrity review catches amplification and unsafe replay', ()
 	assert.match(manifest, /"\.mustflow\/skills\/retry-policy-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"retry-policy-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.retry-policy-integrity-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'retry-policy-integrity-review');
 });
 
 test('transaction boundary integrity review catches atomicity and side-effect traps', () => {
@@ -356,7 +357,7 @@ test('transaction boundary integrity review catches atomicity and side-effect tr
 	assert.match(manifest, /"\.mustflow\/skills\/transaction-boundary-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"transaction-boundary-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.transaction-boundary-integrity-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'transaction-boundary-integrity-review');
 });
 
 test('testability boundary review exposes hidden decisions and test friction', () => {
@@ -434,7 +435,7 @@ test('testability boundary review exposes hidden decisions and test friction', (
 	assert.match(manifest, /"\.mustflow\/skills\/testability-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"testability-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.testability-boundary-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'testability-boundary-review');
 });
 
 test('durable execution skills keep distinct ownership and synchronized install contracts', () => {
@@ -463,7 +464,6 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			category: 'general_code',
 			routeType: 'adjunct',
 			priority: 84,
-			revision: 2,
 			phrases: [
 				'old committed owner authoritative',
 				'atomic conditional commit',
@@ -500,7 +500,6 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			category: 'general_code',
 			routeType: 'adjunct',
 			priority: 86,
-			revision: 2,
 			phrases: [
 				'authority cutover with state and effect continuity',
 				'Pair every snapshot with a source revision',
@@ -541,7 +540,6 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		},
 		{
 			name: 'durable-workflow-orchestration',
-			revision: 3,
 			category: 'general_code',
 			routeType: 'primary',
 			priority: 85,
@@ -579,7 +577,6 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		},
 		{
 			name: 'policy-decision-integrity-review',
-			revision: 3,
 			category: 'security_privacy',
 			routeType: 'adjunct',
 			priority: 82,
@@ -606,7 +603,6 @@ test('durable execution skills keep distinct ownership and synchronized install 
 	assertSkillsIndexRevision(i18n);
 
 	for (const entry of cases) {
-		const revision = entry.revision ?? 1;
 		const localSkill = readText(entry.skillPath ?? `.mustflow/skills/${entry.name}/SKILL.md`);
 		const templateSkill = readText(
 			entry.skillPath
@@ -615,7 +611,7 @@ test('durable execution skills keep distinct ownership and synchronized install 
 		);
 
 		assert.equal(localSkill, templateSkill, `${entry.name} source and template must match`);
-		assert.match(localSkill, new RegExp(`^revision: ${revision}$`, 'mu'));
+		assertDocumentRevision(localSkill);
 		for (const phrase of entry.phrases) {
 			assert.ok(localSkill.includes(phrase), `${entry.name} should preserve ${phrase}`);
 		}
@@ -657,10 +653,7 @@ test('durable execution skills keep distinct ownership and synchronized install 
 			}
 			assert.ok(manifest.includes(`".mustflow/skills/${entry.name}/${entry.additionalReference}"`));
 		}
-		assert.match(
-			i18n,
-			new RegExp(`\\[documents\\."skill\\.${entry.name}"\\][\\s\\S]*?revision = ${revision}`, 'u'),
-		);
+		assertI18nSkillDocument(i18n, entry.name);
 	}
 });
 

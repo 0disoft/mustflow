@@ -111,7 +111,7 @@ test('small service platform architecture review keeps product factories registr
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"small-service-platform-architecture-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.small-service-platform-architecture-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'small-service-platform-architecture-review');
 });
 
 test('llm service UX review captures controllable AI interaction states', () => {
@@ -202,7 +202,7 @@ test('AI product readiness review gates AI features before specialist LLM skills
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"ai-product-readiness-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.ai-product-readiness-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'ai-product-readiness-review');
 });
 
 test('prompt contract quality review treats prompts as product contracts', () => {
@@ -254,7 +254,7 @@ test('prompt contract quality review treats prompts as product contracts', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/prompt-contract-quality-review\/SKILL\.md"/u);
 	assert.match(manifest, /"prompt-contract-quality-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.prompt-contract-quality-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'prompt-contract-quality-review');
 });
 
 test('LLM hallucination control review keeps factual answers evidence-gated', () => {
@@ -307,7 +307,7 @@ test('LLM hallucination control review keeps factual answers evidence-gated', ()
 	assert.match(manifest, /"\.mustflow\/skills\/llm-hallucination-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-hallucination-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-hallucination-control-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'llm-hallucination-control-review');
 });
 
 test('LLM token cost control review keeps model spend measurable and cache-aware', () => {
@@ -399,7 +399,7 @@ test('LLM token cost control review keeps model spend measurable and cache-aware
 	assert.match(manifest, /"\.mustflow\/skills\/llm-token-cost-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-token-cost-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-token-cost-control-review"\][\s\S]*?revision = 8/u);
+	assertI18nSkillDocument(i18n, 'llm-token-cost-control-review');
 });
 
 test('cache friendly context design review keeps repository docs and exploration cheap for agents', () => {
@@ -455,7 +455,7 @@ test('cache friendly context design review keeps repository docs and exploration
 	assert.match(manifest, /"\.mustflow\/skills\/cache-friendly-context-design-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cache-friendly-context-design-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, 'cache-friendly-context-design-review', 1);
+	assertI18nSkillDocument(i18n, 'cache-friendly-context-design-review');
 });
 
 test('LLM model routing review prices accepted outcomes and fails safe on unsupported cases', () => {
@@ -493,7 +493,7 @@ test('LLM model routing review prices accepted outcomes and fails safe on unsupp
 		assert.match(profileMatch[1], /"llm-model-routing-integrity-review"/u);
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"llm-model-routing-integrity-review"/u);
-	assert.match(i18n, /\[documents\."skill\.llm-model-routing-integrity-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'llm-model-routing-integrity-review');
 });
 
 test('LLM response latency review keeps first useful output measurable', () => {
@@ -551,5 +551,5 @@ test('LLM response latency review keeps first useful output measurable', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/llm-response-latency-review\/SKILL\.md"/u);
 	assert.match(manifest, /"llm-response-latency-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.llm-response-latency-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'llm-response-latency-review');
 });

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+	assertDocumentRevision,
 	assertI18nSkillDocument,
 	assertRouteReasonsText,
 	assertSkillsIndexRevision,
@@ -81,7 +82,7 @@ test('bug claim evidence gate keeps defect adjudication bounded and orthogonal',
 		assert.match(profileMatch[1], /"bug-claim-evidence-gate"/u);
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"bug-claim-evidence-gate"/u);
-	assertI18nSkillDocument(i18n, skill, 1);
+	assertI18nSkillDocument(i18n, skill);
 	assertSkillsIndexRevision(i18n);
 
 	for (const integratedSkill of [
@@ -209,7 +210,7 @@ test('AI-generated code hardening catches duplicate, coupling, error, and test d
 	assert.match(manifest, /"\.mustflow\/skills\/ai-generated-code-hardening\/SKILL\.md"/u);
 	assert.match(manifest, /"ai-generated-code-hardening"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.ai-generated-code-hardening"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'ai-generated-code-hardening');
 });
 
 test('quality gaming guard catches metric evasions and stays template-synced', () => {
@@ -244,7 +245,7 @@ test('quality gaming guard catches metric evasions and stays template-synced', (
 	assert.match(manifest, /"\.mustflow\/skills\/quality-gaming-guard\/SKILL\.md"/u);
 	assert.match(manifest, /"quality-gaming-guard"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.quality-gaming-guard"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'quality-gaming-guard');
 });
 
 test('module boundary review traces change spread, ownership, and leakage', () => {
@@ -320,7 +321,7 @@ test('module boundary review traces change spread, ownership, and leakage', () =
 	assert.match(manifest, /"\.mustflow\/skills\/module-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"module-boundary-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.module-boundary-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'module-boundary-review');
 });
 
 test('change blast radius review predicts maintainability spread and deletion cost', () => {
@@ -393,7 +394,7 @@ test('change blast radius review predicts maintainability spread and deletion co
 	assert.match(manifest, /"\.mustflow\/skills\/change-blast-radius-review\/SKILL\.md"/u);
 	assert.match(manifest, /"change-blast-radius-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.change-blast-radius-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'change-blast-radius-review');
 });
 
 test('business rule leakage review follows domain rules through every entrypoint', () => {
@@ -467,7 +468,7 @@ test('business rule leakage review follows domain rules through every entrypoint
 	assert.match(manifest, /"\.mustflow\/skills\/business-rule-leakage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"business-rule-leakage-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.business-rule-leakage-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'business-rule-leakage-review');
 });
 
 test('payment integrity review keeps money events idempotent and auditable', () => {
@@ -545,7 +546,7 @@ test('payment integrity review keeps money events idempotent and auditable', () 
 	assert.match(manifest, /"\.mustflow\/skills\/payment-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"payment-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.payment-integrity-review"\][\s\S]*?revision = 6/u);
+	assertI18nSkillDocument(i18n, 'payment-integrity-review');
 });
 
 test('notification delivery integrity review keeps message intent delivery and suppression explainable', () => {
@@ -619,7 +620,7 @@ test('notification delivery integrity review keeps message intent delivery and s
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"notification-delivery-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.notification-delivery-integrity-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'notification-delivery-integrity-review');
 });
 
 test('agent operational hygiene review keeps merge, shell, encoding, and residue guards template-synced', () => {
@@ -637,7 +638,7 @@ test('agent operational hygiene review keeps merge, shell, encoding, and residue
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /^revision: 3$/mu);
+	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /finalization boundary/u);
 	assert.match(localSkill, /Prove the staged set stays inside the task's intended write set/u);
 	assert.match(localSkill, /Keep commit-message transport at the boundary, not content/u);
@@ -676,5 +677,5 @@ test('agent operational hygiene review keeps merge, shell, encoding, and residue
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"agent-operational-hygiene-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.agent-operational-hygiene-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'agent-operational-hygiene-review');
 });

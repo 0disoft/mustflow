@@ -118,7 +118,7 @@ test('memory lifetime review traces retained owners, cleanup symmetry, and repea
 	);
 	assert.match(manifest, /"memory-lifetime-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.memory-lifetime-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'memory-lifetime-review');
 });
 
 test('desktop memory footprint review separates resident numbers from owned memory', () => {
@@ -200,7 +200,7 @@ test('desktop memory footprint review separates resident numbers from owned memo
 	assert.match(manifest, /"\.mustflow\/skills\/desktop-memory-footprint-review\/SKILL\.md"/u);
 	assert.match(manifest, /"desktop-memory-footprint-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.desktop-memory-footprint-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'desktop-memory-footprint-review');
 });
 
 test('hot path performance review counts repeated work, boundaries, and tail-risk smells', () => {
@@ -286,7 +286,7 @@ test('hot path performance review counts repeated work, boundaries, and tail-ris
 	assert.match(manifest, /"\.mustflow\/skills\/hot-path-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"hot-path-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.hot-path-performance-review"\][\s\S]*?revision = 6/u);
+	assertI18nSkillDocument(i18n, 'hot-path-performance-review');
 });
 
 test('api request performance review counts per-request fan-out and latency evidence', () => {
@@ -368,7 +368,7 @@ test('api request performance review counts per-request fan-out and latency evid
 	assert.match(manifest, /"\.mustflow\/skills\/api-request-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-request-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-request-performance-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'api-request-performance-review');
 });
 
 test('web render performance review protects first render and Core Web Vitals', () => {
@@ -442,7 +442,7 @@ test('web render performance review protects first render and Core Web Vitals', 
 	assert.match(manifest, /"\.mustflow\/skills\/web-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"web-render-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.web-render-performance-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'web-render-performance-review');
 });
 
 test('core web vitals field review treats CWV as real-user percentile operations', () => {
@@ -499,7 +499,7 @@ test('core web vitals field review treats CWV as real-user percentile operations
 	assert.match(manifest, /"\.mustflow\/skills\/core-web-vitals-field-review\/SKILL\.md"/u);
 	assert.match(manifest, /"core-web-vitals-field-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.core-web-vitals-field-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'core-web-vitals-field-review');
 });
 
 test('image delivery performance review catches discovery, candidate, cache, and safety risks', () => {
@@ -573,7 +573,7 @@ test('image delivery performance review catches discovery, candidate, cache, and
 	assert.match(manifest, /"\.mustflow\/skills\/image-delivery-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"image-delivery-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.image-delivery-performance-review"\][\s\S]*?revision = 1/u);
+	assertI18nSkillDocument(i18n, 'image-delivery-performance-review');
 });
 
 test('client bundle pruning review catches tree-shaking blockers and initial JS bloat', () => {
@@ -662,7 +662,7 @@ test('client bundle pruning review catches tree-shaking blockers and initial JS 
 	assert.match(manifest, /"\.mustflow\/skills\/client-bundle-pruning-review\/SKILL\.md"/u);
 	assert.match(manifest, /"client-bundle-pruning-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.client-bundle-pruning-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'client-bundle-pruning-review');
 });
 
 test('frame render performance review catches layout, paint, and INP frame risks', () => {
@@ -739,7 +739,7 @@ test('frame render performance review catches layout, paint, and INP frame risks
 	assert.match(manifest, /"\.mustflow\/skills\/frame-render-performance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"frame-render-performance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.frame-render-performance-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'frame-render-performance-review');
 });
 
 test('motion system contract review catches animation state and settlement risks', () => {
@@ -788,5 +788,5 @@ test('motion system contract review catches animation state and settlement risks
 	assert.match(manifest, /"\.mustflow\/skills\/motion-system-contract-review\/SKILL\.md"/u);
 	assert.match(manifest, /"motion-system-contract-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.motion-system-contract-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'motion-system-contract-review');
 });

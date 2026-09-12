@@ -41,9 +41,9 @@ test('dependency and security reviews deduplicate alerts and harden privileged w
 	assert.match(securitySkill, /Inspect what users actually receive/u);
 	assert.match(securitySkill, /two different decoy secret sets/u);
 	assert.match(securitySkill, /promote it without rebuilding/u);
-	assert.match(i18n, /\[documents\."skill\.dependency-upgrade-review"\][\s\S]*?revision = 8/u);
-	assert.match(i18n, /\[documents\."skill\.security-privacy-review"\][\s\S]*?revision = 30/u);
-	assert.match(i18n, /\[documents\."skill\.security-regression-tests"\][\s\S]*?revision = 13/u);
+	assertI18nSkillDocument(i18n, 'dependency-upgrade-review');
+	assertI18nSkillDocument(i18n, 'security-privacy-review');
+	assertI18nSkillDocument(i18n, 'security-regression-tests');
 });
 
 test('jurisdictional product compliance review binds behavior, policy, enforcement, and evidence', () => {
@@ -111,10 +111,7 @@ test('jurisdictional product compliance review binds behavior, policy, enforceme
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', new RegExp(`"${skillName}"`, 'u'));
 	assertSkillsIndexRevision(i18n);
-	assert.match(
-		i18n,
-		/\[documents\."skill\.jurisdictional-product-compliance-review"\][\s\S]*?revision = 2/u,
-	);
+	assertI18nSkillDocument(i18n, 'jurisdictional-product-compliance-review');
 });
 
 test('payment provider underwriting review binds truthful facts, approved scope, remediation, and runtime', () => {
@@ -182,7 +179,7 @@ test('payment provider underwriting review binds truthful facts, approved scope,
 	assert.match(manifest, new RegExp(`"\\.mustflow/skills/${skillName}/SKILL\\.md"`, 'u'));
 	assert.equal((manifest.match(new RegExp(`"${skillName}"`, 'gu')) ?? []).length, 5);
 	assertSkillsIndexRevision(i18n);
-	assertI18nSkillDocument(i18n, skillName, 1);
+	assertI18nSkillDocument(i18n, skillName);
 });
 
 test('admin control plane safety review treats backoffice tools as production control planes', () => {
@@ -249,7 +246,7 @@ test('admin control plane safety review treats backoffice tools as production co
 	}
 	assert.doesNotMatch(/^minimal = \[([\s\S]*?)^\]/mu.exec(manifest)?.[1] ?? '', /"admin-control-plane-safety-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.admin-control-plane-safety-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'admin-control-plane-safety-review');
 });
 
 test('credit ledger integrity review keeps balance changes atomic and reconcilable', () => {
@@ -335,7 +332,7 @@ test('credit ledger integrity review keeps balance changes atomic and reconcilab
 	assert.match(manifest, /"\.mustflow\/skills\/credit-ledger-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credit-ledger-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.credit-ledger-integrity-review"\][\s\S]*?revision = 4/u);
+	assertI18nSkillDocument(i18n, 'credit-ledger-integrity-review');
 });
 
 test('error message integrity review keeps failures actionable and safe', () => {
@@ -413,7 +410,7 @@ test('error message integrity review keeps failures actionable and safe', () => 
 	assert.match(manifest, /"\.mustflow\/skills\/error-message-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"error-message-integrity-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.error-message-integrity-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'error-message-integrity-review');
 });
 
 test('api misuse resistance review keeps caller contracts hard to misuse', () => {
@@ -495,7 +492,7 @@ test('api misuse resistance review keeps caller contracts hard to misuse', () =>
 	assert.match(manifest, /"\.mustflow\/skills\/api-misuse-resistance-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-misuse-resistance-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-misuse-resistance-review"\][\s\S]*?revision = 2/u);
+	assertI18nSkillDocument(i18n, 'api-misuse-resistance-review');
 });
 
 test('api access control review keeps API authorization object scoped', () => {
@@ -570,7 +567,7 @@ test('api access control review keeps API authorization object scoped', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/api-access-control-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-access-control-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.api-access-control-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'api-access-control-review');
 });
 
 test('multi-tenant isolation review binds tenant context from request to database, cache, queue, and storage', () => {
@@ -597,7 +594,7 @@ test('multi-tenant isolation review binds tenant context from request to databas
 	assert.match(routes, /\[routes\."multi-tenant-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/multi-tenant-isolation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"multi-tenant-isolation-review"/u);
-	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review', 3);
+	assertI18nSkillDocument(i18n, 'multi-tenant-isolation-review');
 });
 
 test('credential token lifecycle review covers issuance, storage, rotation, revocation, and binding', () => {
@@ -624,7 +621,7 @@ test('credential token lifecycle review covers issuance, storage, rotation, revo
 	assert.match(routes, /\[routes\."credential-token-lifecycle-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/credential-token-lifecycle-review\/SKILL\.md"/u);
 	assert.match(manifest, /"credential-token-lifecycle-review"/u);
-	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review', 4);
+	assertI18nSkillDocument(i18n, 'credential-token-lifecycle-review');
 });
 
 test('api version deprecation review treats versions as an attack-surface lifecycle', () => {
@@ -649,7 +646,7 @@ test('api version deprecation review treats versions as an attack-surface lifecy
 	assert.match(routes, /\[routes\."api-version-deprecation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/api-version-deprecation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"api-version-deprecation-review"/u);
-	assertI18nSkillDocument(i18n, 'api-version-deprecation-review', 1);
+	assertI18nSkillDocument(i18n, 'api-version-deprecation-review');
 });
 
 test('session management review covers multi-device sessions, logout operations, cookies, and CSRF', () => {
@@ -676,7 +673,7 @@ test('session management review covers multi-device sessions, logout operations,
 	assert.match(routes, /\[routes\."session-management-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/session-management-review\/SKILL\.md"/u);
 	assert.match(manifest, /"session-management-review"/u);
-	assertI18nSkillDocument(i18n, 'session-management-review', 6);
+	assertI18nSkillDocument(i18n, 'session-management-review');
 });
 
 test('auth state resilience review keeps security state durable across cache and database failure', () => {
@@ -703,7 +700,7 @@ test('auth state resilience review keeps security state durable across cache and
 	assert.match(routes, /\[routes\."auth-state-resilience-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/auth-state-resilience-review\/SKILL\.md"/u);
 	assert.match(manifest, /"auth-state-resilience-review"/u);
-	assertI18nSkillDocument(i18n, 'auth-state-resilience-review', 1);
+	assertI18nSkillDocument(i18n, 'auth-state-resilience-review');
 });
 
 test('authentication design review separates accounts, identifiers, authenticators, and recovery', () => {
@@ -730,7 +727,7 @@ test('authentication design review separates accounts, identifiers, authenticato
 	assert.match(routes, /\[routes\."authentication-design-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/authentication-design-review\/SKILL\.md"/u);
 	assert.match(manifest, /"authentication-design-review"/u);
-	assertI18nSkillDocument(i18n, 'authentication-design-review', 5);
+	assertI18nSkillDocument(i18n, 'authentication-design-review');
 });
 
 test('authorization model review grounds RBAC, ABAC, and ReBAC selection in the granting basis', () => {
@@ -756,7 +753,7 @@ test('authorization model review grounds RBAC, ABAC, and ReBAC selection in the 
 	assert.match(routes, /\[routes\."authorization-model-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/authorization-model-review\/SKILL\.md"/u);
 	assert.match(manifest, /"authorization-model-review"/u);
-	assertI18nSkillDocument(i18n, 'authorization-model-review', 1);
+	assertI18nSkillDocument(i18n, 'authorization-model-review');
 });
 
 test('trust boundary review cuts implicit trust at identity, permission, and key changes', () => {
@@ -783,7 +780,7 @@ test('trust boundary review cuts implicit trust at identity, permission, and key
 	assert.match(routes, /\[routes\."trust-boundary-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/trust-boundary-review\/SKILL\.md"/u);
 	assert.match(manifest, /"trust-boundary-review"/u);
-	assertI18nSkillDocument(i18n, 'trust-boundary-review', 2);
+	assertI18nSkillDocument(i18n, 'trust-boundary-review');
 });
 
 test('cryptographic storage review separates at-rest, transport, and field encryption', () => {
@@ -811,7 +808,7 @@ test('cryptographic storage review separates at-rest, transport, and field encry
 	assert.match(routes, /\[routes\."cryptographic-storage-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/cryptographic-storage-review\/SKILL\.md"/u);
 	assert.match(manifest, /"cryptographic-storage-review"/u);
-	assertI18nSkillDocument(i18n, 'cryptographic-storage-review', 2);
+	assertI18nSkillDocument(i18n, 'cryptographic-storage-review');
 });
 
 test('tenant key and secret isolation review separates keys, secrets, and credentials per tenant', () => {
@@ -838,7 +835,7 @@ test('tenant key and secret isolation review separates keys, secrets, and creden
 	assert.match(routes, /\[routes\."tenant-key-secret-isolation-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/tenant-key-secret-isolation-review\/SKILL\.md"/u);
 	assert.match(manifest, /"tenant-key-secret-isolation-review"/u);
-	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review', 2);
+	assertI18nSkillDocument(i18n, 'tenant-key-secret-isolation-review');
 });
 
 test('file encryption and integrity review separates hashing, signing, and authenticated encryption', () => {
@@ -866,7 +863,7 @@ test('file encryption and integrity review separates hashing, signing, and authe
 	assert.match(routes, /\[routes\."file-encryption-integrity-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/file-encryption-integrity-review\/SKILL\.md"/u);
 	assert.match(manifest, /"file-encryption-integrity-review"/u);
-	assertI18nSkillDocument(i18n, 'file-encryption-integrity-review', 1);
+	assertI18nSkillDocument(i18n, 'file-encryption-integrity-review');
 });
 
 test('media transform worker review isolates converters as potentially compromised executables', () => {
@@ -894,7 +891,7 @@ test('media transform worker review isolates converters as potentially compromis
 	assert.match(routes, /\[routes\."media-transform-worker-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/media-transform-worker-review\/SKILL\.md"/u);
 	assert.match(manifest, /"media-transform-worker-review"/u);
-	assertI18nSkillDocument(i18n, 'media-transform-worker-review', 1);
+	assertI18nSkillDocument(i18n, 'media-transform-worker-review');
 });
 
 test('infrastructure access review segments zones and replaces standing admin rights', () => {
@@ -921,7 +918,7 @@ test('infrastructure access review segments zones and replaces standing admin ri
 	assert.match(routes, /\[routes\."infrastructure-access-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/infrastructure-access-review\/SKILL\.md"/u);
 	assert.match(manifest, /"infrastructure-access-review"/u);
-	assertI18nSkillDocument(i18n, 'infrastructure-access-review', 1);
+	assertI18nSkillDocument(i18n, 'infrastructure-access-review');
 });
 
 test('container platform security review enforces admission and runtime isolation', () => {
@@ -949,7 +946,7 @@ test('container platform security review enforces admission and runtime isolatio
 	assert.match(routes, /\[routes\."container-platform-security-review"\]\r?\ncategory = "security_privacy"\r?\nroute_type = "adjunct"/u);
 	assert.match(manifest, /"\.mustflow\/skills\/container-platform-security-review\/SKILL\.md"/u);
 	assert.match(manifest, /"container-platform-security-review"/u);
-	assertI18nSkillDocument(i18n, 'container-platform-security-review', 1);
+	assertI18nSkillDocument(i18n, 'container-platform-security-review');
 });
 
 test('file upload security review follows uploaded files through storage and serving', () => {
@@ -1055,7 +1052,7 @@ test('file upload security review follows uploaded files through storage and ser
 	assert.match(manifest, /"\.mustflow\/skills\/file-upload-security-review\/references\/file-upload-parser-ssrf-resource-checklist\.md"/u);
 	assert.match(manifest, /"file-upload-security-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.file-upload-security-review"\][\s\S]*?revision = 5/u);
+	assertI18nSkillDocument(i18n, 'file-upload-security-review');
 });
 
 test('security flow review traces source-to-sink security boundaries', () => {
@@ -1124,5 +1121,5 @@ test('security flow review traces source-to-sink security boundaries', () => {
 	assert.match(manifest, /"\.mustflow\/skills\/security-flow-review\/SKILL\.md"/u);
 	assert.match(manifest, /"security-flow-review"/u);
 	assertSkillsIndexRevision(i18n);
-	assert.match(i18n, /\[documents\."skill\.security-flow-review"\][\s\S]*?revision = 3/u);
+	assertI18nSkillDocument(i18n, 'security-flow-review');
 });
