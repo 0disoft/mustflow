@@ -43,3 +43,49 @@ type = "path"
 required = true
 allowed_roots = [".mustflow/state/manifest-lock-plans"]
 allowed_extensions = [".json"]
+
+[intents.skill_author_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Build a reviewed multi-file skill authoring plan from typed local inputs without changing source files."
+argv = ["node", "scripts/skill-author-plan.mjs", "plan", "{request}", "{plan}"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/state/skill-authoring/**"]
+network = false
+destructive = false
+env_policy = "minimal"
+[intents.skill_author_plan.inputs.request]
+type = "path"
+required = true
+allowed_roots = [".mustflow/state/skill-authoring"]
+allowed_extensions = [".json"]
+[intents.skill_author_plan.inputs.plan]
+type = "path"
+required = true
+allowed_roots = [".mustflow/state/skill-authoring"]
+allowed_extensions = [".json"]
+
+[intents.skill_author_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply only regenerated, hash-matched skill surfaces in a reviewed authoring plan."
+argv = ["node", "scripts/skill-author-plan.mjs", "apply", "{plan}"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/skills/**", "templates/default/locales/en/.mustflow/skills/**", "templates/default/manifest.toml", "templates/default/i18n.toml"]
+effects = [{ type = "write", mode = "replace", paths = [".mustflow/skills/**", "templates/default/locales/en/.mustflow/skills/**", "templates/default/manifest.toml", "templates/default/i18n.toml"], lock = "skill_authoring", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+[intents.skill_author_apply.inputs.plan]
+type = "path"
+required = true
+allowed_roots = [".mustflow/state/skill-authoring"]
+allowed_extensions = [".json"]

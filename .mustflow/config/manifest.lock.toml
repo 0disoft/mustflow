@@ -434,4 +434,4 @@ content_hash = "sha256:256a5f4c21b03200cda8e0eadff3bbed7dff0ad14da1a986a07a0e5fa
 [files.".mustflow/config/commands.d/maintenance-plans.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:9dbacb0be4fd5e4086f821b8792641c4fe9bd3597cab7e82fcaafefc33478abd"
+content_hash = "sha256:d6af5df431e4a93259e6c9795a470aade9c3f39252ce959f78f58a19d5721d8b"
