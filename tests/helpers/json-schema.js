@@ -118,6 +118,10 @@ export function validateJsonSchema(rootSchema, value, schemaRoot = null) {
 			}
 		}
 
+		if (typeof candidate === 'number' && typeof schema.minimum === 'number' && candidate < schema.minimum) {
+			errors.push(`${pointer} must be at least ${schema.minimum}`);
+		}
+
 		if (Array.isArray(schema.required) && typeMatches('object', candidate)) {
 			for (const key of schema.required) {
 				if (!Object.hasOwn(candidate, key)) {

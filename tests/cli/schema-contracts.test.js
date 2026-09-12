@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'smol-toml';
 
-import { assertMatchesSchema } from '../helpers/json-schema.js';
+import { assertMatchesSchema, validateJsonSchema } from '../helpers/json-schema.js';
 import {
 	appendIntent,
 	commitGitBaseline,
@@ -26,6 +26,19 @@ import {
 	schemaBackcompatRoot,
 	schemaRoot,
 } from './helpers/schema-contracts.js';
+
+test('local index diagnostics preserve legacy output and constrain diagnostic values', () => {
+	const schema = readSchema('context-report.schema.json').$defs.promptCacheLocalIndex;
+	const legacy = { source: 'local_index', status: 'missing', database_path: '.mustflow/cache/mustflow.sqlite',
+		index_fresh: false, stale_paths: [], search_backend: null, search_fts5_available: null, refresh_hint: null };
+	assert.deepEqual(validateJsonSchema(schema, legacy), []);
+	for (const failure_stage of [null, 'runtime_load', 'database_read', 'database_open', 'freshness_check']) {
+		assert.deepEqual(validateJsonSchema(schema, { ...legacy, database_bytes: 0, failure_stage }), []);
+	}
+	assert.deepEqual(validateJsonSchema(schema, { ...legacy, database_bytes: null, failure_stage: null }), []);
+	assert.ok(validateJsonSchema(schema, { ...legacy, database_bytes: -1 }).length > 0);
+	assert.ok(validateJsonSchema(schema, { ...legacy, failure_stage: 'unknown' }).length > 0);
+});
 
 function appendRunPlanBlockedSchemaIntents(projectPath) {
 	appendIntent(
@@ -2237,4 +2250,3 @@ test('related-files json output matches the published schema', () => {
 		removeTempProject(projectPath);
 	}
 });
-

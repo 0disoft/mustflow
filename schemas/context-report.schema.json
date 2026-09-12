@@ -525,6 +525,14 @@
         "refresh_hint"
       ],
       "properties": {
+        "database_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Bytes loaded from the index database, not process or peak memory usage."
+        },
+        "failure_stage": {
+          "enum": ["runtime_load", "database_read", "database_open", "freshness_check", null]
+        },
         "source": { "const": "local_index" },
         "status": { "enum": ["fresh", "missing", "stale", "unreadable"] },
         "database_path": { "type": "string" },
