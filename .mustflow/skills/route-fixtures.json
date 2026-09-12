@@ -2,6 +2,546 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "procedure-coverage-module-boundary-review-en",
+      "mode": "exact",
+      "task": "Review module boundaries and cross-package deep imports for dependency direction.",
+      "paths": [
+        "src/domain/order.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "module-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-module-boundary-review-ko",
+      "mode": "exact",
+      "task": "모듈 경계와 패키지 간 깊은 import의 의존 방향을 검토해줘.",
+      "paths": [
+        "src/domain/order.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "module-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-module-boundary-review-en",
+      "mode": "exact",
+      "task": "module boundary review excluded: Review module boundaries and cross-package deep imports for dependency direction.",
+      "paths": [
+        "src/domain/order.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "module-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-module-boundary-review-ko",
+      "mode": "exact",
+      "task": "모듈 경계 검토 제외: 모듈 경계와 패키지 간 깊은 import의 의존 방향을 검토해줘.",
+      "paths": [
+        "src/domain/order.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "module-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-testability-boundary-review-en",
+      "mode": "exact",
+      "task": "Review hidden decision inputs and constructor side effects that make tests mock-heavy.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "testability-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-testability-boundary-review-ko",
+      "mode": "exact",
+      "task": "테스트를 어렵게 하는 숨은 결정 입력과 생성자 부작용을 검토해줘.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "testability-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-testability-boundary-review-en",
+      "mode": "exact",
+      "task": "testability review excluded: Review hidden decision inputs and constructor side effects that make tests mock-heavy.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "testability-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-testability-boundary-review-ko",
+      "mode": "exact",
+      "task": "테스트 용이성 검토 제외: 테스트를 어렵게 하는 숨은 결정 입력과 생성자 부작용을 검토해줘.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "testability-boundary-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-change-blast-radius-review-en",
+      "mode": "exact",
+      "task": "Assess next-change blast radius and historical co-change spread before removing this feature.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "change-blast-radius-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-change-blast-radius-review-ko",
+      "mode": "exact",
+      "task": "기능 삭제 전에 다음 변경의 영향 범위와 함께 바뀌는 파일들을 검토해줘.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "change-blast-radius-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-change-blast-radius-review-en",
+      "mode": "exact",
+      "task": "blast radius review excluded: Assess next-change blast radius and historical co-change spread before removing this feature.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "change-blast-radius-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-change-blast-radius-review-ko",
+      "mode": "exact",
+      "task": "변경 영향 범위 검토 제외: 기능 삭제 전에 다음 변경의 영향 범위와 함께 바뀌는 파일들을 검토해줘.",
+      "paths": [
+        "src/order/service.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "change-blast-radius-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-performance-budget-check-en",
+      "mode": "exact",
+      "task": "Set a latency budget using p95 measurements and a comparable before-after baseline.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "performance-budget-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-performance-budget-check-ko",
+      "mode": "exact",
+      "task": "p95 측정값과 동일 조건의 전후 기준으로 지연 시간 예산을 정해줘.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "performance-budget-check"
+      ]
+    },
+    {
+      "id": "procedure-excluded-performance-budget-check-en",
+      "mode": "exact",
+      "task": "performance budget review excluded: Set a latency budget using p95 measurements and a comparable before-after baseline.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "performance-budget-check"
+      ]
+    },
+    {
+      "id": "procedure-excluded-performance-budget-check-ko",
+      "mode": "exact",
+      "task": "성능 예산 검토 제외: p95 측정값과 동일 조건의 전후 기준으로 지연 시간 예산을 정해줘.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "performance-budget-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-hot-path-performance-review-en",
+      "mode": "exact",
+      "task": "Count repeated I/O and per-item parsing in this frequently called loop.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "hot-path-performance-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-hot-path-performance-review-ko",
+      "mode": "exact",
+      "task": "자주 실행되는 루프의 반복 입출력과 항목별 파싱 횟수를 세어줘.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "hot-path-performance-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-hot-path-performance-review-en",
+      "mode": "exact",
+      "task": "hot path review excluded: Count repeated I/O and per-item parsing in this frequently called loop.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "hot-path-performance-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-hot-path-performance-review-ko",
+      "mode": "exact",
+      "task": "반복 실행 경로 검토 제외: 자주 실행되는 루프의 반복 입출력과 항목별 파싱 횟수를 세어줘.",
+      "paths": [
+        "src/search.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "hot-path-performance-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-observability-debuggability-review-en",
+      "mode": "exact",
+      "task": "Review lost trace context and high-cardinality metrics so operators can narrow incidents.",
+      "paths": [
+        "src/telemetry.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "observability-debuggability-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-observability-debuggability-review-ko",
+      "mode": "exact",
+      "task": "운영자가 장애 원인을 좁히도록 유실된 추적 컨텍스트와 메트릭 카디널리티를 검토해줘.",
+      "paths": [
+        "src/telemetry.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "observability-debuggability-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-observability-debuggability-review-en",
+      "mode": "exact",
+      "task": "observability review excluded: Review lost trace context and high-cardinality metrics so operators can narrow incidents.",
+      "paths": [
+        "src/telemetry.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "observability-debuggability-review"
+      ]
+    },
+    {
+      "id": "procedure-excluded-observability-debuggability-review-ko",
+      "mode": "exact",
+      "task": "관측성 검토 제외: 운영자가 장애 원인을 좁히도록 유실된 추적 컨텍스트와 메트릭 카디널리티를 검토해줘.",
+      "paths": [
+        "src/telemetry.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "forbidden_candidates": [
+        "observability-debuggability-review"
+      ]
+    },
+    {
+      "id": "procedure-coverage-public-json-contract-change-en",
+      "mode": "exact",
+      "task": "Review automation-facing JSON contracts for schema compatibility and exit-code semantics.",
+      "paths": [
+        "src/cli/report.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "public-json-contract-change"
+      ]
+    },
+    {
+      "id": "procedure-coverage-public-json-contract-change-ko",
+      "mode": "exact",
+      "task": "자동화용 JSON 계약의 스키마 호환성과 종료 코드 의미를 검토해줘.",
+      "paths": [
+        "src/cli/report.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "public-json-contract-change"
+      ]
+    },
+    {
+      "id": "procedure-coverage-structured-config-change-en",
+      "mode": "exact",
+      "task": "Validate TOML dotted keys and duplicate keys without changing command authority.",
+      "paths": [
+        "config/service.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "structured-config-change"
+      ]
+    },
+    {
+      "id": "procedure-coverage-structured-config-change-ko",
+      "mode": "exact",
+      "task": "명령 권한을 바꾸지 않고 TOML 점 표기 키와 중복 키를 검증해줘.",
+      "paths": [
+        "config/service.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "structured-config-change"
+      ]
+    },
+    {
+      "id": "procedure-coverage-command-contract-authoring-en",
+      "mode": "exact",
+      "task": "Define command intents with explicit writes, effects, timeouts and closed stdin.",
+      "paths": [
+        ".mustflow/config/commands.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "command-contract-authoring"
+      ]
+    },
+    {
+      "id": "procedure-coverage-command-contract-authoring-ko",
+      "mode": "exact",
+      "task": "명시적 쓰기 범위와 타임아웃 및 닫힌 stdin을 갖는 명령 인텐트를 정의해줘.",
+      "paths": [
+        ".mustflow/config/commands.toml"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "command-contract-authoring"
+      ]
+    },
+    {
+      "id": "procedure-coverage-dependency-reality-check-en",
+      "mode": "exact",
+      "task": "Check peer dependency contracts and whether an imported package actually exists.",
+      "paths": [
+        "package.json"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "dependency-reality-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-dependency-reality-check-ko",
+      "mode": "exact",
+      "task": "peer dependency 계약과 import한 패키지의 실재 여부를 확인해줘.",
+      "paths": [
+        "package.json"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "dependency-reality-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-source-freshness-check-en",
+      "mode": "exact",
+      "task": "Verify stale-sensitive sources before relying on old vendor documentation.",
+      "paths": [
+        "docs/vendor.md"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "source-freshness-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-source-freshness-check-ko",
+      "mode": "exact",
+      "task": "오래된 벤더 문서에 의존하기 전에 출처의 최신성을 확인해줘.",
+      "paths": [
+        "docs/vendor.md"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "source-freshness-check"
+      ]
+    },
+    {
+      "id": "procedure-coverage-line-ending-hygiene-en",
+      "mode": "exact",
+      "task": "Review repository line-ending policy after a CRLF interpreter error.",
+      "paths": [
+        "scripts/start.sh"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "line-ending-hygiene"
+      ]
+    },
+    {
+      "id": "procedure-coverage-line-ending-hygiene-ko",
+      "mode": "exact",
+      "task": "CRLF 인터프리터 오류가 나므로 저장소 줄바꿈 정책을 검토해줘.",
+      "paths": [
+        "scripts/start.sh"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "line-ending-hygiene"
+      ]
+    },
+    {
       "id": "framework-coverage-bun-en",
       "mode": "exact",
       "task": "Use Bun to run the build script with Bun.file and Bun.write.",

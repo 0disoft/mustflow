@@ -3164,3 +3164,58 @@ concept_aliases = ["재현 조건","간헐적 버그"]
 [routes."completion-evidence-gate".contexts]
 exclusion_terms = ["completion report excluded","완료 보고 제외"]
 concept_aliases = ["완료 보고","실제 저장소 근거"]
+
+
+[routes."module-boundary-review".contexts]
+positive_terms = ["module boundaries"]
+concept_aliases = ["모듈 경계"]
+exclusion_terms = ["module boundary review excluded","모듈 경계 검토 제외"]
+
+[routes."testability-boundary-review".contexts]
+positive_terms = ["hidden decision inputs"]
+concept_aliases = ["숨은 결정 입력"]
+exclusion_terms = ["testability review excluded","테스트 용이성 검토 제외"]
+
+[routes."change-blast-radius-review".contexts]
+positive_terms = ["next change blast radius"]
+concept_aliases = ["다음 변경의 영향 범위"]
+exclusion_terms = ["blast radius review excluded","변경 영향 범위 검토 제외"]
+
+[routes."performance-budget-check".contexts]
+positive_terms = ["latency budget"]
+concept_aliases = ["지연 시간 예산"]
+exclusion_terms = ["performance budget review excluded","성능 예산 검토 제외"]
+
+[routes."hot-path-performance-review".contexts]
+positive_terms = ["repeated i o"]
+concept_aliases = ["반복 입출력"]
+exclusion_terms = ["hot path review excluded","반복 실행 경로 검토 제외"]
+
+[routes."observability-debuggability-review".contexts]
+positive_terms = ["lost trace context"]
+concept_aliases = ["유실된 추적 컨텍스트"]
+exclusion_terms = ["observability review excluded","관측성 검토 제외"]
+
+[routes."public-json-contract-change".contexts]
+positive_terms = ["automation facing json contracts"]
+concept_aliases = ["자동화용 json 계약"]
+
+[routes."structured-config-change".contexts]
+positive_terms = ["toml dotted keys"]
+concept_aliases = ["toml 점 표기 키"]
+
+[routes."command-contract-authoring".contexts]
+positive_terms = ["define command intents"]
+concept_aliases = ["명령 인텐트를 정의"]
+
+[routes."dependency-reality-check".contexts]
+positive_terms = ["peer dependency contracts"]
+concept_aliases = ["패키지의 실재 여부"]
+
+[routes."source-freshness-check".contexts]
+positive_terms = ["stale sensitive sources"]
+concept_aliases = ["출처의 최신성"]
+
+[routes."line-ending-hygiene".contexts]
+positive_terms = ["crlf interpreter error"]
+concept_aliases = ["저장소 줄바꿈 정책"]

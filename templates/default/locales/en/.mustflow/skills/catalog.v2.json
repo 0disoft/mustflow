@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:57edf0b228725068d6b38ce9bb8afaf79b9b05fb7972d11079ec13dc1004308c",
+  "source_fingerprint": "sha256:2b39744a85c21e82372c235978eb7ff8d238d9bb2e7116b62ac72fd0cf1c4455",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2452,8 +2452,15 @@
         "package_metadata_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "next change blast radius",
+        "다음 변경의 영향 범위"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "blast radius review excluded",
+        "변경 영향 범위 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -2944,7 +2951,10 @@
         "mustflow_docs_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "define command intents",
+        "명령 인텐트를 정의"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -4596,7 +4606,10 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "peer dependency contracts",
+        "패키지의 실재 여부"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -6865,8 +6878,15 @@
         "data_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "repeated i o",
+        "반복 입출력"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "hot path review excluded",
+        "반복 실행 경로 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -8060,7 +8080,10 @@
         "formatting_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "crlf interpreter error",
+        "저장소 줄바꿈 정책"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -8896,8 +8919,15 @@
         "package_metadata_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "module boundaries",
+        "모듈 경계"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "module boundary review excluded",
+        "모듈 경계 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -9442,8 +9472,15 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "lost trace context",
+        "유실된 추적 컨텍스트"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "observability review excluded",
+        "관측성 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -9736,8 +9773,15 @@
         "behavior_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "latency budget",
+        "지연 시간 예산"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "performance budget review excluded",
+        "성능 예산 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -10378,7 +10422,10 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "automation facing json contracts",
+        "자동화용 json 계약"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -12122,7 +12169,10 @@
         "docs_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "stale sensitive sources",
+        "출처의 최신성"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -12480,7 +12530,10 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "toml dotted keys",
+        "toml 점 표기 키"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -13758,8 +13811,15 @@
         "data_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "hidden decision inputs",
+        "숨은 결정 입력"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "testability review excluded",
+        "테스트 용이성 검토 제외"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
