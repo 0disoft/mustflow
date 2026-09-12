@@ -29,6 +29,7 @@ export const enMessages = {
   "command.adapters.summary": "Inspect host adapter compatibility without generating adapter files",
   "command.init.summary": "Copy the default mustflow agent workflow",
   "command.check.summary": "Validate mustflow files",
+  "command.baseline.summary": "Plan or apply exact manifest baselines without executing repository commands",
   "command.classify.summary": "Classify changed files and public surfaces",
   "command.contractLint.summary": "Lint the command contract",
   "command.onboard.summary": "Suggest review-only command onboarding snippets",

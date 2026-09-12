@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import { once } from 'node:events';
 import { pathToFileURL } from 'node:url';
 
-import { projectRoot } from './helpers/cli-harness.js';
+import { projectRoot, runCli } from './helpers/cli-harness.js';
 
 async function loadManifestLockModule() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock.js')).href);
@@ -76,6 +76,51 @@ function createFixture() {
 	);
 	return root;
 }
+
+test('baseline CLI recovers exact entries on a drifted root and preserves the reviewed plan', () => {
+	const root = createFixture();
+	try {
+		writeFileSync(path.join(root, '.mustflow/config/commands.toml'), 'schema_version = "1"\n');
+		const planPath = '.mustflow/state/manifest-lock-plans/review.json';
+		const planned = runCli(root, ['baseline', 'plan', planPath, 'AGENTS.md']);
+		assert.equal(planned.status, 0, planned.stderr);
+		const savedPlan = readFileSync(path.join(root, planPath), 'utf8');
+		assert.equal(runCli(root, ['baseline', 'plan', planPath, 'AGENTS.md']).status, 1);
+		assert.equal(readFileSync(path.join(root, planPath), 'utf8'), savedPlan);
+		const applied = runCli(root, ['baseline', 'apply', planPath]);
+		assert.equal(applied.status, 0, applied.stderr);
+		assert.equal(applied.stdout.trim(), 'AGENTS.md');
+		assert.equal(readFileSync(path.join(root, planPath), 'utf8'), savedPlan);
+		const lock = readFileSync(path.join(root, '.mustflow/config/manifest.lock.toml'), 'utf8');
+		assert.ok(lock.includes('sha256:' + '1'.repeat(64)), 'unrelated README baseline must remain unchanged');
+		assert.equal(runCli(root, ['baseline', 'apply', planPath]).status, 1);
+		assert.equal(runCli(root, ['baseline', 'plan', '.mustflow/state/manifest-lock-plans/../escape.json', 'AGENTS.md']).status, 1);
+		assert.equal(runCli(root, ['baseline', 'plan', '.mustflow/state/manifest-lock-plans/unsupported.json', 'README.md']).status, 1);
+		assert.equal(runCli(root, ['baseline', 'apply', planPath, 'README.md']).status, 1);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test('baseline CLI refuses target drift and a tampered plan with an unsupported path', async () => {
+	const root = createFixture();
+	try {
+		writeFileSync(path.join(root, '.mustflow/config/commands.toml'), 'schema_version = "1"\n');
+		const planPath = '.mustflow/state/manifest-lock-plans/review.json';
+		assert.equal(runCli(root, ['baseline', 'plan', planPath, 'AGENTS.md']).status, 0);
+		const before = readFileSync(path.join(root, '.mustflow/config/manifest.lock.toml'), 'utf8');
+		writeFileSync(path.join(root, 'AGENTS.md'), 'changed after review');
+		assert.equal(runCli(root, ['baseline', 'apply', planPath]).status, 1);
+		const module = await loadManifestLockModule();
+		writeFileSync(path.join(root, planPath), JSON.stringify(module.createManifestLockCustomizationPlan(root, ['README.md'])));
+		const rejected = runCli(root, ['baseline', 'apply', planPath]);
+		assert.equal(rejected.status, 1);
+		assert.match(rejected.stderr, /Unsupported manifest customization path/u);
+		assert.equal(readFileSync(path.join(root, '.mustflow/config/manifest.lock.toml'), 'utf8'), before);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
 
 test('manifest lock customization plan applies only to its reviewed snapshots', async () => {
 	const root = createFixture();

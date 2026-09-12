@@ -31,6 +31,7 @@ export const esMessages = {
   "command.adapters.summary": "Inspecciona compatibilidad de adaptadores sin generar archivos",
   "command.init.summary": "Copia el flujo de trabajo de agente mustflow predeterminado",
   "command.check.summary": "Valida los archivos mustflow",
+  "command.baseline.summary": "Planifica o aplica bases exactas del manifiesto sin ejecutar comandos del repositorio",
   "command.classify.summary": "Clasifica cambios y superficies publicas",
   "command.contractLint.summary": "Revisa el contrato de comandos",
   "command.onboard.summary": "Sugiere fragmentos de onboarding de comandos solo para revisión",

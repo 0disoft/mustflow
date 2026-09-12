@@ -31,6 +31,7 @@ export const hiMessages = {
   "command.adapters.summary": "एडाप्टर फ़ाइलें बनाए बिना होस्ट संगतता जाँचें",
   "command.init.summary": "डिफ़ॉल्ट mustflow एजेंट वर्कफ़्लो कॉपी करें",
   "command.check.summary": "mustflow फ़ाइलों की जाँच करें",
+  "command.baseline.summary": "रिपॉज़िटरी कमांड चलाए बिना सटीक मैनिफेस्ट आधार की योजना बनाएं या लागू करें",
   "command.classify.summary": "बदली फ़ाइलों और सार्वजनिक सतहों को वर्गीकृत करें",
   "command.contractLint.summary": "कमांड अनुबंध की जाँच करें",
   "command.onboard.summary": "review-only command onboarding snippets सुझाएँ",

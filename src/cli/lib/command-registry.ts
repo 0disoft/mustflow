@@ -44,6 +44,13 @@ function commandContract(
 
 export const COMMAND_DEFINITIONS: readonly CommandDefinition[] = [
 	{
+		id: 'baseline',
+		usage: 'mf baseline <plan|apply>',
+		summaryKey: 'command.baseline.summary',
+		contract: commandContract(['text', 'file']),
+		loadRunner: async () => (await import('../commands/baseline.js')).runBaseline,
+	},
+	{
 		id: 'api',
 		usage: 'mf api',
 		summaryKey: 'command.api.summary',

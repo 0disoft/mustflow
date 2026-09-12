@@ -48,6 +48,22 @@ manual or older root without spawning a process. To execute from that root anywa
 `--allow-untrusted-root` after reviewing `AGENTS.md` and `.mustflow/config/commands.toml`; this
 does not relax the command-intent requirements above.
 
+For reviewed workflow edits in an installed root, prefer the built-in recovery primitive:
+
+```sh
+mf baseline plan .mustflow/state/manifest-lock-plans/review.json AGENTS.md .mustflow/config/commands.toml
+# Review the saved JSON: exact paths, content hashes, and previous lock-entry hashes.
+mf baseline apply .mustflow/state/manifest-lock-plans/review.json
+```
+
+`baseline` executes no repository command. It accepts only workflow files, installed skill
+documents, and command fragments currently declared by `[include].files`. Applying a plan
+rechecks this scope and uses compare-and-swap: changed target contents or lock entries fail,
+while independent entries remain untouched. Plans stay available for review; existing plan
+files, symlink paths, and paths outside `.mustflow/state/manifest-lock-plans/` are refused.
+This records a reviewed customization; it does not assess whether its instructions are safe.
+Missing or invalid installations still need `mf init` or the appropriate repair workflow.
+
 For blocked or unknown intents, `mf run` prints a copyable `manual_only` intent snippet. The snippet is a proposal for `.mustflow/config/commands.toml`; it does not grant command authority until a person reviews and enables it. Dry-run and plan-only JSON include the same proposal in `suggested_intent_snippet`. If an unknown root intent exists in one or more delegated fragments, Mustflow instead lists the exact `mf run <intent> --repo <repository>` routes; use that route rather than copying the intent into the root contract.
 
 ## Excluded Lifecycles

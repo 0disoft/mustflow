@@ -32,6 +32,7 @@ export const koMessages = {
   "command.adapters.summary": "어댑터 파일을 만들지 않고 호스트 호환성을 확인합니다",
   "command.init.summary": "기본 mustflow 에이전트 워크플로우를 복사합니다",
   "command.check.summary": "mustflow 파일을 검사합니다",
+  "command.baseline.summary": "저장소 명령 실행 없이 지정한 manifest 기준 해시를 계획하거나 적용합니다",
   "command.classify.summary": "변경 파일과 공개 표면을 분류합니다",
   "command.contractLint.summary": "명령 계약을 점검합니다",
   "command.onboard.summary": "검토 전용 명령 온보딩 조각을 제안합니다",

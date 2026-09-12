@@ -31,6 +31,7 @@ export const frMessages = {
   "command.adapters.summary": "Inspecte la compatibilité des adaptateurs sans générer de fichiers",
   "command.init.summary": "Copie le flux de travail d'agent mustflow par défaut",
   "command.check.summary": "Valide les fichiers mustflow",
+  "command.baseline.summary": "Planifie ou applique les références exactes du manifeste sans exécuter de commandes du dépôt",
   "command.classify.summary": "Classe les changements et surfaces publiques",
   "command.contractLint.summary": "Vérifie le contrat de commandes",
   "command.onboard.summary": "Suggère des fragments d'onboarding de commandes en lecture seule",

@@ -31,6 +31,7 @@ export const zhMessages = {
   "command.adapters.summary": "不生成适配器文件，检查宿主兼容性",
   "command.init.summary": "复制默认的 mustflow 代理工作流",
   "command.check.summary": "验证 mustflow 文件",
+  "command.baseline.summary": "规划或应用精确的清单基准，不执行仓库命令",
   "command.classify.summary": "分类变更文件和公开表面",
   "command.contractLint.summary": "检查命令契约",
   "command.onboard.summary": "建议仅供审阅的命令 onboarding 片段",
