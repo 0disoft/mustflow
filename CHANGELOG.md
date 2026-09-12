@@ -6,7 +6,9 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
-## 2.138.0 - 2026-09-12
+## 2.138.1 - 2026-09-12
+
+- Validate CLI route signal values independently of TOML field order; supersedes the unpublished 2.138.0 attempt.
 
 - Expand built-in interface design, Sui SDK and Sui Move procedures.
 - Strengthen bilingual routing and explicit exclusions; cover 190 skills with 341 routing cases.

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { parseTomlText } from '../../dist/core/toml.js';
 
 import {
 	assertDocumentRevision,
@@ -681,10 +682,8 @@ test('CLI option contracts close parser config type and deployment surfaces', ()
 	assert.match(localSkill, /impact manifest or equivalent deterministic evidence bundle/u);
 	assert.match(localSkill, /Shadow only pure parsing or resolution/u);
 	assert.match(index, /ghost option, hidden execution setting, falsy-state collapse/u);
-	assert.match(
-		routes,
-		/\[routes\."cli-option-contract-review"\.contexts\]\r?\npositive_terms = \["config-precedence", "environment-matrix", "option-registry", "option-rename", "parser-contract", "raw-options", "resolved-config", "type-impact"\]/u,
-	);
+	assert.deepEqual(parseTomlText(routes).routes['cli-option-contract-review'].contexts.positive_terms,
+		['config-precedence', 'environment-matrix', 'option-registry', 'option-rename', 'parser-contract', 'raw-options', 'resolved-config', 'type-impact']);
 	assert.match(routes, /suggests_adjuncts = \["contract-sync-check", "change-blast-radius-review"\]/u);
 	assertSkillsIndexRevision(i18n);
 	assertI18nSkillDocument(i18n, skillName);
