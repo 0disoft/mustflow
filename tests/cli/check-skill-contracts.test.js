@@ -250,7 +250,7 @@ test('strict check fails skill route metadata drift', async () => {
 		const routesPath = path.join(projectPath, '.mustflow', 'skills', 'routes.toml');
 		const routes = readText(routesPath)
 			.replace(
-				/\n\[routes\."code-review"\][\s\S]*?(?=\n\[routes\."[^"]+"\]\n)/u,
+				/\n\[routes\."code-review"(?:\.[^\]]+)?\][\s\S]*?(?=\n\[|$)/gu,
 				'\n',
 			)
 			.concat(
@@ -311,7 +311,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 		const acceptedRoutesPath = path.join(acceptedProject, '.mustflow', 'skills', 'routes.toml');
 		writeFileSync(
 			acceptedRoutesPath,
-			readText(acceptedRoutesPath).replace(
+			readText(acceptedRoutesPath).replace(/\n\[routes\."code-review"\.contexts\][\s\S]*?(?=\n\[|$)/gu, '\n').replace(
 				'[routes."code-review".dependencies]',
 				'[routes."code-review".path_hints]\nextensions = ["review"]\nbasenames = ["review.toml"]\n\n[routes."code-review".contexts]\npositive_terms = ["코드-검토", "font fallback", "텍스트 줄바꿈"]\nnegative_terms = ["문서_전용", "wording only"]\nexclusion_terms = ["static layout only", "모션 변경 없이"]\n\n[routes."code-review".dependencies]',
 			),
@@ -328,7 +328,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 		const rejectedRoutesPath = path.join(rejectedProject, '.mustflow', 'skills', 'routes.toml');
 		writeFileSync(
 			rejectedRoutesPath,
-			readText(rejectedRoutesPath).replace(
+			readText(rejectedRoutesPath).replace(/\n\[routes\."code-review"\.contexts\][\s\S]*?(?=\n\[|$)/gu, '\n').replace(
 				'[routes."code-review".dependencies]',
 				'[routes."code-review".path_hints]\nextensions = [".ts"]\n\n[routes."code-review".contexts]\npositive_terms = ["Code-Review"]\nexclusion_terms = ["Static Only"]\n\n[routes."code-review".dependencies]',
 			),
