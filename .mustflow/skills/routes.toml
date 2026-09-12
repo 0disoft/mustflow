@@ -203,6 +203,7 @@ unlocks_on = [
 ]
 
 [routes."cli-option-contract-review".contexts]
+exclusion_terms = ["output formatting only","출력 형식만"]
 positive_terms = ["config-precedence", "environment-matrix", "option-registry", "option-rename", "parser-contract", "raw-options", "resolved-config", "type-impact"]
 negative_terms = ["help-copy-only", "json-output-only", "runtime-config-only"]
 
@@ -901,6 +902,9 @@ route_type = "adjunct"
 priority = 73
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change"]
+
+[routes."api-request-performance-review".contexts]
+exclusion_terms = ["benchmark methodology only","벤치마크 측정 방식만"]
 
 [routes."api-failure-triage"]
 category = "bug_failure"
@@ -1912,6 +1916,9 @@ priority = 74
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."search-index-integrity-review".contexts]
+exclusion_terms = ["vector retrieval only","벡터 검색만"]
+
 [routes."vector-search-integrity-review"]
 category = "data_external"
 route_type = "primary"
@@ -2042,6 +2049,10 @@ route_type = "adjunct"
 priority = 79
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "performance_change", "security_change", "privacy_change", "data_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."performance-measurement-integrity-review".contexts]
+positive_terms = ["benchmark methodology"]
+concept_aliases = ["벤치마크 측정 방식"]
 
 [routes."machine-code-performance-review"]
 category = "general_code"

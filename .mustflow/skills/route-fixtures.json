@@ -2,6 +2,141 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "cli-options-output-only-en",
+      "task": "Review command stdout, stderr and progress output formatting only; keep CLI flags and argument parsing unchanged.",
+      "paths": [
+        "src/cli/output.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "required_candidates": [
+        "cli-output-contract-review"
+      ],
+      "forbidden_candidates": [
+        "cli-option-contract-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "cli-options-output-only-ko",
+      "task": "CLI flags와 인수 파싱은 그대로 두고 stdout, stderr의 출력 형식만 검토해줘.",
+      "paths": [
+        "src/cli/output.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "forbidden_candidates": [
+        "cli-option-contract-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "api-latency-benchmark-only-en",
+      "task": "Review benchmark methodology only: histogram sampling and latency percentiles for API endpoint measurements; do not change request handlers.",
+      "paths": [
+        "bench/api-latency.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "required_candidates": [
+        "performance-measurement-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "api-request-performance-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "api-latency-benchmark-only-ko",
+      "task": "API endpoint latency histogram의 벤치마크 측정 방식만 검토하고 요청 핸들러는 변경하지 마.",
+      "paths": [
+        "bench/api-latency.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "forbidden_candidates": [
+        "api-request-performance-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "search-vector-only-en",
+      "task": "Review vector retrieval only: embedding dimensions, ANN recall and reranking in semantic search, leaving lexical search indexing unchanged.",
+      "paths": [
+        "src/search/vector.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "required_candidates": [
+        "vector-search-integrity-review"
+      ],
+      "forbidden_candidates": [
+        "search-index-integrity-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "search-vector-only-ko",
+      "task": "embedding, ANN recall, reranking을 사용하는 벡터 검색만 검토하고 일반 search index는 변경하지 마.",
+      "paths": [
+        "src/search/vector.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "forbidden_candidates": [
+        "search-index-integrity-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "cli-options-with-output-formatting",
+      "task": "Change CLI flag aliases and repeated option precedence alongside output formatting; review argument parser compatibility.",
+      "paths": [
+        "src/cli/options.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "required_candidates": [
+        "cli-option-contract-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "api-latency-with-benchmark-methodology",
+      "task": "Review the API endpoint request cost ledger, per-request ORM lazy loading and serialization alongside benchmark methodology.",
+      "paths": [
+        "src/api/orders.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "required_candidates": [
+        "api-request-performance-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "search-lexical-with-vector-retrieval",
+      "task": "Review search ingestion bulk item errors, analyzer mappings and read/write aliases alongside vector retrieval.",
+      "paths": [
+        "src/search/ingest.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "required_candidates": [
+        "search-index-integrity-review"
+      ],
+      "max_candidates": 5
+    },
+    {
       "id": "cli-option-contract-review-scenario-1",
       "task": "Review repeated flags, boolean negation and the option terminator in the command parser; keep precedence predictable.",
       "paths": [

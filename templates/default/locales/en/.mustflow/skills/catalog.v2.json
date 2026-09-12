@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:31ded4253829c10bb8f37f0868f57e14f5621a92233032ed632837a88ba780fc",
+  "source_fingerprint": "sha256:8b279455ef4e1d138c50614b9c89f4718fe489da9ef817626b691c9ff8290bb8",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -1146,6 +1146,10 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "exclusion_signals": [
+        "benchmark methodology only",
+        "벤치마크 측정 방식만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -2557,6 +2561,10 @@
         "help copy only",
         "json output only",
         "runtime config only"
+      ],
+      "exclusion_signals": [
+        "output formatting only",
+        "출력 형식만"
       ],
       "dependencies": {
         "requires_skills": [],
@@ -9678,7 +9686,10 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "benchmark methodology",
+        "벤치마크 측정 방식"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -11349,6 +11360,10 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "exclusion_signals": [
+        "vector retrieval only",
+        "벡터 검색만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
