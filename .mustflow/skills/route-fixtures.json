@@ -2,6 +2,176 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "motion-system-contract-review-natural-en",
+      "task": "Review transition durations, easing curves, interrupted animations, and reduced motion behavior.",
+      "paths": [
+        "design/motion.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "motion-system-contract-review"
+      ]
+    },
+    {
+      "id": "motion-system-contract-review-natural-ko",
+      "task": "화면 전환 애니메이션의 지속 시간, 이징, 중단 동작과 모션 감소 설정을 검토해줘.",
+      "paths": [
+        "design/motion.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "motion-system-contract-review"
+      ]
+    },
+    {
+      "id": "design-implementation-handoff-natural-en",
+      "task": "Prepare a design handoff from agent A to implementing agent B with a shared specification, allowed paths, blockers, and acceptance criteria.",
+      "paths": [
+        "design/handoff.md"
+      ],
+      "reasons": [
+        "docs_change",
+        "workflow_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "design-implementation-handoff"
+      ]
+    },
+    {
+      "id": "design-implementation-handoff-natural-ko",
+      "task": "설계 에이전트에서 구현 에이전트로 넘길 인계 문서에 공통 명세, 허용 경로, 차단 사항과 완료 기준을 정리해줘.",
+      "paths": [
+        "design/handoff.md"
+      ],
+      "reasons": [
+        "docs_change",
+        "workflow_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "design-implementation-handoff"
+      ]
+    },
+    {
+      "id": "frontend-component-library-review-natural-en",
+      "task": "Review headless component primitives, controlled and uncontrolled APIs, portal focus, and library upgrade boundaries.",
+      "paths": [
+        "ui/primitives.tsx"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-component-library-review"
+      ]
+    },
+    {
+      "id": "frontend-component-library-review-natural-ko",
+      "task": "컴포넌트 라이브러리의 제어형 API, 포털 포커스와 버전 업그레이드 경계를 검토해줘.",
+      "paths": [
+        "ui/primitives.tsx"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-component-library-review"
+      ]
+    },
+    {
+      "id": "frontend-localization-review-natural-en",
+      "task": "Review frontend localization for RTL layouts, plural messages, locale switching, and translation text expansion.",
+      "paths": [
+        "ui/messages.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-localization-review"
+      ]
+    },
+    {
+      "id": "frontend-localization-review-natural-ko",
+      "task": "다국어 화면에서 RTL 배치, 복수형 메시지, 언어 전환과 번역문 길이 증가를 검토해줘.",
+      "paths": [
+        "ui/messages.json"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-localization-review"
+      ]
+    },
+    {
+      "id": "frontend-state-ownership-review-natural-en",
+      "task": "Review duplicated client state, copied props, server cache ownership, and URL query synchronization.",
+      "paths": [
+        "ui/state.ts"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-state-ownership-review"
+      ]
+    },
+    {
+      "id": "frontend-state-ownership-review-natural-ko",
+      "task": "프런트엔드에서 props 복사로 중복된 상태, 서버 캐시의 소유권과 URL 쿼리 동기화를 검토해줘.",
+      "paths": [
+        "ui/state.ts"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-state-ownership-review"
+      ]
+    },
+    {
+      "id": "frontend-render-stability-natural-en",
+      "task": "Investigate the dark mode flash and hydration flicker during initial page rendering and route transitions.",
+      "paths": [
+        "ui/layout.tsx"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-render-stability"
+      ]
+    },
+    {
+      "id": "frontend-render-stability-natural-ko",
+      "task": "페이지 첫 로딩의 다크모드 깜빡임과 하이드레이션 불일치, 화면 전환 중 번쩍임을 조사해줘.",
+      "paths": [
+        "ui/layout.tsx"
+      ],
+      "reasons": [
+        "ui_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "frontend-render-stability"
+      ]
+    },
+    {
       "id": "design-foundations-combined-request",
       "task": "Review typography font fallback and semantic color tokens with contrast pairs",
       "paths": [

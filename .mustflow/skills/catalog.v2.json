@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:ab6d5b657a2e3aa25e43e17f0b1c493fcf03fd4ea655d8c4c57f87818b56a14c",
+  "source_fingerprint": "sha256:1e049aafd184678d0d7ffa54d596a85854a2409e8471e7f6eba71a0a7625bb05",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -6217,7 +6217,14 @@
         "code_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "first paint",
+        "hydration flicker",
+        "theme flash",
+        "다크모드 깜빡임",
+        "하이드레이션 불일치",
+        "화면 전환 중 번쩍임"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],

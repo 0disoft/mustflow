@@ -2616,6 +2616,10 @@ priority = 78
 selection_axis = "task"
 applies_to_reasons = ["ui_change", "performance_change", "behavior_change", "code_change"]
 
+[routes."frontend-render-stability".contexts]
+positive_terms = ["theme flash", "hydration flicker", "first paint"]
+concept_aliases = ["다크모드 깜빡임", "하이드레이션 불일치", "화면 전환 중 번쩍임"]
+
 [routes."ui-quality-gate"]
 category = "ui_assets"
 route_type = "primary"
