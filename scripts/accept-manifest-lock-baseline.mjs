@@ -3,31 +3,11 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const allowedPaths = new Set([
-	'AGENTS.md',
-	'.mustflow/docs/agent-workflow.md',
-	'.mustflow/config/commands.toml',
-	'.mustflow/config/commands.d/scoped-check.toml',
-	'.mustflow/config/commands.d/command-contract-scaling.toml',
-	'.mustflow/config/preferences.toml',
-	'.mustflow/skills/INDEX.md',
-	'.mustflow/skills/routes.toml',
-	'.mustflow/skills/router.toml',
-	'.mustflow/skills/catalog.v2.json',
-	'.mustflow/skills/dependency-upgrade-review/SKILL.md',
-	'.mustflow/skills/native-crash-forensics-review/SKILL.md',
-	'.mustflow/skills/security-privacy-review/SKILL.md',
-]);
-
-// The manifest-lock policy (mustflow 2.134.0) tracks the whole skill surface:
-// every installed skill SKILL.md is part of the locked install surface.
-function isAllowedPath(entry) {
-	if (allowedPaths.has(entry)) {
-		return true;
-	}
-
-	return /^\.mustflow\/skills\/[a-z0-9-]+\/SKILL\.md$/u.test(entry);
-}
+const projectRoot = process.cwd();
+const { isAllowedManifestCustomizationPath } = await import(
+	pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock-scope.js')).href
+);
+const isAllowedPath = (entry) => isAllowedManifestCustomizationPath(projectRoot, entry);
 
 function toPosixRelative(value) {
 	return value.replace(/\\/g, '/').replace(/^\.\//u, '');
@@ -54,7 +34,6 @@ if (invalidPath) {
 	process.exit(2);
 }
 
-const projectRoot = process.cwd();
 const manifestLockModule = await import(
 	pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock.js')).href
 );
@@ -86,6 +65,10 @@ if (action === 'plan') {
 if (action === 'apply') {
 	const resolvedPlanPath = resolvePlanPath(planPath);
 	const plan = manifestLockModule.parseManifestLockCustomizationPlan(JSON.parse(readFileSync(resolvedPlanPath, 'utf8')));
+	const unsupported = plan.files.find((entry) => !isAllowedPath(entry.relative_path));
+	if (unsupported) {
+		throw new Error(`Refusing to accept manifest lock baseline for unsupported path: ${unsupported.relative_path}`);
+	}
 	const updated = manifestLockModule.applyManifestLockCustomizationPlan(projectRoot, plan);
 	rmSync(resolvedPlanPath, { force: true });
 	console.log(JSON.stringify({ schema_version: '1', command: 'accept-manifest-lock-baseline', plan_path: planPath, updated }, null, 2));

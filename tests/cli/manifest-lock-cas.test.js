@@ -15,6 +15,29 @@ async function loadManifestLockModule() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock.js')).href);
 }
 
+test('manifest customization follows current command includes and rejects undeclared paths', async () => {
+	const root = createFixture();
+	try {
+		const { isAllowedManifestCustomizationPath: allowed } = await import(
+			pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'manifest-lock-scope.js')).href
+		);
+		const commands = path.join(root, '.mustflow', 'config', 'commands.toml');
+		writeFileSync(commands, 'schema_version = "1"\n[include]\nfiles = ["commands.d/custom.toml"]\n');
+		assert.equal(allowed(root, '.mustflow/config/commands.d/custom.toml'), true);
+		assert.equal(allowed(root, '.mustflow/config/commands.d/unlisted.toml'), false);
+		assert.equal(allowed(root, 'README.md'), false);
+		assert.equal(allowed(root, '../AGENTS.md'), false);
+		assert.equal(allowed(root, 'AGENTS.md'), true);
+		assert.equal(allowed(root, '.mustflow/skills/example/SKILL.md'), true);
+		writeFileSync(commands, 'schema_version = "1"\n[include]\nfiles = []\n');
+		assert.equal(allowed(root, '.mustflow/config/commands.d/custom.toml'), false);
+		writeFileSync(commands, 'schema_version = "1"\n[include]\nfiles = ["../outside.toml"]\n');
+		assert.throws(() => allowed(root, '.mustflow/config/commands.d/custom.toml'));
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test('manifest publication retries transient Windows sharing violations without deleting the old file', { skip: process.platform !== 'win32' }, async (t) => {
 	const root = createFixture();
 	const module = await loadManifestLockModule();
