@@ -3,6 +3,83 @@ import { test } from 'node:test';
 import vm from 'node:vm';
 import { dashboardRequestScript } from '../../dist/cli/lib/dashboard-html/request-script.js';
 import { renderDashboardClientScript } from '../../dist/cli/lib/dashboard-html/client-script.js';
+import { dashboardDocumentsScript, dashboardDocumentEventsScript } from '../../dist/cli/lib/dashboard-html/documents-script.js';
+
+test('document review controls keep filtering, reviewer guards and single-action dispatch after extraction', async () => {
+	const h = harness(), elements = new Map(), jobs = [];
+	function element() {
+		return {
+			value: '', children: [], listeners: {}, attributes: {},
+			set textContent(value) { this.text = value; this.children = []; },
+			get textContent() { return this.text; },
+			appendChild(child) { this.children.push(child); },
+			setAttribute(key, value) { this.attributes[key] = value; },
+			addEventListener(name, handler) { (this.listeners[name] ??= []).push(handler); },
+		};
+	}
+	const get = id => {
+		if (!elements.has(id)) elements.set(id, element());
+		return elements.get(id);
+	};
+	h.context.document = { getElementById: get, createElement: element };
+	h.context.messageFormat = (key, values) => key + JSON.stringify(values);
+	h.context.statusKey = key => h.messages.push(key);
+	h.context.markDataUpdated = () => {};
+	h.context.renderChrome = () => {};
+	const update = h.context.updateDashboardView;
+	h.context.updateDashboardView = (...args) => {
+		const job = update(...args);
+		jobs.push(job);
+		return job;
+	};
+	const entry = { path: 'docs\\Guide.md', status: 'pending', reason: 'changed', review_comment: '<script>text only</script>' };
+	h.context.docReview = { documents: [entry] };
+	h.run(dashboardDocumentsScript);
+	h.run(dashboardDocumentEventsScript);
+	for (const [id, event] of [
+		['doc-status-filter', 'change'], ['doc-path-filter', 'input'],
+		['doc-reviewer-id', 'input'], ['doc-reviewer-kind', 'change'],
+	]) assert.equal(get(id).listeners[event].length, 1);
+
+	get('doc-status-filter').value = 'active';
+	assert.equal(h.run('docStatusQuery()'), '');
+	get('doc-status-filter').value = 'all';
+	assert.equal(h.run('docStatusQuery()'), '?all=1');
+	get('doc-status-filter').value = 'approved';
+	assert.equal(h.run('docStatusQuery()'), '?status=approved');
+
+	get('doc-path-filter').value = ' GUIDE.MD ';
+	h.run('renderDocuments()');
+	let row = get('docs-review-list').children[0];
+	assert.equal(row.className, 'doc-row');
+	assert.equal(row.children[2].children[0].disabled, true);
+	await h.run('markDocument("docs/Guide.md", "approved")');
+	assert.equal(h.calls.length, 0);
+
+	get('doc-reviewer-id').value = ' reviewer ';
+	get('doc-reviewer-kind').value = 'human';
+	get('doc-review-summary').value = ' checked ';
+	get('doc-reviewer-id').listeners.input[0]();
+	row = get('docs-review-list').children[0];
+	assert.equal(row.children[0].children[2].textContent, 'dashboard.docs.comment:\n<script>text only</script>');
+	const approve = row.children[2].children[0];
+	assert.equal(approve.disabled, false);
+	approve.listeners.click[0]();
+	assert.equal(h.calls.length, 1);
+	assert.equal(h.calls[0].url, '/api/docs/review?status=approved');
+	assert.deepEqual(JSON.parse(h.calls[0].options.body), {
+		path: entry.path, status: 'approved', reviewerKind: 'human',
+		reviewerId: 'reviewer', summary: 'checked',
+	});
+	h.calls[0].resolve(json({ documents: [{ ...entry, status: 'approved' }] }));
+	await jobs[0];
+	assert.equal(get('docs-review-list').children[0].children[2].children[0].disabled, true);
+
+	get('doc-path-filter').value = 'missing';
+	get('doc-path-filter').listeners.input[0]();
+	assert.equal(get('docs-review-list').children[0].textContent, 'dashboard.docs.noSearchMatches');
+});
+
 
 function deferred() {
 	let resolve, reject;
