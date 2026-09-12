@@ -5,6 +5,10 @@ This directory contains the build-free pieces used by `../dashboard-html.ts`.
 - `template.ts` owns the server-rendered HTML shell and public `renderDashboardHtml` function.
 - `styles.ts` owns the inline CSS string.
 - `client-script.ts` owns the inline browser script string.
+- `request-script.ts` owns authenticated requests, a 30-second response/body deadline,
+  and latest-view result ownership. Superseded reads are aborted; stale results and
+  errors cannot update the current view even if transport cancellation arrives late.
+  Mutations are never automatically retried or treated as rolled back on timeout.
 - `locale-bootstrap.ts` serializes the dashboard locale bundle for the browser script.
 - `types.ts` owns the dashboard snapshot types re-exported by the facade.
 

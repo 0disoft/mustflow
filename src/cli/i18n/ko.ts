@@ -1,6 +1,8 @@
 import type { MessageKey } from "./en.js";
 
 export const koMessages = {
+  "dashboard.ui.requestTimeout": "요청 시간이 초과됐습니다. 다시 불러와 주세요.",
+  "dashboard.ui.writeTimeout": "응답 시간이 초과됐습니다. 변경이 저장됐을 수 있으니 다시 시도하기 전에 새로 불러와 확인해 주세요.",
   "cli.error.withUsage":
     "오류: {message}\n사용법은 `{helpCommand}` 명령으로 확인하세요.",
   "cli.error.prefix": "오류: {message}",

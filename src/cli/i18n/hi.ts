@@ -1,6 +1,8 @@
 import type { MessageKey } from "./en.js";
 
 export const hiMessages = {
+  "dashboard.ui.requestTimeout": "अनुरोध का समय समाप्त हो गया। दोबारा लोड करें।",
+  "dashboard.ui.writeTimeout": "जवाब का समय समाप्त हो गया। बदलाव सहेजा गया हो सकता है; दोबारा प्रयास करने से पहले फिर से लोड करके जाँचें।",
   "cli.error.withUsage": "त्रुटि: {message}\nउपयोग देखने के लिए `{helpCommand}` चलाएँ।",
   "cli.error.prefix": "त्रुटि: {message}",
   "cli.error.unknownCommand": "अज्ञात कमांड: {command}",

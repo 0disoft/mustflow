@@ -1,6 +1,8 @@
 import type { MessageKey } from "./en.js";
 
 export const frMessages = {
+  "dashboard.ui.requestTimeout": "La requête a expiré. Rechargez les données.",
+  "dashboard.ui.writeTimeout": "La réponse a expiré. La modification a peut-être été enregistrée ; rechargez les données pour vérifier avant de réessayer.",
   "cli.error.withUsage": "Erreur : {message}\nExécutez `{helpCommand}` pour voir l'utilisation.",
   "cli.error.prefix": "Erreur : {message}",
   "cli.error.unknownCommand": "Commande inconnue : {command}",

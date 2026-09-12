@@ -1,6 +1,8 @@
 import type { MessageKey } from "./en.js";
 
 export const esMessages = {
+  "dashboard.ui.requestTimeout": "La solicitud agotó el tiempo de espera. Vuelve a cargar.",
+  "dashboard.ui.writeTimeout": "La respuesta agotó el tiempo de espera. El cambio podría haberse guardado; vuelve a cargar para comprobarlo antes de reintentar.",
   "cli.error.withUsage": "Error: {message}\nEjecuta `{helpCommand}` para ver el uso.",
   "cli.error.prefix": "Error: {message}",
   "cli.error.unknownCommand": "Comando desconocido: {command}",

@@ -1,6 +1,8 @@
 import type { MessageKey } from "./en.js";
 
 export const zhMessages = {
+  "dashboard.ui.requestTimeout": "请求超时。请重新加载。",
+  "dashboard.ui.writeTimeout": "响应超时。更改可能已保存；请重新加载并确认后再重试。",
   "cli.error.withUsage": "错误：{message}\n运行 `{helpCommand}` 查看用法。",
   "cli.error.prefix": "错误：{message}",
   "cli.error.unknownCommand": "未知命令：{command}",

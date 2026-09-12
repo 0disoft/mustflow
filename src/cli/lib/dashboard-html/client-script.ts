@@ -1,3 +1,5 @@
+import { dashboardRequestScript } from './request-script.js';
+
 export interface DashboardClientScriptOptions {
 	readonly serializedSnapshot: string;
 	readonly serializedToken: string;
@@ -32,6 +34,7 @@ let dashboardStatus = initialStatusSnapshot;
 let docReview = initialDocReview;
 let lastUpdatedAt = new Date();
 let loadingCount = 0;
+${dashboardRequestScript}
 const listFilters = {
 	verification: { query: "", state: "all" },
 	commands: { query: "", state: "all" },
@@ -463,6 +466,8 @@ function reloadCurrentTabData() {
 }
 
 function activateTab(tabName, options = {}) {
+	invalidateDashboardView();
+	statusText("");
 	currentTab = tabName;
 	renderTabState();
 	if (options.focus) {
@@ -494,40 +499,24 @@ function handleTabKeydown(event) {
 }
 
 async function openMustflowFolder() {
-	const response = await fetch("/api/open-mustflow", {
-		method: "POST",
-		headers: { "x-mustflow-dashboard-token": dashboardToken }
-	});
-	if (!response.ok) throw new Error(await response.text());
+	await requestDashboard("/api/open-mustflow", { method: "POST" }, undefined, "text");
 	statusKey("dashboard.ui.openedMustflow", "ok");
 }
 
 async function loadSnapshot() {
-	setLoading(true);
-	try {
-		const response = await fetch("/api/preferences", {
-			headers: { "x-mustflow-dashboard-token": dashboardToken }
-		});
-		if (!response.ok) throw new Error(await response.text());
-		snapshot = await response.json();
+	return updateDashboardView("/api/preferences", {}, (data) => {
+		snapshot = data;
 		pending = new Map();
 		updateSaveState();
 		markDataUpdated();
 		statusKey("dashboard.ui.reloaded", "ok");
 		render();
-	} finally {
-		setLoading(false);
-	}
+	});
 }
 
 async function loadStatus() {
-	setLoading(true);
-	try {
-		const response = await fetch("/api/status", {
-			headers: { "x-mustflow-dashboard-token": dashboardToken }
-		});
-		if (!response.ok) throw new Error(await response.text());
-		dashboardStatus = await response.json();
+	return updateDashboardView("/api/status", {}, (data) => {
+		dashboardStatus = data;
 		markDataUpdated();
 		statusKey(
 			currentTab === "commands"
@@ -552,9 +541,7 @@ async function loadStatus() {
 		renderUpdatePanel();
 		renderRunsPanel();
 		renderSkillsPanel();
-	} finally {
-		setLoading(false);
-	}
+	});
 }
 
 function docStatusQuery() {
@@ -1697,39 +1684,32 @@ function renderSkillsPanel() {
 }
 
 async function loadDocuments() {
-	setLoading(true);
-	try {
-		const response = await fetch("/api/docs/review" + docStatusQuery(), {
-			headers: { "x-mustflow-dashboard-token": dashboardToken }
-		});
-		if (!response.ok) throw new Error(await response.text());
-		docReview = await response.json();
+	return updateDashboardView("/api/docs/review" + docStatusQuery(), {}, (data) => {
+		docReview = data;
 		markDataUpdated();
 		statusKey("dashboard.docs.reloaded", "ok");
 		renderChrome();
 		renderDocuments();
-	} finally {
-		setLoading(false);
-	}
+	});
 }
 
 async function save() {
 	const updates = Array.from(pending, ([id, value]) => ({ id, value }));
-	const response = await fetch("/api/preferences", {
+	return updateDashboardView("/api/preferences", {
 		method: "POST",
 		headers: {
 			"content-type": "application/json",
 			"x-mustflow-dashboard-token": dashboardToken
 		},
 		body: JSON.stringify({ updates })
+	}, (data) => {
+		snapshot = data;
+		pending = new Map();
+		updateSaveState();
+		markDataUpdated();
+		statusKey("dashboard.ui.saved", "ok");
+		render();
 	});
-	if (!response.ok) throw new Error(await response.text());
-	snapshot = await response.json();
-	pending = new Map();
-	updateSaveState();
-	markDataUpdated();
-	statusKey("dashboard.ui.saved", "ok");
-	render();
 }
 
 async function markDocument(path, status) {
@@ -1739,7 +1719,7 @@ async function markDocument(path, status) {
 		return;
 	}
 
-	const response = await fetch("/api/docs/review" + docStatusQuery(), {
+	return updateDashboardView("/api/docs/review" + docStatusQuery(), {
 		method: "POST",
 		headers: {
 			"content-type": "application/json",
@@ -1752,13 +1732,13 @@ async function markDocument(path, status) {
 			reviewerId,
 			summary: document.getElementById("doc-review-summary").value.trim()
 		})
+	}, (data) => {
+		docReview = data;
+		markDataUpdated();
+		statusKey("dashboard.docs.updated", "ok");
+		renderChrome();
+		renderDocuments();
 	});
-	if (!response.ok) throw new Error(await response.text());
-	docReview = await response.json();
-	markDataUpdated();
-	statusKey("dashboard.docs.updated", "ok");
-	renderChrome();
-	renderDocuments();
 }
 
 function renderDocFilters() {

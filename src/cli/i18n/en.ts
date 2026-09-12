@@ -1,4 +1,6 @@
 export const enMessages = {
+  "dashboard.ui.requestTimeout": "The request timed out. Try reloading.",
+  "dashboard.ui.writeTimeout": "The response timed out. The change may have been saved; reload to check before retrying.",
   "cli.error.withUsage": "Error: {message}\nRun `{helpCommand}` for usage.",
   "cli.error.prefix": "Error: {message}",
   "cli.error.unknownCommand": "Unknown command: {command}",

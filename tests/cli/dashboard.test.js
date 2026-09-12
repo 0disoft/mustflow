@@ -217,8 +217,8 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /copyCommandLabel\(recommendation\.command\)/);
 		assert.match(html, /showCopyButtonFeedback\(copy, copyLabel\)/);
 		assert.match(html, /button\.setAttribute\("aria-disabled", button\.disabled \? "true" : "false"\)/);
-		assert.match(html, /fetch\("\/api\/status"/);
-		assert.match(html, /fetch\("\/api\/docs\/review"/);
+		assert.match(html, /updateDashboardView\("\/api\/status"/);
+		assert.match(html, /updateDashboardView\("\/api\/docs\/review"/);
 		assert.match(html, /const initialStatusSnapshot = \{"schema_version":"1","command":"dashboard status"/);
 		assert.match(
 			html,
@@ -310,7 +310,7 @@ test('dashboard serves and updates safe preferences', async () => {
 		assert.match(html, /document\.getElementById\("doc-path-filter"\)\.addEventListener\("input"/);
 		assert.match(html, /document\.getElementById\("doc-reviewer-id"\)\.addEventListener\("input"/);
 		assert.match(html, /dashboard\.ui\.openMustflow":"\.mustflow 폴더 열기/);
-		assert.match(html, /fetch\("\/api\/open-mustflow"/);
+		assert.match(html, /requestDashboard\("\/api\/open-mustflow"/);
 		assert.match(html, /background-position:\s*calc\(100% - 22px\) 50%,\s*calc\(100% - 16px\) 50%;/);
 		assert.match(html, /padding-right: 44px;/);
 		assert.match(html, /id="dashboard-language"/);
@@ -1419,4 +1419,3 @@ required_after = ["public_api_change"]
 		removeTempProject(projectPath);
 	}
 });
-
