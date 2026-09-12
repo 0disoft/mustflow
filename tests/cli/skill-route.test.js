@@ -148,7 +148,9 @@ test('does not select a skill without route evidence', () => {
 test('reports aggregate skill route quality metrics from the versioned corpus', () => {
 	const report = evaluateSkillRouteFixtures(projectRoot);
 
-	assert.equal(report.case_count, 124);
+	const corpus = JSON.parse(readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'route-fixtures.json'), 'utf8'));
+	assert.ok(corpus.cases.length > 0);
+	assert.equal(report.case_count, corpus.cases.length);
 	assert.equal(report.passed_case_count, report.case_count);
 	assert.equal(report.main_accuracy.rate, 1);
 	assert.equal(report.candidate_recall.rate, 1);
