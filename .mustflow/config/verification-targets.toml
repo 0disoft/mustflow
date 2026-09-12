@@ -71,6 +71,10 @@ witnesses = ["tests/cli/run.test.js", "tests/cli/check.test.js"]
 kind = "executable"
 witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
 
+[verification_targets."scripts/skill-author-plan.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/skill-author-plan.test.js"]
+
 [verification_targets."scripts/start-npm-release.mjs"]
 kind = "executable"
 witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]

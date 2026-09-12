@@ -6,11 +6,12 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
-## 2.138.3 - 2026-09-12
+## 2.138.4 - 2026-09-12
 
+- Register skill-authoring plan verification against its existing executable tests.
 - Synchronize optional local-index diagnostics with the public context JSON schema.
 - Wait for the lock-release test helper to start before measuring bounded lock contention.
-- Restore baseline help examples and exit codes, and validate CLI route values independently of TOML field order; supersedes the unpublished 2.138.0 through 2.138.2 attempts.
+- Restore baseline help examples and exit codes, and validate CLI route values independently of TOML field order; supersedes the unpublished 2.138.0 through 2.138.3 attempts.
 
 - Expand built-in interface design, Sui SDK and Sui Move procedures.
 - Strengthen bilingual routing and explicit exclusions; cover 190 skills with 341 routing cases.
