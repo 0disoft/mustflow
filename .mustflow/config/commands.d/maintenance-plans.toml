@@ -1,0 +1,45 @@
+[intents.manifest_baseline_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Plan one exact workflow baseline through the built-in recovery primitive."
+argv = ["node", "dist/cli/index.js", "baseline", "plan", "{plan}", "{target}"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/state/manifest-lock-plans/**"]
+network = false
+destructive = false
+env_policy = "minimal"
+[intents.manifest_baseline_plan.inputs.plan]
+type = "path"
+required = true
+allowed_roots = [".mustflow/state/manifest-lock-plans"]
+allowed_extensions = [".json"]
+[intents.manifest_baseline_plan.inputs.target]
+type = "path"
+required = true
+allowed_roots = [".mustflow", "AGENTS.md"]
+allowed_extensions = [".md", ".toml", ".json"]
+
+[intents.manifest_baseline_apply]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Apply only the exact reviewed manifest entries through the built-in recovery primitive."
+argv = ["node", "dist/cli/index.js", "baseline", "apply", "{plan}"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/config/manifest.lock.toml"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/config/manifest.lock.toml", lock = "manifest_lock_baseline", concurrency = "exclusive" }]
+network = false
+destructive = false
+env_policy = "minimal"
+[intents.manifest_baseline_apply.inputs.plan]
+type = "path"
+required = true
+allowed_roots = [".mustflow/state/manifest-lock-plans"]
+allowed_extensions = [".json"]
