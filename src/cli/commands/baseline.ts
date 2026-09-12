@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { renderHelp } from '../lib/cli-output.js';
 import { acquireActiveCommandLock, reportActiveCommandLockConflict } from '../lib/active-command-lock.js';
 import { ensureFileTargetInsideWithoutSymlinks, readUtf8FileInsideWithoutSymlinks } from '../lib/filesystem.js';
 import { t, type CliLang } from '../lib/i18n.js';
@@ -11,7 +12,19 @@ import type { Reporter } from '../lib/reporter.js';
 export function runBaseline(args: string[], reporter: Reporter, lang: CliLang = 'en'): number {
 	const usage = 'mf baseline plan <.mustflow/state/manifest-lock-plans/name.json> <path>...\nmf baseline apply <.mustflow/state/manifest-lock-plans/name.json>';
 	if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
-		reporter.stdout(`${usage}\n\n${t(lang, 'command.baseline.summary')}`);
+		reporter.stdout(renderHelp({
+			usage,
+			summary: t(lang, 'command.baseline.summary'),
+			options: [{ label: '-h, --help', description: t(lang, 'cli.option.help') }],
+			examples: [
+				'mf baseline plan .mustflow/state/manifest-lock-plans/review.json AGENTS.md',
+				'mf baseline apply .mustflow/state/manifest-lock-plans/review.json',
+			],
+			exitCodes: [
+				{ label: '0', description: 'The requested plan or apply operation succeeded.' },
+				{ label: '1', description: 'Invalid input, conflicting state or a failed baseline operation.' },
+			],
+		}, lang));
 		return 0;
 	}
 	const [action, planPath, ...paths] = args;
