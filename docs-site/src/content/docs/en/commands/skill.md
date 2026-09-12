@@ -182,6 +182,26 @@ Machine-readable import output uses these fields:
 
 The published JSON Schema is `schemas/skill-import-report.schema.json`.
 
+## Route Evaluation Coverage
+
+For built-in route maintenance, this repository's `skill_route_eval` intent also
+reports `coverage` alongside accuracy and recall. Coverage uses the current
+built-in skill source rather than a fixed skill count:
+
+- `expected_skill_count`: distinct installed skills with an enforced positive expectation.
+- `passed_skill_count` and `passed_skill_rate`: skills named by at least one passing positive case, divided by all installed skills.
+- `untested_skills`: installed skills without positive expectations; negative-only references are also listed separately.
+- `failing_skills`: positively expected skills with no passing case.
+- `unknown_references`: fixture names absent from the installed catalog.
+- `categories`: installed, expected, and passing skill counts grouped by route category.
+
+Duplicate expectations do not increase coverage. A forbidden reference is not a
+positive test. Non-enforced adjunct hints in invariant cases are excluded.
+A passing case proves only its stated assertions; coverage does not measure all
+natural-language requests or the quality of a skill's procedure. Missing or empty
+corpora report zero coverage, and malformed corpora retain their validation errors.
+Ordinary strict validation omits this optional inventory to avoid extra source reads.
+
 ## Exit Codes
 
 - `0`: Route candidates were resolved or an import preview/install succeeded.

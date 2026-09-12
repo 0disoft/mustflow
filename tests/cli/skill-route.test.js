@@ -14,6 +14,7 @@ import {
 	resolveSkillRoutes,
 } from '../../dist/core/skill-route-resolution.js';
 import { evaluateSkillRouteFixtures } from '../../dist/core/skill-route-fixtures.js';
+import { summarizeSkillRouteCoverage } from '../../dist/core/skill-route-coverage.js';
 import { isSkillRouteSearchTerm, normalizeSkillRouteText } from '../../dist/core/skill-route-text.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -159,7 +160,7 @@ test('does not select a skill without route evidence', () => {
 });
 
 test('reports aggregate skill route quality metrics from the versioned corpus', () => {
-	const report = evaluateSkillRouteFixtures(projectRoot);
+	const report = evaluateSkillRouteFixtures(projectRoot, { includeCoverage: true });
 
 	const corpus = JSON.parse(readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'route-fixtures.json'), 'utf8'));
 	assert.ok(corpus.cases.length > 0);
@@ -170,6 +171,53 @@ test('reports aggregate skill route quality metrics from the versioned corpus', 
 	assert.equal(report.adjunct_recall.rate, 1);
 	assert.equal(report.forbidden_violation_rate.rate, 0);
 	assert.deepEqual(report.issues, []);
+	const installed = buildSkillRouteCatalog(projectRoot).entries;
+	const asserted = new Set(corpus.cases.flatMap(fixture => [
+		...(fixture.required_main ? [fixture.required_main] : []),
+		...(fixture.required_candidates ?? []),
+		...(fixture.mode === 'invariant' ? [] : fixture.required_adjuncts ?? []),
+	]));
+	assert.equal(report.coverage.installed_skill_count, installed.length);
+	assert.equal(report.coverage.passed_skill_count, installed.filter(skill => asserted.has(skill.skill)).length);
+	assert.deepEqual(report.coverage.untested_skills, installed.map(skill => skill.skill).filter(name => !asserted.has(name)).sort());
+	assert.deepEqual(report.coverage.failing_skills, []);
+	assert.deepEqual(report.coverage.unknown_references, []);
+});
+
+test('route coverage counts distinct positive assertions and separates failed, negative-only and unknown skills', () => {
+	const coverage = summarizeSkillRouteCoverage([
+		{ skill: 'covered', category: 'code' }, { skill: 'failed', category: 'code' },
+		{ skill: 'negative', category: 'ui' }, { skill: 'untested', category: 'ui' },
+	], [
+		{ positive: ['covered', 'covered'], forbidden: ['negative', 'missing'], passed: true },
+		{ positive: ['covered', 'failed', 'missing'], forbidden: [], passed: false },
+	]);
+	assert.equal(coverage.installed_skill_count, 4);
+	assert.equal(coverage.expected_skill_count, 2);
+	assert.equal(coverage.passed_skill_count, 1);
+	assert.equal(coverage.passed_skill_rate, 0.25);
+	assert.deepEqual(coverage.untested_skills, ['negative', 'untested']);
+	assert.deepEqual(coverage.failing_skills, ['failed']);
+	assert.deepEqual(coverage.negative_only_skills, ['negative']);
+	assert.deepEqual(coverage.unknown_references, ['missing']);
+	assert.deepEqual(coverage.categories, [
+		{ category: 'code', installed_skill_count: 2, expected_skill_count: 2, passed_skill_count: 1 },
+		{ category: 'ui', installed_skill_count: 2, expected_skill_count: 0, passed_skill_count: 0 },
+	]);
+	assert.equal(summarizeSkillRouteCoverage([], []).passed_skill_rate, 0);
+});
+
+test('missing and malformed corpora cannot claim complete route coverage', () => {
+	const root = createTempProject();
+	try {
+		assert.equal(evaluateSkillRouteFixtures(root, { includeCoverage: true }).coverage.passed_skill_rate, 0);
+		assert.equal(evaluateSkillRouteFixtures(root).coverage, undefined);
+		mkdirSync(path.join(root, '.mustflow', 'skills'), { recursive: true });
+		writeFileSync(path.join(root, '.mustflow', 'skills', 'route-fixtures.json'), '{');
+		const report = evaluateSkillRouteFixtures(root, { includeCoverage: true });
+		assert.equal(report.coverage.passed_skill_count, 0);
+		assert.equal(report.issues[0].kind, 'invalid');
+	} finally { removeTempProject(root); }
 });
 
 test('keeps the generated route catalog synchronized with built-in skill frontmatter', () => {

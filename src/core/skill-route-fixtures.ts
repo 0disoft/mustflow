@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { isRecord } from './config-loading.js';
 import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
-import { resolveSkillRoutes } from './skill-route-resolution.js';
+import { buildSkillRouteCatalog, resolveSkillRoutes } from './skill-route-resolution.js';
+import { summarizeSkillRouteCoverage, type SkillRouteCoverage, type SkillRouteCoverageCase } from './skill-route-coverage.js';
 
 export const SKILL_ROUTE_FIXTURES_PATH = '.mustflow/skills/route-fixtures.json';
 
@@ -39,6 +40,7 @@ export interface SkillRouteEvaluationReport {
 	readonly kind: 'skill_route_evaluation';
 	readonly case_count: number;
 	readonly passed_case_count: number;
+	readonly coverage?: SkillRouteCoverage;
 	readonly main_accuracy: { readonly matched: number; readonly expected: number; readonly rate: number };
 	readonly candidate_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
 	readonly adjunct_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
@@ -320,10 +322,15 @@ function evaluateFixtureCase(
 	return { issues, counts };
 }
 
-export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvaluationReport {
+export function evaluateSkillRouteFixtures(projectRoot: string, options: { includeCoverage?: boolean } = {}): SkillRouteEvaluationReport {
+	const coverageCases: SkillRouteCoverageCase[] = [];
+	const finish = (report: SkillRouteEvaluationReport): SkillRouteEvaluationReport => {
+		if (!options.includeCoverage) return report;
+		return { ...report, coverage: summarizeSkillRouteCoverage(buildSkillRouteCatalog(projectRoot).entries, coverageCases) };
+	};
 	const fixturePath = path.join(projectRoot, ...SKILL_ROUTE_FIXTURES_PATH.split('/'));
 	if (!existsSync(fixturePath)) {
-		return createEvaluationReport(0, 0, [], emptyEvaluationCounts());
+		return finish(createEvaluationReport(0, 0, [], emptyEvaluationCounts()));
 	}
 
 	const issues: SkillRouteFixtureValidationIssue[] = [];
@@ -334,7 +341,7 @@ export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvalu
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		const issues = [{ kind: 'invalid', message: `${SKILL_ROUTE_FIXTURES_PATH} is not valid JSON: ${message}` }] as const;
-		return createEvaluationReport(0, 0, issues, emptyEvaluationCounts());
+		return finish(createEvaluationReport(0, 0, issues, emptyEvaluationCounts()));
 	}
 
 	if (!isRecord(parsed) || parsed.schema_version !== '1' || !Array.isArray(parsed.cases)) {
@@ -342,7 +349,7 @@ export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvalu
 			kind: 'invalid',
 			message: `${SKILL_ROUTE_FIXTURES_PATH} must contain schema_version "1" and a cases array`,
 		} as const;
-		return createEvaluationReport(0, 0, [invalidIssue], emptyEvaluationCounts());
+		return finish(createEvaluationReport(0, 0, [invalidIssue], emptyEvaluationCounts()));
 	}
 
 	const counts = emptyEvaluationCounts();
@@ -355,6 +362,17 @@ export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvalu
 		}
 		validCaseCount += 1;
 		const evaluation = evaluateFixtureCase(projectRoot, fixture);
+		if (options.includeCoverage) {
+			coverageCases.push({
+				positive: [
+					...(fixture.requiredMain ? [fixture.requiredMain] : []),
+					...fixture.requiredCandidates,
+					...(fixture.mode === 'exact' ? fixture.requiredAdjuncts : []),
+				],
+				forbidden: fixture.forbiddenCandidates,
+				passed: evaluation.issues.length === 0,
+			});
+		}
 		if (evaluation.issues.length === 0) {
 			passedCaseCount += 1;
 		}
@@ -362,7 +380,7 @@ export function evaluateSkillRouteFixtures(projectRoot: string): SkillRouteEvalu
 		addEvaluationCounts(counts, evaluation.counts);
 	}
 
-	return createEvaluationReport(validCaseCount, passedCaseCount, issues, counts);
+	return finish(createEvaluationReport(validCaseCount, passedCaseCount, issues, counts));
 }
 
 export function validateSkillRouteFixtures(projectRoot: string): SkillRouteFixtureValidationIssue[] {
