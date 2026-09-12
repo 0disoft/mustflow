@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { isSkillRouteSearchTerm } from '../../../core/skill-route-text.js';
 import { isSkillRoutePathHints } from '../../../core/skill-route-path-hints.js';
+import { withFileReadCache } from '../../../core/file-read-cache.js';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readScopedCommandContract } from '../../../core/config-loading.js';
@@ -2950,6 +2951,10 @@ function validateStrictScoped(projectRoot: string, parsed: ParsedConfigFiles, is
 }
 
 function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): CheckIssue[] {
+	return withFileReadCache(() => collectUncachedCheckIssues(projectRoot, options));
+}
+
+function collectUncachedCheckIssues(projectRoot: string, options: CheckOptions): CheckIssue[] {
 	const issues: CheckIssue[] = [];
 
 	validateRequiredFiles(projectRoot, issues);

@@ -26,6 +26,12 @@ Use `--json` when automation or an agent needs to parse the results.
 
 ## Strict Checks
 
+Each check reuses file bytes within that invocation when the reopened file's
+identity, size, and modification metadata still match. Access, symlink, regular-file,
+and size-limit checks still run before a cache hit. Cached buffers are isolated
+from callers, entries over 1 MiB are not cached, and stored bytes are capped at
+16 MiB. The cache is discarded between invocations; validation results are not cached.
+
 ```sh
 npx mf check --strict
 ```

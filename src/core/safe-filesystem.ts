@@ -13,6 +13,7 @@ import {
 } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import path from 'node:path';
+import { reuseFileRead } from './file-read-cache.js';
 
 const NOFOLLOW_FLAG = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
 const WINDOWS_RENAME_RETRY_DELAYS_MS = [10, 25, 50, 100, 200];
@@ -234,9 +235,10 @@ export function readFileInsideWithoutSymlinks(
 		if (options.maxBytes !== undefined && stats.size > options.maxBytes) {
 			throw new Error(`File exceeds maximum size ${options.maxBytes} bytes: ${childPath}`);
 		}
-		return options.maxBytes === undefined
+		const identity = JSON.stringify([absoluteChildPath, stats.dev, stats.ino, stats.size, stats.mtimeMs, stats.ctimeMs]);
+		return reuseFileRead(identity, () => options.maxBytes === undefined
 			? readFileSync(fileDescriptor)
-			: readBoundedFileDescriptor(fileDescriptor, childPath, options.maxBytes);
+			: readBoundedFileDescriptor(fileDescriptor, childPath, options.maxBytes));
 	} finally {
 		closeSync(fileDescriptor);
 	}
