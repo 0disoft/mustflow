@@ -10,4 +10,7 @@ This directory holds focused helpers for `src/cli/commands/verify.ts`.
 - `result-analysis.ts` owns result counts, failure classification and failure-fingerprint inputs;
   it does not execute commands or persist receipts.
 
-Keep execution, verdict assembly, receipt content writing, and output rendering outside these modules.
+- `scheduled-execution.ts` owns sequential/parallel batches, early stopping, buffered output and batch write-drift tracking.
+- `completion-evidence.ts` assembles receipt binding, criteria coverage and completion verdict inputs.
+
+Keep receipt persistence, output rendering and CLI orchestration in the coordinator.
