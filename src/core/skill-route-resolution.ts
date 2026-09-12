@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { normalizeSkillRouteText as normalizeRouteText } from './skill-route-text.js';
+import { isSkillRoutePathHints, LEGACY_SKILL_ROUTE_PATH_HINTS, matchesSkillRoutePathHints, type SkillRoutePathHints } from './skill-route-path-hints.js';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
 import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
@@ -31,27 +32,6 @@ function compareStrings(left: string, right: string): number {
 }
 const NEGATIVE_SIGNAL_TERM_PENALTY = -25;
 const NEGATIVE_SIGNAL_MAX_PENALTY = -75;
-const DOCS_TREE_MARKDOWN_PATH_PATTERN =
-	/(?:^|\/)(?:docs|docs-site|documentation|\.mustflow\/docs|\.mustflow\/context)\/.+\.(?:md|mdx)$/u;
-const ROOT_DOCUMENT_BASENAMES = [
-	'readme',
-	'changelog',
-	'contributing',
-	'security',
-	'support',
-	'governance',
-	'maintainers',
-	'releasing',
-	'release',
-	'testing',
-	'deployment',
-	'operations',
-	'runbook',
-	'configuration',
-	'troubleshooting',
-	'architecture',
-	'api',
-] as const;
 
 export interface SkillRouteResolveInput {
 	readonly taskText: string | null;
@@ -183,6 +163,7 @@ interface SkillRouteMetadata {
 	readonly appliesToReasons: readonly string[];
 	readonly mutuallyExclusiveWith: readonly string[];
 	readonly signalProfile: RouteSignalProfile;
+	readonly pathHints?: SkillRoutePathHints;
 	readonly dependencies: SkillRouteDependencies;
 }
 
@@ -204,6 +185,7 @@ interface SkillRouteCatalogEntry {
 	readonly positive_signals: readonly string[];
 	readonly negative_signals: readonly string[];
 	readonly exclusion_signals?: readonly string[];
+	readonly path_hints?: SkillRoutePathHints;
 	readonly dependencies: SkillRouteDependencies;
 	readonly trigger: string;
 	readonly command_intents: readonly string[];
@@ -305,53 +287,12 @@ function normalizeSignals(values: readonly string[]): string[] {
 	return [...new Set(values.map(normalizeRouteText).filter(Boolean))].sort(compareStrings);
 }
 
-function collectPathSkillHints(paths: readonly string[]): Set<string> {
-	const hints = new Set<string>();
-
-	for (const pathValue of paths) {
-		const lower = pathValue.toLowerCase();
-
-		if (/\.(?:cts|mts|ts|tsx)$/u.test(lower) || lower.endsWith('tsconfig.json')) {
-			hints.add('typescript-code-change');
-		}
-
-		if (/\.(?:cjs|mjs|js|jsx)$/u.test(lower)) {
-			hints.add('javascript-code-change');
-		}
-
-		if (/\.py$/u.test(lower) || /(?:^|\/)(?:pyproject\.toml|requirements\.txt|poetry\.lock)$/u.test(lower)) {
-			hints.add('python-code-change');
-		}
-
-		if (/\.go$/u.test(lower) || /(?:^|\/)go\.(?:mod|sum)$/u.test(lower)) {
-			hints.add('go-code-change');
-		}
-
-		if (/\.rs$/u.test(lower) || /(?:^|\/)(?:cargo\.toml|cargo\.lock)$/u.test(lower)) {
-			hints.add('rust-code-change');
-		}
-
-		if (/\.ps1$/u.test(lower)) {
-			hints.add('powershell-code-change');
-		}
-
-		if (DOCS_TREE_MARKDOWN_PATH_PATTERN.test(lower) || isRootDocumentationPath(lower)) {
-			hints.add('docs-update');
-		}
-	}
-
-	return hints;
-}
-
-function isRootDocumentationPath(lowercasePath: string): boolean {
-	const basename = lowercasePath.split('/').pop();
-	if (!basename?.endsWith('.md')) {
-		return false;
-	}
-
-	const rootName = basename.replace(/\.md$/u, '');
-
-	return ROOT_DOCUMENT_BASENAMES.includes(rootName as (typeof ROOT_DOCUMENT_BASENAMES)[number]);
+function collectPathSkillHints(paths: readonly string[], metadata: ReadonlyMap<string, SkillRouteMetadata>): Set<string> {
+	const skills = new Set([...Object.keys(LEGACY_SKILL_ROUTE_PATH_HINTS), ...metadata.keys()]);
+	return new Set([...skills].filter(skill => matchesSkillRoutePathHints(
+		metadata.get(skill)?.pathHints ?? LEGACY_SKILL_ROUTE_PATH_HINTS[skill] ?? {},
+		paths,
+	)));
 }
 
 function readStringArrayFromTable(table: TomlTable, key: string): string[] {
@@ -508,6 +449,7 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 				appliesToReasons: readStringArrayFromTable(route, 'applies_to_reasons'),
 				mutuallyExclusiveWith: readStringArrayFromTable(route, 'mutually_exclusive_with'),
 				signalProfile: readRouteSignalProfile(route),
+				...(route.path_hints === undefined ? {} : { pathHints: isSkillRoutePathHints(route.path_hints) ? route.path_hints : {} }),
 				dependencies: readRouteDependencies(route),
 			});
 		}
@@ -579,6 +521,7 @@ function createSkillRouteCatalog(
 				mutually_exclusive_with: [...routeMetadata.mutuallyExclusiveWith],
 				positive_signals: [...routeMetadata.signalProfile.positiveSignals],
 				negative_signals: [...routeMetadata.signalProfile.negativeSignals],
+				...(routeMetadata.pathHints === undefined ? {} : { path_hints: routeMetadata.pathHints }),
 				...(routeMetadata.signalProfile.exclusionSignals.length > 0
 					? { exclusion_signals: [...routeMetadata.signalProfile.exclusionSignals] }
 					: {}),
@@ -661,6 +604,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			!isCatalogStringArray(entry.positive_signals) ||
 			!isCatalogStringArray(entry.negative_signals) ||
 			(entry.exclusion_signals !== undefined && !isCatalogStringArray(entry.exclusion_signals)) ||
+			(entry.path_hints !== undefined && !isSkillRoutePathHints(entry.path_hints)) ||
 			!isCatalogDependencies(entry.dependencies) ||
 			typeof entry.trigger !== 'string' ||
 			entry.trigger.trim().length === 0 ||
@@ -687,6 +631,7 @@ function parseSkillRouteCatalog(content: string): SkillRouteCatalog | null {
 			mutually_exclusive_with: entry.mutually_exclusive_with as string[],
 			positive_signals: entry.positive_signals as string[],
 			negative_signals: entry.negative_signals as string[],
+			...(entry.path_hints === undefined ? {} : { path_hints: entry.path_hints as SkillRoutePathHints }),
 			...(entry.exclusion_signals === undefined ? {} : { exclusion_signals: entry.exclusion_signals as string[] }),
 			dependencies: entry.dependencies as unknown as SkillRouteDependencies,
 			trigger: entry.trigger,
@@ -803,6 +748,7 @@ function readSkillRouteCatalog(projectRoot: string): InstalledSkillRouteCatalog 
 			negativeSignals: entry.negative_signals,
 			exclusionSignals: entry.exclusion_signals ?? [],
 		},
+		...(entry.path_hints === undefined ? {} : { pathHints: entry.path_hints }),
 		dependencies: entry.dependencies,
 	}] satisfies [string, SkillRouteMetadata]));
 
@@ -1460,13 +1406,13 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const reasons = [...new Set(input.reasons.map((reason) => reason.trim()).filter(Boolean))].sort(compareStrings);
 	const taskTerms = tokenize(input.taskText ?? '');
 	const pathTerms = tokenize(paths.join(' '));
-	const pathSkillHints = collectPathSkillHints(paths);
 	const dependencySignals = collectDependencySignals(paths, reasons, taskTerms, pathTerms);
 	const installedCatalog = readSkillRouteCatalog(projectRoot);
 	const builtInRoutes = installedCatalog?.routes ?? readSkillFrontmatterRoutes(projectRoot);
 	const externalRoutes = readExternalSkillFrontmatterRoutes(projectRoot);
 	const routes = [...builtInRoutes, ...externalRoutes];
 	const metadata = installedCatalog?.metadata ?? readSkillRouteMetadata(projectRoot);
+	const pathSkillHints = collectPathSkillHints(paths, metadata);
 	const normalizedTask = ` ${normalizeRouteText(input.taskText ?? '')} `;
 	const routeCandidates = routes
 		.filter((route) => {

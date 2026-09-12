@@ -313,7 +313,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 			acceptedRoutesPath,
 			readText(acceptedRoutesPath).replace(
 				'[routes."code-review".dependencies]',
-				'[routes."code-review".contexts]\npositive_terms = ["코드-검토", "font fallback", "텍스트 줄바꿈"]\nnegative_terms = ["문서_전용", "wording only"]\nexclusion_terms = ["static layout only", "모션 변경 없이"]\n\n[routes."code-review".dependencies]',
+				'[routes."code-review".path_hints]\nextensions = ["review"]\nbasenames = ["review.toml"]\n\n[routes."code-review".contexts]\npositive_terms = ["코드-검토", "font fallback", "텍스트 줄바꿈"]\nnegative_terms = ["문서_전용", "wording only"]\nexclusion_terms = ["static layout only", "모션 변경 없이"]\n\n[routes."code-review".dependencies]',
 			),
 		);
 		unlinkSync(path.join(acceptedProject, '.mustflow', 'config', 'manifest.lock.toml'));
@@ -321,7 +321,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 		const acceptedResult = await runCliInProcess(acceptedProject, ['check', '--strict', '--json']);
 		const acceptedCheck = JSON.parse(acceptedResult.stdout);
 		assert.ok(
-			!acceptedCheck.issues.some((issue) => ['코드-검토', '문서_전용', 'font fallback', '텍스트 줄바꿈', 'wording only', 'exclusion_terms'].some((term) => issue.includes(term))),
+			!acceptedCheck.issues.some((issue) => ['코드-검토', '문서_전용', 'font fallback', '텍스트 줄바꿈', 'wording only', 'exclusion_terms', 'path_hints'].some((term) => issue.includes(term))),
 			`lowercase Unicode search terms should be valid: ${acceptedCheck.issues.join('\n')}`,
 		);
 
@@ -330,7 +330,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 			rejectedRoutesPath,
 			readText(rejectedRoutesPath).replace(
 				'[routes."code-review".dependencies]',
-				'[routes."code-review".contexts]\npositive_terms = ["Code-Review"]\nexclusion_terms = ["Static Only"]\n\n[routes."code-review".dependencies]',
+				'[routes."code-review".path_hints]\nextensions = [".ts"]\n\n[routes."code-review".contexts]\npositive_terms = ["Code-Review"]\nexclusion_terms = ["Static Only"]\n\n[routes."code-review".dependencies]',
 			),
 		);
 		unlinkSync(path.join(rejectedProject, '.mustflow', 'config', 'manifest.lock.toml'));
@@ -339,6 +339,7 @@ test('strict check accepts lowercase Unicode route search terms and rejects uppe
 		const rejectedCheck = JSON.parse(rejectedResult.stdout);
 		assert.equal(rejectedResult.status, 1);
 		assert.ok(rejectedCheck.issues.some(issue => issue.includes('contexts.exclusion_terms entry "Static Only"')));
+		assert.ok(rejectedCheck.issues.some(issue => issue.includes('routes.code-review.path_hints')));
 		assert.ok(
 			rejectedCheck.issues.some(
 				(issue) =>

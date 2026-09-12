@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { isSkillRouteSearchTerm } from '../../../core/skill-route-text.js';
+import { isSkillRoutePathHints } from '../../../core/skill-route-path-hints.js';
 
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { readScopedCommandContract } from '../../../core/config-loading.js';
@@ -1482,6 +1483,9 @@ function validateSkillRouteMetadataTable(
 		issues,
 	);
 	const contexts = readSkillRouteMetadataContexts(route.contexts, label, issues);
+	if (route.path_hints !== undefined && !isSkillRoutePathHints(route.path_hints)) {
+		pushStrictIssue(issues, `${label}.path_hints must contain lowercase unique extensions/basenames arrays and an optional documentation boolean`);
+	}
 	const dependencies = readSkillRouteMetadataDependencies(route.dependencies, label, issues);
 
 	if (!category) {

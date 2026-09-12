@@ -182,6 +182,29 @@ Machine-readable import output uses these fields:
 
 The published JSON Schema is `schemas/skill-import-report.schema.json`.
 
+## Path-Based Route Hints
+
+Declare path evidence on a route without adding a skill-name branch to the resolver:
+
+```toml
+[routes."custom-language".path_hints]
+extensions = ["abc"]
+basenames = ["project.toml"]
+```
+
+Extensions omit the dot; basenames match the complete filename at any depth.
+Both lists use unique lowercase values. Input paths normalize Windows separators
+and case. A route may instead set `documentation = true` for Markdown/MDX under
+documentation trees and recognized documentation basenames such as README.md.
+Matching grants one path-hint bonus, while ordinary text evidence remains separate.
+It does not override explicit exclusions.
+
+The default template declares these rules for its existing language and documentation
+hints. Catalogs preserve optional `path_hints`. Older installations without the field
+retain the legacy rules; an explicit empty table disables that fallback for its route.
+Unknown fields, path separators in basenames, dotted extensions, and duplicate values
+fail strict validation.
+
 ## Explicit Exclusion Boundaries
 
 Route contexts may declare `exclusion_terms` for explicit task boundaries, such as

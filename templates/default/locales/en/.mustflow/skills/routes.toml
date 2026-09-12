@@ -1407,6 +1407,10 @@ priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "ui_change", "performance_change", "package_metadata_change", "release_risk"]
 
+[routes."typescript-code-change".path_hints]
+extensions = ["cts","mts","ts","tsx"]
+basenames = ["tsconfig.json"]
+
 [routes."type-contract-change"]
 category = "general_code"
 route_type = "adjunct"
@@ -1433,6 +1437,9 @@ priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "public_api_change", "test_change"]
 
+[routes."javascript-code-change".path_hints]
+extensions = ["cjs","mjs","js","jsx"]
+
 [routes."java-code-change"]
 category = "general_code"
 route_type = "primary"
@@ -1446,6 +1453,10 @@ route_type = "primary"
 priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "data_change", "migration_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."python-code-change".path_hints]
+extensions = ["py"]
+basenames = ["pyproject.toml","requirements.txt","poetry.lock"]
 
 [routes."php-code-change"]
 category = "general_code"
@@ -1461,6 +1472,9 @@ priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "test_change", "docs_change", "package_metadata_change", "workflow_change"]
 
+[routes."powershell-code-change".path_hints]
+extensions = ["ps1"]
+
 [routes."go-code-change"]
 category = "general_code"
 route_type = "primary"
@@ -1468,12 +1482,20 @@ priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "package_metadata_change", "release_risk"]
 
+[routes."go-code-change".path_hints]
+extensions = ["go"]
+basenames = ["go.mod","go.sum"]
+
 [routes."rust-code-change"]
 category = "general_code"
 route_type = "primary"
 priority = 85
 selection_axis = "language"
 applies_to_reasons = ["code_change", "behavior_change", "public_api_change", "test_change", "docs_change", "data_change", "performance_change", "security_change", "privacy_change", "package_metadata_change", "release_risk"]
+
+[routes."rust-code-change".path_hints]
+extensions = ["rs"]
+basenames = ["cargo.toml","cargo.lock"]
 
 [routes."axum-code-change"]
 category = "general_code"
@@ -2903,3 +2925,6 @@ route_type = "primary"
 priority = 35
 selection_axis = "task"
 applies_to_reasons = ["docs_change", "copy_change", "i18n_change"]
+
+[routes."docs-update".path_hints]
+documentation = true

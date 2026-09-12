@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:a61439b6cbf1ca5a974b2c138cbbd3fee971b3981212ad0e102a717a4747d131",
+  "source_fingerprint": "sha256:31ded4253829c10bb8f37f0868f57e14f5621a92233032ed632837a88ba780fc",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -5018,6 +5018,9 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "documentation": true
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -6548,6 +6551,15 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "go"
+        ],
+        "basenames": [
+          "go.mod",
+          "go.sum"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -7802,6 +7814,14 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "cjs",
+          "mjs",
+          "js",
+          "jsx"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -9842,6 +9862,11 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "ps1"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -10349,6 +10374,16 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "py"
+        ],
+        "basenames": [
+          "pyproject.toml",
+          "requirements.txt",
+          "poetry.lock"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -11235,6 +11270,15 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "rs"
+        ],
+        "basenames": [
+          "cargo.toml",
+          "cargo.lock"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -13474,6 +13518,17 @@
       "mutually_exclusive_with": [],
       "positive_signals": [],
       "negative_signals": [],
+      "path_hints": {
+        "extensions": [
+          "cts",
+          "mts",
+          "ts",
+          "tsx"
+        ],
+        "basenames": [
+          "tsconfig.json"
+        ]
+      },
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
