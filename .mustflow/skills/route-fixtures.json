@@ -2,6 +2,174 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "cli-option-contract-review-scenario-1",
+      "task": "Review repeated flags, boolean negation and the option terminator in the command parser; keep precedence predictable.",
+      "paths": [
+        "src/cli/options.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cli-option-contract-review"
+      ]
+    },
+    {
+      "id": "cli-option-contract-review-scenario-2",
+      "task": "Check inherited global options, aliases, required positional arguments and duration parsing for non-interactive CLI use.",
+      "paths": [
+        "src/cli/options.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cli-option-contract-review"
+      ]
+    },
+    {
+      "id": "cli-output-contract-review-scenario-1",
+      "task": "Keep progress output on stderr, JSONL records framed correctly on stdout and exit codes consistent for automation.",
+      "paths": [
+        "src/cli/output.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cli-output-contract-review"
+      ]
+    },
+    {
+      "id": "cli-output-contract-review-scenario-2",
+      "task": "Review command help text, warning output and the distinction between partial success and failure in machine-readable reports.",
+      "paths": [
+        "src/cli/output.ts"
+      ],
+      "reasons": [
+        "public_api_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "cli-output-contract-review"
+      ]
+    },
+    {
+      "id": "api-request-performance-review-scenario-1",
+      "task": "Review this API endpoint for per-request ORM lazy loading, Redis fan-out, pool acquire wait and excessive response serialization.",
+      "paths": [
+        "src/api/orders.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-request-performance-review"
+      ]
+    },
+    {
+      "id": "api-request-performance-review-scenario-2",
+      "task": "Trace the slow request handler from middleware through DTO mapping and external API calls; produce a request cost ledger.",
+      "paths": [
+        "src/api/orders.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-request-performance-review"
+      ]
+    },
+    {
+      "id": "error-message-integrity-review-scenario-1",
+      "task": "Review exception wrapping so the original cause, stable error code and actionable validation message survive redaction.",
+      "paths": [
+        "src/errors/provider.ts"
+      ],
+      "reasons": [
+        "behavior_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "error-message-integrity-review"
+      ]
+    },
+    {
+      "id": "error-message-integrity-review-scenario-2",
+      "task": "Check provider error mapping and troubleshooting guidance so users see the true cause without leaking sensitive response text.",
+      "paths": [
+        "src/errors/provider.ts"
+      ],
+      "reasons": [
+        "behavior_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "error-message-integrity-review"
+      ]
+    },
+    {
+      "id": "search-index-integrity-review-scenario-1",
+      "task": "Review search ingestion bulk item errors, index refresh visibility and read/write alias swaps that leave documents missing.",
+      "paths": [
+        "src/search/ingest.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "search-index-integrity-review"
+      ]
+    },
+    {
+      "id": "search-index-integrity-review-scenario-2",
+      "task": "Investigate stale search results by checking analyzer mappings, synonyms, index aliases and rejected indexing writes.",
+      "paths": [
+        "src/search/ingest.ts"
+      ],
+      "reasons": [
+        "data_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "search-index-integrity-review"
+      ]
+    },
+    {
+      "id": "performance-measurement-integrity-review-scenario-1",
+      "task": "Audit histogram timers and benchmark counters so retried and cancelled asynchronous work is not counted twice.",
+      "paths": [
+        "src/metrics/timers.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "performance-measurement-integrity-review"
+      ]
+    },
+    {
+      "id": "performance-measurement-integrity-review-scenario-2",
+      "task": "Review cache statistics denominators and queue wait measurements before claiming a throughput improvement from the telemetry.",
+      "paths": [
+        "src/metrics/timers.ts"
+      ],
+      "reasons": [
+        "performance_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "performance-measurement-integrity-review"
+      ]
+    },
+    {
       "id": "motion-static-only-boundary",
       "task": "Review animation transition motion duration and easing documentation for static layout only; do not change motion behavior.",
       "paths": [
