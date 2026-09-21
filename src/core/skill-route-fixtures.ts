@@ -20,6 +20,7 @@ interface SkillRouteFixtureCase {
 	readonly requiredCandidates: readonly string[];
 	readonly requiredAdjuncts: readonly string[];
 	readonly forbiddenCandidates: readonly string[];
+	readonly allowedCandidates: readonly string[] | undefined;
 	// "exact" (default) asserts the full main/candidate/adjunct contract.
 	// "invariant" asserts only that a required main is selected, forbidden
 	// candidates are absent, the candidate count stays within the limit, and
@@ -43,6 +44,7 @@ export interface SkillRouteEvaluationReport {
 	readonly coverage?: SkillRouteCoverage;
 	readonly main_accuracy: { readonly matched: number; readonly expected: number; readonly rate: number };
 	readonly candidate_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
+	readonly candidate_precision: { readonly evaluated_cases: number; readonly matched: number; readonly selected: number; readonly rate: number | null };
 	readonly adjunct_recall: { readonly matched: number; readonly expected: number; readonly rate: number };
 	readonly forbidden_violation_rate: { readonly violations: number; readonly expected: number; readonly rate: number };
 	readonly issues: readonly SkillRouteFixtureValidationIssue[];
@@ -50,6 +52,9 @@ export interface SkillRouteEvaluationReport {
 
 interface SkillRouteEvaluationCounts {
 	mainMatched: number;
+	precisionCases: number;
+	precisionMatched: number;
+	precisionSelected: number;
 	mainExpected: number;
 	candidateMatched: number;
 	candidateExpected: number;
@@ -143,6 +148,12 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 	const requiredCandidates = readOptionalStringArray(value.required_candidates, `${pointer}.required_candidates`, issues);
 	const requiredAdjuncts = readOptionalStringArray(value.required_adjuncts, `${pointer}.required_adjuncts`, issues);
 	const forbiddenCandidates = readOptionalStringArray(value.forbidden_candidates, `${pointer}.forbidden_candidates`, issues);
+	const allowedCandidates = value.allowed_candidates === undefined
+		? undefined : readStringArray(value.allowed_candidates, { allowEmpty: true });
+	if (allowedCandidates === null) {
+		issues.push({ kind: 'invalid', message: `${pointer}.allowed_candidates must be a string array (empty means no candidates)` });
+		return null;
+	}
 	if (!requiredCandidates || !requiredAdjuncts || !forbiddenCandidates) {
 		return null;
 	}
@@ -157,6 +168,7 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		requiredCandidates,
 		requiredAdjuncts,
 		forbiddenCandidates,
+		allowedCandidates,
 		mode: value.mode === 'invariant' ? 'invariant' : 'exact',
 	} satisfies SkillRouteFixtureCase;
 
@@ -164,7 +176,8 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		!fixture.requiredMain &&
 		fixture.requiredCandidates.length === 0 &&
 		fixture.requiredAdjuncts.length === 0 &&
-		fixture.forbiddenCandidates.length === 0
+		fixture.forbiddenCandidates.length === 0 &&
+		fixture.allowedCandidates === undefined
 	) {
 		issues.push({
 			kind: 'invalid',
@@ -173,6 +186,15 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		return null;
 	}
 
+	if (fixture.allowedCandidates !== undefined) {
+		const required = [...fixture.requiredCandidates, ...fixture.requiredAdjuncts,
+			...(fixture.requiredMain ? [fixture.requiredMain] : [])];
+		if (required.some(skill => !fixture.allowedCandidates!.includes(skill)) ||
+			fixture.forbiddenCandidates.some(skill => fixture.allowedCandidates!.includes(skill))) {
+			issues.push({ kind: 'invalid', message: `${pointer}.allowed_candidates conflicts with required or forbidden skills` });
+			return null;
+		}
+	}
 	return fixture;
 }
 
@@ -192,6 +214,9 @@ function evaluateFixtureCase(
 	});
 	const issues: SkillRouteFixtureValidationIssue[] = [];
 	const counts: SkillRouteEvaluationCounts = {
+		precisionCases: 0,
+		precisionMatched: 0,
+		precisionSelected: 0,
 		mainMatched: 0,
 		mainExpected: fixture.requiredMain ? 1 : 0,
 		candidateMatched: 0,
@@ -203,6 +228,16 @@ function evaluateFixtureCase(
 	};
 	const candidateSkills = new Set(report.candidates.map((candidate) => candidate.skill));
 	const adjunctSkills = new Set(report.selected.adjuncts.map((candidate) => candidate.skill));
+	if (fixture.allowedCandidates !== undefined) {
+		const actual = new Set([...candidateSkills, ...adjunctSkills,
+			...(report.selected.main ? [report.selected.main.skill] : [])]);
+		counts.precisionCases = 1;
+		counts.precisionSelected = actual.size;
+		for (const skill of actual) {
+			if (fixture.allowedCandidates.includes(skill)) counts.precisionMatched += 1;
+			else issues.push({ kind: 'mismatch', message: `Skill route fixture "${fixture.id}" selected unexpected candidate "${skill}"` });
+		}
+	}
 
 	if (fixture.mode === 'invariant') {
 		// Low-risk routing: prove the required main is selected, every required
@@ -389,6 +424,9 @@ export function validateSkillRouteFixtures(projectRoot: string): SkillRouteFixtu
 
 function emptyEvaluationCounts(): SkillRouteEvaluationCounts {
 	return {
+		precisionCases: 0,
+		precisionMatched: 0,
+		precisionSelected: 0,
 		mainMatched: 0,
 		mainExpected: 0,
 		candidateMatched: 0,
@@ -401,6 +439,9 @@ function emptyEvaluationCounts(): SkillRouteEvaluationCounts {
 }
 
 function addEvaluationCounts(target: SkillRouteEvaluationCounts, source: SkillRouteEvaluationCounts): void {
+	target.precisionCases += source.precisionCases;
+	target.precisionMatched += source.precisionMatched;
+	target.precisionSelected += source.precisionSelected;
 	target.mainMatched += source.mainMatched;
 	target.mainExpected += source.mainExpected;
 	target.candidateMatched += source.candidateMatched;
@@ -435,6 +476,12 @@ function createEvaluationReport(
 			matched: counts.candidateMatched,
 			expected: counts.candidateExpected,
 			rate: rate(counts.candidateMatched, counts.candidateExpected),
+		},
+		candidate_precision: {
+			evaluated_cases: counts.precisionCases,
+			matched: counts.precisionMatched,
+			selected: counts.precisionSelected,
+			rate: counts.precisionSelected === 0 ? null : rate(counts.precisionMatched, counts.precisionSelected),
 		},
 		adjunct_recall: {
 			matched: counts.adjunctMatched,

@@ -30,7 +30,8 @@
         { "required": ["required_main"] },
         { "required": ["required_candidates"] },
         { "required": ["required_adjuncts"] },
-        { "required": ["forbidden_candidates"] }
+        { "required": ["forbidden_candidates"] },
+        { "required": ["allowed_candidates"] }
       ],
       "properties": {
         "id": { "$ref": "#/$defs/nonEmptyString" },
@@ -50,7 +51,11 @@
         "required_main": { "$ref": "#/$defs/nonEmptyString" },
         "required_candidates": { "$ref": "#/$defs/nonEmptyStringArray" },
         "required_adjuncts": { "$ref": "#/$defs/nonEmptyStringArray" },
-        "forbidden_candidates": { "$ref": "#/$defs/nonEmptyStringArray" }
+        "forbidden_candidates": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "allowed_candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
       }
     }
   }

@@ -220,6 +220,44 @@ test('missing and malformed corpora cannot claim complete route coverage', () =>
 	} finally { removeTempProject(root); }
 });
 
+test('closed candidate expectations detect excess routes in both evaluation modes', () => {
+	const root = createTempProject();
+	try {
+		initProject(root);
+		const task = 'Fix a TypeScript bug in a function';
+		const paths = ['src/example.ts'];
+		const reasons = ['code_change'];
+		const resolved = resolveSkillRoutes(root, { taskText: task, paths, reasons });
+		const actual = [...new Set([...resolved.candidates.map(item => item.skill),
+			...resolved.selected.adjuncts.map(item => item.skill),
+			...(resolved.selected.main ? [resolved.selected.main.skill] : [])])];
+		assert.ok(actual.length > 0);
+		const fixturePath = path.join(root, '.mustflow/skills/route-fixtures.json');
+		const evaluate = (entry) => {
+			writeFileSync(fixturePath, JSON.stringify({ schema_version: '1', cases: [{ id: 'precision', task, paths, reasons, ...entry }] }));
+			return evaluateSkillRouteFixtures(root);
+		};
+		for (const mode of ['exact', 'invariant']) {
+			const valid = evaluate({ mode, allowed_candidates: actual });
+			assert.deepEqual(valid.issues, []);
+			assert.equal(valid.candidate_precision.rate, 1);
+			const excess = evaluate({ mode, allowed_candidates: actual.slice(1) });
+			assert.equal(excess.passed_case_count, 0);
+			assert.equal(excess.candidate_precision.selected, actual.length);
+			assert.equal(excess.candidate_precision.matched, actual.length - 1);
+			assert.match(excess.issues[0].message, /unexpected candidate/);
+		}
+		assert.equal(evaluate({ required_candidates: [actual[0]] }).candidate_precision.rate, null);
+		assert.equal(evaluate({ allowed_candidates: 'invalid' }).issues[0].kind, 'invalid');
+		assert.equal(evaluate({ allowed_candidates: [], required_main: actual[0] }).issues[0].kind, 'invalid');
+		assert.equal(evaluate({ allowed_candidates: actual, forbidden_candidates: [actual[0]] }).issues[0].kind, 'invalid');
+		const abstain = evaluate({ task: null, paths: ['unrelated.bin'], reasons: ['unclassified'], allowed_candidates: [] });
+		assert.deepEqual(abstain.issues, []);
+		assert.equal(abstain.passed_case_count, 1);
+		assert.deepEqual(abstain.candidate_precision, { evaluated_cases: 1, matched: 0, selected: 0, rate: null });
+	} finally { removeTempProject(root); }
+});
+
 test('installed default catalog matches installed routing metadata', () => {
 	const root = createTempProject();
 	try {
