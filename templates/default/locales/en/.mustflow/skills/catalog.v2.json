@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:b79f9053430624cbb2655efbbbe99af751f283192fcf02646bdc4d27e844e417",
+  "source_fingerprint": "sha256:39a6b62e510af0089295924ddd0209d5b00284ba832759c55e1b575b0d52df0f",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -2011,7 +2011,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "log correlation",
+        "로그 증거",
+        "요청 추적 로그"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -2054,7 +2058,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "backend retries",
+        "백엔드 신뢰성",
+        "백엔드 재시도"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -5700,7 +5708,9 @@
         "failure matrix",
         "failure path id",
         "false success",
-        "swallowed exception"
+        "swallowed exception",
+        "실패를 성공으로",
+        "예외를 삼키"
       ],
       "negative_signals": [
         "copy only",
@@ -7207,7 +7217,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "incident triage",
+        "운영 장애",
+        "장애 초동"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],

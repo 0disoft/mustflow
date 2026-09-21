@@ -2,6 +2,148 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "backend-reliability-retries-en",
+      "task": "Review backend retries for idempotency and duplicate message processing.",
+      "required_candidates": [
+        "backend-reliability-change"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "backend-reliability-retries-ko",
+      "task": "백엔드 재시도 때문에 중복 메시지가 처리돼. 멱등성과 대기 시간을 검토해줘.",
+      "required_candidates": [
+        "backend-reliability-change"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "backend-log-correlation-en",
+      "task": "Review log correlation so a request's final outcome can be reconstructed from backend logs.",
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "backend-log-correlation-ko",
+      "task": "요청 추적 로그만으로 마지막 처리 결과와 원인을 재구성할 수 있는지 검토해줘.",
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "incident-triage-firstpass-en",
+      "task": "Plan incident triage to establish user impact and eliminate failing operational boundaries first.",
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "incident-triage-firstpass-ko",
+      "task": "운영 장애가 났어. 사용자 영향과 실패한 구간부터 확인하는 장애 초동 절차를 잡아줘.",
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "failure-integrity-swallowed-en",
+      "task": "Audit swallowed-exception handling that turns a failed write into false-success.",
+      "required_candidates": [
+        "failure-integrity-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "failure-integrity-swallowed-ko",
+      "task": "예외를 삼키는 catch가 실패를 성공으로 보고해. 실제 결과를 숨기지 않게 검토해줘.",
+      "required_candidates": [
+        "failure-integrity-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "backend-log-logo-boundary",
+      "task": "Adjust the logo alignment on a landing page.",
+      "forbidden_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "backend-reliability-pure-math-boundary",
+      "task": "Prove a pure arithmetic identity on integers.",
+      "forbidden_candidates": [
+        "backend-reliability-change",
+        "incident-triage-review",
+        "failure-integrity-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
       "id": "precision-api-failure-top1",
       "task": "Investigate API request failures at the failing boundary.",
       "required_main": "api-failure-triage",
