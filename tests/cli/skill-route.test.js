@@ -194,14 +194,15 @@ test('route coverage counts distinct positive assertions and separates failed, n
 	]);
 	assert.equal(coverage.installed_skill_count, 4);
 	assert.equal(coverage.expected_skill_count, 2);
-	assert.equal(coverage.passed_skill_count, 1);
-	assert.equal(coverage.passed_skill_rate, 0.25);
+	assert.equal(coverage.passed_skill_count, 0);
+	assert.equal(coverage.passed_skill_rate, 0);
 	assert.deepEqual(coverage.untested_skills, ['negative', 'untested']);
-	assert.deepEqual(coverage.failing_skills, ['failed']);
+	assert.deepEqual(coverage.failing_skills, ['covered', 'failed']);
+	assert.deepEqual(coverage.partially_passing_skills, ['covered']);
 	assert.deepEqual(coverage.negative_only_skills, ['negative']);
 	assert.deepEqual(coverage.unknown_references, ['missing']);
 	assert.deepEqual(coverage.categories, [
-		{ category: 'code', installed_skill_count: 2, expected_skill_count: 2, passed_skill_count: 1 },
+		{ category: 'code', installed_skill_count: 2, expected_skill_count: 2, passed_skill_count: 0 },
 		{ category: 'ui', installed_skill_count: 2, expected_skill_count: 0, passed_skill_count: 0 },
 	]);
 	assert.equal(summarizeSkillRouteCoverage([], []).passed_skill_rate, 0);
