@@ -723,6 +723,10 @@ priority = 74
 selection_axis = "task"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_change", "public_api_change", "performance_change"]
 
+[routes."ai-generated-code-hardening".contexts]
+positive_terms = ["ai generated code", "ai가 작성한 코드"]
+exclusion_terms = ["주석의 오탈자만", "comment typos only"]
+
 [routes."quality-gaming-guard"]
 category = "general_code"
 route_type = "adjunct"
@@ -913,12 +917,20 @@ priority = 72
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "public_api_change", "performance_change", "data_change", "docs_change"]
 
+[routes."api-failure-triage".contexts]
+positive_terms = ["api request failures", "응답 원문", "failing boundary"]
+exclusion_terms = ["no failing request", "장애 분석은 필요 없어"]
+
 [routes."auth-flow-triage"]
 category = "bug_failure"
 route_type = "primary"
 priority = 74
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "command_failure", "behavior_change", "security_change", "privacy_change", "data_change", "docs_change"]
+
+[routes."auth-flow-triage".contexts]
+positive_terms = ["authentication redirect loop", "인증 리다이렉트", "로그인 화면으로 돌아"]
+exclusion_terms = ["인증 흐름은 정상", "authentication flow is healthy"]
 
 [routes."docker-runtime-triage"]
 category = "bug_failure"

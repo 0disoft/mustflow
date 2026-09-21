@@ -2,6 +2,156 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "triage-api-wire-ko",
+      "task": "API 요청이 간헐적으로 실패해. 응답 원문을 보존하고 클라이언트와 게이트웨이 중 어디서 깨지는지 찾아줘.",
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "triage-api-wire-en",
+      "task": "Investigate intermittent API request failures and preserve the wire response before locating the failing boundary.",
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "triage-auth-redirect-ko",
+      "task": "로그인 후 다시 로그인 화면으로 돌아가. 쿠키와 인증 리다이렉트 중 어디서 실패하는지 찾아줘.",
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "triage-auth-redirect-en",
+      "task": "Diagnose an authentication redirect loop after login and isolate cookie versus identity-provider failure.",
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "hardening-generated-diff-ko",
+      "task": "AI가 작성한 코드를 검토해줘. 하드코딩된 예외 처리와 중복 헬퍼, 숨은 결합을 찾아줘.",
+      "required_candidates": [
+        "ai-generated-code-hardening"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "hardening-generated-diff-en",
+      "task": "Harden this AI-generated code against hardcoded exceptions, duplicate helpers and hidden coupling.",
+      "required_candidates": [
+        "ai-generated-code-hardening"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "triage-api-design-only",
+      "task": "Design the response schema for a new healthy endpoint. No failing request to diagnose.",
+      "forbidden_candidates": [
+        "api-failure-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "triage-auth-copy-only",
+      "task": "로그인 화면의 버튼 문구만 다듬어줘. 인증 흐름은 정상이고 오류 분석은 필요 없어.",
+      "forbidden_candidates": [
+        "auth-flow-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "hardening-handwritten-copy-only",
+      "task": "사람이 작성한 주석의 오탈자만 고쳐줘. AI 생성 코드 보완 작업은 하지 마.",
+      "forbidden_candidates": [
+        "ai-generated-code-hardening"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "abstain-greeting-ko",
+      "task": "안녕, 좋은 하루 보내!",
+      "allowed_candidates": [],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unclassified"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "abstain-greeting-en",
+      "task": "Hello, have a nice day!",
+      "allowed_candidates": [],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unclassified"
+      ],
+      "max_candidates": 5
+    },
+    {
       "id": "procedure-coverage-module-boundary-review-en",
       "mode": "exact",
       "task": "Review module boundaries and cross-package deep imports for dependency direction.",

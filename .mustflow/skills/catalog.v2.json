@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:2b39744a85c21e82372c235978eb7ff8d238d9bb2e7116b62ac72fd0cf1c4455",
+  "source_fingerprint": "sha256:b79f9053430624cbb2655efbbbe99af751f283192fcf02646bdc4d27e844e417",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -861,8 +861,15 @@
         "performance_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "ai generated code",
+        "ai가 작성한 코드"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "comment typos only",
+        "주석의 오탈자만"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -1060,8 +1067,16 @@
         "docs_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "api request failures",
+        "failing boundary",
+        "응답 원문"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "no failing request",
+        "장애 분석은 필요 없어"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -1502,8 +1517,16 @@
         "docs_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "authentication redirect loop",
+        "로그인 화면으로 돌아",
+        "인증 리다이렉트"
+      ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "authentication flow is healthy",
+        "인증 흐름은 정상"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
