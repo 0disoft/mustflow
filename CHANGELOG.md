@@ -6,6 +6,14 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.139.0 - 2026-09-22
+
+- Add optional exhaustive candidate expectations, top-one and top-five precision checks, and empty-context routing cases without inventing file paths.
+- Count a skill as covered only when all its positive cases pass; expose partially passing skills instead of hiding mixed results.
+- Improve bilingual discovery for API and authentication failures, backend reliability, log evidence, incident triage, failure handling, database changes and migrations, file upload security, and secret exposure response.
+- Distinguish log-only review from incident triage with complete Korean and English exclusion phrases, and retain colloquial, mixed-language, and negated requests as regressions.
+- Document routing evaluation semantics and the limits of precision and coverage claims.
+
 ## 2.138.4 - 2026-09-12
 
 - Register skill-authoring plan verification against its existing executable tests.

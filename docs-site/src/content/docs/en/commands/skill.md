@@ -69,6 +69,48 @@ Projects may add `.mustflow/skills/route-fixtures.json` to pin important routing
 When that file exists, `mf check --strict` re-runs those cases and fails if the selected main route,
 required candidates, selected adjuncts, or forbidden candidates drift.
 
+### Evaluate candidate precision
+
+Each case supplies `paths` and `reasons` arrays. Use empty arrays when the request has no
+file or classification context; invented paths can introduce unrelated routing signals.
+
+The optional `allowed_candidates` array is an exhaustive allowlist for returned candidates
+and the selected main and adjunct routes. A case fails when any of those routes falls outside
+the list. Keep `required_main`, `required_candidates`, or `required_adjuncts` to assert
+which routes must appear: an allowlist alone does not require every listed route.
+Use `allowed_candidates: []` to assert that no route should be selected. Omit the field
+to retain the existing partial required/forbidden expectations. Required routes outside
+the allowlist, or forbidden routes inside it, are invalid expectations.
+
+```json
+{
+  "id": "auth-redirect",
+  "task": "인증 리다이렉트가 반복돼. 실패 지점을 확인해줘.",
+  "paths": [],
+  "reasons": [],
+  "max_candidates": 1,
+  "required_main": "auth-flow-triage",
+  "allowed_candidates": ["auth-flow-triage"]
+}
+```
+
+The source repository's `skill_route_eval` intent reports `candidate_precision` with
+`evaluated_cases`, `matched`, `selected`, and `rate`. Only cases with an explicit
+allowlist contribute. Predictions are deduplicated within each case; `rate` is
+`matched / selected`, or `null` when there are no predictions. Empty-selection cases
+still count toward case pass/fail, so silence cannot hide a missing required route.
+Check `max_candidates` and sample size before interpreting the result: correct top-one
+predictions do not establish top-five precision or accuracy on arbitrary user requests.
+
+Coverage counts a skill as passed only when all cases that positively require it pass.
+`partially_passing_skills` identifies skills with both passing and failing positive cases;
+these also remain in `failing_skills` and are excluded from `passed_skill_count`.
+Unasserted skills remain untested even when they appear incidentally in results.
+
+Explicit exclusion phrases must match complete normalized words. Include the intended
+Korean ending, such as `운영 장애 분석은 아니고`, rather than assuming that a stem
+like `아니` also matches `아니고`.
+
 ## Usage
 
 ```sh

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { parse } from 'smol-toml';
 
 import {
 	assertI18nSkillDocument,
@@ -80,7 +81,10 @@ test('failure integrity review catches false-success error handling', () => {
 	assert.match(skillIndex, /four-oracle evidence/u);
 	assert.match(routes, /\[routes\."failure-integrity-review"\]\r?\ncategory = "general_code"\r?\nroute_type = "adjunct"/u);
 	assert.match(routes, /priority = 78/u);
-	assert.match(routes, /positive_terms = \["failure-matrix", "swallowed-exception", "false-success", "error-transformation", "failure-path-id", "contradictory-success"\]/u);
+	const failureTerms = parse(routes).routes['failure-integrity-review'].contexts.positive_terms;
+	for (const term of ['failure-matrix', 'swallowed-exception', 'false-success', 'error-transformation', 'failure-path-id', 'contradictory-success', '예외를 삼키', '실패를 성공으로']) {
+		assert.ok(failureTerms.includes(term), `failure integrity route must retain ${term}`);
+	}
 	assertRouteReasonsText(routes, [
 		'unknown_change',
 		'code_change',

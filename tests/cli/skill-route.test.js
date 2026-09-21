@@ -252,7 +252,7 @@ test('closed candidate expectations detect excess routes in both evaluation mode
 		assert.equal(evaluate({ allowed_candidates: 'invalid' }).issues[0].kind, 'invalid');
 		assert.equal(evaluate({ allowed_candidates: [], required_main: actual[0] }).issues[0].kind, 'invalid');
 		assert.equal(evaluate({ allowed_candidates: actual, forbidden_candidates: [actual[0]] }).issues[0].kind, 'invalid');
-		const abstain = evaluate({ task: null, paths: ['unrelated.bin'], reasons: ['unclassified'], allowed_candidates: [] });
+		const abstain = evaluate({ task: null, paths: [], reasons: [], allowed_candidates: [] });
 		assert.deepEqual(abstain.issues, []);
 		assert.equal(abstain.passed_case_count, 1);
 		assert.deepEqual(abstain.candidate_precision, { evaluated_cases: 1, matched: 0, selected: 0, rate: null });

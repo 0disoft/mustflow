@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:39a6b62e510af0089295924ddd0209d5b00284ba832759c55e1b575b0d52df0f",
+  "source_fingerprint": "sha256:f0fe45708449a7b9ae1fa2e883dcf28024e74b7aeef9043e7f7c0188559d39e6",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -4239,7 +4239,11 @@
         "behavior_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "database schema",
+        "데이터 소유권",
+        "데이터베이스 스키마"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -4357,7 +4361,11 @@
         "security_change"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "database migration",
+        "데이터 마이그레이션",
+        "온라인 마이그레이션"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -5943,7 +5951,10 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "file upload security",
+        "파일 업로드 보안"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],
@@ -7223,6 +7234,11 @@
         "장애 초동"
       ],
       "negative_signals": [],
+      "exclusion_signals": [
+        "not incident triage",
+        "운영 장애 분석은 아니고",
+        "운영 장애 분석은 아님"
+      ],
       "dependencies": {
         "requires_skills": [],
         "suggests_adjuncts": [],
@@ -11575,7 +11591,11 @@
         "release_risk"
       ],
       "mutually_exclusive_with": [],
-      "positive_signals": [],
+      "positive_signals": [
+        "credential exposure",
+        "비밀키 노출",
+        "시크릿 노출"
+      ],
       "negative_signals": [],
       "dependencies": {
         "requires_skills": [],

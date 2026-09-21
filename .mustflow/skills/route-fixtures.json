@@ -2,6 +2,214 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "ambiguity-log-incident-short-negation",
+      "task": "운영 장애 분석은 아님. 요청 추적 로그의 필드 누락만 점검해줘.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "ambiguity-log-incident-english-negation",
+      "task": "This is not incident triage; review log correlation fields only.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "data-schema-ownership-en",
+      "task": "Review database schema constraints and ownership before adding persistent customer records.",
+      "paths": [],
+      "reasons": [
+        "data_change"
+      ],
+      "required_candidates": [
+        "database-change-safety"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "data-schema-ownership-ko",
+      "task": "데이터베이스 스키마를 바꾸기 전에 레코드 소유권과 제약 조건을 검토해줘.",
+      "paths": [],
+      "reasons": [
+        "data_change"
+      ],
+      "required_candidates": [
+        "database-change-safety"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "data-migration-backfill-en",
+      "task": "Plan a database migration with compatible rollout and a resumable backfill.",
+      "paths": [],
+      "reasons": [
+        "migration_change"
+      ],
+      "required_candidates": [
+        "database-migration-change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "data-migration-backfill-ko",
+      "task": "온라인 마이그레이션의 구버전 호환성과 백필 재시작 방식을 검토해줘.",
+      "paths": [],
+      "reasons": [
+        "migration_change"
+      ],
+      "required_candidates": [
+        "database-migration-change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "upload-security-lifecycle-en",
+      "task": "Review file upload security from untrusted filename through parsing and public download.",
+      "paths": [],
+      "reasons": [
+        "security_change"
+      ],
+      "required_candidates": [
+        "file-upload-security-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "upload-security-lifecycle-ko",
+      "task": "파일 업로드 보안을 파일명 검증부터 변환 작업과 공개 다운로드까지 점검해줘.",
+      "paths": [],
+      "reasons": [
+        "security_change"
+      ],
+      "required_candidates": [
+        "file-upload-security-review"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "secret-exposure-containment-en",
+      "task": "Respond to credential exposure in a published build log; contain it without reproducing the value.",
+      "paths": [],
+      "reasons": [
+        "security_change"
+      ],
+      "required_candidates": [
+        "secret-exposure-response"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "secret-exposure-containment-ko",
+      "task": "빌드 로그에서 시크릿 노출이 발견됐어. 값을 재출력하지 말고 차단과 교체 절차를 잡아줘.",
+      "paths": [],
+      "reasons": [
+        "security_change"
+      ],
+      "required_candidates": [
+        "secret-exposure-response"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "precision-top5-auth-failure",
+      "task": "인증 리다이렉트가 반복돼. 실패 원인을 좁혀줘.",
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage",
+        "authentication-design-review",
+        "session-management-review",
+        "credential-token-lifecycle-review"
+      ],
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "precision-top5-log-evidence",
+      "task": "요청 추적 로그가 끊겨. 최종 결과를 재구성할 수 있는지 검토해줘.",
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "observability-debuggability-review",
+        "incident-triage-review",
+        "backend-reliability-change"
+      ],
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "precision-top5-generated-code",
+      "task": "AI가 작성한 코드의 중복과 하드코딩을 찾아줘.",
+      "required_candidates": [
+        "ai-generated-code-hardening"
+      ],
+      "allowed_candidates": [
+        "ai-generated-code-hardening",
+        "abstraction-boundary-review",
+        "quality-gaming-guard"
+      ],
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "ambiguity-auth-versus-api",
+      "task": "인증 리다이렉트 루프 때문에 로그인 화면으로 돌아와. 원인 추적부터 해줘.",
+      "required_main": "auth-flow-triage",
+      "forbidden_candidates": [
+        "api-request-performance-review"
+      ],
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "ambiguity-log-versus-incident",
+      "task": "운영 장애 분석은 아니고 요청 추적 로그의 누락 필드만 검토해줘.",
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ],
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
       "id": "holdout-backend-retry-colloquial",
       "task": "백엔드 재시도 돌다가 같은 작업이 두 번 됨. 중복 실행 안 나게 봐줘.",
       "required_candidates": [

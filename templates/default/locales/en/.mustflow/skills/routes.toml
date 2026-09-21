@@ -1188,6 +1188,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 
 [routes."incident-triage-review".contexts]
 positive_terms = ["incident triage", "운영 장애", "장애 초동"]
+exclusion_terms = ["운영 장애 분석은 아니고", "운영 장애 분석은 아님", "not incident triage"]
 
 [routes."deployment-rollout-safety-review"]
 category = "general_code"
@@ -1870,6 +1871,9 @@ priority = 55
 selection_axis = "risk"
 applies_to_reasons = ["code_change", "behavior_change"]
 
+[routes."database-change-safety".contexts]
+positive_terms = ["database schema", "데이터베이스 스키마", "데이터 소유권"]
+
 [routes."vendor-portability-exit-readiness-review"]
 category = "data_external"
 route_type = "adjunct"
@@ -1888,6 +1892,9 @@ route_type = "primary"
 priority = 82
 selection_axis = "task"
 applies_to_reasons = ["code_change", "data_change", "migration_change", "public_api_change", "test_change", "docs_change", "security_change"]
+
+[routes."database-migration-change".contexts]
+positive_terms = ["database migration", "데이터 마이그레이션", "온라인 마이그레이션"]
 
 [routes."database-query-bottleneck-review"]
 category = "data_external"
@@ -2207,6 +2214,9 @@ priority = 90
 selection_axis = "workflow"
 applies_to_reasons = ["security_change", "privacy_change", "docs_change", "package_metadata_change", "release_risk"]
 
+[routes."secret-exposure-response".contexts]
+positive_terms = ["credential exposure", "시크릿 노출", "비밀키 노출"]
+
 [routes."provenance-license-gate"]
 category = "security_privacy"
 route_type = "adjunct"
@@ -2431,6 +2441,9 @@ route_type = "adjunct"
 priority = 78
 selection_axis = "risk"
 applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "public_api_change", "security_change", "privacy_change", "data_change", "test_change", "docs_change", "package_metadata_change", "release_risk"]
+
+[routes."file-upload-security-review".contexts]
+positive_terms = ["file upload security", "파일 업로드 보안"]
 
 [routes."input-boundary-validation-review"]
 category = "security_privacy"

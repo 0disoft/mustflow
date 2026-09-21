@@ -115,15 +115,15 @@ function parseFixtureCase(value: unknown, index: number, issues: SkillRouteFixtu
 		return null;
 	}
 
-	const paths = readStringArray(value.paths);
+	const paths = readStringArray(value.paths, { allowEmpty: true });
 	if (!paths) {
-		issues.push({ kind: 'invalid', message: `${pointer}.paths must be a non-empty string array` });
+		issues.push({ kind: 'invalid', message: `${pointer}.paths must be an array of non-empty strings` });
 		return null;
 	}
 
-	const reasons = readStringArray(value.reasons);
+	const reasons = readStringArray(value.reasons, { allowEmpty: true });
 	if (!reasons) {
-		issues.push({ kind: 'invalid', message: `${pointer}.reasons must be a non-empty string array` });
+		issues.push({ kind: 'invalid', message: `${pointer}.reasons must be an array of non-empty strings` });
 		return null;
 	}
 

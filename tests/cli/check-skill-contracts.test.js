@@ -521,7 +521,7 @@ test('strict check fails invalid skill route golden fixture shape', async () => 
 		assertHasIssueDetail(check, 'mustflow.skill.route_fixture_invalid');
 		assert.ok(
 			check.issues.some((issue) =>
-				issue.includes('.mustflow/skills/route-fixtures.json cases[0].paths must be a non-empty string array'),
+				issue.includes('.mustflow/skills/route-fixtures.json cases[0].paths must be an array of non-empty strings'),
 			),
 		);
 	} finally {

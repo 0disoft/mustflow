@@ -41,8 +41,8 @@
             { "type": "null" }
           ]
         },
-        "paths": { "$ref": "#/$defs/nonEmptyStringArray" },
-        "reasons": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "paths": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "reasons": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
         "max_candidates": {
           "type": "integer",
           "minimum": 1,
