@@ -2,6 +2,90 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "holdout-backend-retry-colloquial",
+      "task": "백엔드 재시도 돌다가 같은 작업이 두 번 됨. 중복 실행 안 나게 봐줘.",
+      "required_candidates": [
+        "backend-reliability-change"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "holdout-backend-log-mixed",
+      "task": "request ID는 찍히는데 요청 추적 로그가 중간에 끊겨. 마지막 결과까지 따라갈 수 있게 점검 ㄱㄱ.",
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "holdout-incident-colloquial",
+      "task": "운영 장애 났음. 어디부터 확인해야 복구 범위를 빨리 좁힐지 순서 잡아줘.",
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "holdout-failure-mixed",
+      "task": "catch 이후 실패를 성공으로 표시하는 듯? rollback 실패도 가려지는지 봐줘.",
+      "required_candidates": [
+        "failure-integrity-review"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "holdout-auth-negation",
+      "task": "인증 흐름은 정상. 로그인 버튼 label만 짧게 바꿔줘.",
+      "forbidden_candidates": [
+        "auth-flow-triage"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
+      "id": "holdout-hardening-negation",
+      "task": "AI가 작성한 코드라도 지금은 주석의 오탈자만 수정해줘.",
+      "forbidden_candidates": [
+        "ai-generated-code-hardening"
+      ],
+      "paths": [
+        "misc/opaque.bin"
+      ],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5
+    },
+    {
       "id": "backend-reliability-retries-en",
       "task": "Review backend retries for idempotency and duplicate message processing.",
       "required_candidates": [
