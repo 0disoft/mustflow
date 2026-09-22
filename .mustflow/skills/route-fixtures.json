@@ -2,6 +2,342 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "precision-expanded-auth-ko",
+      "task": "인증 리다이렉트가 계속 반복돼. 어디에서 실패하는지 확인해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-auth-en",
+      "task": "Investigate this authentication redirect loop and identify the failing step.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-api-ko",
+      "task": "응답 원문이 오류 페이지야. 요청이 실패한 경계를 찾아줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-api-en",
+      "task": "Investigate API request failures and locate the failing boundary.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-log-ko",
+      "task": "요청 추적 로그에서 누락된 식별자를 찾아줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-log-en",
+      "task": "Review log correlation fields to reconstruct the request outcome.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-incident-ko",
+      "task": "운영 장애가 발생했어. 영향 범위와 초동 대응부터 정리해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-incident-en",
+      "task": "Perform incident triage and establish the current impact.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-schema-ko",
+      "task": "데이터베이스 스키마의 소유권과 제약 조건을 검토해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety"
+      ],
+      "allowed_candidates": [
+        "database-change-safety"
+      ]
+    },
+    {
+      "id": "precision-expanded-schema-en",
+      "task": "Review database schema ownership and constraints before adding records.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety"
+      ],
+      "allowed_candidates": [
+        "database-change-safety"
+      ]
+    },
+    {
+      "id": "precision-expanded-migration-ko",
+      "task": "온라인 마이그레이션의 백필 재시작 순서를 검토해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-expanded-migration-en",
+      "task": "Plan a database migration with a resumable backfill.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-combined-auth-api-ko",
+      "task": "인증 리다이렉트 반복과 API 요청의 응답 원문을 함께 조사해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-combined-auth-api-en",
+      "task": "Investigate the authentication redirect loop and API request failures together.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-combined-log-incident-ko",
+      "task": "운영 장애 초동 분석과 요청 추적 로그의 누락 필드 점검을 둘 다 진행해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-combined-log-incident-en",
+      "task": "Perform incident triage and review log correlation fields together.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-combined-schema-migration-ko",
+      "task": "데이터베이스 스키마 제약과 온라인 마이그레이션 백필을 함께 검토해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-combined-schema-migration-en",
+      "task": "Review database schema ownership and the database migration backfill together.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-negation-auth-healthy",
+      "task": "인증 흐름은 정상. 응답 원문으로 요청 실패를 추적해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "api-failure-triage"
+      ],
+      "forbidden_candidates": [
+        "auth-flow-triage"
+      ]
+    },
+    {
+      "id": "precision-negation-api-healthy",
+      "task": "There is no failing request. Review log correlation fields only.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-negation-incident-excluded",
+      "task": "운영 장애 분석 말고 요청 추적 로그의 누락 필드만 점검해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-negation-incident-excluded-en",
+      "task": "This is not incident triage. Review log correlation fields only.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-conditional-incident",
+      "task": "운영 장애 분석은 아니면 안 돼. 영향 범위를 먼저 조사해줘.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-quoted-exclusion",
+      "task": "The old note says \"not incident triage\". That note is wrong. Perform incident triage now.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
       "id": "ambiguity-log-incident-short-negation",
       "task": "운영 장애 분석은 아님. 요청 추적 로그의 필드 누락만 점검해줘.",
       "paths": [],
