@@ -1,7 +1,7 @@
 import { buildSkillRouteCatalog } from './skill-route-resolution.js';
 
 function cell(value: string): string {
-	return value.replace(/[\r\n]+/gu, ' ').replace(/\|/gu, '\\|');
+	return value.replace(/[\r\n]+/gu, ' ').replace(/[\\|]/gu, '\\$&');
 }
 
 export function renderSkillCategoryIndex(projectRoot: string, category?: string): string {
