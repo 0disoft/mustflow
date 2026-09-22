@@ -2,6 +2,198 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "precision-expanded-auth-en-unknown",
+      "task": "Investigate this authentication redirect loop and identify the failing step.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-api-en-unknown",
+      "task": "Investigate API request failures and locate the failing boundary.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-expanded-log-en-unknown",
+      "task": "Review log correlation fields to reconstruct the request outcome.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-incident-en-unknown",
+      "task": "Perform incident triage and establish the current impact.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-expanded-schema-en-unknown",
+      "task": "Review database schema ownership and constraints before adding records.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety"
+      ],
+      "allowed_candidates": [
+        "database-change-safety"
+      ]
+    },
+    {
+      "id": "precision-expanded-migration-en-unknown",
+      "task": "Plan a database migration with a resumable backfill.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-combined-auth-api-en-unknown",
+      "task": "Investigate the authentication redirect loop and API request failures together.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ],
+      "allowed_candidates": [
+        "auth-flow-triage",
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-combined-log-incident-en-unknown",
+      "task": "Perform incident triage and review log correlation fields together.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review",
+        "backend-log-evidence-review"
+      ]
+    },
+    {
+      "id": "precision-combined-schema-migration-en-unknown",
+      "task": "Review database schema ownership and the database migration backfill together.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ],
+      "allowed_candidates": [
+        "database-change-safety",
+        "database-migration-change"
+      ]
+    },
+    {
+      "id": "precision-negation-api-healthy-unknown",
+      "task": "There is no failing request. Review log correlation fields only.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "api-failure-triage"
+      ]
+    },
+    {
+      "id": "precision-negation-incident-excluded-en-unknown",
+      "task": "This is not incident triage. Review log correlation fields only.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
+      "id": "precision-quoted-exclusion-unknown",
+      "task": "The old note says \"not incident triage\". That note is wrong. Perform incident triage now.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "incident-triage-review"
+      ],
+      "allowed_candidates": [
+        "incident-triage-review"
+      ]
+    },
+    {
       "id": "precision-expanded-auth-ko",
       "task": "인증 리다이렉트가 계속 반복돼. 어디에서 실패하는지 확인해줘.",
       "paths": [],

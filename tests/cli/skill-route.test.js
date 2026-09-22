@@ -778,11 +778,21 @@ test('task-only signals suppress incidental words without dropping combined sign
 			const resolve = (task, paths = [], reasons = []) => resolveSkillRoutes(root, { taskText: task, paths, reasons, maxCandidates: 5 });
 			const names = report => report.candidates.map(candidate => candidate.skill);
 			assert.deepEqual(names(resolve('log correlation request outcome')), ['focused']);
+			for (const reasons of [['unknown_change'], [' unknown_change ', 'unknown_change', '']]) {
+				assert.deepEqual(names(resolve('log correlation request outcome', [], reasons)), ['focused']);
+				assert.deepEqual(new Set(names(resolve('log correlation request outcome fsync', [], reasons))), new Set(['focused', 'recovery']));
+				assert.deepEqual(new Set(names(resolve('log correlation request outcome Rust compiler', [], reasons))), new Set(['focused', 'rust-code-change']));
+				assert.ok(names(resolve('request outcome', [], reasons)).includes('incidental'));
+				assert.ok(names(resolve('log correlation request outcome', ['src/request.ts'], reasons)).includes('incidental'));
+			}
 			assert.deepEqual(new Set(names(resolve('log correlation request outcome fsync'))), new Set(['focused', 'recovery']));
 			assert.deepEqual(new Set(names(resolve('log correlation request outcome Rust compiler'))), new Set(['focused', 'rust-code-change']));
 			assert.ok(names(resolve('request outcome')).includes('incidental'));
 			assert.ok(names(resolve('log correlation request outcome', ['src/request.ts'])).includes('incidental'));
 			assert.ok(names(resolve('log correlation request outcome', [], ['code_change'])).includes('incidental'));
+			for (const reasons of [['unknown_change', 'code_change'], ['code_change', 'unknown_change'], ['security_change']]) {
+				assert.ok(names(resolve('log correlation request outcome', [], reasons)).includes('incidental'));
+			}
 		}
 	} finally { removeTempProject(root); }
 });

@@ -1460,7 +1460,8 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	// Keep every explicit phrase match for combined tasks instead of filling the limit
 	// with weaker token overlap. Language evidence is orthogonal to the task signal;
 	// structured requests retain their corroborating evidence.
-	const hasTaskOnlyPhraseEvidence = paths.length === 0 && reasons.length === 0
+	// unknown_change is a placeholder, not additional subject evidence.
+	const hasTaskOnlyPhraseEvidence = paths.length === 0 && reasons.every((reason) => reason === 'unknown_change')
 		&& evidenceCandidates.some((candidate) => candidate.score_breakdown.pattern_signal_match > 0);
 	const allCandidates = hasTaskOnlyPhraseEvidence
 		? evidenceCandidates.filter((candidate) => candidate.score_breakdown.pattern_signal_match > 0
