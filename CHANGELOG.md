@@ -6,6 +6,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.139.1 - 2026-09-22
+
+- Reduce incidental candidates in task-only routing when an explicit pattern signal is present, including requests with only the `unknown_change` placeholder.
+- Retain explicitly named language routes and combined task signals; distinguish C, C++, and C# notation, including attached numeric versions and fullwidth characters, without treating drive paths or the verb `go` as language evidence.
+- Ignore exclusion phrases inside supported balanced, same-line quoted examples while retaining unquoted exclusions; add the Korean incident exclusion `운영 장애 분석 말고`.
+- Expand the routing regression corpus from 386 to 446 cases covering mixed requests, exclusions, quoted examples, and language notation.
+
 ## 2.139.0 - 2026-09-22
 
 - Add optional exhaustive candidate expectations, top-one and top-five precision checks, and empty-context routing cases without inventing file paths.

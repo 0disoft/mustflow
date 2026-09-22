@@ -74,6 +74,17 @@ required candidates, selected adjuncts, or forbidden candidates drift.
 Each case supplies `paths` and `reasons` arrays. Use empty arrays when the request has no
 file or classification context; invented paths can introduce unrelated routing signals.
 
+For task-only requests, a positive pattern signal filters out candidates supported only
+by incidental prose overlap, while retaining other positive pattern signals and
+explicitly named language routes. A lone `unknown_change` reason also counts as no
+classification context. Requests with concrete reasons or paths keep their existing
+context evidence; task-only requests without a positive pattern signal keep the fallback.
+
+Language matching normalizes fullwidth characters and recognizes attached numeric
+versions such as `C++20` and `C#7.3`. It keeps those names distinct from C and does not
+treat a C drive path or the verb `go` alone as language evidence. Normalizing a language
+name does not install a corresponding skill or guarantee that one is available.
+
 The optional `allowed_candidates` array is an exhaustive allowlist for returned candidates
 and the selected main and adjunct routes. A case fails when any of those routes falls outside
 the list. Keep `required_main`, `required_candidates`, or `required_adjuncts` to assert
@@ -110,6 +121,11 @@ Unasserted skills remain untested even when they appear incidentally in results.
 Explicit exclusion phrases must match complete normalized words. Include the intended
 Korean ending, such as `운영 장애 분석은 아니고`, rather than assuming that a stem
 like `아니` also matches `아니고`.
+
+Exclusion matching ignores balanced, same-line double quotes, curly double quotes,
+Japanese corner quotes, and single-backtick spans, so quoted examples do not become
+current exclusions. Unquoted exclusions still apply. Unmatched or multiline quotes
+are not masked; this is phrase matching, not a general natural-language negation parser.
 
 ## Usage
 
