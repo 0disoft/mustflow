@@ -991,7 +991,7 @@ function createCandidate(
 	// A short verb such as "go" needs the existing corroborating evidence.
 	const namedLanguage = metadata.selectionAxis === 'language'
 		&& (languageName.length >= 3 || languageName === 'c')
-		&& (languageName !== 'c' || /\bc\b(?![:\\/])/iu.test(unquotedSkillRouteText(taskText)))
+		&& (languageName !== 'c' || /\bc\b(?![:\\/+#])/iu.test(unquotedSkillRouteText(taskText).normalize('NFKC')))
 		&& ` ${normalizeRouteText(unquotedSkillRouteText(taskText))} `.includes(` ${languageName} `);
 	const matchedReasons = reasons.filter((reason) => metadata.appliesToReasons.includes(reason));
 	const taskMatches = countMatches(taskTerms, terms);

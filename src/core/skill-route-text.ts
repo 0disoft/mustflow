@@ -2,8 +2,8 @@ export function normalizeSkillRouteText(value: string): string {
 	return value
 		.normalize('NFKC')
 		.toLocaleLowerCase('en-US')
-		.replace(/(?<![\p{L}\p{N}_])c\+\+(?![\p{L}\p{N}_+])/gu, 'cpp')
-		.replace(/(?<![\p{L}\p{N}_])c#(?![\p{L}\p{N}_#])/gu, 'csharp')
+		.replace(/(?<![\p{L}\p{N}_])c\+\+(\d+(?:\.\d+)*)?(?![\p{L}\p{N}_+])/gu, 'cpp $1')
+		.replace(/(?<![\p{L}\p{N}_])c#(\d+(?:\.\d+)*)?(?![\p{L}\p{N}_#])/gu, 'csharp $1')
 		.replace(/\.mustflow\/skills\/[^/\s]+\/skill\.md/giu, ' ')
 		.replace(/[^\p{L}\p{N}]+/gu, ' ')
 		.trim()

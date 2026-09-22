@@ -2,6 +2,226 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "language-version-cpp17-empty",
+      "task": "Review log correlation in C++17.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp17-unknown",
+      "task": "Review log correlation in C++17.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp20-empty",
+      "task": "Review log correlation in C++20.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp20-unknown",
+      "task": "Review log correlation in C++20.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp23-empty",
+      "task": "Review log correlation in C++23.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp23-unknown",
+      "task": "Review log correlation in C++23.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp-wide-empty",
+      "task": "Review log correlation in Ｃ＋＋２０.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-cpp-wide-unknown",
+      "task": "Review log correlation in Ｃ＋＋２０.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-csharp12-empty",
+      "task": "Review log correlation in C#12.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-csharp12-unknown",
+      "task": "Review log correlation in C#12.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-csharp-wide-empty",
+      "task": "Review log correlation in Ｃ＃１２.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-version-csharp-wide-unknown",
+      "task": "Review log correlation in Ｃ＃１２.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review"
+      ],
+      "forbidden_candidates": [
+        "c-code-change"
+      ]
+    },
+    {
       "id": "language-explicit-cpp-code-change-empty",
       "task": "Review log correlation in C++.",
       "paths": [],

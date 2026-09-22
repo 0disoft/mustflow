@@ -52,6 +52,8 @@ test('route search phrases share validation and matching normalization', () => {
 	assert.equal(isSkillRouteSearchTerm('텍스트 줄바꿈'), true);
 	assert.equal(normalizeSkillRouteText('텍스트-줄바꿈'), '텍스트 줄바꿈');
 	assert.equal(normalizeSkillRouteText('C C++ C# Ｃ＋＋ Ｃ＃'), 'c cpp csharp cpp csharp');
+	assert.equal(normalizeSkillRouteText('C++17 C++20 C++23 C#7.3 C#12 Ｃ＋＋２０'), 'cpp 17 cpp 20 cpp 23 csharp 7 3 csharp 12 cpp 20');
+	assert.equal(normalizeSkillRouteText('XC++20 C++20Thing C#12Thing'), 'xc 20 c 20thing c 12thing');
 	assert.equal(normalizeSkillRouteText('Objective-C++ XC++ XC#'), 'objective cpp xc xc');
 	for (const invalid of ['', 'Font fallback', 'font/fallback', '../outside', 'font;exit']) {
 		assert.equal(isSkillRouteSearchTerm(invalid), false, invalid);
@@ -801,6 +803,10 @@ test('task-only signals suppress incidental words without dropping combined sign
 				assert.deepEqual(names(resolve('log correlation C:/logs', [], reasons)), ['focused']);
 				assert.deepEqual(names(resolve('log correlation C:\\logs', [], reasons)), ['focused']);
 				assert.deepEqual(new Set(names(resolve('log correlation in C', [], reasons))), new Set(['focused', 'c-code-change']));
+				assert.deepEqual(new Set(names(resolve('log correlation in Ｃ', [], reasons))), new Set(['focused', 'c-code-change']));
+				for (const identifier of ['C++20Thing', 'C#12Thing', 'Ｃ＋＋２０Ｔｈｉｎｇ', 'Ｃ＃１２Ｔｈｉｎｇ', 'Ｃ:/logs']) {
+					assert.deepEqual(names(resolve('log correlation ' + identifier, [], reasons)), ['focused']);
+				}
 				assert.deepEqual(new Set(names(resolve('log correlation Go compiler', [], reasons))), new Set(['focused', 'go-code-change']));
 			}
 			assert.ok(names(resolve('request outcome')).includes('incidental'));
