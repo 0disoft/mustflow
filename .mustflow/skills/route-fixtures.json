@@ -2,6 +2,198 @@
   "schema_version": "1",
   "cases": [
     {
+      "id": "language-explicit-cpp-code-change-empty",
+      "task": "Review log correlation in C++.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-cpp-code-change-unknown",
+      "task": "Review log correlation in C++.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "cpp-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-c-code-change-empty",
+      "task": "Review log correlation in C.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "c-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-c-code-change-unknown",
+      "task": "Review log correlation in C.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "c-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "c-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-rust-code-change-empty",
+      "task": "Review log correlation in Rust.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "rust-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-rust-code-change-unknown",
+      "task": "Review log correlation in Rust.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "rust-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "rust-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-typescript-code-change-empty",
+      "task": "Review log correlation in TypeScript.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "typescript-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "typescript-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-typescript-code-change-unknown",
+      "task": "Review log correlation in TypeScript.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "typescript-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "typescript-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-javascript-code-change-empty",
+      "task": "Review log correlation in JavaScript.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "javascript-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "javascript-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-javascript-code-change-unknown",
+      "task": "Review log correlation in JavaScript.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "javascript-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "javascript-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-python-code-change-empty",
+      "task": "Review log correlation in Python.",
+      "paths": [],
+      "reasons": [],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "python-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "python-code-change"
+      ]
+    },
+    {
+      "id": "language-explicit-python-code-change-unknown",
+      "task": "Review log correlation in Python.",
+      "paths": [],
+      "reasons": [
+        "unknown_change"
+      ],
+      "max_candidates": 5,
+      "required_candidates": [
+        "backend-log-evidence-review",
+        "python-code-change"
+      ],
+      "allowed_candidates": [
+        "backend-log-evidence-review",
+        "python-code-change"
+      ]
+    },
+    {
       "id": "precision-expanded-auth-en-unknown",
       "task": "Investigate this authentication redirect loop and identify the failing step.",
       "paths": [],

@@ -987,6 +987,12 @@ function createCandidate(
 ): SkillRouteResolvedCandidate {
 	const skill = skillNameFromPath(route.skillPath);
 	const terms = routeTextTerms(route, skill);
+	const languageName = skill.endsWith('-code-change') ? skill.slice(0, -'-code-change'.length) : '';
+	// A short verb such as "go" needs the existing corroborating evidence.
+	const namedLanguage = metadata.selectionAxis === 'language'
+		&& (languageName.length >= 3 || languageName === 'c')
+		&& (languageName !== 'c' || /\bc\b(?![:\\/])/iu.test(unquotedSkillRouteText(taskText)))
+		&& ` ${normalizeRouteText(unquotedSkillRouteText(taskText))} `.includes(` ${languageName} `);
 	const matchedReasons = reasons.filter((reason) => metadata.appliesToReasons.includes(reason));
 	const taskMatches = countMatches(taskTerms, terms);
 	const pathMatches = countMatches(pathTerms, terms);
@@ -1004,13 +1010,14 @@ function createCandidate(
 	const score = Object.values(breakdown).reduce((total, value) => total + value, 0);
 	const matchedDimensions = [
 		...(matchedReasons.length > 0 ? ['reason'] : []),
-		...(taskMatches > 0 ? ['task_terms'] : []),
+		...(taskMatches > 0 || namedLanguage ? ['task_terms'] : []),
 		...(pathMatches > 0 ? ['path_terms'] : []),
 		...(pathSkillHintMatched ? ['path_skill_hint'] : []),
 		...(patternSignals.positiveMatches.length > 0 ? ['pattern_signal'] : []),
 		...(patternSignals.negativeMatches.length > 0 ? ['negative_signal'] : []),
 	];
 	const selectionReasons = [
+		...(namedLanguage ? [`task_skill_name:${skill}`] : []),
 		...matchedReasons.map((reason) => `reason:${reason}`),
 		...(taskMatches > 0 ? [`task_terms:${taskMatches}`] : []),
 		...(pathMatches > 0 ? [`path_terms:${pathMatches}`] : []),
@@ -1051,6 +1058,7 @@ function hasCandidateEvidence(candidate: SkillRouteResolvedCandidate): boolean {
 
 	return (
 		hasExactPathHint ||
+		candidate.selection_reasons.includes(`task_skill_name:${candidate.skill}`) ||
 		breakdown.pattern_signal_match > 0 ||
 		breakdown.task_text_match >= 6 ||
 		breakdown.path_match >= 6 ||

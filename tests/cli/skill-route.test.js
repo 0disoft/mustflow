@@ -51,6 +51,8 @@ test('route search phrases share validation and matching normalization', () => {
 	}
 	assert.equal(isSkillRouteSearchTerm('텍스트 줄바꿈'), true);
 	assert.equal(normalizeSkillRouteText('텍스트-줄바꿈'), '텍스트 줄바꿈');
+	assert.equal(normalizeSkillRouteText('C C++ C# Ｃ＋＋ Ｃ＃'), 'c cpp csharp cpp csharp');
+	assert.equal(normalizeSkillRouteText('Objective-C++ XC++ XC#'), 'objective cpp xc xc');
 	for (const invalid of ['', 'Font fallback', 'font/fallback', '../outside', 'font;exit']) {
 		assert.equal(isSkillRouteSearchTerm(invalid), false, invalid);
 	}
@@ -760,7 +762,7 @@ test('matches negative route signals as phrases instead of token bags', () => {
 test('task-only signals suppress incidental words without dropping combined signals or structured context', () => {
 	const root = createTempProject();
 	try {
-		for (const [name, description] of [['focused', 'Request tracing'], ['recovery', 'Durable storage'], ['incidental', 'Request outcome review'], ['rust-code-change', 'Rust compiler request outcome']]) {
+		for (const [name, description] of [['focused', 'Request tracing'], ['recovery', 'Durable storage'], ['incidental', 'Request outcome review'], ['rust-code-change', 'Rust compiler request outcome'], ['go-code-change', 'Go compiler'], ['c-code-change', 'C compiler']]) {
 			const directory = path.join(root, '.mustflow', 'skills', name);
 			mkdirSync(directory, { recursive: true });
 			writeFileSync(path.join(directory, 'SKILL.md'), '---\nname: ' + name + '\ndescription: ' + description + '\n---\n');
@@ -772,6 +774,8 @@ test('task-only signals suppress incidental words without dropping combined sign
 			'[routes."recovery".contexts]', 'positive_terms = ["fsync"]',
 			'[routes."incidental"]', 'category = "general_code"', 'route_type = "adjunct"', 'priority = 60', 'selection_axis = "risk"',
 			'[routes."rust-code-change"]', 'category = "general_code"', 'route_type = "primary"', 'priority = 60', 'selection_axis = "language"',
+			'[routes."go-code-change"]', 'category = "general_code"', 'route_type = "primary"', 'priority = 60', 'selection_axis = "language"',
+			'[routes."c-code-change"]', 'category = "general_code"', 'route_type = "primary"', 'priority = 60', 'selection_axis = "language"',
 		].join('\n'));
 		for (const catalog of [false, true]) {
 			if (catalog) writeFileSync(path.join(root, '.mustflow', 'skills', 'catalog.v2.json'), JSON.stringify(buildSkillRouteCatalog(root)));
@@ -787,6 +791,18 @@ test('task-only signals suppress incidental words without dropping combined sign
 			}
 			assert.deepEqual(new Set(names(resolve('log correlation request outcome fsync'))), new Set(['focused', 'recovery']));
 			assert.deepEqual(new Set(names(resolve('log correlation request outcome Rust compiler'))), new Set(['focused', 'rust-code-change']));
+			for (const reasons of [[], ['unknown_change']]) {
+				const named = resolve('log correlation Rust', [], reasons);
+				assert.deepEqual(new Set(names(named)), new Set(['focused', 'rust-code-change']));
+				assert.ok(named.candidates.find(candidate => candidate.skill === 'rust-code-change').selection_reasons.includes('task_skill_name:rust-code-change'));
+				assert.deepEqual(names(resolve('log correlation Rustling', [], reasons)), ['focused']);
+				assert.deepEqual(names(resolve('log correlation "Rust"', [], reasons)), ['focused']);
+				assert.deepEqual(names(resolve('go review log correlation', [], reasons)), ['focused']);
+				assert.deepEqual(names(resolve('log correlation C:/logs', [], reasons)), ['focused']);
+				assert.deepEqual(names(resolve('log correlation C:\\logs', [], reasons)), ['focused']);
+				assert.deepEqual(new Set(names(resolve('log correlation in C', [], reasons))), new Set(['focused', 'c-code-change']));
+				assert.deepEqual(new Set(names(resolve('log correlation Go compiler', [], reasons))), new Set(['focused', 'go-code-change']));
+			}
 			assert.ok(names(resolve('request outcome')).includes('incidental'));
 			assert.ok(names(resolve('log correlation request outcome', ['src/request.ts'])).includes('incidental'));
 			assert.ok(names(resolve('log correlation request outcome', [], ['code_change'])).includes('incidental'));
