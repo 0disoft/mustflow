@@ -1,3 +1,51 @@
+[intents.test_skill_category_index]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run focused category index output and escaping regressions against a fresh CLI build."
+argv = ["node", "--test", "tests/cli/skill-category-index.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
+
+[intents.dependency_prs_sync]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Fast-forward a clean checkout only across reviewed root/docs lockfile changes, then install both frozen dependency graphs."
+argv = ["node", "--input-type=module", "-e", '''
+import {spawnSync} from 'node:child_process';
+const run=(bin,args,cwd='.')=>{const r=spawnSync(bin,args,{cwd,encoding:'utf8',shell:false,timeout:180000,maxBuffer:1024*1024});if(r.status!==0)throw Error(r.stderr||r.stdout||String(r.error));return r.stdout.trim();};
+if(run('git',['status','--porcelain']))throw Error('Clean checkout required');
+const head=run('git',['rev-parse','HEAD']);
+run('git',['fetch','origin','main']);
+const target=run('git',['rev-parse','FETCH_HEAD']);
+run('git',['merge-base','--is-ancestor',head,target]);
+const paths=run('git',['diff','--name-only',head,target]).split(/\r?\n/u).filter(Boolean);
+if(paths.some(p=>!['bun.lock','docs-site/bun.lock'].includes(p)))throw Error('Remote changes exceed reviewed lockfiles');
+if(run('git',['rev-parse','HEAD'])!==head||run('git',['status','--porcelain']))throw Error('Checkout changed during review');
+console.log(run('git',['merge','--ff-only',target]));
+console.log(run('bun',['install','--frozen-lockfile']));
+console.log(run('bun',['install','--frozen-lockfile'],'docs-site'));
+''']
+cwd = "."
+timeout_seconds = 600
+stdin = "closed"
+success_exit_codes = [0]
+max_output_bytes = 262144
+writes = [".git/**", "bun.lock", "docs-site/bun.lock", "node_modules/**", "docs-site/node_modules/**"]
+effects = [{ type = "write", mode = "replace", lock = "git_history", concurrency = "exclusive" }, { type = "write", mode = "replace", lock = "docs_dependency_graph", concurrency = "exclusive" }]
+network = true
+destructive = false
+env_policy = "minimal"
+approval_actions = ["git_commit", "dependency_install"]
+
 [intents.release_plan_show]
 status = "configured"
 lifecycle = "oneshot"
