@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
-import { normalizeSkillRouteText as normalizeRouteText } from './skill-route-text.js';
+import { normalizeSkillRouteText as normalizeRouteText, unquotedSkillRouteText } from './skill-route-text.js';
 import { isSkillRoutePathHints, LEGACY_SKILL_ROUTE_PATH_HINTS, matchesSkillRoutePathHints, type SkillRoutePathHints } from './skill-route-path-hints.js';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
@@ -1418,7 +1418,7 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 	const routes = [...builtInRoutes, ...externalRoutes];
 	const metadata = installedCatalog?.metadata ?? readSkillRouteMetadata(projectRoot);
 	const pathSkillHints = collectPathSkillHints(paths, metadata);
-	const normalizedTask = ` ${normalizeRouteText(input.taskText ?? '')} `;
+	const normalizedTask = ` ${normalizeRouteText(unquotedSkillRouteText(input.taskText ?? ''))} `;
 	const routeCandidates = routes
 		.filter((route) => {
 			const exclusions = metadata.get(skillNameFromPath(route.skillPath))?.signalProfile.exclusionSignals ?? [];
@@ -1453,9 +1453,20 @@ export function resolveSkillRoutes(projectRoot: string, input: SkillRouteResolve
 		})
 		.sort(sortCandidates);
 	const allCandidatesBySkill = new Map(routeCandidates.map((candidate) => [candidate.skill, candidate]));
-	const allCandidates = routeCandidates
+	const evidenceCandidates = routeCandidates
 		.filter((candidate) => hasCandidateEvidence(candidate) && candidate.score > 0)
 		.sort(sortCandidates);
+	// Without file or classification context, shared prose words are only a fallback.
+	// Keep every explicit phrase match for combined tasks instead of filling the limit
+	// with weaker token overlap. Language evidence is orthogonal to the task signal;
+	// structured requests retain their corroborating evidence.
+	const hasTaskOnlyPhraseEvidence = paths.length === 0 && reasons.length === 0
+		&& evidenceCandidates.some((candidate) => candidate.score_breakdown.pattern_signal_match > 0);
+	const allCandidates = hasTaskOnlyPhraseEvidence
+		? evidenceCandidates.filter((candidate) => candidate.score_breakdown.pattern_signal_match > 0
+			|| (candidate.selection_axis === 'language'
+				&& normalizedTask.includes(` ${normalizeRouteText(candidate.skill.split('-')[0])} `)))
+		: evidenceCandidates;
 	const candidates = allCandidates.slice(0, maxCandidates);
 	const main = candidates.find(isSelectableMain) ?? null;
 	const axes = selectCandidatesByAxis(candidates, { ...routerConfig, selectionLimit: maxCandidates }, metadata);

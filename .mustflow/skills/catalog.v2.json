@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:f0fe45708449a7b9ae1fa2e883dcf28024e74b7aeef9043e7f7c0188559d39e6",
+  "source_fingerprint": "sha256:b5d409f471af8858aa0b65aceec254b4731aa292584a2c204bcdacc244912d31",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -3814,7 +3814,7 @@
         "fault injection",
         "fsync",
         "power loss",
-        "resumable",
+        "resumable recovery",
         "short write",
         "崩溃一致性",
         "异常退出恢复",
@@ -7236,6 +7236,7 @@
       "negative_signals": [],
       "exclusion_signals": [
         "not incident triage",
+        "운영 장애 분석 말고",
         "운영 장애 분석은 아니고",
         "운영 장애 분석은 아님"
       ],
@@ -12390,7 +12391,7 @@
         "algorithm",
         "branch",
         "discount",
-        "plan",
+        "plan selection",
         "policy",
         "pricing",
         "provider",

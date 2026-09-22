@@ -405,7 +405,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/verification-decision-graph\.ts$/u, tests: ['verify.test.js', ...verifyCompletionVerdictTests, 'dashboard.test.js'] },
 		{ match: /^src\/core\/verification-scheduler\.ts$/u, tests: ['verify-plan-scheduler.test.js', ...runTests] },
 		{ match: /^src\/core\/skill-route-(alignment|explanation)\.ts$/u, tests: ['check-skill-contracts.test.js', 'explain-skills.test.js'] },
-		{ match: /^src\/core\/skill-route-resolution\.ts$/u, tests: skillRouteTests },
+		{ match: /^src\/core\/skill-route-(?:resolution|text)\.ts$/u, tests: skillRouteTests },
 		{ match: /^src\/core\/skill-route-fixtures\.ts$/u, tests: skillRouteTests },
 		{ match: /^schemas\/skill-route-report\.schema\.json$/u, tests: skillRouteTests },
 		{ match: /^scripts\/generate-skill-route-catalog\.ts$/u, tests: [...skillRouteTests, 'package-template.test.js'] },

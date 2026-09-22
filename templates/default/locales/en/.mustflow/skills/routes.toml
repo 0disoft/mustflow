@@ -151,7 +151,7 @@ conflicts_with = ["state-machine-pattern"]
 file_types = ["ts", "tsx", "js", "jsx", "py", "go", "rs"]
 layers = ["domain", "service", "policy", "pricing", "permission", "provider_selection"]
 pattern_categories = ["variant_selection", "algorithm_policy", "branch_extraction"]
-positive_terms = ["algorithm", "branch", "discount", "plan", "policy", "pricing", "provider", "region", "selection", "strategy", "switch", "variant"]
+positive_terms = ["algorithm", "branch", "discount", "plan selection", "policy", "pricing", "provider", "region", "selection", "strategy", "switch", "variant"]
 negative_terms = ["adapter", "audit", "history", "idempotency", "lifecycle", "phase", "protocol", "retry", "state", "status", "transaction", "transition"]
 
 [routes."command-pattern"]
@@ -1188,7 +1188,7 @@ applies_to_reasons = ["unknown_change", "code_change", "behavior_change", "test_
 
 [routes."incident-triage-review".contexts]
 positive_terms = ["incident triage", "운영 장애", "장애 초동"]
-exclusion_terms = ["운영 장애 분석은 아니고", "운영 장애 분석은 아님", "not incident triage"]
+exclusion_terms = ["운영 장애 분석은 아니고", "운영 장애 분석은 아님", "운영 장애 분석 말고", "not incident triage"]
 
 [routes."deployment-rollout-safety-review"]
 category = "general_code"
@@ -2022,7 +2022,7 @@ unlocks_on = [
 ]
 
 [routes."crash-consistency-recovery-review".contexts]
-positive_terms = ["atomic-replace", "crash-consistency", "durability", "fault-injection", "fsync", "power-loss", "resumable", "short-write"]
+positive_terms = ["atomic-replace", "crash-consistency", "durability", "fault-injection", "fsync", "power-loss", "resumable recovery", "short-write"]
 concept_aliases = ["충돌 일관성", "비정상 종료 복구", "崩溃一致性", "异常退出恢复"]
 negative_terms = ["css", "layout", "pricing", "prompt", "translation"]
 

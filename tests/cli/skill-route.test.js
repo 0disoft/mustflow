@@ -15,7 +15,7 @@ import {
 } from '../../dist/core/skill-route-resolution.js';
 import { evaluateSkillRouteFixtures } from '../../dist/core/skill-route-fixtures.js';
 import { summarizeSkillRouteCoverage } from '../../dist/core/skill-route-coverage.js';
-import { isSkillRouteSearchTerm, normalizeSkillRouteText } from '../../dist/core/skill-route-text.js';
+import { isSkillRouteSearchTerm, normalizeSkillRouteText, unquotedSkillRouteText } from '../../dist/core/skill-route-text.js';
 
 const projectRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'index.js');
@@ -53,6 +53,15 @@ test('route search phrases share validation and matching normalization', () => {
 	assert.equal(normalizeSkillRouteText('텍스트-줄바꿈'), '텍스트 줄바꿈');
 	for (const invalid of ['', 'Font fallback', 'font/fallback', '../outside', 'font;exit']) {
 		assert.equal(isSkillRouteSearchTerm(invalid), false, invalid);
+	}
+});
+
+test('quoted route context does not consume unmatched quotes or adjacent instructions', () => {
+	for (const quoted of ['"old exclusion"', '“old exclusion”', '「old exclusion」', '`old exclusion`']) {
+		assert.equal(unquotedSkillRouteText('before ' + quoted + ' after'), 'before   after');
+	}
+	for (const text of ['"unclosed exclusion', '"first\nsecond"', "don't exclude", 'plain exclusion']) {
+		assert.equal(unquotedSkillRouteText(text), text);
 	}
 });
 
@@ -748,6 +757,36 @@ test('matches negative route signals as phrases instead of token bags', () => {
 	assert.ok(negativeTypeContract.score_breakdown.negative_signal_penalty < 0);
 });
 
+test('task-only signals suppress incidental words without dropping combined signals or structured context', () => {
+	const root = createTempProject();
+	try {
+		for (const [name, description] of [['focused', 'Request tracing'], ['recovery', 'Durable storage'], ['incidental', 'Request outcome review'], ['rust-code-change', 'Rust compiler request outcome']]) {
+			const directory = path.join(root, '.mustflow', 'skills', name);
+			mkdirSync(directory, { recursive: true });
+			writeFileSync(path.join(directory, 'SKILL.md'), '---\nname: ' + name + '\ndescription: ' + description + '\n---\n');
+		}
+		writeFileSync(path.join(root, '.mustflow', 'skills', 'routes.toml'), [
+			'[routes."focused"]', 'category = "general_code"', 'route_type = "primary"', 'priority = 80', 'selection_axis = "task"',
+			'[routes."focused".contexts]', 'positive_terms = ["log correlation"]',
+			'[routes."recovery"]', 'category = "general_code"', 'route_type = "adjunct"', 'priority = 70', 'selection_axis = "risk"',
+			'[routes."recovery".contexts]', 'positive_terms = ["fsync"]',
+			'[routes."incidental"]', 'category = "general_code"', 'route_type = "adjunct"', 'priority = 60', 'selection_axis = "risk"',
+			'[routes."rust-code-change"]', 'category = "general_code"', 'route_type = "primary"', 'priority = 60', 'selection_axis = "language"',
+		].join('\n'));
+		for (const catalog of [false, true]) {
+			if (catalog) writeFileSync(path.join(root, '.mustflow', 'skills', 'catalog.v2.json'), JSON.stringify(buildSkillRouteCatalog(root)));
+			const resolve = (task, paths = [], reasons = []) => resolveSkillRoutes(root, { taskText: task, paths, reasons, maxCandidates: 5 });
+			const names = report => report.candidates.map(candidate => candidate.skill);
+			assert.deepEqual(names(resolve('log correlation request outcome')), ['focused']);
+			assert.deepEqual(new Set(names(resolve('log correlation request outcome fsync'))), new Set(['focused', 'recovery']));
+			assert.deepEqual(new Set(names(resolve('log correlation request outcome Rust compiler'))), new Set(['focused', 'rust-code-change']));
+			assert.ok(names(resolve('request outcome')).includes('incidental'));
+			assert.ok(names(resolve('log correlation request outcome', ['src/request.ts'])).includes('incidental'));
+			assert.ok(names(resolve('log correlation request outcome', [], ['code_change'])).includes('incidental'));
+		}
+	} finally { removeTempProject(root); }
+});
+
 test('hard exclusions override positive scores and dependencies in catalog and fallback routing', () => {
 	const root = createTempProject();
 	try {
@@ -776,6 +815,10 @@ test('hard exclusions override positive scores and dependencies in catalog and f
 			}
 			assert.ok(resolve('entry anchor target phrase visual animation review', ['exclude-this-scope/view.ts']).candidates.some(candidate => candidate.skill === 'excluded'));
 			assert.ok(resolve('entry anchor target phrase visual animation review 대상 작업 제외아님').candidates.some(candidate => candidate.skill === 'excluded'));
+			for (const quoted of ['"exclude this scope"', '“exclude this scope”', '「exclude this scope」', '`exclude this scope`']) {
+				assert.ok(resolve('entry anchor target phrase ' + quoted).candidates.some(candidate => candidate.skill === 'excluded'));
+				assert.equal(resolve('entry anchor target phrase ' + quoted + ' exclude this scope').candidates.some(candidate => candidate.skill === 'excluded'), false);
+			}
 		}
 	} finally { removeTempProject(root); }
 });
