@@ -292,6 +292,18 @@ natural-language negation reasoning. Review ambiguous or contradictory requests.
 Catalogs retain optional `exclusion_signals`; older catalogs without that field
 continue to load. Regenerate both catalog copies after editing the route source.
 
+In the mustflow source repository, run the configured `skill_route_catalog_write`
+intent followed by `skill_route_eval` when skill names, descriptions, command intents,
+or route metadata change. Installed projects can use their template's configured
+`skill_route_catalog_write` intent, which invokes `mf skill catalog --write` and
+updates only `.mustflow/skills/catalog.v2.json`. This CLI path uses the installed
+package and needs no repository `scripts/` directory. It reads installed skill
+frontmatter and `routes.toml`, and fails before publication if metadata is incomplete.
+Review changed managed baselines through the normal baseline workflow afterward.
+
+Options are checked per action before fetching or writing. `--ref` and `--name`
+are import options; `update --ref` is rejected because updates use saved provenance.
+
 ## Route Evaluation Coverage
 
 For built-in route maintenance, this repository's `skill_route_eval` intent also
@@ -299,14 +311,17 @@ reports `coverage` alongside accuracy and recall. Coverage uses the current
 built-in skill source rather than a fixed skill count:
 
 - `expected_skill_count`: distinct installed skills with an enforced positive expectation.
-- `passed_skill_count` and `passed_skill_rate`: skills named by at least one passing positive case, divided by all installed skills.
+- `passed_skill_count` and `passed_skill_rate`: skills with at least one passing positive case and no failing positive case, divided by all installed skills.
 - `untested_skills`: installed skills without positive expectations; negative-only references are also listed separately.
-- `failing_skills`: positively expected skills with no passing case.
+- `failing_skills`: positively expected skills with any failing case, including mixed pass/fail results.
+- `partially_passing_skills`: skills with both passing and failing positive cases; these remain failing and are excluded from the passed count.
 - `unknown_references`: fixture names absent from the installed catalog.
 - `categories`: installed, expected, and passing skill counts grouped by route category.
 
 Duplicate expectations do not increase coverage. A forbidden reference is not a
 positive test. Non-enforced adjunct hints in invariant cases are excluded.
+All-pass cases count as covered; mixed cases are failing and partially passing;
+all-fail cases are failing; skills with no positive cases are untested.
 A passing case proves only its stated assertions; coverage does not measure all
 natural-language requests or the quality of a skill's procedure. Missing or empty
 corpora report zero coverage, and malformed corpora retain their validation errors.

@@ -283,6 +283,55 @@ test('installed default catalog matches installed routing metadata', () => {
 	}
 });
 
+test('installed CLI regenerates stale routes and newly added skills without package scripts', () => {
+	const root = createTempProject();
+	try {
+		initProject(root);
+		const skillPath = path.join(root, '.mustflow/skills/typescript-code-change/SKILL.md');
+		writeFileSync(skillPath, readFileSync(skillPath, 'utf8').replace(/^description:.*$/mu, 'description: Review zebrafish genome assembly.'));
+		const newDir = path.join(root, '.mustflow/skills/genome-review');
+		mkdirSync(newDir);
+		writeFileSync(path.join(newDir, 'SKILL.md'), '---\nname: genome-review\ndescription: Review zebrafish genome assembly.\n---\n# Genome review\n');
+		const routesPath = path.join(root, '.mustflow/skills/routes.toml');
+		writeFileSync(routesPath, readFileSync(routesPath, 'utf8') + '\n[routes."genome-review"]\ncategory = "general_code"\nroute_type = "primary"\npriority = 90\nselection_axis = "task"\n');
+		const input = { taskText: 'Review zebrafish genome assembly', paths: [], reasons: [], maxCandidates: 10 };
+		assert.equal(resolveSkillRoutes(root, input).candidates.some(c => c.skill === 'genome-review'), false);
+		const result = runCli(root, ['skill', 'catalog', '--write']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.match(result.stdout, /catalog.v2.json/u);
+		const report = resolveSkillRoutes(root, input);
+		assert.equal(report.candidates.some(c => c.skill === 'genome-review'), true);
+		assert.equal(report.candidates.some(c => c.skill === 'typescript-code-change'), true);
+		assert.equal(existsSync(path.join(root, 'templates')), false);
+		assert.equal(existsSync(path.join(root, 'scripts')), false);
+		const before = readFileSync(path.join(root, '.mustflow/skills/catalog.v2.json'), 'utf8');
+		assert.equal(runCli(root, ['skill', 'catalog', '--write']).status, 0);
+		assert.equal(readFileSync(path.join(root, '.mustflow/skills/catalog.v2.json'), 'utf8'), before);
+	} finally { removeTempProject(root); }
+});
+
+test('skill actions reject unsupported options before fetching or creating update state', async () => {
+	const { runSkill } = await import('../../dist/cli/commands/skill.js');
+	const originalFetch = globalThis.fetch;
+	let fetchCalls = 0;
+	globalThis.fetch = async () => { fetchCalls++; throw new Error('Unexpected fetch'); };
+	try {
+		for (const args of [
+			['update', 'example', '--ref', 'pinned-sha'],
+			['update', 'example', '--name', 'renamed'],
+			['outdated', '--trust-scripts'],
+			['import', 'https://github.com/example/repo', '--all'],
+			['route', '--install'],
+			['catalog', '--ref', 'main', '--write'],
+		]) {
+			const stderr = [];
+			assert.equal(await runSkill(args, { stdout() {}, stderr(text) { stderr.push(text); } }), 1);
+			assert.ok(stderr.length > 0);
+		}
+		assert.equal(fetchCalls, 0);
+	} finally { globalThis.fetch = originalFetch; }
+});
+
 test('keeps the generated route catalog synchronized with built-in skill frontmatter', () => {
 	const sourceCatalog = readFileSync(path.join(projectRoot, '.mustflow', 'skills', 'catalog.v2.json'), 'utf8');
 	const templateCatalog = readFileSync(

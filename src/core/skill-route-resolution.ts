@@ -549,9 +549,11 @@ export function serializeSkillRouteCatalog(catalog: SkillRouteCatalog): string {
 	return `${JSON.stringify(catalog, null, 2)}\n`;
 }
 
-export function writeSkillRouteCatalogs(projectRoot: string): readonly string[] {
+export function writeSkillRouteCatalogs(projectRoot: string, options: { readonly template?: boolean } = {}): readonly string[] {
 	const content = serializeSkillRouteCatalog(buildSkillRouteCatalog(projectRoot));
-	const writtenPaths = [SKILL_ROUTE_CATALOG_PATH, TEMPLATE_SKILL_ROUTE_CATALOG_PATH];
+	const writtenPaths = options.template === false
+		? [SKILL_ROUTE_CATALOG_PATH]
+		: [SKILL_ROUTE_CATALOG_PATH, TEMPLATE_SKILL_ROUTE_CATALOG_PATH];
 
 	for (const relativePath of writtenPaths) {
 		writeUtf8FileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, ...relativePath.split('/')), content);

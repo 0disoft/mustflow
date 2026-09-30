@@ -16,7 +16,8 @@ import {
 	createScriptPackSuggestionReport,
 	type ScriptPackSuggestionReport,
 } from '../../core/script-pack-suggestions.js';
-import { resolveSkillRoutes } from '../../core/skill-route-resolution.js';
+import { resolveSkillRoutes, writeSkillRouteCatalogs, SKILL_ROUTE_CATALOG_PATH } from '../../core/skill-route-resolution.js';
+import { acquireActiveCommandLock, reportActiveCommandLockConflict } from '../lib/active-command-lock.js';
 import { renderSkillCategoryIndex } from '../../core/skill-category-index.js';
 import {
 	createExternalSkillImportReport,
@@ -29,6 +30,7 @@ import {
 
 const SKILL_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
+	{ name: '--write', kind: 'boolean' },
 	{ name: '--task', kind: 'string' },
 	{ name: '--path', kind: 'string' },
 	{ name: '--reason', kind: 'string' },
@@ -42,6 +44,8 @@ const SKILL_OPTIONS = [
 ] as const satisfies readonly CliOptionSpec[];
 
 interface ParsedSkillArgs {
+	readonly write: boolean;
+	readonly suppliedOptions: readonly string[];
 	readonly json: boolean;
 	readonly action: string | null;
 	readonly sourceUrl: string | null;
@@ -78,6 +82,7 @@ export function getSkillHelp(lang: CliLang = 'en'): string {
 			options: [
 				{ label: 'route', description: 'Resolve installed skill route candidates' },
 				{ label: 'index [--category <name>]', description: 'Generate a compact index from installed built-in skills' },
+				{ label: 'catalog --write', description: 'Regenerate the installed route catalog from skill frontmatter and routes.toml' },
 				{ label: 'import <github-url>', description: 'Preview or install an external SKILL.md under .mustflow/external-skills/' },
 				{ label: 'outdated [skill-name...]', description: 'Check installed external skills for upstream file changes' },
 				{ label: 'update <skill-name>|--all', description: 'Refresh installed external skills from their saved provenance source' },
@@ -130,6 +135,8 @@ function getParsedCliStringOptions(parsed: ParsedCliOptions, name: string): stri
 function parseSkillArgs(args: readonly string[]): ParsedSkillArgs {
 	const parsed = parseCliOptions(args, SKILL_OPTIONS, { allowPositionals: true });
 	return {
+		write: hasParsedCliOption(parsed, '--write'),
+		suppliedOptions: parsed.occurrences.map(occurrence => occurrence.name),
 		json: hasParsedCliOption(parsed, '--json'),
 		action: parsed.positionals[0] ?? null,
 		sourceUrl: parsed.positionals[1] ?? null,
@@ -394,6 +401,43 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 	if (parsed.error) {
 		printUsageError(reporter, formatCliOptionParseError(parsed.error, lang), 'mf skill --help', getSkillHelp(lang), lang);
 		return 1;
+	}
+
+	const actionOptions: Readonly<Record<string, readonly string[]>> = {
+		route: ['--json', '--task', '--path', '--reason', '--max-candidates'],
+		import: ['--json', '--install', '--dry-run', '--name', '--ref', '--trust-scripts'],
+		outdated: ['--json', '--all'],
+		update: ['--json', '--dry-run', '--all', '--trust-scripts'],
+		catalog: ['--write'],
+	};
+	const allowedOptions = actionOptions[parsed.action ?? ''];
+	const unsupportedOption = allowedOptions && parsed.suppliedOptions.find(option => !allowedOptions.includes(option));
+	if (unsupportedOption) {
+		printUsageError(reporter, t(lang, 'cli.error.unexpectedValue', { option: unsupportedOption }), 'mf skill --help', getSkillHelp(lang), lang);
+		return 1;
+	}
+	if (parsed.action === 'catalog') {
+		if (!parsed.write || parsed.skillNames.length > 0) {
+			printUsageError(reporter, 'mf skill catalog requires --write and accepts no positional arguments.', 'mf skill --help', getSkillHelp(lang), lang);
+			return 1;
+		}
+		const root = resolveMustflowRoot();
+		const lock = acquireActiveCommandLock(root, 'skill catalog --write', [
+			{ type: 'write', mode: 'replace', path: SKILL_ROUTE_CATALOG_PATH, concurrency: 'exclusive' },
+		]);
+		if (!lock.ok) {
+			reportActiveCommandLockConflict(reporter, 'mf skill catalog --write', lock.conflicts, 'mf skill --help', lang);
+			return 1;
+		}
+		try {
+			for (const writtenPath of writeSkillRouteCatalogs(root, { template: false })) reporter.stdout(`Wrote: ${writtenPath}`);
+			return 0;
+		} catch (error) {
+			reporter.stderr(error instanceof Error ? error.message : String(error));
+			return 1;
+		} finally {
+			lock.handle.release();
+		}
 	}
 
 	if (

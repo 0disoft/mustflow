@@ -240,6 +240,23 @@ network = false
 destructive = false
 required_after = ["docs_change", "mustflow_docs_change", "i18n_change", "copy_change"]
 
+[intents.skill_route_catalog_write]
+status = "configured"
+kind = "mustflow_builtin"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Regenerate only the installed skill route catalog from local skill frontmatter and route metadata."
+argv = ["mf", "skill", "catalog", "--write"]
+cwd = "."
+timeout_seconds = 120
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/skills/catalog.v2.json"]
+effects = [{ type = "write", mode = "replace", path = ".mustflow/skills/catalog.v2.json", concurrency = "exclusive" }]
+network = false
+destructive = false
+required_after = []
+
 [intents.mustflow_doctor]
 status = "configured"
 kind = "mustflow_builtin"
