@@ -1153,19 +1153,28 @@ function writeTrustedScriptCommandContract(
 	}
 
 	const fragmentContent = renderTrustedScriptCommandFragment(target, source, scriptTrust);
-	writeUtf8FileInsideWithoutSymlinks(
-		projectRoot,
-		path.join(projectRoot, ...scriptTrust.fragment_path.split('/')),
-		fragmentContent,
-	);
-
+	const fragmentPath = path.join(projectRoot, ...scriptTrust.fragment_path.split('/'));
 	const commandsPath = path.join(projectRoot, ...COMMANDS_CONFIG_PATH.split('/'));
 	const commandsContent = readUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, { maxBytes: 256 * 1024 });
-	writeUtf8FileInsideWithoutSymlinks(
-		projectRoot,
-		commandsPath,
-		updateCommandIncludeText(commandsContent, scriptTrust.include_entry),
-	);
+	const updatedCommands = updateCommandIncludeText(commandsContent, scriptTrust.include_entry);
+	const previousFragment = existsSync(fragmentPath)
+		? readUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, { maxBytes: 256 * 1024 })
+		: null;
+	let fragmentWritten = false;
+	try {
+		writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, fragmentContent);
+		fragmentWritten = true;
+		writeUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, updatedCommands);
+	} catch (error) {
+		if (fragmentWritten) {
+			if (previousFragment === null) {
+				rmSync(fragmentPath, { force: true });
+			} else {
+				writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, previousFragment);
+			}
+		}
+		throw error;
+	}
 }
 
 function writeImportedSkillFiles(
@@ -1226,6 +1235,7 @@ function writeUpdatedSkillFiles(
 	fileReport: readonly ExternalSkillImportedFile[],
 	warnings: readonly string[],
 	scriptTrust: ExternalSkillScriptTrust,
+	writeContract: () => void,
 ): void {
 	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
 	if (!existsSync(targetPath)) {
@@ -1239,6 +1249,8 @@ function writeUpdatedSkillFiles(
 	const backupPath = path.join(projectRoot, ...backupSkillDir.split('/'));
 	const tempSkillPath = path.join(tempPath, 'SKILL.md');
 	ensureFileTargetInsideWithoutSymlinks(projectRoot, tempSkillPath, { allowMissingLeaf: true });
+	let backedUp = false;
+	let published = false;
 
 	try {
 		for (const file of files) {
@@ -1259,14 +1271,18 @@ function writeUpdatedSkillFiles(
 		});
 
 		renameSync(targetPath, backupPath);
+		backedUp = true;
 		renameSync(tempPath, targetPath);
+		published = true;
+		writeContract();
 		rmSync(backupPath, { recursive: true, force: true });
 	} catch (error) {
 		rmSync(tempPath, { recursive: true, force: true });
-		if (!existsSync(targetPath) && existsSync(backupPath)) {
+		if (backedUp && existsSync(backupPath)) {
+			if (published) {
+				rmSync(targetPath, { recursive: true, force: true });
+			}
 			renameSync(backupPath, targetPath);
-		} else {
-			rmSync(backupPath, { recursive: true, force: true });
 		}
 		throw error;
 	}
@@ -1378,6 +1394,12 @@ async function createExternalSkillUpdateItem(
 			mode === 'install' ? 'install' : 'dry_run',
 			provenance.script_trust,
 		);
+		const trustStateChanged = trustScripts && (
+			provenance.script_trust?.status !== (hasScriptFiles ? 'trusted' : 'no_scripts') ||
+			JSON.stringify(provenance.script_trust?.intents ?? []) !== JSON.stringify(scriptTrust.intents)
+		);
+		const needsUpdate = changedFiles.length > 0 || trustStateChanged;
+		const applyUpdate = options.action === 'update' && mode === 'install' && needsUpdate;
 		const warnings = [
 			...(changedFiles.length === 0 ? ['External skill is already current.'] : []),
 			...(hasScriptFiles && scriptTrust.status !== 'trusted'
@@ -1392,15 +1414,15 @@ async function createExternalSkillUpdateItem(
 			'External skills are untrusted until the agent reads and evaluates the selected SKILL.md.',
 		];
 
-		if (options.action === 'update' && mode === 'install' && changedFiles.length > 0) {
-			writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust);
-			writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust);
+		if (applyUpdate) {
+			writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust,
+				() => writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust));
 		}
 
 		return {
 			skill_name: skillName,
 			ok: true,
-			status: options.action === 'update' && mode === 'install' && changedFiles.length > 0
+			status: applyUpdate
 				? 'updated'
 				: changedFiles.length > 0
 					? 'outdated'
@@ -1413,7 +1435,7 @@ async function createExternalSkillUpdateItem(
 			script_trust: scriptTrust,
 			warnings,
 			issues: [],
-			wrote_files: options.action === 'update' && mode === 'install' && changedFiles.length > 0,
+			wrote_files: applyUpdate,
 		};
 	} catch (error) {
 		return rejectedUpdateItem(skillName, error instanceof Error ? error.message : String(error));
@@ -1551,13 +1573,14 @@ export async function createExternalSkillImportReport(
 		];
 
 		if (mode === 'install') {
+			let installedByThisAttempt = false;
 			try {
 				writeImportedSkillFiles(projectRoot, target, source, files, reports, warnings, scriptTrust);
+				installedByThisAttempt = true;
 				writeTrustedScriptCommandContract(projectRoot, target, source, scriptTrust);
 			} catch (error) {
-				rmSync(path.join(projectRoot, ...target.skill_dir.split('/')), { recursive: true, force: true });
-				if (scriptTrust.fragment_path) {
-					rmSync(path.join(projectRoot, ...scriptTrust.fragment_path.split('/')), { force: true });
+				if (installedByThisAttempt) {
+					rmSync(path.join(projectRoot, ...target.skill_dir.split('/')), { recursive: true, force: true });
 				}
 				throw error;
 			}

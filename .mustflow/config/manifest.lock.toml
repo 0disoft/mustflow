@@ -434,7 +434,7 @@ content_hash = "sha256:256a5f4c21b03200cda8e0eadff3bbed7dff0ad14da1a986a07a0e5fa
 [files.".mustflow/config/commands.d/maintenance-plans.toml"]
 source = "template_common"
 last_action = "customized"
-content_hash = "sha256:de1466b5f9bd6add122c68cfacc33529b9b9946d4ab77e86b6791726b39636b1"
+content_hash = "sha256:cf455cc9396958580cbba744f69c4d84dccdb4adfdb724ddd86c285444e25317"
 
 [files.".mustflow/skills/sui-wallet-signing-review/SKILL.md"]
 source = "template_common"

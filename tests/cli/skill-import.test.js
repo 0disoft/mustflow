@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import fs from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -37,6 +39,105 @@ function createTempCommandContract(projectPath) {
 
 function removeTempProject(projectPath) {
 	rmSync(projectPath, { recursive: true, force: true });
+}
+
+function snapshotTree(root, prefix = '') {
+	return Object.fromEntries(readdirSync(root, { withFileTypes: true }).flatMap(entry => {
+		const relative = prefix + entry.name;
+		const absolute = path.join(root, entry.name);
+		return entry.isDirectory()
+			? Object.entries(snapshotTree(absolute, relative + '/'))
+			: [[relative, readFileSync(absolute).toString('hex')]];
+	}));
+}
+
+test('duplicate external import preserves every existing skill byte and command file', async () => {
+	const projectPath = createTempProject();
+	try {
+		const { createExternalSkillImportReport } = await readImportModule();
+		const url = 'https://github.com/example/agent-skills/tree/main/review/concurrency';
+		assert.equal((await createExternalSkillImportReport(projectPath, url, { mode: 'install', fetch: createMockFetch() })).ok, true);
+		const directory = path.join(projectPath, '.mustflow', 'external-skills', 'concurrency-review');
+		writeFileSync(path.join(directory, 'SKILL.md'), 'User-edited skill\r\n');
+		writeFileSync(path.join(directory, 'user.bin'), Buffer.from([0, 255, 13, 10]));
+		const before = snapshotTree(projectPath);
+		const rejected = await createExternalSkillImportReport(projectPath, url, { mode: 'install', fetch: createMockFetch() });
+		assert.equal(rejected.ok, false);
+		assert.match(rejected.issues.join('\n'), /already exists/u);
+		assert.deepEqual(snapshotTree(projectPath), before);
+	} finally { removeTempProject(projectPath); }
+});
+
+test('unchanged external skill can preview and apply its first script trust transition', async () => {
+	const projectPath = createTempProject();
+	try {
+		createTempCommandContract(projectPath);
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		assert.equal((await createExternalSkillImportReport(projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{ mode: 'install', fetch: createMockFetch() })).ok, true);
+		const before = snapshotTree(path.join(projectPath, '.mustflow', 'external-skills'));
+		const options = { action: 'update', skillNames: ['concurrency-review'], trustScripts: true, fetch: createMockFetch() };
+		const preview = await createExternalSkillUpdateReport(projectPath, { ...options, mode: 'dry_run' });
+		assert.equal(preview.ok, true);
+		assert.equal(preview.wrote_files, false);
+		assert.equal(preview.skills[0].script_trust.status, 'planned');
+		assert.equal(preview.skills[0].script_trust.grants_command_authority, false);
+		assert.deepEqual(snapshotTree(path.join(projectPath, '.mustflow', 'external-skills')), before);
+		const applied = await createExternalSkillUpdateReport(projectPath, options);
+		assert.equal(applied.ok, true);
+		assert.equal(applied.status, 'updated');
+		assert.deepEqual(applied.skills[0].changed_files, []);
+		assert.equal(applied.skills[0].script_trust.grants_command_authority, true);
+		const trust = applied.skills[0].script_trust;
+		assert.match(readFileSync(path.join(projectPath, trust.fragment_path), 'utf8'), /external_skill_concurrency_review_inspect/u);
+		assert.ok(readFileSync(path.join(projectPath, '.mustflow/config/commands.toml'), 'utf8').includes(trust.include_entry));
+		const provenance = JSON.parse(readFileSync(path.join(projectPath, applied.skills[0].target.provenance_path), 'utf8'));
+		assert.deepEqual(provenance.script_trust, trust);
+		const second = await createExternalSkillUpdateReport(projectPath, options);
+		assert.equal(second.wrote_files, false);
+	} finally { removeTempProject(projectPath); }
+});
+
+test('failed script contract publication rolls back import and update without touching existing files', async () => {
+	for (const action of ['import', 'update']) {
+		const projectPath = createTempProject();
+		const originalRename = fs.renameSync;
+		try {
+			createTempCommandContract(projectPath);
+			const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+			const url = 'https://github.com/example/agent-skills/tree/main/review/concurrency';
+			if (action === 'update') {
+				assert.equal((await createExternalSkillImportReport(projectPath, url, { mode: 'install', fetch: createMockFetch() })).ok, true);
+			}
+			const commandsPath = path.join(projectPath, '.mustflow/config/commands.toml');
+			const before = snapshotTree(projectPath);
+			fs.renameSync = (source, destination) => {
+				if (path.resolve(destination) === commandsPath) {
+					throw Object.assign(new Error('Injected command contract publication failure'), { code: 'EIO' });
+				}
+				return originalRename(source, destination);
+			};
+			syncBuiltinESMExports();
+			const report = action === 'import'
+				? await createExternalSkillImportReport(projectPath, url, { mode: 'install', fetch: createMockFetch(), trustScripts: true })
+				: await createExternalSkillUpdateReport(projectPath, { action, skillNames: ['concurrency-review'], fetch: createMockFetch(), trustScripts: true });
+			assert.equal(report.ok, false);
+			assert.equal(report.wrote_files, false);
+			assert.deepEqual(snapshotTree(path.join(projectPath, '.mustflow/external-skills')), snapshotTreeFromBefore(before));
+			assert.equal(readFileSync(commandsPath, 'utf8'), Buffer.from(before['.mustflow/config/commands.toml'], 'hex').toString());
+			assert.equal(existsSync(path.join(projectPath, '.mustflow/config/commands/external-skills-concurrency-review.toml')), false);
+		} finally {
+			fs.renameSync = originalRename;
+			syncBuiltinESMExports();
+			removeTempProject(projectPath);
+		}
+	}
+});
+
+function snapshotTreeFromBefore(before) {
+	const prefix = '.mustflow/external-skills/';
+	return Object.fromEntries(Object.entries(before).filter(([name]) => name.startsWith(prefix)).map(([name, bytes]) => [name.slice(prefix.length), bytes]));
 }
 
 function jsonResponse(value, status = 200) {

@@ -69,6 +69,26 @@ destructive = false
 env_policy = "minimal"
 preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
 
+[intents.test_skill_component]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Run one explicitly selected skill lifecycle, route, plugin or option regression file against the current build."
+argv = ["node", "--test", "{test}"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
+[intents.test_skill_component.inputs.test]
+type = "enum"
+required = true
+allowed_values = ["tests/cli/skill-import.test.js", "tests/cli/skill-route.test.js", "tests/cli/agent-plugin-bundles.test.js", "tests/cli/option-parser.test.js"]
+
 [intents.test_skill_lifecycle]
 status = "configured"
 lifecycle = "oneshot"
