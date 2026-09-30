@@ -6,6 +6,15 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.140.0 - 2026-09-30
+
+- Add `mf skill catalog --write` so installed projects can regenerate their routing catalog without source-repository scripts.
+- Reject unsupported skill action options before fetching sources or writing state.
+- Preserve existing external skills on duplicate imports, local drift, failed publication, and backup cleanup failures; keep locally edited trusted command fragments intact during updates.
+- Export portable plugin skill frontmatter while preserving canonical metadata and require a reviewed `export_description` instead of silently truncating long descriptions.
+- Synchronize skill authoring, refresh, intake, template maintenance, and performance review procedures with focused verification and explicit evidence boundaries.
+- Refresh compatible CLI and documentation dependencies and retry manifest ownership checks when the observed owner has already released its lock.
+
 ## 2.139.1 - 2026-09-22
 
 - Reduce incidental candidates in task-only routing when an explicit pattern signal is present, including requests with only the `unknown_change` placeholder.
