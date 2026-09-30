@@ -335,6 +335,41 @@ test('manifest lock customization waits briefly for a live owner to release', as
 	}
 });
 
+test('manifest lock customization retries when an owner disappears during a slow ownership check', async () => {
+	const root = createFixture();
+	const originalRead = fs.readFileSync;
+	try {
+		const module = await loadManifestLockModule();
+		const processIdentity = await import(
+			pathToFileURL(path.join(projectRoot, 'dist', 'core', 'process-identity.js')).href
+		);
+		const plan = module.createManifestLockCustomizationPlan(root, ['AGENTS.md']);
+		const ownerPath = path.join(root, '.mustflow', 'cache', 'manifest-lock-accept.owner.json');
+		mkdirSync(path.dirname(ownerPath), { recursive: true });
+		writeFileSync(ownerPath, JSON.stringify({
+			schema_version: '1', pid: process.pid,
+			process_start_token: processIdentity.readCurrentProcessStartToken(), owner_token: 'released-during-check',
+		}));
+		let released = false;
+		fs.readFileSync = function (file, ...args) {
+			const content = originalRead.call(this, file, ...args);
+			if (file === ownerPath && !released) {
+				released = true;
+				rmSync(ownerPath);
+				Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1_050);
+			}
+			return content;
+		};
+		syncBuiltinESMExports();
+		assert.deepEqual(module.applyManifestLockCustomizationPlan(root, plan), ['AGENTS.md']);
+		assert.equal(released, true);
+	} finally {
+		fs.readFileSync = originalRead;
+		syncBuiltinESMExports();
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
 test('manifest lock customization refuses a concurrent live owner', async () => {
 	const root = createFixture();
 	try {

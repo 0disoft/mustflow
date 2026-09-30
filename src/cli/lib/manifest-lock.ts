@@ -210,7 +210,8 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 			let existing: ManifestLockCasOwner | null = null;
 			try {
 				existing = parseCasOwner(JSON.parse(readFileSync(ownerPath, 'utf8')));
-			} catch {
+			} catch (readError) {
+				if (typeof readError === 'object' && readError !== null && 'code' in readError && readError.code === 'ENOENT') continue;
 				throw new Error('Manifest lock CAS owner record is unreadable; refusing concurrent baseline acceptance');
 			}
 			if (!existing) {
@@ -218,6 +219,16 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 			}
 			const live = isProcessLive(existing.pid);
 			const currentToken = live ? readProcessStartToken(existing.pid) : null;
+			// Process identity probes can outlive the owner; do not act on an obsolete record.
+			let checked: ManifestLockCasOwner | null;
+			try {
+				checked = parseCasOwner(JSON.parse(readFileSync(ownerPath, 'utf8')));
+			} catch (readError) {
+				if (typeof readError === 'object' && readError !== null && 'code' in readError && readError.code === 'ENOENT') continue;
+				throw new Error('Manifest lock CAS owner record is unreadable; refusing concurrent baseline acceptance');
+			}
+			if (!checked) throw new Error('Manifest lock CAS owner record is invalid; refusing concurrent baseline acceptance');
+			if (checked.owner_token !== existing.owner_token || checked.pid !== existing.pid || checked.process_start_token !== existing.process_start_token) continue;
 			if (live && !processStartTokensProveMismatch(existing.process_start_token, currentToken)) {
 				if (Date.now() >= waitDeadline) {
 					throw new Error(`Manifest lock baseline update already owned by live process ${existing.pid}`);
