@@ -1,11 +1,45 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
 import { assertMatchesSchema } from '../helpers/json-schema.js';
 import { createTempProject, projectRoot, removeTempProject, runCli } from './helpers/cli-harness.js';
 import { schemaRoot } from './helpers/schema-contracts.js';
+import { buildAgentPluginBundle } from '../../dist/core/agent-plugin-bundle.js';
+
+test('real bundled skills export portable string metadata without changing canonical files', () => {
+	const fixture = createTempProject('mustflow-portable-real-');
+	try {
+		const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'plugin-bundles/mustflow-review.bundle.json'), 'utf8'));
+		mkdirSync(path.join(fixture, 'plugin-bundles'), { recursive: true });
+		writeFileSync(path.join(fixture, 'plugin-bundles/review.json'), JSON.stringify(bundle));
+		writeFileSync(path.join(fixture, 'package.json'), '{"version":"1.2.3"}');
+		const originals = new Map();
+		for (const skill of bundle.skills) {
+			cpSync(path.dirname(path.join(projectRoot, skill.source)), path.dirname(path.join(fixture, skill.source)), { recursive: true });
+			originals.set(skill.name, readFileSync(path.join(fixture, skill.source), 'utf8'));
+		}
+		assert.equal(buildAgentPluginBundle(fixture, 'plugin-bundles/review.json').validation.skills_valid, true);
+		for (const skill of bundle.skills) {
+			const exported = readFileSync(path.join(fixture, bundle.output_directory, 'skills', skill.name, 'SKILL.md'), 'utf8');
+			const header = exported.split('\n---\n')[0];
+			assert.doesNotMatch(header, /^(?:mustflow_doc|locale|canonical|revision|lifecycle|authority):/mu);
+			assert.match(header, /compatibility: "Requires a mustflow-managed repository/u);
+			assert.ok(JSON.parse(/^description: (.+)$/mu.exec(header)[1]).length <= 1024);
+			const fields = [...header.matchAll(/^  ([a-z_]+): (.+)$/gmu)];
+			assert.ok(fields.length > 0);
+			assert.ok(fields.every(([, , value]) => typeof JSON.parse(value) === 'string'));
+			const intentField = fields.find(([, key]) => key === 'mustflow_command_intents');
+			assert.ok(Array.isArray(JSON.parse(JSON.parse(intentField[2]))));
+			assert.equal(exported.split('\n---\n')[1], originals.get(skill.name).replaceAll('\r\n', '\n').split('\n---\n')[1]);
+			assert.equal(readFileSync(path.join(fixture, skill.source), 'utf8'), originals.get(skill.name));
+		}
+		const first = bundle.skills[0];
+		writeFileSync(path.join(fixture, first.source), originals.get(first.name).replace(/^description:.*$/mu, 'description: ""'));
+		assert.throws(() => buildAgentPluginBundle(fixture, 'plugin-bundles/review.json'), /portable_fields_invalid/u);
+	} finally { removeTempProject(fixture); }
+});
 
 test('Agent Plugin bundle declarations are schema-valid and reference canonical skills', () => {
 	const bundlePath = path.join(projectRoot, 'plugin-bundles', 'mustflow-review.bundle.json');

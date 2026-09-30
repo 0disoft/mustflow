@@ -57,6 +57,60 @@ const NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/u;
 const MANIFEST_KEYS = ['description', 'homepage', 'license', 'name', 'repository', 'version'] as const;
 
+function portableSkillText(text: string, skill: BundleSkill): string {
+	const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/u.exec(text);
+	if (!match) throw new Error(`agent_plugin_skill_frontmatter_invalid:${skill.name}`);
+	const lines = match[1].split(/\r?\n/u);
+	const scalar = (key: string): string | null => {
+		const line = lines.find(line => line.startsWith(`${key}:`));
+		if (!line) return null;
+		const value = line.slice(key.length + 1).trim();
+		if (value.startsWith('"')) {
+			const parsed: unknown = JSON.parse(value);
+			if (typeof parsed !== 'string') throw new Error(`agent_plugin_skill_field_invalid:${key}`);
+			return parsed;
+		}
+		if (value.startsWith("'") && value.endsWith("'")) return value.slice(1, -1).replaceAll("''", "'");
+		if (!value || /^[\[\]{|>]/u.test(value)) throw new Error(`agent_plugin_skill_scalar_required:${key}`);
+		return value;
+	};
+	const name = scalar('name');
+	const description = scalar('description');
+	if (name !== skill.name || name.length > 64 || !description) {
+		throw new Error(`agent_plugin_skill_portable_fields_invalid:${skill.name}`);
+	}
+	const portableDescription = description.length > 1024
+		? `${description.slice(0, 1021).replace(/\s+\S*$/u, '')}...`
+		: description;
+	const output = ['---', `name: ${JSON.stringify(name)}`, `description: ${JSON.stringify(portableDescription)}`];
+	const license = scalar('license');
+	if (license) output.push(`license: ${JSON.stringify(license)}`);
+	const compatibility = scalar('compatibility') ?? (scalar('mustflow_doc')
+		? 'Requires a mustflow-managed repository and its configured command intents.' : null);
+	if (compatibility) {
+		if (compatibility.length > 500) throw new Error(`agent_plugin_skill_compatibility_invalid:${skill.name}`);
+		output.push(`compatibility: ${JSON.stringify(compatibility)}`);
+	}
+	const metadata: Record<string, string> = { mustflow_source: skill.source };
+	if (description !== portableDescription) metadata.mustflow_description = description;
+	for (const key of ['mustflow_doc', 'locale', 'canonical', 'revision', 'lifecycle', 'authority']) {
+		const value = scalar(key);
+		if (value !== null) metadata[`mustflow_${key.replace(/^mustflow_/u, '')}`] = value;
+	}
+	const intentIndex = lines.findIndex(line => /^\s+command_intents:\s*$/u.test(line));
+	if (intentIndex >= 0) {
+		const intents: string[] = [];
+		for (const line of lines.slice(intentIndex + 1)) {
+			const item = /^\s+-\s+([a-zA-Z0-9_.-]+)\s*$/u.exec(line);
+			if (!item) break;
+			intents.push(item[1]);
+		}
+		metadata.mustflow_command_intents = JSON.stringify(intents);
+	}
+	output.push('metadata:', ...Object.entries(metadata).map(([key, value]) => `  ${key}: ${JSON.stringify(value)}`), '---');
+	return `${output.join('\n')}\n${match[2]}`;
+}
+
 function insideRoot(root: string, candidate: string): boolean {
 	const relative = path.relative(root, candidate);
 	return relative.length === 0 || (!relative.startsWith('..') && !path.isAbsolute(relative));
@@ -114,6 +168,7 @@ function validateSkill(projectRoot: string, skill: BundleSkill): string {
 		throw new Error(`agent_plugin_skill_frontmatter_mismatch:${skill.name}`);
 	}
 	verifyTreeHasNoLinks(path.dirname(sourcePath));
+	portableSkillText(skillText, skill);
 	return path.dirname(sourcePath);
 }
 
@@ -151,8 +206,22 @@ function validateGeneratedOutput(outputDirectory: string, skillNames: readonly s
 		throw new Error('agent_plugin_generated_manifest_invalid');
 	}
 	for (const skillName of skillNames) {
-		if (!existsSync(path.join(outputDirectory, 'skills', skillName, 'SKILL.md'))) {
+		const skillPath = path.join(outputDirectory, 'skills', skillName, 'SKILL.md');
+		if (!existsSync(skillPath)) {
 			throw new Error(`agent_plugin_generated_skill_missing:${skillName}`);
+		}
+		const text = readFileSync(skillPath, 'utf8');
+		const frontmatter = /^---\n([\s\S]*?)\n---\n/u.exec(text)?.[1];
+		if (!frontmatter) throw new Error(`agent_plugin_generated_skill_invalid:${skillName}`);
+		let inMetadata = false;
+		for (const line of frontmatter.split('\n')) {
+			if (line === 'metadata:') { inMetadata = true; continue; }
+			const field = /^(\s*)([a-z_-]+): (.+)$/u.exec(line);
+			if (!field || (field[1] ? !inMetadata : !['name', 'description', 'license', 'compatibility'].includes(field[2])) ||
+				typeof JSON.parse(field[3]) !== 'string') {
+				throw new Error(`agent_plugin_generated_skill_field_invalid:${skillName}`);
+			}
+			if (!field[1]) inMetadata = false;
 		}
 	}
 	if (hasMcp) {
@@ -176,7 +245,9 @@ export function buildAgentPluginBundle(projectRoot: string, bundlePath: string):
 	rmSync(outputDirectory, { recursive: true, force: true });
 	mkdirSync(path.join(outputDirectory, 'skills'), { recursive: true });
 	for (const { skill, directory } of skillSources) {
-		cpSync(directory, path.join(outputDirectory, 'skills', skill.name), { recursive: true, dereference: false });
+		const exportedDirectory = path.join(outputDirectory, 'skills', skill.name);
+		cpSync(directory, exportedDirectory, { recursive: true, dereference: false });
+		writeFileSync(path.join(exportedDirectory, 'SKILL.md'), portableSkillText(readFileSync(path.join(directory, 'SKILL.md'), 'utf8'), skill));
 	}
 
 	const manifest = {
