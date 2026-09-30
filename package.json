@@ -81,13 +81,13 @@
     "workflow"
   ],
   "devDependencies": {
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.6.3",
     "@types/sql.js": "^1.4.11",
-    "fast-check": "^4.9.0",
+    "fast-check": "^4.10.2",
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "smol-toml": "^1.8.0",
+    "smol-toml": "^1.9.0",
     "sql.js": "^1.14.2"
   }
 }

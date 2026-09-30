@@ -277,7 +277,7 @@ test('installed default catalog matches installed routing metadata', () => {
 	try {
 		initProject(root);
 		const actual = JSON.parse(readFileSync(path.join(root, '.mustflow/skills/catalog.v2.json'), 'utf8'));
-		assert.deepEqual(actual, buildSkillRouteCatalog(root));
+		assert.deepEqual(actual, JSON.parse(JSON.stringify(buildSkillRouteCatalog(root))));
 	} finally {
 		removeTempProject(root);
 	}

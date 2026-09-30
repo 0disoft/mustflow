@@ -60,7 +60,7 @@ test('skill authoring plans synchronize creation and update without touching uns
 		assert.equal(read(root, '.mustflow/skills/INDEX.md'), read(root, template + '.mustflow/skills/INDEX.md'));
 		let manifest = parseTomlText(read(root, 'templates/default/manifest.toml'));
 		assert.deepEqual(manifest.creates, [skillPath]);
-		assert.deepEqual(manifest.skill_profiles, { minimal: [], team: [name] });
+		assert.deepEqual(manifest.skill_profiles, Object.assign(Object.create(null), { minimal: [], team: [name] }));
 		let i18n = parseTomlText(read(root, 'templates/default/i18n.toml'));
 		assert.equal(i18n.documents['skill.' + name].revision, 1);
 		assert.equal(i18n.documents['skills.index'].revision, 2);
@@ -71,7 +71,7 @@ test('skill authoring plans synchronize creation and update without touching uns
 		applySkillAuthorPlan(root, createSkillAuthorPlan(root, updated));
 		manifest = parseTomlText(read(root, 'templates/default/manifest.toml'));
 		assert.deepEqual(manifest.creates, [skillPath]);
-		assert.deepEqual(manifest.skill_profiles, { minimal: [name], team: [] });
+		assert.deepEqual(manifest.skill_profiles, Object.assign(Object.create(null), { minimal: [name], team: [] }));
 		i18n = parseTomlText(read(root, 'templates/default/i18n.toml'));
 		assert.equal(i18n.documents['skill.' + name].revision, 2);
 		assert.equal(i18n.documents['skill.' + name].translations.ko.status, 'needs_review');

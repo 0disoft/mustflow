@@ -23,6 +23,68 @@ required = true
 allowed_roots = [".mustflow", "AGENTS.md"]
 allowed_extensions = [".md", ".toml", ".json"]
 
+[intents.dependency_catalog]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read official npm latest tags and installed versions for only the root and documentation manifests."
+argv = ["node", "--input-type=module", "-e", '''
+import fs from 'node:fs';
+const manifests=['package.json','docs-site/package.json'];
+for(const file of manifests){
+  const manifest=JSON.parse(fs.readFileSync(file,'utf8'));
+  const directory=file==='package.json'?'.':'docs-site';
+  for(const [name,range] of Object.entries({...manifest.dependencies,...manifest.devDependencies,...manifest.overrides})){
+    const response=await fetch('https://registry.npmjs.org/'+encodeURIComponent(name)+'/latest',{signal:AbortSignal.timeout(15000)});
+    if(!response.ok)throw Error(name+': registry HTTP '+response.status);
+    const metadata=await response.json();
+    let installed=null;
+    try{installed=JSON.parse(fs.readFileSync(directory+'/node_modules/'+name+'/package.json','utf8')).version;}catch{}
+    console.log(JSON.stringify({manifest:file,name,range,installed,latest:metadata.version,engines:metadata.engines??null,peers:metadata.peerDependencies??null}));
+  }
+}
+''']
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = true
+destructive = false
+env_policy = "minimal"
+
+[intents.test_skill_author_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify skill authoring publication, profile preservation and rollback against the current TOML parser."
+argv = ["node", "--test", "tests/cli/skill-author-plan.test.js"]
+cwd = "."
+timeout_seconds = 60
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
+
+[intents.test_skill_lifecycle]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify external skill lifecycle, routing, portable exports, CLI options and dependency-sensitive maintenance contracts."
+argv = ["node", "--test", "tests/cli/skill-import.test.js", "tests/cli/skill-route.test.js", "tests/cli/agent-plugin-bundles.test.js", "tests/cli/option-parser.test.js", "tests/cli/manifest-lock-cas.test.js", "tests/cli/package-command-contracts.test.js", "tests/cli/skill-author-plan.test.js"]
+cwd = "."
+timeout_seconds = 300
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+env_policy = "minimal"
+preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
+
 [intents.manifest_baseline_apply]
 status = "configured"
 lifecycle = "oneshot"

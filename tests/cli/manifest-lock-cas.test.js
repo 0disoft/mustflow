@@ -314,13 +314,15 @@ test('manifest lock customization waits briefly for a live owner to release', as
 		);
 		const releaser = spawn(
 			process.execPath,
-			['--input-type=module', '-e', "import { rmSync } from 'node:fs'; process.once('message', () => { setTimeout(() => { rmSync(process.argv[1], { force: true }); process.disconnect(); }, 150); }); process.send('ready');", ownerPath],
+			['--input-type=module', '-e', "import { rmSync } from 'node:fs'; process.once('message', () => { setTimeout(() => { rmSync(process.argv[1], { force: true }); process.disconnect(); }, 150); process.send('armed'); }); process.send('ready');", ownerPath],
 			{ stdio: ['ignore', 'ignore', 'ignore', 'ipc'] },
 		);
 		const exited = once(releaser, 'exit');
 		try {
 			await once(releaser, 'message', { signal: AbortSignal.timeout(10_000) });
+			const armed = once(releaser, 'message', { signal: AbortSignal.timeout(10_000) });
 			releaser.send('release');
+			assert.deepEqual(await armed, ['armed', undefined]);
 			assert.deepEqual(module.applyManifestLockCustomizationPlan(root, plan), ['AGENTS.md']);
 			const [exitCode] = await exited;
 			assert.equal(exitCode, 0);
