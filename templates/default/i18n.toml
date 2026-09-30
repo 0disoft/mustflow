@@ -183,7 +183,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 347
+revision = 348
 translations = {}
 
 [documents."skill.delivery-verification-budget"]
@@ -1484,7 +1484,7 @@ translations = {}
 [documents."skill.external-skill-intake"]
 source = "locales/en/.mustflow/skills/external-skill-intake/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.github-contribution-quality-gate"]
@@ -1531,7 +1531,7 @@ translations = {}
 [documents."skill.performance-measurement-integrity-review"]
 source = "locales/en/.mustflow/skills/performance-measurement-integrity-review/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.pattern-scout"]
@@ -1675,13 +1675,13 @@ translations = {}
 [documents."skill.skill-refresh"]
 source = "locales/en/.mustflow/skills/skill-refresh/SKILL.md"
 source_locale = "en"
-revision = 3
+revision = 4
 translations = {}
 
 [documents."skill.skill-authoring"]
 source = "locales/en/.mustflow/skills/skill-authoring/SKILL.md"
 source_locale = "en"
-revision = 12
+revision = 13
 translations = {}
 
 [documents."skill.task-instruction-authoring"]
@@ -1693,7 +1693,7 @@ translations = {}
 [documents."skill.template-install-surface-sync"]
 source = "locales/en/.mustflow/skills/template-install-surface-sync/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.restricted-handoff-resume"]

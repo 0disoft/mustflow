@@ -2,7 +2,7 @@
 mustflow_doc: skill.template-install-surface-sync
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: template-install-surface-sync
@@ -15,6 +15,9 @@ metadata:
   command_intents:
     - changes_status
     - changes_diff_summary
+    - test_skill_contracts
+    - skill_route_catalog_write
+    - skill_route_eval
     - test_related
     - docs_validate_fast
     - test_release
@@ -83,13 +86,19 @@ Keep the source repository's mustflow workflow files, install templates, manifes
 5. Check `templates/default/manifest.toml`. Add new installable files to `creates`, remove deleted files, and place new skills only in profiles that would genuinely benefit from the route.
 6. Check locale policy. Use the source locale as canonical. Non-source template locales may fall back to source-locale skill text unless translated skill text is intentionally maintained and review is available.
 7. Check route alignment. `.mustflow/skills/INDEX.md` and `.mustflow/skills/routes.toml` must agree on route names, category, route type, priority intent, and expected verification intent names.
+   When installed names, descriptions, command intents, or route metadata change, regenerate both
+   `catalog.v2.json` copies with `skill_route_catalog_write`, then check fixtures with `skill_route_eval`.
+   The downstream contract uses the installed CLI catalog writer; keep source-only generator scripts
+   out of downstream command templates.
 8. Check install/update behavior. If new files, profile membership, conflict policy, or managed targets change, inspect init/update tests and package tests that assert installed output, manifest lock behavior, backups, or diff previews.
 9. Check package and release surfaces. Installed template files must be included in package output and covered by release-sensitive tests when the package includes templates.
 10. Check public docs and examples only when they list installed files, profiles, init/update behavior, or workflow expectations.
 11. When the command contract exposes `script_pack_list`, use it to discover optional script-pack helpers before editing or verifying template surfaces. `repo/generated-boundary` is useful for checking candidate template, manifest, generated-output, vendor, cache, or protected paths.
 12. Keep generated files generated. Refresh generated maps or package output only with configured intents, and report generated surfaces that are stale but outside the current allowed command set.
 13. Run selected script-pack helpers only when the repository command contract and script metadata allow them.
-14. Verify with related tests first, then release and docs checks when package, template, manifest, or docs surfaces changed.
+14. Verify skill bodies and metadata with `test_skill_contracts`, installed behavior with `test_related`,
+    and public prose with `docs_validate_fast`. Escalate to release tests for package inclusion or
+    release behavior and full docs builds for site build/config changes.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions

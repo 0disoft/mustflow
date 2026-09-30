@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-refresh
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-refresh
@@ -15,6 +15,10 @@ metadata:
   command_intents:
     - changes_status
     - changes_diff_summary
+    - test_skill_contracts
+    - skill_route_catalog_write
+    - skill_route_eval
+    - test_related
     - docs_validate_fast
     - test_release
     - mustflow_check
@@ -152,6 +156,9 @@ source freshness, routing metadata, helper-file alignment, and verification evid
      only when useful, convert arrays such as `command_intents` to JSON strings or omit them, and
      run portable validation only against the exported artifact.
    - Do not run portable fixers against canonical mustflow sources.
+   - Validate real bundled skills as well as small fixtures. Bound exported descriptions to the
+     portable format's length limit and retain the full source description in string metadata.
+     State runtime requirements explicitly; portable frontmatter does not remove mustflow dependencies.
 7. Treat `description` as routing code. Put the strongest positive trigger and the most important
    exclusion near the front. Avoid generic descriptions that overlap with broad authoring, docs, or
    review skills.
@@ -185,6 +192,9 @@ source freshness, routing metadata, helper-file alignment, and verification evid
     instead of silently choosing one side.
 14. Keep the refresh idempotent. A second refresh with the same inputs should produce no diff except
     generated surfaces produced by configured intents.
+    For external import/update code, verify duplicate-name conflicts and local edits remain intact,
+    unchanged-content trust preview grants no authority, apply creates real command fragment/include
+    and provenance, and publication failures restore both skill files and command fragments.
 15. Update synchronized surfaces:
     - `.mustflow/skills/routes.toml`;
     - `.mustflow/skills/INDEX.md`;
@@ -192,6 +202,10 @@ source freshness, routing metadata, helper-file alignment, and verification evid
     - `templates/default/manifest.toml`;
     - `templates/default/i18n.toml`;
     - package or docs tests when the installed surface changes.
+    When names, descriptions, command intents, or route metadata change, run the configured
+    `skill_route_catalog_write` intent for the source and template catalogs, then `skill_route_eval`.
+    Installed projects must use their own configured package-contained catalog writer instead of
+    relying on unshipped source-repository scripts.
 16. Apply version impact policy when the refresh changes packaged templates, public behavior, docs,
     tests, or package metadata.
 17. Verify with the narrowest configured intents that cover the changed skill, route, template,
@@ -224,8 +238,10 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Use `test_related`, `lint`, `build`, or `docs_validate` when helper files, executable behavior,
-package output, public docs, or release-sensitive template output changed.
+Start with `test_skill_contracts` for skill bodies and metadata. For routing inputs, regenerate with
+`skill_route_catalog_write`, then run `skill_route_eval`. Use `test_related` for helper code and
+installed behavior, and `docs_validate_fast` for public prose. Choose `test_release` only for package
+inclusion or release behavior, and full `docs_validate` only for site build/config output.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

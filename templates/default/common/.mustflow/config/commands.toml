@@ -240,6 +240,20 @@ network = false
 destructive = false
 required_after = ["docs_change", "mustflow_docs_change", "i18n_change", "copy_change"]
 
+[intents.test_skill_contracts]
+status = "unknown"
+description = "Validate this project's changed skill procedures and synchronized installation metadata."
+reason = "Configure a project-owned focused check; the mustflow source repository's test scripts are not installed."
+agent_action = "configure_project_skill_contract_check_before_running"
+required_after = []
+
+[intents.skill_route_eval]
+status = "unknown"
+description = "Evaluate this project's optional positive and negative skill route fixtures."
+reason = "Configure a project-owned route fixture check; the source repository's fixture corpus and evaluator scripts are not installed."
+agent_action = "configure_project_route_fixture_check_before_running"
+required_after = []
+
 [intents.skill_route_catalog_write]
 status = "configured"
 kind = "mustflow_builtin"

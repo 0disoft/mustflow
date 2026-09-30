@@ -2,7 +2,7 @@
 mustflow_doc: skill.performance-measurement-integrity-review
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: performance-measurement-integrity-review
@@ -170,6 +170,13 @@ optimization claim, alert, budget, or release gate.
      rework, and backlog recovery when applicable.
    - A cancellation API returning success does not prove execution or side effects stopped.
 9. Make benchmark evidence comparable.
+   - Before comparing candidates, pass a predeclared null-control validity gate using equivalent
+     builds or workloads. If the control fails, stop the performance verdict and report invalid
+     measurement evidence instead of a speedup or regression.
+   - Keep process exit and functional-test PASS separate from the statistical verdict. Preserve
+     failed samples, raw receipts, and exclusion reasons; never discard unfavorable runs silently.
+   - Predeclare run counts, warmup, stopping rules, exclusions, and retry policy before collecting
+     samples, then follow them without extending the run to obtain a favorable result.
    - Use a versioned result schema containing scenario and environment identity, commit or build
      identity, raw samples, units, warmup, repetitions, input size, concurrency, cache state, and
      measurement-tool version.

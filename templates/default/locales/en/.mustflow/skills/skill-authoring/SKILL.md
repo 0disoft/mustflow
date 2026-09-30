@@ -2,7 +2,7 @@
 mustflow_doc: skill.skill-authoring
 locale: en
 canonical: true
-revision: 12
+revision: 13
 lifecycle: mustflow-owned
 authority: procedure
 name: skill-authoring
@@ -13,6 +13,11 @@ metadata:
   pack_id: mustflow.core
   skill_id: mustflow.core.skill-authoring
   command_intents:
+    - test_skill_contracts
+    - skill_route_catalog_write
+    - skill_route_eval
+    - test_related
+    - docs_validate_fast
     - mustflow_check
     - docs_validate
 ---
@@ -107,6 +112,11 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
     - Include bounded negative coverage for empty input, common words, and exact exclusion phrases
       when the route change can create false positives.
 12. Update `.mustflow/skills/INDEX.md` with a compact route that includes trigger, required input, edit scope, risk, verification intents, and expected output.
+    - When skill names, descriptions, command intents, or route metadata change, regenerate
+      `.mustflow/skills/catalog.v2.json` and its template copy with the configured
+      `skill_route_catalog_write` intent, then check route fixtures with `skill_route_eval`.
+      Installed projects use the package-contained catalog writer configured in their own contract;
+      do not assume the mustflow source repository's generator scripts are installed.
 13. If the skill is installed by a template, update the canonical skill copy plus installation metadata, package tests, and public docs that list installed files. Do not fan out routine skill edits into every localized skill copy by default; localized skill copies may be absent, and non-source template locales should fall back to the canonical source-locale skill text unless locale-specific skill text is intentionally maintained and translation review is available.
 14. If a portable Agent Skills artifact is part of the task, create or validate it as a derived export, not as the mustflow-native canonical source. Use portable-only top-level fields and string-to-string metadata. A `gh skill publish --dry-run` check may validate the export artifact when available, but `gh skill publish --fix` must be limited to the export directory because it can remove installed provenance metadata and mustflow-native fields.
 
@@ -122,12 +132,16 @@ Create narrow, repeatable mustflow skill procedures without turning skills into 
 <!-- mustflow-section: verification -->
 ## Verification
 
-Use configured oneshot command intents when available:
+Choose configured oneshot intents by the changed contract:
 
-- `mustflow_check`
-- `docs_validate`
+- Skill body or source/template metadata: `test_skill_contracts`.
+- Skill names, descriptions, command intents, or routes: `skill_route_catalog_write`,
+  then `skill_route_eval` and `test_skill_contracts`.
+- Helper code or installed behavior: `test_related` and directly affected install tests.
+- Public documentation: `docs_validate_fast`; use `docs_validate` for site build/config changes.
+- Workflow or configuration validation: `mustflow_check`.
 
-If the skill changes tests or behavior-sensitive template output, also use the relevant configured test or build intents.
+Escalate to broader package or release checks only when the changed installed surface needs them.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

@@ -2,7 +2,7 @@
 mustflow_doc: skill.external-skill-intake
 locale: en
 canonical: true
-revision: 3
+revision: 4
 lifecycle: mustflow-owned
 authority: procedure
 name: external-skill-intake
@@ -15,6 +15,10 @@ metadata:
   command_intents:
     - changes_status
     - changes_diff_summary
+    - test_skill_contracts
+    - skill_route_catalog_write
+    - skill_route_eval
+    - test_related
     - docs_validate_fast
     - test_release
     - mustflow_check
@@ -96,7 +100,13 @@ External web-testing and session-handoff ideas need extra care: they may be usef
 9. Decide one outcome: reject, defer, update an existing skill, create a new mustflow-native skill, or keep only a research note.
 10. If adapting a skill, write canonical English procedure content first. Do not create locale-specific skill copies unless a localization owner and review path are explicit.
 11. Synchronize route entries, template metadata, profile placement, package tests, public docs, version metadata, and documentation review entries as needed.
+    Regenerate both route catalogs with the configured `skill_route_catalog_write` intent when
+    installed names, descriptions, command intents, or routes change, then run `skill_route_eval`.
+    Use the installed CLI writer in downstream projects instead of assuming package scripts exist.
 12. Run the narrowest configured verification intents that cover the changed skill, template, docs, and package surfaces.
+    For import/update implementation, check duplicate-name conflicts, byte preservation of existing
+    skills and local edits, dry-run versus applied trust transitions with unchanged content, actual
+    fragment/include and provenance creation, and rollback after a publication failure.
 
 <!-- mustflow-section: postconditions -->
 ## Postconditions
@@ -118,7 +128,10 @@ Use configured oneshot command intents when available:
 - `test_release`
 - `mustflow_check`
 
-Use `test_related` or `test_audit` when tests, profile selection, template installation, or documentation review behavior changes.
+Prefer `test_skill_contracts` for skill bodies/metadata, `test_related` for helpers and installed
+behavior, and `docs_validate_fast` for public prose. Regenerate routing inputs with
+`skill_route_catalog_write` and check `skill_route_eval`. Use `test_release` only for package inclusion
+or release behavior; an unchanged template body does not require the full release suite.
 
 <!-- mustflow-section: failure-handling -->
 ## Failure Handling

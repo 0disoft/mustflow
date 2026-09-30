@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:b5d409f471af8858aa0b65aceec254b4731aa292584a2c204bcdacc244912d31",
+  "source_fingerprint": "sha256:b39d0984bcc3d1d1a7d3150db6197726147ca3fe778e89a79e5afb7d3a0bdb78",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -5640,6 +5640,10 @@
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "test_skill_contracts",
+        "skill_route_catalog_write",
+        "skill_route_eval",
+        "test_related",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -12109,6 +12113,11 @@
       },
       "trigger": "Apply this skill when creating or maintaining logically rigorous `.mustflow/skills/*/SKILL.md` procedures and `.mustflow/skills/INDEX.md` routes.",
       "command_intents": [
+        "test_skill_contracts",
+        "skill_route_catalog_write",
+        "skill_route_eval",
+        "test_related",
+        "docs_validate_fast",
         "mustflow_check",
         "docs_validate"
       ]
@@ -12138,6 +12147,10 @@
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "test_skill_contracts",
+        "skill_route_catalog_write",
+        "skill_route_eval",
+        "test_related",
         "docs_validate_fast",
         "test_release",
         "mustflow_check"
@@ -13574,6 +13587,9 @@
       "command_intents": [
         "changes_status",
         "changes_diff_summary",
+        "test_skill_contracts",
+        "skill_route_catalog_write",
+        "skill_route_eval",
         "test_related",
         "docs_validate_fast",
         "test_release",

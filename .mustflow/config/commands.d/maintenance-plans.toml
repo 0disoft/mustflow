@@ -105,6 +105,21 @@ destructive = false
 env_policy = "minimal"
 preconditions = [{ kind = "artifact_freshness", artifact = "dist/cli/index.js", sources = ["src/**", "tsconfig*.json"], satisfy_intent = "build" }]
 
+[intents.skill_review_baseline_plan]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Plan only the skill maintenance review's five procedures, index, generated catalog and bounded command fragment."
+argv = ["node", "dist/cli/index.js", "baseline", "plan", ".mustflow/state/manifest-lock-plans/skill-review-20260930.json", ".mustflow/skills/skill-authoring/SKILL.md", ".mustflow/skills/skill-refresh/SKILL.md", ".mustflow/skills/template-install-surface-sync/SKILL.md", ".mustflow/skills/external-skill-intake/SKILL.md", ".mustflow/skills/performance-measurement-integrity-review/SKILL.md", ".mustflow/skills/INDEX.md", ".mustflow/skills/catalog.v2.json", ".mustflow/config/commands.d/maintenance-plans.toml"]
+cwd = "."
+timeout_seconds = 30
+stdin = "closed"
+success_exit_codes = [0]
+writes = [".mustflow/state/manifest-lock-plans/skill-review-20260930.json"]
+network = false
+destructive = false
+env_policy = "minimal"
+
 [intents.manifest_baseline_apply]
 status = "configured"
 lifecycle = "oneshot"
