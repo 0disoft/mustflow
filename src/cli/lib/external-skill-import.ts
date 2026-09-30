@@ -1089,6 +1089,22 @@ function renderTrustedScriptCommandFragment(
 	return lines.join('\n');
 }
 
+function assertTrustedScriptFragmentUnchanged(
+	projectRoot: string,
+	target: ExternalSkillImportTarget,
+	provenance: ExternalSkillProvenance,
+): void {
+	const trust = provenance.script_trust;
+	if (trust?.grants_command_authority !== true) return;
+	const fragmentPath = `${COMMAND_FRAGMENT_DIRECTORY}/external-skills-${target.skill_name}.toml`;
+	const absolutePath = path.join(projectRoot, ...fragmentPath.split('/'));
+	if (trust.fragment_path !== fragmentPath || !existsSync(absolutePath) ||
+		readUtf8FileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: 256 * 1024 }) !==
+			renderTrustedScriptCommandFragment(target, provenance.source, trust)) {
+		throw new Error(`External skill ${target.skill_name} has local command fragment drift: ${fragmentPath}. Preserve edits or resolve the conflict before update.`);
+	}
+}
+
 function updateCommandIncludeText(content: string, includeEntry: string): string {
 	const normalizedContent = content.replace(/\r\n?/gu, '\n');
 	const lines = normalizedContent.split('\n');
@@ -1363,6 +1379,7 @@ async function createExternalSkillUpdateItem(
 			};
 		}
 
+		if (options.action === 'update') assertTrustedScriptFragmentUnchanged(projectRoot, target, provenance);
 		const remoteSourceFiles = await loadExternalSkillFiles(fetchImpl, sourceToParsed(provenance.source));
 		const normalizedRemoteFiles = normalizeImportedSkillFiles(remoteSourceFiles);
 		const remoteReports = fileReports(normalizedRemoteFiles);
@@ -1424,7 +1441,10 @@ async function createExternalSkillUpdateItem(
 
 		if (applyUpdate) {
 			const cleanupWarning = writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust,
-				() => writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust));
+				() => {
+					assertTrustedScriptFragmentUnchanged(projectRoot, target, provenance);
+					writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust);
+				});
 			if (cleanupWarning) warnings.push(cleanupWarning);
 		}
 

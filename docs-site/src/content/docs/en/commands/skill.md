@@ -151,6 +151,12 @@ refresh command-contract fragments for supported imported scripts, but it does n
 scripts. The generated intents retain explicit network and destructive approvals, so the current
 repository and host policy still decide whether an execution is allowed.
 
+Updates preserve local skill edits and changes to generated command fragments. A modified or
+missing trusted fragment is reported as a conflict before fetching; it is checked again before
+publication to preserve edits made during the fetch. Resolve the conflict explicitly before retrying.
+If publication succeeds but old backup cleanup fails, the update remains applied and reports the
+remaining backup path as a warning. It does not restore a partially deleted backup.
+
 ## Options
 
 ### `mf skill route`

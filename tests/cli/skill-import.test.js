@@ -179,6 +179,43 @@ test('partial backup cleanup failure preserves the committed skill and command c
 	}
 });
 
+test('trusted updates preserve command fragment edits before and during upstream fetch', async () => {
+	for (const editDuringFetch of [false, true]) {
+		const projectPath = createTempProject();
+		try {
+			createTempCommandContract(projectPath);
+			const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+			const imported = await createExternalSkillImportReport(projectPath,
+				'https://github.com/example/agent-skills/tree/main/review/concurrency',
+				{ mode: 'install', fetch: createMockFetch(), trustScripts: true });
+			assert.equal(imported.ok, true);
+			const fragmentPath = path.join(projectPath, imported.script_trust.fragment_path);
+			const original = readFileSync(fragmentPath, 'utf8');
+			const userEdit = original.replace('timeout_seconds = 300', 'timeout_seconds = 60') + '# User restriction\n';
+			if (!editDuringFetch) writeFileSync(fragmentPath, userEdit);
+			const beforeSkill = snapshotTree(path.join(projectPath, '.mustflow/external-skills'));
+			const commandsBefore = readFileSync(path.join(projectPath, '.mustflow/config/commands.toml'), 'utf8');
+			let fetchCalls = 0;
+			const upstream = createMockFetch({ skillBody: '---\nname: concurrency-review\ndescription: Updated upstream.\n---\nChanged upstream body.\n' });
+			const report = await createExternalSkillUpdateReport(projectPath, {
+				action: 'update', skillNames: ['concurrency-review'], trustScripts: true,
+				fetch: async (...args) => {
+					fetchCalls++;
+					if (editDuringFetch && fetchCalls === 1) writeFileSync(fragmentPath, userEdit);
+					return upstream(...args);
+				},
+			});
+			assert.equal(report.ok, false);
+			assert.equal(report.wrote_files, false);
+			assert.match(report.issues.join('\n'), /local command fragment drift/u);
+			assert.equal(readFileSync(fragmentPath, 'utf8'), userEdit);
+			assert.equal(readFileSync(path.join(projectPath, '.mustflow/config/commands.toml'), 'utf8'), commandsBefore);
+			assert.deepEqual(snapshotTree(path.join(projectPath, '.mustflow/external-skills')), beforeSkill);
+			assert.equal(fetchCalls > 0, editDuringFetch);
+		} finally { removeTempProject(projectPath); }
+	}
+});
+
 function snapshotTreeFromBefore(before) {
 	const prefix = '.mustflow/external-skills/';
 	return Object.fromEntries(Object.entries(before).filter(([name]) => name.startsWith(prefix)).map(([name, bytes]) => [name.slice(prefix.length), bytes]));
