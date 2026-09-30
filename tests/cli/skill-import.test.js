@@ -135,6 +135,50 @@ test('failed script contract publication rolls back import and update without to
 	}
 });
 
+test('partial backup cleanup failure preserves the committed skill and command contract', async () => {
+	const projectPath = createTempProject();
+	const originalRm = fs.rmSync;
+	try {
+		createTempCommandContract(projectPath);
+		const { createExternalSkillImportReport, createExternalSkillUpdateReport } = await readImportModule();
+		assert.equal((await createExternalSkillImportReport(projectPath,
+			'https://github.com/example/agent-skills/tree/main/review/concurrency',
+			{ mode: 'install', fetch: createMockFetch() })).ok, true);
+		let backupPath = null;
+		fs.rmSync = (target, options) => {
+			if (String(target).includes('.concurrency-review.backup-')) {
+				backupPath = String(target);
+				originalRm(path.join(target, 'SKILL.md'));
+				throw Object.assign(new Error('Injected partial backup removal'), { code: 'EACCES' });
+			}
+			return originalRm(target, options);
+		};
+		syncBuiltinESMExports();
+		const report = await createExternalSkillUpdateReport(projectPath, {
+			action: 'update', skillNames: ['concurrency-review'], trustScripts: true,
+			fetch: createMockFetch({ skillBody: '---\nname: concurrency-review\ndescription: Review updated parallel work.\n---\nUpstream refresh.\n' }),
+		});
+		assert.equal(report.ok, true);
+		assert.equal(report.status, 'updated');
+		assert.equal(report.wrote_files, true);
+		const item = report.skills[0];
+		assert.match(item.warnings.join('\n'), /update succeeded, but backup cleanup failed/u);
+		assert.ok(backupPath && existsSync(backupPath));
+		assert.equal(existsSync(path.join(backupPath, 'SKILL.md')), false);
+		assert.match(readFileSync(path.join(projectPath, item.target.skill_dir, 'SKILL.md'), 'utf8'), /Upstream refresh/u);
+		assert.equal(existsSync(path.join(projectPath, item.target.skill_dir, 'scripts/inspect.sh')), true);
+		const provenance = JSON.parse(readFileSync(path.join(projectPath, item.target.provenance_path), 'utf8'));
+		assert.deepEqual(provenance.script_trust, item.script_trust);
+		assert.equal(item.script_trust.grants_command_authority, true);
+		assert.ok(readFileSync(path.join(projectPath, '.mustflow/config/commands.toml'), 'utf8').includes(item.script_trust.include_entry));
+		assert.equal(existsSync(path.join(projectPath, item.script_trust.fragment_path)), true);
+	} finally {
+		fs.rmSync = originalRm;
+		syncBuiltinESMExports();
+		removeTempProject(projectPath);
+	}
+});
+
 function snapshotTreeFromBefore(before) {
 	const prefix = '.mustflow/external-skills/';
 	return Object.fromEntries(Object.entries(before).filter(([name]) => name.startsWith(prefix)).map(([name, bytes]) => [name.slice(prefix.length), bytes]));

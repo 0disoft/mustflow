@@ -1236,7 +1236,7 @@ function writeUpdatedSkillFiles(
 	warnings: readonly string[],
 	scriptTrust: ExternalSkillScriptTrust,
 	writeContract: () => void,
-): void {
+): string | null {
 	const targetPath = path.join(projectRoot, ...target.skill_dir.split('/'));
 	if (!existsSync(targetPath)) {
 		throw new Error(`External skill is not installed: ${target.skill_dir}`);
@@ -1275,7 +1275,6 @@ function writeUpdatedSkillFiles(
 		renameSync(tempPath, targetPath);
 		published = true;
 		writeContract();
-		rmSync(backupPath, { recursive: true, force: true });
 	} catch (error) {
 		rmSync(tempPath, { recursive: true, force: true });
 		if (backedUp && existsSync(backupPath)) {
@@ -1285,6 +1284,15 @@ function writeUpdatedSkillFiles(
 			renameSync(backupPath, targetPath);
 		}
 		throw error;
+	}
+
+	// The skill and command contract are committed. Cleanup must never roll them
+	// back to a backup that recursive deletion may already have partially removed.
+	try {
+		rmSync(backupPath, { recursive: true, force: true });
+		return null;
+	} catch {
+		return `External skill update succeeded, but backup cleanup failed; inspect remaining files at ${backupSkillDir}.`;
 	}
 }
 
@@ -1415,8 +1423,9 @@ async function createExternalSkillUpdateItem(
 		];
 
 		if (applyUpdate) {
-			writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust,
+			const cleanupWarning = writeUpdatedSkillFiles(projectRoot, target, provenance.source, normalizedRemoteFiles, remoteReports, warnings, scriptTrust,
 				() => writeTrustedScriptCommandContract(projectRoot, target, provenance.source, scriptTrust));
+			if (cleanupWarning) warnings.push(cleanupWarning);
 		}
 
 		return {
