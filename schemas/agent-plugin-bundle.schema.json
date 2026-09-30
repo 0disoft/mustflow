@@ -70,6 +70,13 @@
       "required": ["name", "source"],
       "properties": {
         "name": { "$ref": "#/$defs/name" },
+        "export_description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "\\S",
+          "description": "Reviewed portable routing description; required when the canonical description exceeds 1024 characters."
+        },
         "source": {
           "type": "string",
           "pattern": "^\\.mustflow/skills/[a-z0-9]+(?:-[a-z0-9]+)*/SKILL\\.md$"

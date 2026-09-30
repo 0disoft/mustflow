@@ -4,6 +4,7 @@ import path from 'node:path';
 interface BundleSkill {
 	readonly name: string;
 	readonly source: string;
+	readonly export_description?: string;
 }
 
 interface BundleDeclaration {
@@ -79,9 +80,13 @@ function portableSkillText(text: string, skill: BundleSkill): string {
 	if (name !== skill.name || name.length > 64 || !description) {
 		throw new Error(`agent_plugin_skill_portable_fields_invalid:${skill.name}`);
 	}
-	const portableDescription = description.length > 1024
-		? `${description.slice(0, 1021).replace(/\s+\S*$/u, '')}...`
-		: description;
+	if (skill.export_description !== undefined && (
+		typeof skill.export_description !== 'string' || !skill.export_description.trim() || skill.export_description.length > 1024
+	)) throw new Error(`agent_plugin_skill_export_description_invalid:${skill.name}`);
+	const portableDescription = skill.export_description ?? description;
+	if (portableDescription.length > 1024) {
+		throw new Error(`agent_plugin_skill_export_description_required:${skill.name}`);
+	}
 	const output = ['---', `name: ${JSON.stringify(name)}`, `description: ${JSON.stringify(portableDescription)}`];
 	const license = scalar('license');
 	if (license) output.push(`license: ${JSON.stringify(license)}`);

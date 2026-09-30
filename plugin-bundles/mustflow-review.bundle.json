@@ -28,6 +28,7 @@
     },
     {
       "name": "security-privacy-review",
+      "export_description": "Review security and privacy when code, configuration, data flows, authentication or authorization, uploads or downloads, APIs, queues, AI inputs or outputs, telemetry or logs, dependencies, build or deployment artifacts, cryptography, agent settings, or release changes affect secrets, personal data, retention, access control, third-party data use, vendor disclosure, or external disclosure.",
       "source": ".mustflow/skills/security-privacy-review/SKILL.md"
     }
   ],

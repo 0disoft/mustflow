@@ -27,6 +27,12 @@ test('real bundled skills export portable string metadata without changing canon
 			assert.doesNotMatch(header, /^(?:mustflow_doc|locale|canonical|revision|lifecycle|authority):/mu);
 			assert.match(header, /compatibility: "Requires a mustflow-managed repository/u);
 			assert.ok(JSON.parse(/^description: (.+)$/mu.exec(header)[1]).length <= 1024);
+			if (skill.export_description) {
+				assert.equal(JSON.parse(/^description: (.+)$/mu.exec(header)[1]), skill.export_description);
+				assert.match(skill.export_description, /secrets, personal data, retention, access control/u);
+				assert.match(skill.export_description, /vendor disclosure, or external disclosure/u);
+				assert.equal(JSON.parse(/^  mustflow_description: (.+)$/mu.exec(header)[1]), /^description: (.+)$/mu.exec(originals.get(skill.name))[1].trimEnd());
+			}
 			const fields = [...header.matchAll(/^  ([a-z_]+): (.+)$/gmu)];
 			assert.ok(fields.length > 0);
 			assert.ok(fields.every(([, , value]) => typeof JSON.parse(value) === 'string'));
@@ -36,6 +42,23 @@ test('real bundled skills export portable string metadata without changing canon
 			assert.equal(readFileSync(path.join(fixture, skill.source), 'utf8'), originals.get(skill.name));
 		}
 		const first = bundle.skills[0];
+		const portableOutput = path.join(fixture, bundle.output_directory, 'skills', first.name, 'SKILL.md');
+		const before = readFileSync(portableOutput, 'utf8');
+		const longDescription = 'Review inputs. ' + 'x'.repeat(1024) + ' Do not use for unrelated work.';
+		writeFileSync(path.join(fixture, first.source), originals.get(first.name).replace(/^description:.*$/mu, 'description: ' + longDescription));
+		assert.throws(() => buildAgentPluginBundle(fixture, 'plugin-bundles/review.json'), /export_description_required/u);
+		assert.equal(readFileSync(portableOutput, 'utf8'), before);
+		for (const invalid of ['', '   ', 'x'.repeat(1025)]) {
+			bundle.skills[0].export_description = invalid;
+			writeFileSync(path.join(fixture, 'plugin-bundles/review.json'), JSON.stringify(bundle));
+			assert.throws(() => buildAgentPluginBundle(fixture, 'plugin-bundles/review.json'), /export_description_invalid/u);
+			assert.equal(readFileSync(portableOutput, 'utf8'), before);
+		}
+		bundle.skills[0].export_description = 'Review inputs. Do not use for unrelated work.';
+		writeFileSync(path.join(fixture, 'plugin-bundles/review.json'), JSON.stringify(bundle));
+		assert.equal(buildAgentPluginBundle(fixture, 'plugin-bundles/review.json').ok, true);
+		assert.ok(readFileSync(portableOutput, 'utf8').includes('description: "Review inputs. Do not use for unrelated work."'));
+		assert.equal(JSON.parse(/^  mustflow_description: (.+)$/mu.exec(readFileSync(portableOutput, 'utf8'))[1]), longDescription);
 		writeFileSync(path.join(fixture, first.source), originals.get(first.name).replace(/^description:.*$/mu, 'description: ""'));
 		assert.throws(() => buildAgentPluginBundle(fixture, 'plugin-bundles/review.json'), /portable_fields_invalid/u);
 	} finally { removeTempProject(fixture); }
