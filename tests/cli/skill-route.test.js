@@ -39,6 +39,8 @@ function initProject(projectPath, profile = null) {
 	const result = runCli(projectPath, [
 		'init',
 		'--yes',
+		'--workflow',
+		'strict',
 		...(profile ? ['--profile', profile] : []),
 	]);
 	assert.equal(result.status, 0, result.stderr || result.stdout);

@@ -6,7 +6,7 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
-## 2.141.0 - 2026-10-04
+## 2.141.1 - 2026-10-04
 
 - New installs default to simple mode; existing installs with no `[workflow]` section stay on strict.
 - Simple mode runs project commands directly, optionally discovers package scripts and Go/Cargo checks, and skips mandatory skill files and manifest sealing.
