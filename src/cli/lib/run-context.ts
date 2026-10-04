@@ -17,6 +17,7 @@ import { normalizeCommandEffects } from '../../core/command-effects.js';
 import { readEffectiveCommandCwd } from '../../core/command-run-constraints.js';
 import { isRecord } from './command-contract.js';
 import { resolveMustflowRoot } from './project-root.js';
+import { resolveWorkflowPolicy } from '../../core/workflow-policy.js';
 
 const MUSTFLOW_CONFIG_RELATIVE_PATH = '.mustflow/config/mustflow.toml';
 
@@ -204,6 +205,14 @@ export function resolveRunCommandContext(options: ResolveRunCommandContextOption
 	const startPath = path.resolve(options.startPath ?? process.cwd());
 	const projectRoot = resolveMustflowRoot(startPath);
 	const mustflowConfig = readMustflowConfigIfExists(projectRoot);
+	if (resolveWorkflowPolicy(mustflowConfig).mode === 'simple') {
+		const commandRoot = requestedSimpleRoot(projectRoot, startPath, options.repository);
+		return {
+			projectRoot: commandRoot,
+			contract: readCommandContract(commandRoot, mustflowConfig),
+			mustflowConfig, workspaceScope: null, trustPaths: undefined, delegatedIntentCandidates: [],
+		};
+	}
 	const workspaceAuthority = readWorkspaceCommandAuthorityConfig(mustflowConfig);
 	const requestedRepository = options.repository?.trim() ? normalizeRepositoryOption(options.repository) : null;
 
@@ -247,4 +256,15 @@ export function resolveRunCommandContext(options: ResolveRunCommandContextOption
 			? []
 			: findDelegatedIntentCandidates(projectRoot, workspaceAuthority.contracts, options.intentName),
 	};
+}
+
+function requestedSimpleRoot(root: string, startPath: string, repository?: string | null): string {
+	if (repository?.trim()) return resolveSafeProjectCwd(root, repository.trim());
+	let current = startPath;
+	while (resolvedPathIsInside(current, root)) {
+		if (['.git', 'package.json', 'go.mod', 'Cargo.toml', 'Makefile', 'Taskfile.yml'].some(marker => existsSync(path.join(current, marker)))) return current;
+		if (current === root) break;
+		current = path.dirname(current);
+	}
+	return root;
 }

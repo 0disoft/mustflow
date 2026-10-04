@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import { readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { parseTomlText } from './toml.js';
+import { resolveWorkflowPolicy } from './workflow-policy.js';
+import { addProjectCommands } from './project-command-discovery.js';
 
 export type TomlTable = Record<string, unknown>;
 
@@ -420,8 +422,13 @@ export function readMustflowConfigIfExists(projectRoot: string): TomlTable | und
 	return existsSync(configPath) ? readMustflowConfig(projectRoot) : undefined;
 }
 
-export function readCommandContract(projectRoot: string): CommandContract {
-	return commandContractFromParsed(readResolvedCommandContractToml(projectRoot));
+export function readCommandContract(projectRoot: string, workflowConfig?: TomlTable): CommandContract {
+	const policy = resolveWorkflowPolicy(workflowConfig ?? readMustflowConfigIfExists(projectRoot));
+	const exists = existsSync(resolveMustflowConfigPath(projectRoot, COMMANDS_CONFIG_RELATIVE_PATH));
+	const contract = policy.inferProjectCommands && !exists
+		? { defaults: {}, intents: {}, resources: {} }
+		: commandContractFromParsed(readResolvedCommandContractToml(projectRoot));
+	return policy.inferProjectCommands ? addProjectCommands(projectRoot, contract) : contract;
 }
 
 export function readString(table: TomlTable, key: string): string | undefined {

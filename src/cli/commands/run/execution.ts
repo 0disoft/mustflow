@@ -6,6 +6,7 @@ import { createCommandEnv } from '../../../core/command-env.js';
 import { createCorrelationId } from '../../../core/correlation-id.js';
 import { recordRunPerformanceHistory } from '../../../core/run-performance-history.js';
 import { RunProfiler } from '../../../core/run-profile.js';
+import { resolveWorkflowPolicy } from '../../../core/workflow-policy.js';
 import {
 	writeRunReceipt,
 	type RunReceipt,
@@ -292,15 +293,15 @@ export async function executeRunCommand(
 		resolveRunCommandContext({ repository: request.repository, intentName: request.intentName }),
 	);
 	const projectRoot = runContext.projectRoot;
-	const rootTrust = profiler.measure('root_trust', () =>
+	const rootTrust = resolveWorkflowPolicy(runContext.mustflowConfig).requireManifestLock ? profiler.measure('root_trust', () =>
 		assessRunRootTrust(projectRoot, {
 			requiredPaths: runContext.trustPaths,
 			includeRootCommandContract: runContext.workspaceScope === null,
 		}),
-	);
+	) : null;
 	const jsonLikeOutput = request.outputMode !== 'text';
 
-	if (!request.allowUntrustedRoot && !rootTrust.trusted) {
+	if (rootTrust && !request.allowUntrustedRoot && !rootTrust.trusted) {
 		const message =
 			rootTrust.reason === 'manifest_lock_invalid'
 				? t(lang, 'run.error.untrustedRootInvalid', { detail: rootTrust.detail ?? rootTrust.manifestLockPath })
