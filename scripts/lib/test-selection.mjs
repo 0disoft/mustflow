@@ -155,6 +155,7 @@ export function createTestSelection(allCliTests, options = {}) {
 	];
 
 	const fastWorkflowContractTests = [
+		'workflow-simple.test.js',
 		'docs.test.js',
 		'authoring-fixtures.test.js',
 		'authoring-skill-contracts.test.js',
@@ -201,7 +202,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		['help', [...routerSmokeTests]],
 		['impact', ['impact.test.js']],
 		['index', ['index-dry-run.test.js', ...indexTests]],
-		['init', ['init.test.js', 'init-default-template.test.js', 'workflow.test.js']],
+		['init', ['init.test.js', 'init-default-template.test.js', 'workflow.test.js', 'workflow-simple.test.js']],
 		['line-endings', ['line-endings.test.js']],
 		['map', ['map.test.js', 'workflow.test.js']],
 		['next', ['next.test.js']],
@@ -219,6 +220,12 @@ export function createTestSelection(allCliTests, options = {}) {
 	]);
 
 	const relatedRules = [
+		{
+			match: /^(?:src\/core\/(?:workflow-policy|project-command-discovery)\.ts|src\/cli\/lib\/workflow-(?:templates|migration)\.ts|templates\/default\/workflows\/simple\/)/u,
+			tests: ['workflow-simple.test.js'],
+			terminal: true,
+		},
+		{ match: /^src\/cli\/lib\/run-context\.ts$/u, tests: ['workflow-simple.test.js', ...runTests] },
 		{
 			match: /^\.github\/workflows\/native-crash-fixtures\.yml$/u,
 			tests: ['package-command-contracts.test.js'],

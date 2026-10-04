@@ -86,6 +86,19 @@ test('simple merge preserves project rules without inserting the strict router',
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test('simple guidance installs in every supported locale without expanded workflow files', async () => {
+	for (const locale of ['en', 'ko', 'zh', 'es', 'fr', 'hi']) {
+		const root = mkdtempSync(path.join(tmpdir(), 'mustflow-simple-locale-'));
+		try {
+			const result = await runCliInProcess(root, ['init', '--yes', '--locale', locale]);
+			assert.equal(result.status, 0, `${locale}: ${result.stderr}`);
+			assert.match(readFileSync(path.join(root, 'AGENTS.md'), 'utf8'), new RegExp(`locale: ${locale}`));
+			assert.equal(existsSync(path.join(root, '.mustflow/docs')), false);
+			assert.equal(existsSync(path.join(root, '.mustflow/skills')), false);
+		} finally { rmSync(root, { recursive: true, force: true }); }
+	}
+});
+
 test('explicit strict init retains the legacy installation and subsequent init preserves strict', async () => {
 	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-strict-init-'));
 	try {
@@ -263,5 +276,10 @@ test('discovery prefers fast checks while retaining full checks for release risk
 			writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'tests', check } }));
 			assert.ok(discoverProjectCommands(root).test.required_after.includes('code_change'));
 		}
+		writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'tests', check: 'npm test' } }));
+		writeFileSync(path.join(root, '.mustflow/config/commands.toml'), '[intents.check]\nstatus = "manual_only"\n');
+		const restricted = readCommandContract(root).intents;
+		assert.equal(restricted.check.status, 'manual_only');
+		assert.ok(restricted.test.required_after.includes('code_change'));
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });

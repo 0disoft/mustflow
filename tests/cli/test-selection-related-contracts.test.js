@@ -60,6 +60,16 @@ test('related selection keeps router changes out of local index suites', () => {
 	assert.deepEqual([...selected].sort(), ['router.test.js', 'workflow.test.js']);
 });
 
+test('simple workflow changes select their focused lifecycle coverage without a broad fallback', () => {
+	for (const file of ['src/core/workflow-policy.ts', 'src/core/project-command-discovery.ts',
+		'src/cli/lib/workflow-templates.ts', 'src/cli/lib/workflow-migration.ts',
+		'templates/default/workflows/simple/ko/AGENTS.md']) {
+		const selected = selectedFor([file]);
+		assert.deepEqual([...selected], ['workflow-simple.test.js'], file);
+	}
+	assert.ok(selectedFor(['src/cli/commands/init.ts']).has('workflow-simple.test.js'));
+});
+
 test('related selection covers shared command eligibility behavior', () => {
 	const selected = selectedFor(['src/core/command-intent-eligibility.ts']);
 

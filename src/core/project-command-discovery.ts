@@ -35,7 +35,7 @@ function inferredIntent(name: string, argv: string[]): TomlTable {
 	};
 }
 
-export function discoverProjectCommands(projectRoot: string): Record<string, TomlTable> {
+export function discoverProjectCommands(projectRoot: string, authoredIntents: Readonly<Record<string, unknown>> = {}): Record<string, TomlTable> {
 	const intents: Record<string, TomlTable> = {};
 	const packagePath = path.join(projectRoot, 'package.json');
 	if (existsSync(packagePath)) {
@@ -76,7 +76,8 @@ export function discoverProjectCommands(projectRoot: string): Record<string, Tom
 			}
 			// Deduplicate only explicitly covered scripts, for the same reasons.
 			for (const aggregate of ['check', 'check_full']) {
-				if (!intents[aggregate]) continue;
+				// An authored aggregate may be blocked or execute something else entirely.
+				if (!intents[aggregate] || Object.hasOwn(authoredIntents, aggregate)) continue;
 				const coveredReasons = new Set(intents[aggregate].required_after as string[]);
 				for (const [name, script] of Object.entries(selectedScripts)) {
 					if (name === aggregate || name === 'build') continue;
@@ -102,7 +103,7 @@ export function discoverProjectCommands(projectRoot: string): Record<string, Tom
 
 export function addProjectCommands(projectRoot: string, contract: CommandContract): CommandContract {
 	// Authored entries, including manual-only or unknown entries, retain priority.
-	const inferred = discoverProjectCommands(projectRoot);
+	const inferred = discoverProjectCommands(projectRoot, contract.intents);
 	for (const intent of Object.values(inferred)) {
 		for (const [field, defaultField] of [['timeout_seconds', 'default_timeout_seconds'], ['max_output_bytes', 'max_output_bytes'], ['env_policy', 'env_policy'], ['stdin', 'stdin']]) {
 			if (contract.defaults[defaultField] !== undefined) intent[field] = contract.defaults[defaultField];
