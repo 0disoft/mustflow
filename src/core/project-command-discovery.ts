@@ -11,6 +11,11 @@ function isTable(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function callsScript(command: string, scriptName: string): boolean {
+	const escaped = scriptName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return new RegExp(`(?:^|[;&|]\\s*)(?:bun|npm|pnpm|yarn)\\s+(?:run(?:-script)?\\s+)?${escaped}(?:\\s|$|[;&|])`).test(command);
+}
+
 function inferredIntent(name: string, argv: string[]): TomlTable {
 	return {
 		status: 'configured', lifecycle: 'oneshot', run_policy: 'agent_allowed',
@@ -44,12 +49,12 @@ export function discoverProjectCommands(projectRoot: string): Record<string, Tom
 				intents.test_related = { ...inferredIntent('test:related', [executable, 'run', 'test:related']), required_after: REASONS };
 				if (intents.test) intents.test = { ...intents.test, required_after: FULL_REASONS };
 			}
-			// A repository's aggregate check already owns its component checks.
-			// Keep explicit mf run test/typecheck/lint available, but don't run them
-			// again in the same automatic verification plan.
+			// Only remove checks that the aggregate explicitly invokes. A script
+			// called "check" is not proof that tests or type checks are covered.
 			if (intents.check) {
 				for (const name of ['test', 'test_related', 'typecheck', 'lint']) {
-					if (intents[name]) intents[name] = { ...intents[name], required_after: [] };
+					const scriptName = name === 'test_related' ? 'test:related' : name;
+					if (intents[name] && callsScript(String(pkg.scripts.check), scriptName)) intents[name] = { ...intents[name], required_after: [] };
 				}
 			}
 		}

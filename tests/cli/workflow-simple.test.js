@@ -86,12 +86,17 @@ test('automatic verification prefers related tests and does not duplicate aggreg
 		assert.ok(intents.test_related.required_after.includes('code_change'));
 		assert.ok(!intents.test.required_after.includes('code_change'));
 		assert.ok(intents.test.required_after.includes('release_risk'));
-		pkg.scripts.check = 'npm run typecheck && npm test';
+		pkg.scripts.check = 'npm run typecheck && npm run test:related && npm test';
 		writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg));
 		intents = discoverProjectCommands(root);
 		assert.ok(intents.check.required_after.includes('code_change'));
 		assert.deepEqual(intents.test.required_after, []);
 		assert.deepEqual(intents.test_related.required_after, []);
 		assert.deepEqual(intents.typecheck.required_after, []);
+		pkg.scripts.check = 'npm run typecheck';
+		writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg));
+		intents = discoverProjectCommands(root);
+		assert.ok(intents.test.required_after.includes('release_risk'));
+		assert.ok(intents.test_related.required_after.includes('code_change'));
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
