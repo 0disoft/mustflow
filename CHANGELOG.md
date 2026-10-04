@@ -6,6 +6,13 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.141.0 - 2026-10-04
+
+- New installs default to simple mode; existing installs with no `[workflow]` section stay on strict.
+- Simple mode runs project commands directly, optionally discovers package scripts and Go/Cargo checks, and skips mandatory skill files and manifest sealing.
+- `init --workflow simple --merge` keeps custom rules, explicit command restrictions, and preferences, and backs up generated files it replaces.
+- Faster and related checks are preferred, and duplicate checks are removed only with proven unconditional coverage, while authored time, output, and environment limits still apply; six languages are documented.
+
 ## 2.140.0 - 2026-09-30
 
 - Add `mf skill catalog --write` so installed projects can regenerate their routing catalog without source-repository scripts.

@@ -275,7 +275,7 @@ test('published npm smoke executes both public aliases and a strict consumer wor
 		assert.ok(calls.some((call) => call.includes('--prefer-online --cache')));
 		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf --version')));
 		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mustflow --version')));
-		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf init --yes')));
+		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf init --yes --workflow strict')));
 		assert.ok(calls.some((call) => call.includes('exec --package=mustflow --cache') && call.endsWith('--offline --yes=false -- mf check --strict --json')));
 		assert.deepEqual(readdirSync(tempParent), []);
 	} finally {
@@ -451,7 +451,8 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	});
 
 	assert.equal(result.status, 0);
-	const [pack] = JSON.parse(result.stdout);
+	const packs = JSON.parse(result.stdout);
+	const pack = Array.isArray(packs) ? packs[0] : Object.values(packs)[0];
 	const files = new Set(pack.files.map((file) => file.path));
 
 	assert.ok(files.has('dist/cli/index.js'));
@@ -603,6 +604,7 @@ test('npm package includes compiled cli, schema contracts, and default template 
 	assert.ok(files.has('examples/nested-repos/README.md'));
 	for (const locale of supportedTemplateLocales) {
 		assert.ok(files.has(`templates/default/locales/${locale}/AGENTS.md`));
+		assert.ok(files.has(`templates/default/workflows/simple/${locale}/AGENTS.md`));
 	}
 	for (const relativePath of templateCreates) {
 		assert.ok(

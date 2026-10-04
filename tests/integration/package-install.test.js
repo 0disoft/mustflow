@@ -46,8 +46,8 @@ function runPackageManagerTool(name, args, options = {}) {
 }
 
 function parsePackResult(stdout) {
-	const [pack] = JSON.parse(stdout);
-	return pack;
+	const packs = JSON.parse(stdout);
+	return Array.isArray(packs) ? packs[0] : Object.values(packs)[0];
 }
 
 function hasBinShim(projectPath, name) {
@@ -128,11 +128,23 @@ test('packed npm package installs and runs the public mf workflow', async () => 
 		assertInstalledPackageSurface(projectPath);
 		assertInstalledCliVersions(projectPath);
 
+		const simplePath = path.join(projectPath, 'simple-consumer');
+		mkdirSync(simplePath);
+		const simpleInit = runPackageManagerTool('npx', ['mf', 'init', '--yes'], { cwd: simplePath });
+		assert.equal(simpleInit.status, 0, simpleInit.stderr || simpleInit.stdout);
+		assert.match(readFileSync(path.join(simplePath, '.mustflow/config/mustflow.toml'), 'utf8'), /mode = "simple"/);
+		assert.equal(existsSync(path.join(simplePath, '.mustflow/skills')), false);
+		const simpleCheck = runPackageManagerTool('npx', ['mf', 'check', '--json'], { cwd: simplePath });
+		assert.equal(simpleCheck.status, 0, simpleCheck.stderr || simpleCheck.stdout);
+		assert.equal(JSON.parse(simpleCheck.stdout).ok, true);
+
 		const dryRun = runPackageManagerTool(
 			'npx',
 			[
 				'mf',
 				'init',
+				'--workflow',
+				'strict',
 				'--dry-run',
 				'--profile',
 				'product',
@@ -155,6 +167,8 @@ test('packed npm package installs and runs the public mf workflow', async () => 
 			[
 				'mf',
 				'init',
+				'--workflow',
+				'strict',
 				'--yes',
 				'--profile',
 				'product',

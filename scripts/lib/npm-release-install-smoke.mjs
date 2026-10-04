@@ -303,7 +303,7 @@ export async function smokePublishedPackage({
 		}
 
 		await runNpm(
-			['exec', `--package=${packageJson.name}`, '--cache', cacheRoot, '--offline', '--yes=false', '--', 'mf', 'init', '--yes'],
+			['exec', `--package=${packageJson.name}`, '--cache', cacheRoot, '--offline', '--yes=false', '--', 'mf', 'init', '--yes', '--workflow', 'strict'],
 			projectRoot,
 		);
 		const checkResult = await runNpm(
