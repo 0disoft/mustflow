@@ -201,14 +201,46 @@ test('automatic verification prefers related tests and does not duplicate aggreg
 		pkg.scripts.check = 'npm run typecheck && npm run test:related && npm test';
 		writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg));
 		intents = discoverProjectCommands(root);
-		assert.ok(intents.check.required_after.includes('code_change'));
+		assert.ok(!intents.check.required_after.includes('code_change'));
 		assert.deepEqual(intents.test.required_after, []);
-		assert.deepEqual(intents.test_related.required_after, []);
-		assert.deepEqual(intents.typecheck.required_after, []);
+		assert.ok(intents.test_related.required_after.includes('code_change'));
+		assert.ok(intents.typecheck.required_after.includes('code_change'));
+		assert.ok(!intents.typecheck.required_after.includes('release_risk'));
 		pkg.scripts.check = 'npm run typecheck';
 		writeFileSync(path.join(root, 'package.json'), JSON.stringify(pkg));
 		intents = discoverProjectCommands(root);
 		assert.ok(intents.test.required_after.includes('release_risk'));
 		assert.ok(intents.test_related.required_after.includes('code_change'));
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('discovery prefers fast checks while retaining full checks for release risk and authored defaults', () => {
+	const root = fixture();
+	try {
+		writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: {
+			'check:fast': 'npm run check:typecheck && npm run test:fast',
+			check: 'npm run check:typecheck && npm test',
+			'check:typecheck': 'types', 'test:fast': 'fast-tests', test: 'slow-tests',
+		} }));
+		writeFileSync(path.join(root, '.mustflow/config/commands.toml'), '[defaults]\ndefault_timeout_seconds = 15\nmax_output_bytes = 2048\nenv_policy = "allowlist"\nenv_allowlist = ["PATH"]\n[intents]\n');
+		const intents = readCommandContract(root).intents;
+		assert.equal(intents.check.argv.at(-1), 'check:fast');
+		assert.equal(intents.typecheck.argv.at(-1), 'check:typecheck');
+		assert.ok(intents.check.required_after.includes('code_change'));
+		assert.deepEqual(intents.test_fast.required_after, []);
+		assert.deepEqual(intents.typecheck.required_after, []);
+		assert.ok(!intents.check_full.required_after.includes('code_change'));
+		assert.ok(intents.check_full.required_after.includes('release_risk'));
+		assert.deepEqual(intents.test.required_after, []);
+		assert.equal(intents.check.timeout_seconds, 15);
+		assert.equal(intents.check.max_output_bytes, 2048);
+		assert.equal(intents.check.env_policy, 'allowlist');
+		assert.equal(intents.check.effects[0].lock, intents.test.effects[0].lock);
+		assert.equal(intents.check.effects[0].type, 'write');
+		// Commands with failure-masking syntax cannot suppress standalone checks.
+		for (const check of ['npm test || echo ok', 'npm test -- --filter narrow', 'echo "npm test"']) {
+			writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'tests', check } }));
+			assert.ok(discoverProjectCommands(root).test.required_after.includes('code_change'));
+		}
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
