@@ -45,10 +45,31 @@ test('new installs default to simple and work through check, doctor, context, ru
 		assert.doesNotMatch(result.stdout, /Missing|skills\/router/);
 		result = await runCliInProcess(root, ['help', 'commands']);
 		assert.match(result.stdout, /check: configured/);
+		result = await runCliInProcess(root, ['init', '--yes']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(readFileSync(path.join(root, 'AGENTS.md'), 'utf8'), /locale: ko/);
 		// A stale optional lock must not impose sealing work on ordinary development.
 		writeFileSync(path.join(root, 'AGENTS.md'), '# Project rules\n');
 		result = await runCliInProcess(root, ['check', '--json']);
 		assert.equal(result.status, 0, result.stdout);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('simple parent selection respects a child strict policy and checks installed simple children', async () => {
+	const root = fixture();
+	try {
+		const child = path.join(root, 'projects/child');
+		mkdirSync(child, { recursive: true });
+		let result = await runCliInProcess(child, ['init', '--yes', '--workflow', 'simple']);
+		assert.equal(result.status, 0, result.stderr);
+		result = await runCliInProcess(root, ['check', '--repo', 'projects/child', '--json']);
+		assert.equal(result.status, 0, result.stdout);
+		writeFileSync(path.join(child, '.mustflow/config/mustflow.toml'), '[workflow]\nmode = "strict"\n');
+		writeFileSync(path.join(child, '.mustflow/config/commands.toml'), '[intents.test]\nstatus = "manual_only"\n');
+		writeFileSync(path.join(child, 'package.json'), JSON.stringify({ scripts: { test: 'node -e "process.exit(0)"' } }));
+		result = await runCliInProcess(root, ['run', 'test', '--repo', 'projects/child', '--dry-run', '--json']);
+		assert.notEqual(result.status, 0);
+		assert.match(result.stdout + result.stderr, /manual_only/);
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 

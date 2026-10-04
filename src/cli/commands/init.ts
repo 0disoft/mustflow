@@ -1467,7 +1467,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 
 	let options: InitOptions = { ...parsedOptions, workflow: initialWorkflow,
 		migrateToSimple: initialWorkflow === 'simple' && parsedOptions.merge && Boolean(existingConfig) && resolveWorkflowPolicy(existingConfig).mode === 'strict' };
-	if (options.migrateToSimple) {
+	if (existingConfig) {
 		const lock = readManifestLock(targetRoot);
 		if (lock.kind === 'present') options = { ...options,
 			locale: options.locale ?? lock.lock.templateLocale,
@@ -1566,7 +1566,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		}
 	}
 	const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
-	const preferenceOptions = options.migrateToSimple && !options.interactive
+	const preferenceOptions = existingConfig && !options.interactive
 		? { ...options, locale: parsedOptions.locale, profile: parsedOptions.profile } : options;
 	if (applyInitPreferences(targetRoot, preferencesPath, template, preferenceOptions)) {
 		customizedFiles.add('.mustflow/config/preferences.toml');

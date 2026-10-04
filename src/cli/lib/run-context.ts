@@ -207,10 +207,15 @@ export function resolveRunCommandContext(options: ResolveRunCommandContextOption
 	const mustflowConfig = readMustflowConfigIfExists(projectRoot);
 	if (resolveWorkflowPolicy(mustflowConfig).mode === 'simple') {
 		const commandRoot = requestedSimpleRoot(projectRoot, startPath, options.repository);
+		const localConfig = commandRoot === projectRoot ? mustflowConfig : readMustflowConfigIfExists(commandRoot);
+		if (localConfig && resolveWorkflowPolicy(localConfig).mode === 'strict') {
+			return resolveRunCommandContext({ startPath: commandRoot, intentName: options.intentName });
+		}
+		const effectiveConfig = localConfig ?? mustflowConfig;
 		return {
 			projectRoot: commandRoot,
-			contract: readCommandContract(commandRoot, mustflowConfig),
-			mustflowConfig, workspaceScope: null, trustPaths: undefined, delegatedIntentCandidates: [],
+			contract: readCommandContract(commandRoot, effectiveConfig),
+			mustflowConfig: effectiveConfig, workspaceScope: null, trustPaths: undefined, delegatedIntentCandidates: [],
 		};
 	}
 	const workspaceAuthority = readWorkspaceCommandAuthorityConfig(mustflowConfig);

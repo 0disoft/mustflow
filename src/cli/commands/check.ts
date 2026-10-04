@@ -77,11 +77,11 @@ export async function runCheck(args: string[], reporter: Reporter, lang: CliLang
 	try {
 		if (repository) {
 			const context = resolveRunCommandContext({ repository });
-			if (!context.workspaceScope || !context.trustPaths) {
-				throw new Error('--repo requires a delegated workspace repository mapping');
-			}
 			projectRoot = context.projectRoot;
-			scope = {
+			if (!context.workspaceScope || !context.trustPaths) {
+				// Simple roots select ordinary repositories without delegated contracts.
+				scope = undefined;
+			} else scope = {
 				kind: 'workspace_repository' as const,
 				repository: context.workspaceScope.repository,
 				contract: context.workspaceScope.contract,
