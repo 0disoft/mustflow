@@ -773,6 +773,7 @@ export const zhMessages = {
   "init.help.option.merge":
     "将 mustflow 管理块合并到现有 AGENTS.md",
   "init.help.option.force": "备份冲突文件并覆盖它们",
+  "init.help.option.workflow": "选择工作流：simple（新安装默认）或 strict（保留现有安装）",
   "init.help.option.profile":
     "设置项目配置：minimal、patterns、oss、team、product 或 library",
   "init.help.option.locale": "设置已安装 mustflow 文档的语言",

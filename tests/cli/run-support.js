@@ -87,7 +87,7 @@ export function waitForOutput(getOutput, pattern, timeoutMs = 2000) {
 
 before(() => {
 	initializedProjectFixture = createTempProject();
-	const result = runCli(initializedProjectFixture, ['init', '--yes']);
+	const result = runCli(initializedProjectFixture, ['init', '--yes', '--workflow', 'strict']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 });
 

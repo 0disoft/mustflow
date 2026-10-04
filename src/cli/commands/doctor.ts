@@ -1,4 +1,6 @@
 import { existsSync } from 'node:fs';
+import { resolveWorkflowPolicy } from '../../core/workflow-policy.js';
+import { readMustflowConfigIfExists } from '../../core/config-loading.js';
 import path from 'node:path';
 
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
@@ -130,7 +132,7 @@ function pluralize(count: number, singular: string, plural: string): string {
 	return count === 1 ? singular : plural;
 }
 
-function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[] {
+function createDiagnostics(output: DoctorBaseOutput, simple = false): readonly DoctorDiagnostic[] {
 	const diagnostics: DoctorDiagnostic[] = [];
 	const checkCommand = output.strict ? 'mf check --strict' : 'mf check';
 	const repoMapExists = existsSync(path.join(output.mustflow_root, 'REPO_MAP.md'));
@@ -158,18 +160,18 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 
 	diagnostics.push({
 		id: 'skill_routes',
-		status: output.strict ? skillRouteAlignment.status : 'info',
-		summary: output.strict ? skillRouteAlignment.summary : 'not evaluated; run strict doctor',
-		action: output.strict ? skillRouteAlignment.action : 'mf doctor --strict --json',
+		status: !simple && output.strict ? skillRouteAlignment.status : 'info',
+		summary: simple ? 'optional in simple mode' : output.strict ? skillRouteAlignment.summary : 'not evaluated; run strict doctor',
+		action: simple ? null : output.strict ? skillRouteAlignment.action : 'mf doctor --strict --json',
 	});
 
 	diagnostics.push({
 		id: 'commands',
-		status: output.context.command_contract_exists ? (runnableIntentCount > 0 ? 'ok' : 'warn') : 'fail',
+		status: simple ? (runnableIntentCount > 0 ? 'ok' : 'info') : output.context.command_contract_exists ? (runnableIntentCount > 0 ? 'ok' : 'warn') : 'fail',
 		summary: output.context.command_contract_exists
 			? `present, ${runnableIntentCount} runnable ${pluralize(runnableIntentCount, 'intent', 'intents')}`
-			: 'missing',
-		action: output.context.command_contract_exists ? 'mf help commands' : 'mf init --dry-run',
+			: simple ? `${runnableIntentCount} discovered commands; explicit contract optional` : 'missing',
+		action: simple || output.context.command_contract_exists ? 'mf help commands' : 'mf init --dry-run',
 	});
 
 	diagnostics.push({
@@ -238,7 +240,7 @@ function createDiagnostics(output: DoctorBaseOutput): readonly DoctorDiagnostic[
 	return diagnostics;
 }
 
-function getNextSteps(output: Omit<DoctorOutput, 'next_steps'>): readonly string[] {
+function getNextSteps(output: Omit<DoctorOutput, 'next_steps'>, simple = false): readonly string[] {
 	if (!output.installed) {
 		return ['mf init --dry-run', 'mf init --yes'];
 	}
@@ -248,7 +250,7 @@ function getNextSteps(output: Omit<DoctorOutput, 'next_steps'>): readonly string
 		return [checkCommand, 'mf status --json', 'mf update --dry-run'];
 	}
 
-	const nextSteps = ['mf help workflow', 'mf help commands', 'mf context --json', 'mf check --strict'];
+	const nextSteps = simple ? ['mf context --json', 'mf run check --dry-run'] : ['mf help workflow', 'mf help commands', 'mf context --json', 'mf check --strict'];
 
 	for (const diagnostic of output.diagnostics) {
 		if (diagnostic.action && diagnostic.status !== 'ok' && !nextSteps.includes(diagnostic.action)) {
@@ -281,6 +283,7 @@ function readCommandEnvironmentSummary(projectRoot: string): DoctorCommandEnviro
 
 function createDoctorOutput(strict: boolean): DoctorOutput {
 	const mustflowRoot = resolveMustflowRoot();
+	const simple = resolveWorkflowPolicy(readMustflowConfigIfExists(mustflowRoot)).mode === 'simple';
 	const context = getAgentContext(mustflowRoot);
 	const checkReport = checkMustflowProjectReport(mustflowRoot, { strict });
 	const check = {
@@ -313,12 +316,12 @@ function createDoctorOutput(strict: boolean): DoctorOutput {
 		state_policy: context.state_policy,
 		blocked_actions: context.blocked_actions,
 	};
-	const diagnostics = createDiagnostics(baseOutput);
+	const diagnostics = createDiagnostics(baseOutput, simple);
 
 	return {
 		...baseOutput,
 		diagnostics,
-		next_steps: getNextSteps({ ...baseOutput, diagnostics }),
+		next_steps: getNextSteps({ ...baseOutput, diagnostics }, simple),
 	};
 }
 

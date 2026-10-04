@@ -783,6 +783,7 @@ Lisez ces fichiers avant de travailler :
   "init.help.option.merge":
     "Fusionne un bloc géré par mustflow dans un AGENTS.md existant",
   "init.help.option.force": "Sauvegarde les fichiers en conflit et les écrase",
+  "init.help.option.workflow": "Choisir simple pour une nouvelle installation ou strict pour une installation existante",
   "init.help.option.profile":
     "Définit le profil du projet : minimal, patterns, oss, team, product ou library",
   "init.help.option.locale": "Définit la langue des documents mustflow installés",

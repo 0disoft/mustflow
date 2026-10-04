@@ -34,7 +34,7 @@ export async function runCli(cwd, args, options = {}) {
 }
 
 export async function initProject(projectPath) {
-	const result = await runCli(projectPath, ['init', '--yes']);
+	const result = await runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 

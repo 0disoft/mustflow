@@ -38,8 +38,9 @@ export function isSafeRelativePath(value: unknown): value is string {
 	return segments.length > 0 && segments.every((segment) => segment !== '.' && segment !== '..');
 }
 
-export function validateRequiredFiles(projectRoot: string, issues: CheckIssue[]): void {
-	for (const relativePath of REQUIRED_FILES) {
+export function validateRequiredFiles(projectRoot: string, issues: CheckIssue[], simple = false): void {
+	const required = simple ? ['AGENTS.md', '.mustflow/config/mustflow.toml'] : REQUIRED_FILES;
+	for (const relativePath of required) {
 		if (!existsSync(path.join(projectRoot, relativePath))) {
 			issues.push({ message: `Missing ${relativePath}` });
 		}

@@ -99,7 +99,7 @@ test('tech command records low-authority technology preferences', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--yes', '--workflow', 'strict']).status, 0);
 		assert.ok(existsSync(path.join(projectPath, '.mustflow', 'config', 'technology.toml')));
 
 		const add = runCli(projectPath, [
@@ -166,7 +166,7 @@ test('tech add verifies npm packages before writing the preference', async () =>
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--yes', '--workflow', 'strict']).status, 0);
 
 		const add = await withNpmPackages(['next', 'react'], (registryUrl) =>
 			runCliAsync(
@@ -211,7 +211,7 @@ test('tech add verify refuses missing npm packages without writing preferences',
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--yes', '--workflow', 'strict']).status, 0);
 
 		const add = await withNpmPackages(['next'], (registryUrl) =>
 			runCliAsync(
@@ -250,7 +250,7 @@ test('check rejects technology preferences that claim higher authority', () => {
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--yes', '--workflow', 'strict']).status, 0);
 		writeFileSync(
 			path.join(projectPath, '.mustflow', 'config', 'technology.toml'),
 			[

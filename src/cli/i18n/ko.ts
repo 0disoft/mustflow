@@ -784,6 +784,7 @@ export const koMessages = {
   "init.help.option.interactive": "질문에 답하며 초기 설정을 선택합니다",
   "init.help.option.merge": "기존 AGENTS.md에 mustflow 관리 블록만 병합합니다",
   "init.help.option.force": "충돌 파일을 백업한 뒤 덮어씁니다",
+  "init.help.option.workflow": "워크플로 선택: simple(새 설치 기본값) 또는 strict(기존 설치 유지)",
   "init.help.option.profile":
     "프로젝트 유형을 설정합니다: minimal, patterns, oss, team, product, library",
   "init.help.option.locale": "설치할 mustflow 문서 언어를 설정합니다",

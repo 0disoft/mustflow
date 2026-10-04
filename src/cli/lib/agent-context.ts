@@ -1,4 +1,6 @@
 import { existsSync } from 'node:fs';
+import { resolveWorkflowPolicy } from '../../core/workflow-policy.js';
+import { readCommandContract } from '../../core/config-loading.js';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -899,8 +901,18 @@ function readCompactSkillRouteCandidateContent(routeReport: SkillRouteResolveRep
 	}, null, 2)}\n`;
 }
 
-function readCommandContractContext(projectRoot: string): CommandContractContext {
+function readCommandContractContext(projectRoot: string, mustflow?: TomlTable): CommandContractContext {
 	const commands = readTomlTableIfExists(projectRoot, COMMANDS_RELATIVE_PATH);
+	if (resolveWorkflowPolicy(mustflow).inferProjectCommands) {
+		const contract = readCommandContract(projectRoot, mustflow);
+		const intents = Object.entries(contract.intents).filter((entry): entry is [string, TomlTable] => isRecord(entry[1]));
+		return {
+			path: COMMANDS_RELATIVE_PATH,
+			exists: safeExists(projectRoot, COMMANDS_RELATIVE_PATH),
+			intents: intents.map(([name, intent]) => ({ name, status: readString(intent, 'status') ?? 'unknown', lifecycle: readString(intent, 'lifecycle') ?? null, run_policy: readString(intent, 'run_policy') ?? null, description: readString(intent, 'description') ?? null })),
+			runnable_intents: intents.filter(([name]) => createRunPlan(projectRoot, contract, name).ok).map(([name]) => name),
+		};
+	}
 
 	if (!commands || !isRecord(commands.intents)) {
 		return {
@@ -971,8 +983,9 @@ function readEffectivePolicyContext(
 	const verification = readNestedTable(mustflow, 'verification');
 	const retention = readNestedTable(mustflow, 'retention');
 	const git = readNestedTable(preferences, 'git');
-	const allowInferredCommands = readBoolean(verification, 'allow_inferred_commands', false);
-	const requireConfiguredIntents = readBoolean(verification, 'require_configured_intents', true);
+	const simple = resolveWorkflowPolicy(mustflow).mode === 'simple';
+	const allowInferredCommands = simple || readBoolean(verification, 'allow_inferred_commands', false);
+	const requireConfiguredIntents = !simple && readBoolean(verification, 'require_configured_intents', true);
 	const rawEventsStore = readRetentionStore(retention, 'raw_events') ?? 'none';
 	const verificationSelection = readNestedTable(preferences, 'verification.selection');
 	const rawProfile = verificationSelection ? readString(verificationSelection, 'profile') : undefined;
@@ -1068,11 +1081,15 @@ function readPromptCacheLayer(mustflow: TomlTable | undefined, name: string): To
 	return readNestedTable(layers, name);
 }
 
+function defaultStableRead(mustflow: TomlTable | undefined): string[] {
+	return resolveWorkflowPolicy(mustflow).mode === 'simple' ? ['AGENTS.md'] : [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+}
+
 function readStablePromptCacheLayer(projectRoot: string, mustflow: TomlTable | undefined): StablePromptCacheLayerContext {
 	const promptCache = readNestedTable(mustflow, 'prompt_cache');
 	const layer = readPromptCacheLayer(mustflow, 'stable');
 	const volatileLayer = readPromptCacheLayer(mustflow, 'volatile');
-	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+	const read = resolveWorkflowPolicy(mustflow).mode === 'simple' ? defaultStableRead(mustflow) : readOptionalStringArray(layer, 'read') ?? defaultStableRead(mustflow);
 	const documents = read.map((relativePath) => {
 		const content = safeRead(projectRoot, relativePath);
 		const contentHash = content === null ? null : sha256(content);
@@ -1220,7 +1237,7 @@ function readVolatilePromptCacheLayer(mustflow: TomlTable | undefined): Volatile
 
 function readStablePromptBundleLayer(projectRoot: string, mustflow: TomlTable | undefined): PromptBundleLayerContext {
 	const layer = readPromptCacheLayer(mustflow, 'stable');
-	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+	const read = resolveWorkflowPolicy(mustflow).mode === 'simple' ? defaultStableRead(mustflow) : readOptionalStringArray(layer, 'read') ?? defaultStableRead(mustflow);
 
 	return {
 		cache_layer: 'stable',
@@ -1871,7 +1888,7 @@ function readStablePromptCacheAuditLayer(
 	settings: PromptCacheSettingsContext,
 ): PromptCacheAuditLayerContext {
 	const layer = readPromptCacheLayer(mustflow, 'stable');
-	const read = readOptionalStringArray(layer, 'read') ?? [...DEFAULT_PROMPT_CACHE_STABLE_READ];
+	const read = resolveWorkflowPolicy(mustflow).mode === 'simple' ? defaultStableRead(mustflow) : readOptionalStringArray(layer, 'read') ?? defaultStableRead(mustflow);
 	const budget = budgetBytes(settings.max_stable_prefix_kb);
 	const targetKb = readNumber(layer, 'target_kb');
 	const target = budgetBytes(targetKb);
@@ -2295,8 +2312,9 @@ export function getAgentContext(projectRoot: string): AgentContext {
 	const preferences = readEffectivePreferencesToml(projectRoot);
 	const authority = isRecord(mustflow?.authority) ? mustflow.authority : undefined;
 	const capabilities = isRecord(mustflow?.capabilities) ? mustflow.capabilities : undefined;
-	const readOrder = mustflow ? readStringArray(mustflow, 'read_order') ?? [] : [];
-	const optionalReadOrder = mustflow ? readStringArray(mustflow, 'optional_read_order') ?? [] : [];
+	const policy = resolveWorkflowPolicy(mustflow);
+	const readOrder = policy.mode === 'simple' ? [...policy.requiredReadPaths] : mustflow ? readStringArray(mustflow, 'read_order') ?? [] : [];
+	const optionalReadOrder = policy.mode === 'simple' ? [] : mustflow ? readStringArray(mustflow, 'optional_read_order') ?? [] : [];
 	const lockInspection = inspectManifestLock(projectRoot);
 	const lock = lockInspection.readResult.kind === 'present' ? lockInspection.readResult.lock : undefined;
 
@@ -2311,12 +2329,12 @@ export function getAgentContext(projectRoot: string): AgentContext {
 		capabilities: readScalarObject(capabilities),
 		read_order: readPathContext(projectRoot, readOrder),
 		optional_read_order: readPathContext(projectRoot, optionalReadOrder),
-		command_contract: readCommandContractContext(projectRoot),
+		command_contract: readCommandContractContext(projectRoot, mustflow),
 		technology_preferences: readTechnologyPreferencesContext(projectRoot),
 		effective_policy: readEffectivePolicyContext(mustflow, preferences),
 		state_policy: readStatePolicyContext(),
-		blocked_actions: BLOCKED_ACTIONS,
+		blocked_actions: policy.mode === 'simple' ? BLOCKED_ACTIONS.filter(action => action !== 'unconfigured_project_command') : BLOCKED_ACTIONS,
 		latest_run: readLatestRunContext(projectRoot),
-		issues: lockInspection.issues,
+		issues: policy.requireManifestLock ? lockInspection.issues : [],
 	};
 }

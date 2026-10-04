@@ -38,7 +38,7 @@ function runGit(cwd, args) {
 }
 
 function initProject(projectPath) {
-	const result = runCli(projectPath, ['init', '--yes']);
+	const result = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 	runGit(projectPath, ['init']);
 	runGit(projectPath, ['add', '.']);

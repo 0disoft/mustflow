@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -19,6 +19,76 @@ test('legacy mode stays strict and malformed workflow configuration is rejected'
 	assert.equal(resolveWorkflowPolicy({}).mode, 'strict');
 	assert.throws(() => resolveWorkflowPolicy({ workflow: 'simple' }), /TOML table/);
 	assert.throws(() => resolveWorkflowPolicy({ workflow: { mode: 'simpel' } }), /simple or strict/);
+});
+
+test('new installs default to simple and work through check, doctor, context, run and update', async () => {
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-simple-init-'));
+	try {
+		writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { check: 'node -e "console.log(456)"' } }));
+		let result = await runCliInProcess(root, ['init', '--yes', '--locale', 'ko']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(readFileSync(path.join(root, '.mustflow/config/mustflow.toml'), 'utf8'), /mode = "simple"/);
+		assert.equal(existsSync(path.join(root, '.mustflow/skills')), false);
+		for (const args of [['check', '--json'], ['check', '--strict', '--json'], ['doctor', '--json'], ['doctor', '--strict', '--json'], ['run', 'check', '--json'], ['update', '--dry-run', '--json']]) {
+			result = await runCliInProcess(root, args);
+			assert.equal(result.status, 0, `${args.join(' ')}: ${result.stderr}\n${result.stdout}`);
+			assert.doesNotMatch(result.stdout, /skills\/router|docs\/agent-workflow/);
+		}
+		result = await runCliInProcess(root, ['context', '--json']);
+		const context = JSON.parse(result.stdout);
+		assert.deepEqual(context.read_order.map(entry => entry.path), ['AGENTS.md']);
+		assert.ok(context.command_contract.runnable_intents.includes('check'));
+		assert.equal(context.effective_policy.project_commands_require_mf_run, false);
+		assert.equal(context.blocked_actions.includes('unconfigured_project_command'), false);
+		// A stale optional lock must not impose sealing work on ordinary development.
+		writeFileSync(path.join(root, 'AGENTS.md'), '# Project rules\n');
+		result = await runCliInProcess(root, ['check', '--json']);
+		assert.equal(result.status, 0, result.stdout);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('simple merge preserves project rules without inserting the strict router', async () => {
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-simple-merge-'));
+	try {
+		writeFileSync(path.join(root, 'AGENTS.md'), '# Local rules\nKeep this project rule.\n');
+		const result = await runCliInProcess(root, ['init', '--yes', '--merge']);
+		assert.equal(result.status, 0, result.stderr);
+		const agents = readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
+		assert.match(agents, /Keep this project rule/);
+		assert.match(agents, /simple workflow/);
+		assert.doesNotMatch(agents, /skills\/router|docs\/agent-workflow/);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('explicit strict init retains the legacy installation and subsequent init preserves strict', async () => {
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-strict-init-'));
+	try {
+		let result = await runCliInProcess(root, ['init', '--yes', '--workflow', 'strict']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(existsSync(path.join(root, '.mustflow/skills/router.toml')), true);
+		result = await runCliInProcess(root, ['init', '--yes']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(resolveWorkflowPolicy({}).mode, 'strict');
+		result = await runCliInProcess(root, ['check', '--strict', '--json']);
+		assert.equal(result.status, 0, result.stdout);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('simple checks reject malformed policies and explicit command definitions', async () => {
+	const root = fixture();
+	try {
+		writeFileSync(path.join(root, 'AGENTS.md'), '# Rules\n');
+		let result = await runCliInProcess(root, ['check', '--json']);
+		assert.equal(result.status, 0, result.stdout);
+		writeFileSync(path.join(root, '.mustflow/config/commands.toml'), '[intents.test]\nstatus = "configured"\nlifecycle = "oneshot"\nrun_policy = "agent_allowed"\nargv = "broken"\n');
+		result = await runCliInProcess(root, ['check', '--json']);
+		assert.notEqual(result.status, 0);
+		assert.match(result.stdout, /argv/);
+		writeFileSync(path.join(root, '.mustflow/config/mustflow.toml'), '[workflow]\nmode = "simpel"\n');
+		result = await runCliInProcess(root, ['check', '--json']);
+		assert.notEqual(result.status, 0);
+		assert.match(result.stdout, /simple or strict/);
+	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test('simple run discovers scripts and does not require contracts or manifest sealing', async () => {

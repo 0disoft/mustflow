@@ -127,7 +127,7 @@ async function withPackageVersion(version, callback) {
 
 before(() => {
 	initializedProjectFixture = createTempProject('mustflow-upgrade-fixture-');
-	const result = runCli(initializedProjectFixture, ['init', '--yes']);
+	const result = runCli(initializedProjectFixture, ['init', '--yes', '--workflow', 'strict']);
 	assert.equal(result.status, 0, result.stderr || result.stdout);
 });
 

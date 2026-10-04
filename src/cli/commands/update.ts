@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { readMustflowConfigIfExists } from '../../core/config-loading.js';
+import { resolveWorkflowPolicy } from '../../core/workflow-policy.js';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -170,7 +172,7 @@ function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typ
 		template,
 		lock.templateLocale ?? template.manifest.defaultLocale,
 		lock.templateProfile ?? template.manifest.defaultProfile,
-		{ extraSkillNames: lockedTemplateSkillNames(lock.files) },
+		{ extraSkillNames: lockedTemplateSkillNames(lock.files), workflow: resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode },
 	);
 }
 

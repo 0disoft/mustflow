@@ -783,6 +783,7 @@ export const hiMessages = {
   "init.help.option.merge":
     "मौजूदा AGENTS.md में mustflow प्रबंधित ब्लॉक मिलाएँ",
   "init.help.option.force": "टकराती फ़ाइलों का बैकअप लेकर उन्हें overwrite करें",
+  "init.help.option.workflow": "वर्कफ़्लो चुनें: नई स्थापना के लिए simple या मौजूदा स्थापना के लिए strict",
   "init.help.option.profile":
     "प्रोजेक्ट profile सेट करें: minimal, patterns, oss, team, product या library",
   "init.help.option.locale": "इंस्टॉल किए गए mustflow दस्तावेज़ों की भाषा सेट करें",

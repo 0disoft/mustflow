@@ -727,21 +727,27 @@ function collectCheckIssues(projectRoot: string, options: CheckOptions = {}): Ch
 function collectUncachedCheckIssues(projectRoot: string, options: CheckOptions): CheckIssue[] {
 	const issues: CheckIssue[] = [];
 
-	runCheckStage('required_files', options.onProgress, () => validateRequiredFiles(projectRoot, issues));
 	const parsed = runCheckStage('toml', options.onProgress, () => validateToml(projectRoot, issues, options.scope?.commandsToml));
 	runCheckStage('mustflow_config', options.onProgress, () => validateMustflowConfig(parsed.mustflowToml, issues));
+	const simple = isRecord(parsed.mustflowToml?.workflow) && parsed.mustflowToml.workflow.mode === 'simple';
+	runCheckStage('required_files', options.onProgress, () => validateRequiredFiles(projectRoot, issues, simple));
 	runCheckStage('preferences_config', options.onProgress, () => validatePreferencesConfig(parsed.preferencesToml, issues));
 	runCheckStage('technology_config', options.onProgress, () => validateTechnologyConfig(parsed.technologyToml, issues));
 	runCheckStage('versioning_config', options.onProgress, () => validateVersioningConfig(parsed.versioningToml, issues));
 	runCheckStage('command_intents', options.onProgress, () => validateCommandIntents(parsed.commandsToml, issues));
-	if (!options.scope) {
+	if (!simple && !options.scope) {
 		runCheckStage('skills', options.onProgress, () => validateSkills(projectRoot, issues));
 		runCheckStage('context_documents', options.onProgress, () => validateContextDocuments(projectRoot, issues));
 	}
-	runCheckStage('manifest_lock', options.onProgress, () => validateManifestLock(projectRoot, issues, options.scope?.manifestPaths));
+	if (!simple) runCheckStage('manifest_lock', options.onProgress, () => validateManifestLock(projectRoot, issues, options.scope?.manifestPaths));
 
 	if (options.strict) {
-		if (options.scope) {
+		if (simple) {
+			// Inspect authored restrictions without requiring the strict-mode installation surface.
+			if (parsed.commandsToml) validateStrictCommandDefaults(projectRoot, parsed.commandsToml, issues);
+			validateStrictReleaseVersioningAuthority(parsed.preferencesToml, issues);
+			validateStrictVerificationSelectionAuthority(parsed.preferencesToml, issues);
+		} else if (options.scope) {
 			validateStrictScoped(projectRoot, parsed, issues, options);
 		} else {
 			validateStrict(projectRoot, parsed, issues, options);

@@ -30,7 +30,7 @@ function removeTempProject(projectPath) {
 }
 
 function runInitSpawn(cwd, args = ['--yes'], options = {}) {
-	return spawnSync(process.execPath, [cliPath, 'init', ...args], {
+	return spawnSync(process.execPath, [cliPath, 'init', '--workflow', 'strict', ...args], {
 		cwd,
 		encoding: 'utf8',
 		...options,
@@ -42,7 +42,7 @@ async function runInit(cwd, args = ['--yes'], options = {}) {
 		return runInitSpawn(cwd, args, options);
 	}
 
-	return runCliInProcess(cwd, ['init', ...args], {
+	return runCliInProcess(cwd, ['init', '--workflow', 'strict', ...args], {
 		env: envOverrides(options.env),
 	});
 }

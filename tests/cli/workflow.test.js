@@ -38,7 +38,7 @@ test('runs the init check and map workflow', () => {
 	const projectPath = createTempProject();
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0);
 		assert.ok(existsSync(path.join(projectPath, 'AGENTS.md')));
 

@@ -24,6 +24,8 @@ import {
 import { discoverNestedRepositories, getRepoMapConfig } from '../lib/repo-map.js';
 import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
+import { readMustflowConfigIfExists } from '../../core/config-loading.js';
+import { resolveWorkflowPolicy, WORKFLOW_MODES, type WorkflowMode } from '../../core/workflow-policy.js';
 
 type PlannedStatus = 'create' | 'unchanged' | 'conflict' | 'merge' | 'overwrite';
 
@@ -45,6 +47,7 @@ interface InitOptions {
 	readonly force: boolean;
 	readonly interactive: boolean;
 	readonly profile?: string;
+	readonly workflow?: WorkflowMode;
 	readonly locale?: string;
 	readonly agentLang?: string;
 	readonly productSourceLocale?: string;
@@ -78,6 +81,7 @@ const INIT_OPTION_SPECS = [
 	{ name: '--interactive', kind: 'boolean' },
 	{ name: '--set', kind: 'string' },
 	{ name: '--profile', kind: 'string' },
+	{ name: '--workflow', kind: 'string' },
 	{ name: '--locale', kind: 'string' },
 	{ name: '--agent-lang', kind: 'string' },
 	{ name: '--product-source-locale', kind: 'string' },
@@ -139,6 +143,7 @@ export function getInitHelp(lang: CliLang = 'en'): string {
 					label: '--profile <name>',
 					description: t(lang, 'init.help.option.profile'),
 				},
+				{ label: '--workflow <simple|strict>', description: t(lang, 'init.help.option.workflow') },
 				{
 					label: '--locale <locale>',
 					description: t(lang, 'init.help.option.locale'),
@@ -524,6 +529,7 @@ function parseOptions(args: readonly string[], reporter: Reporter, lang: CliLang
 	let force = false;
 	let interactive = false;
 	let profile: string | undefined;
+	let workflow: WorkflowMode | undefined;
 	let locale: string | undefined;
 	let agentLang: string | undefined;
 	let productSourceLocale: string | undefined;
@@ -594,7 +600,13 @@ function parseOptions(args: readonly string[], reporter: Reporter, lang: CliLang
 			continue;
 		}
 
-		if (occurrence.name === '--profile') {
+		if (occurrence.name === '--workflow') {
+			if (!WORKFLOW_MODES.includes(occurrence.value as WorkflowMode)) {
+				reporter.stderr('--workflow must be simple or strict');
+				return undefined;
+			}
+			workflow = occurrence.value as WorkflowMode;
+		} else if (occurrence.name === '--profile') {
 			profile = occurrence.value;
 		} else if (occurrence.name === '--locale') {
 			locale = occurrence.value;
@@ -624,6 +636,7 @@ function parseOptions(args: readonly string[], reporter: Reporter, lang: CliLang
 		force,
 		interactive,
 		profile,
+		workflow,
 		locale,
 		agentLang,
 		productSourceLocale,
@@ -1103,8 +1116,9 @@ function printConflictReport(conflicts: readonly PlannedFile[], reporter: Report
 	reporter.stderr(t(lang, 'init.conflictGuidance'));
 }
 
-function mergeAgentsContent(existingContent: string, locale: string): string {
-	const routerBlock = getMustflowRouterBlock(locale);
+function mergeAgentsContent(existingContent: string, locale: string, simpleContent?: string): string {
+	const routerBlock = simpleContent === undefined ? getMustflowRouterBlock(locale)
+		: `${MUSTFLOW_BLOCK_START}\n${simpleContent.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/u, '').trim()}\n${MUSTFLOW_BLOCK_END}`;
 	const blockPattern = new RegExp(
 		`${escapeRegExp(MUSTFLOW_BLOCK_START)}[\\s\\S]*?${escapeRegExp(MUSTFLOW_BLOCK_END)}`,
 	);
@@ -1123,7 +1137,7 @@ function buildPlannedFiles(
 	options: InitOptions,
 ): PlannedFile[] {
 	const selectedProfile = options.profile ?? template.manifest.defaultProfile;
-	const plannedFiles = getTemplateFiles(template, selectedLocale, selectedProfile).map((source): PlannedFile => {
+	const plannedFiles = getTemplateFiles(template, selectedLocale, selectedProfile, { workflow: options.workflow }).map((source): PlannedFile => {
 		const targetPath = path.join(targetRoot, source.relativePath);
 
 		ensureInside(template.templateRoot, source.sourcePath);
@@ -1431,7 +1445,9 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 	const targetRoot = process.cwd();
 	let template: ReturnType<typeof getDefaultTemplate>;
 
-	if (shouldRefuseWorkspaceRootInit(targetRoot)) {
+	const existingConfig = readMustflowConfigIfExists(targetRoot);
+	const initialWorkflow = parsedOptions.workflow ?? (existingConfig ? resolveWorkflowPolicy(existingConfig).mode : 'simple');
+	if (initialWorkflow === 'strict' && shouldRefuseWorkspaceRootInit(targetRoot)) {
 		printWorkspaceRootInitRefusal(targetRoot, reporter, lang);
 		return 1;
 	}
@@ -1443,10 +1459,10 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		return 1;
 	}
 
-	let options = parsedOptions;
+	let options: InitOptions = { ...parsedOptions, workflow: initialWorkflow };
 
 	if (shouldPromptForInit(args, parsedOptions)) {
-		const promptedOptions = await promptInitOptions(template, parsedOptions, reporter, lang);
+		const promptedOptions = await promptInitOptions(template, options, reporter, lang);
 
 		if (!promptedOptions) {
 			return 1;
@@ -1514,7 +1530,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 							readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath),
 							readTemplateSourceText(file.sourceRoot, file.sourcePath),
 						)
-					: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale);
+					: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale, options.workflow === 'simple' ? file.content : undefined);
 
 			writeUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath, mergedContent);
 			merged += 1;

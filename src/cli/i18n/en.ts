@@ -781,6 +781,7 @@ Read these files before working:
   "init.help.option.merge":
     "Merge a mustflow managed block into an existing AGENTS.md",
   "init.help.option.force": "Back up conflicting files and overwrite them",
+  "init.help.option.workflow": "Choose workflow: simple (new installs) or strict (existing installs)",
   "init.help.option.profile":
     "Set project profile: minimal, patterns, oss, team, product, or library",
   "init.help.option.locale": "Set installed mustflow document locale",

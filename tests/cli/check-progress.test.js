@@ -28,7 +28,7 @@ test('check progress preserves stage results and failures in execution order', a
 test('check progress goes to stderr while JSON results and failure status remain usable', async () => {
 	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-check-progress-'));
 	try {
-		assert.equal((await runCliInProcess(root, ['init', '--yes'])).status, 0);
+		assert.equal((await runCliInProcess(root, ['init', '--yes', '--workflow', 'strict'])).status, 0);
 		const baseline = await runCliInProcess(root, ['check', '--strict', '--json']);
 		const progress = await runCliInProcess(root, ['check', '--strict', '--json', '--progress']);
 		assert.equal(progress.status, baseline.status);

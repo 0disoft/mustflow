@@ -31,7 +31,7 @@ function readText(filePath) {
 }
 
 async function initProject(projectPath) {
-	const result = await runCli(projectPath, ['init', '--yes']);
+	const result = await runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 	assert.equal(result.status, 0);
 	assert.ok(existsSync(path.join(projectPath, 'AGENTS.md')));
 }

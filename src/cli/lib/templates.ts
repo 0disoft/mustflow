@@ -4,6 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parse } from 'smol-toml';
+import type { WorkflowMode } from '../../core/workflow-policy.js';
+import { getSimpleWorkflowTemplateFiles } from './workflow-templates.js';
 
 const DEV_TEMPLATE_ROOT_ENV = 'MUSTFLOW_DEV_TEMPLATE_ROOT';
 const ALLOW_DEV_TEMPLATE_ROOT_ENV = 'MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT';
@@ -36,6 +38,7 @@ export interface TemplateFileSource {
 
 export interface TemplateFileSelectionOptions {
 	readonly extraSkillNames?: readonly string[];
+	readonly workflow?: WorkflowMode;
 }
 
 interface RawManifest {
@@ -541,6 +544,7 @@ export function getTemplateFiles(
 	profile: string = template.manifest.defaultProfile,
 	options: TemplateFileSelectionOptions = {},
 ): TemplateFileSource[] {
+	if (options.workflow === 'simple') return getSimpleWorkflowTemplateFiles(template, locale, profile);
 	const commonRoot = path.join(template.templateRoot, template.manifest.commonRoot);
 	const localeRoot = template.manifest.localesRoot ? path.join(template.templateRoot, template.manifest.localesRoot, locale) : undefined;
 	const sourceLocaleRoot =

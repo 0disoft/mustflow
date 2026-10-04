@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { resolveWorkflowPolicy } from '../../../core/workflow-policy.js';
 import { isRecord, type TomlTable } from '../command-contract.js';
 import { ALLOWED_RETENTION_ON_LIMIT, ALLOWED_RETENTION_STORES } from '../../../core/retention-policy.js';
 import {
@@ -78,6 +79,11 @@ import type { CheckIssue } from './types.js';
 export function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
 	if (!mustflowToml) {
 		return;
+	}
+	try {
+		resolveWorkflowPolicy(mustflowToml);
+	} catch (error) {
+		issues.push({ message: error instanceof Error ? error.message : String(error) });
 	}
 
 	const map = validateTable(mustflowToml, 'map', issues);

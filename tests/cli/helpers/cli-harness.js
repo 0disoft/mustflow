@@ -133,7 +133,7 @@ async function runCliCommandIsolated(cwd, args, commandRunner, options = {}) {
 	}
 }
 
-export function initProject(projectPath, args = ['init', '--yes']) {
+export function initProject(projectPath, args = ['init', '--yes', '--workflow', 'strict']) {
 	return profileOperation('fixture_init', { projectPath, args }, () => {
 		const result = runCli(projectPath, args);
 		assert.equal(result.status, 0, result.stderr || result.stdout);
@@ -142,7 +142,7 @@ export function initProject(projectPath, args = ['init', '--yes']) {
 	});
 }
 
-export async function initProjectInProcess(projectPath, args = ['init', '--yes']) {
+export async function initProjectInProcess(projectPath, args = ['init', '--yes', '--workflow', 'strict']) {
 	return profileOperationAsync('fixture_init_in_process', { projectPath, args }, async () => {
 		const result = await runCliInProcess(projectPath, args);
 		assert.equal(result.status, 0, result.stderr || result.stdout);

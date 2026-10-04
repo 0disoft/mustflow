@@ -30,7 +30,7 @@ test('dashboard preference update rejects symlinked preferences file', async (t)
 	const outsidePreferencesContent = '[git]\nauto_stage = false\n';
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		writeFileSync(outsidePreferencesPath, outsidePreferencesContent);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
@@ -60,7 +60,7 @@ test('dashboard preference update rejects symlinked manifest lock before writing
 	const outsideLockContent = 'schema_version = "outside"\n';
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		const preferencesPath = path.join(projectPath, '.mustflow', 'config', 'preferences.toml');
 		const preferencesBefore = readFileSync(preferencesPath, 'utf8');
@@ -90,7 +90,7 @@ test('dashboard serves and updates safe preferences', async () => {
 	let dashboard;
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
 		writeFileSync(path.join(projectPath, 'docs', 'guide.md'), '# Guide\n\nDraft prose.\n');
@@ -909,7 +909,7 @@ test('dashboard exports static HTML and redacted JSON without starting a server'
 	const projectPath = createTempProject();
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		writeLatestRunReceipt(projectPath);
 
@@ -1003,7 +1003,7 @@ test('dashboard JSON export includes harness verification gaps and remaining ris
 	const projectPath = createTempProject();
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		writeFileSync(
@@ -1114,7 +1114,7 @@ test('dashboard export rejects paths outside the mustflow root', () => {
 	const outsideJsonPath = path.resolve(projectPath, '..', 'mustflow-dashboard-outside.json');
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 
 		const htmlResult = runCli(projectPath, ['dashboard', '--export', '../mustflow-dashboard-outside.html']);
@@ -1138,7 +1138,7 @@ test('dashboard status cache invalidates command contract edits', async () => {
 	let dashboard;
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 
 		dashboard = spawn(process.execPath, [cliPath, 'dashboard', '--json'], {
@@ -1214,7 +1214,7 @@ test('dashboard rejects non-local host binding', () => {
 	const projectPath = createTempProject();
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 
 		const result = runCli(projectPath, ['dashboard', '--host', '0.0.0.0']);
@@ -1229,7 +1229,7 @@ test('dashboard options use shared value and boolean option rules', () => {
 	const projectPath = createTempProject();
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 
 		const booleanValue = runCli(projectPath, ['dashboard', '--json=true']);
@@ -1260,7 +1260,7 @@ test('dashboard verification recommendations use the core change verification co
 	let dashboard;
 
 	try {
-		const init = runCli(projectPath, ['init', '--yes']);
+		const init = runCli(projectPath, ['init', '--yes', '--workflow', 'strict']);
 		assert.equal(init.status, 0, init.stderr);
 		const commandsPath = path.join(projectPath, '.mustflow', 'config', 'commands.toml');
 		writeFileSync(
