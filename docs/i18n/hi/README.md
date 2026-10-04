@@ -7,11 +7,42 @@ mustflow LLM-आधारित कोडिंग एजेंटों के 
 टूल नीतियों को नहीं बदलता; यह एजेंटों को रिपॉज़िटरी की स्पष्ट पढ़ने, कमांड और
 सत्यापन सीमाओं के भीतर काम करने में मदद करता है।
 
-मुख्य मॉडल सरल है: प्रोजेक्ट रूट में `AGENTS.md` रखें और विस्तृत वर्कफ़्लो को
-`.mustflow/` के अंतर्गत संग्रहित करें। एजेंट `AGENTS.md` से शुरू करते हैं, फिर क्रमवार
-रिपॉज़िटरी कमांड अनुबंध, कौशल, प्रोजेक्ट संदर्भ और सत्यापन नियमों का पालन करते हैं।
+## वर्कफ़्लो modes
+
+नई installations default रूप से simple workflow इस्तेमाल करती हैं। मौजूदा installations अपनी configuration
+में दर्ज mode बनाए रखती हैं, और `[workflow]` section रहित configuration strict रहती है। Mode
+`.mustflow/config/mustflow.toml` में रहता है:
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+| Mode | Installed surface | Verification style |
+| --- | --- | --- |
+| `simple` | छोटा `AGENTS.md` और `mustflow.toml`, `commands.toml`, `preferences.toml`। skills या विस्तृत workflow documents की ज़रूरत नहीं। | Project commands सीधे चलते हैं। `mf run` common package scripts और Go/Cargo test, check, build commands खोज सकता है। |
+| `strict` | [इंस्टॉल की गई फ़ाइलें](#इंस्टॉल-की-गई-फ़ाइलें) में दिखाए गए विस्तृत workflow documents और profile के अनुसार चुनी गई skills। | command intent registration, manifest sealing और skill routing रोज़ के flow का हिस्सा रहते हैं। |
+
+legacy detailed workflow के लिए `mf init --yes --workflow strict`, या मौजूदा strict installation को
+simple में migrate करने के लिए `mf init --yes --workflow simple --merge` इस्तेमाल करें। Files लिखने से
+पहले plan देखने के लिए `--dry-run` जोड़ें।
+
+Migration explicit command contracts और preferences, installed locale और profile सुरक्षित रखता है, बदले
+गए generated files का backup लेता है, और `AGENTS.md` के custom rules बनाए रखता है। पुराने strict
+documents अपने आप delete नहीं होते।
+
+simple mode में `mf check` और `mf doctor` को manifest sealing या skill files की ज़रूरत नहीं होती।
+`check` की जगह `check:fast`, types के लिए `typecheck` या `check:typecheck`, lint के लिए `lint` या
+`check:lint`, और रोज़ के changes के लिए पहले `test:related` फिर `test:fast` चुनें। release, security
+और data changes के लिए पूरे test और `check_full` रखें। explicit intent restrictions और लिखे गए
+timeout, output, environment defaults हमेशा प्राथमिकता रखते हैं, और Makefile या Taskfile targets सीधे
+चलते हैं, auto-discover नहीं होते।
+
+`check_full` उपनाम तब उपलब्ध होता है जब प्रोजेक्ट में `check:fast` और `check` दोनों स्क्रिप्ट मौजूद हों।
 
 ## एजेंट पढ़ने का प्रवाह
+
+इस अनुभाग में दिया गया विस्तृत पठन क्रम `strict` मोड पर लागू होता है। `simple` मोड AGENTS.md और कार्य से जुड़ी प्रोजेक्ट फ़ाइलों से शुरू होता है।
 
 ```mermaid
 flowchart TD
@@ -83,7 +114,8 @@ Node.js 20 या नया संस्करण आवश्यक है। m
 npm install -D mustflow
 npx mf init --dry-run
 npx mf init
-npx mf check --strict
+npx mf check
+npx mf doctor
 ```
 
 इंटरैक्टिव टर्मिनल में `mf init` दस्तावेज़ भाषा, प्रोजेक्ट प्रोफ़ाइल और एजेंट रिपोर्ट भाषा चुनने देता है। बिना प्रश्नों के English डिफ़ॉल्ट इंस्टॉल करने के लिए `mf init --yes` का उपयोग करें।
@@ -114,7 +146,23 @@ Deno के `npm:` निष्पादन को सत्यापित ह�
 
 ## इंस्टॉल की गई फ़ाइलें
 
-`mf init` वर्तमान डायरेक्टरी में केवल एजेंट वर्कफ़्लो इंस्टॉल करता है।
+`mf init` वर्तमान डायरेक्टरी में केवल एजेंट वर्कफ़्लो इंस्टॉल करता है। नई installation simple workflow
+इस्तेमाल करती है और केवल छोटा guidance file और configuration लिखती है:
+
+```text
+your-project/
+├─ AGENTS.md
+├─ .gitignore
+└─ .mustflow/
+   └─ config/
+      ├─ commands.toml
+      ├─ mustflow.toml
+      └─ preferences.toml
+```
+
+`manifest.lock.toml` installation baseline के रूप में `.mustflow/config/` में जोड़ा जाता है।
+
+strict installation विस्तृत workflow documents और profile के अनुसार चुनी गई skills जोड़ती है।
 
 ```text
 your-project/
@@ -179,11 +227,13 @@ your-project/
 
 ## मूल वर्कफ़्लो
 
+नीचे दिए गए वर्गीकरण, सत्यापन, खोज और अपडेट कमांड वैकल्पिक टूल हैं। `simple` मोड में हर संपादन के लिए इस सूची को चलाना ज़रूरी नहीं है।
+
 ```sh
 npx mf init --dry-run
 npx mf init
 npx mf doctor
-npx mf check --strict
+npx mf check
 npx mf map --write
 ```
 
@@ -214,7 +264,7 @@ mf run mustflow_update_apply
 
 | कमांड                     | उद्देश्य                                                                                   |
 |---------------------------|--------------------------------------------------------------------------------------------|
-| `mf init`                 | `AGENTS.md` और `.mustflow/**` फ़ाइलें इंस्टॉल करता है।                                   |
+| `mf init`                 | `AGENTS.md` और `.mustflow/**` फ़ाइलें इंस्टॉल करता है। नई installations default रूप से simple इस्तेमाल करती हैं; legacy detailed workflow के लिए `--workflow strict` जोड़ें। |
 | `mf init --dry-run`       | बिना कोई फ़ाइल लिखे दिखाता है कि कौन-सी फ़ाइलें बनाई जाएंगी।                             |
 | `mf init --merge`         | मौजूदा `AGENTS.md` में mustflow-प्रबंधित ब्लॉक्स को मर्ज करता है।                       |
 | `mf init --force`         | टकराती फ़ाइलों का बैकअप लेकर उन्हें ओवरराइट करता है।                                    |
@@ -255,6 +305,8 @@ mf run mustflow_update_apply
 ऑटोमेशन और एजेंटों को मनुष्यों के लिए बने पाठ को पार्स करने के बजाय `--json` आउटपुट या `mf api serve --stdio` JSONL responses का उपयोग करना चाहिए। स्थिर आउटपुट के JSON स्कीमाएँ `schemas/` में उपलब्ध हैं।
 
 ## कमांड निष्पादन नीति
+
+`simple` मोड प्रोजेक्ट में मौजूद जाँचों का पता लगाता है। नीचे दिया गया स्पष्ट कमांड-कॉन्ट्रैक्ट सेटअप `strict` मोड पर लागू होता है, या उन कमांड पर जिन्हें आप कॉन्फ़िगर करना चुनते हैं।
 
 चलाए जाने वाले काम `.mustflow/config/commands.toml` में घोषित होते हैं ताकि  
 एजेंट कमांड का अनुमान न लगा सकें।

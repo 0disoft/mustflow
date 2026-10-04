@@ -4,9 +4,41 @@
 
 mustflow는 에이전트가 이 저장소에서 무엇을 먼저 읽고 어떤 명령을 실행할 수 있는지 정해 두는 CLI입니다. 샌드박스, 승인 절차, 체크포인트, 모델, 도구 정책은 에이전트를 실행하는 호스트가 계속 맡습니다.
 
-프로젝트 루트에는 `AGENTS.md`를 두고 자세한 작업 규칙은 `.mustflow/` 아래에 모읍니다. 에이전트는 `AGENTS.md`부터 읽은 뒤 등록된 명령, 필요한 스킬과 프로젝트 설명을 확인하고 검증 방법을 고릅니다.
+## 워크플로우 모드
+
+새 설치는 기본값으로 간단(simple) 워크플로우를 씁니다. 기존 설치는 설정에 기록된 모드를 그대로
+유지하고, `[workflow]` 섹션이 없는 설정은 strict로 봅니다. 모드는
+`.mustflow/config/mustflow.toml`에 있습니다.
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+| 모드 | 설치 범위 | 검증 방식 |
+| --- | --- | --- |
+| `simple` | 짧은 `AGENTS.md`와 `mustflow.toml`, `commands.toml`, `preferences.toml`. 스킬이나 자세한 워크플로우 문서는 필요하지 않습니다. | 프로젝트 명령을 직접 실행합니다. `mf run`은 흔한 package script와 Go/Cargo test, check, build 명령을 찾아 실행할 수 있습니다. |
+| `strict` | 아래 [설치되는 파일](#설치되는-파일)에 나오는 자세한 워크플로우 문서와 프로필별 스킬. | 명령 의도 등록, manifest 봉인, 스킬 라우팅이 평소 흐름에 포함됩니다. |
+
+기존의 자세한 워크플로우를 쓰려면 `mf init --yes --workflow strict`, 기존 strict 설치를 simple로
+옮기려면 `mf init --yes --workflow simple --merge`를 사용합니다. `--dry-run`을 붙이면 파일을
+쓰기 전에 계획을 미리 볼 수 있습니다.
+
+마이그레이션은 직접 작성한 명령 계약과 preferences, 설치된 로케일과 프로필을 유지하고, 덮어쓴 생성
+파일은 백업하며, `AGENTS.md`에 추가한 규칙을 보존합니다. 예전 strict 문서는 자동으로 삭제하지
+않습니다.
+
+간단 모드에서 `mf check`와 `mf doctor`는 manifest 봉인이나 스킬 파일을 요구하지 않습니다.
+`check`보다 `check:fast`를, 타입 검사는 `typecheck`나 `check:typecheck`를, 린트는 `lint`나
+`check:lint`를 우선하고, 일상 변경에는 `test:related` 다음 `test:fast`를 씁니다. 릴리스·보안·데이터
+변경에는 전체 test와 `check_full`을 유지합니다. 직접 선언한 명령 제한과 작성한 timeout, output,
+environment 기본값이 항상 우선하며, Makefile이나 Taskfile 타깃은 자동으로 찾지 않고 직접 실행합니다.
+
+`check_full` 별칭은 프로젝트에 `check:fast`와 `check` 스크립트가 모두 있을 때 사용할 수 있습니다.
 
 ## 에이전트 읽기 흐름
+
+이 섹션의 자세한 읽기 순서는 `strict` 모드에 적용됩니다. `simple` 모드는 AGENTS.md와 작업에 관련된 프로젝트 파일부터 시작합니다.
 
 ```mermaid
 flowchart TD
@@ -73,7 +105,8 @@ Node.js 20 이상이 필요하며, npm 패키지로 배포됩니다. CLI 실행 
 npm install -D mustflow
 npx mf init --dry-run
 npx mf init
-npx mf check --strict
+npx mf check
+npx mf doctor
 ```
 
 대화형 터미널에서 `mf init`을 실행하면 문서 언어, 프로젝트 성격, 에이전트 보고 언어를 선택할 수 있습니다. 스크립트에서 질문 없이 영어 기본값으로 설치하려면 `mf init --yes`를 사용하세요.
@@ -104,7 +137,23 @@ Deno의 `npm:` 실행은 별도 검증 전까지 실험적 기능으로 간주�
 
 ## 설치되는 파일
 
-`mf init`은 현재 폴더에 에이전트용 워크플로우만 설치합니다.
+`mf init`은 현재 폴더에 에이전트용 워크플로우만 설치합니다. 새 설치는 간단 워크플로우를 쓰고, 짧은
+가이드 파일과 설정만 만듭니다.
+
+```text
+your-project/
+├─ AGENTS.md
+├─ .gitignore
+└─ .mustflow/
+   └─ config/
+      ├─ commands.toml
+      ├─ mustflow.toml
+      └─ preferences.toml
+```
+
+`manifest.lock.toml`은 설치 기준선으로 `.mustflow/config/` 아래에 기록됩니다.
+
+strict 설치에는 자세한 워크플로우 문서와 프로필별 스킬이 더해집니다.
 
 ```text
 your-project/
@@ -155,11 +204,13 @@ your-project/
 
 ## 기본 흐름
 
+아래의 분류, 검증, 검색, 업데이트 명령은 선택적 도구입니다. `simple` 모드에서는 수정할 때마다 이 목록을 모두 실행할 필요가 없습니다.
+
 ```sh
 npx mf init --dry-run
 npx mf init
 npx mf doctor
-npx mf check --strict
+npx mf check
 npx mf map --write
 ```
 
@@ -190,7 +241,7 @@ mf run mustflow_update_apply
 
 | 명령 | 역할 |
 | --- | --- |
-| `mf init` | `AGENTS.md`와 `.mustflow/**`를 설치합니다. |
+| `mf init` | `AGENTS.md`와 `.mustflow/**`를 설치합니다. 새 설치는 simple이 기본이며, 자세한 워크플로우는 `--workflow strict`로 설치합니다. |
 | `mf init --dry-run` | 생성될 파일을 미리 보여주며 실제로는 쓰지 않습니다. |
 | `mf init --merge` | 기존 `AGENTS.md`에 mustflow 관리 블록을 병합합니다. |
 | `mf init --force` | 충돌하는 파일을 백업 후 덮어씁니다. |
@@ -231,6 +282,8 @@ mf run mustflow_update_apply
 자동화나 에이전트가 결과를 읽어야 할 경우, 사람이 읽기 위한 텍스트를 파싱하지 말고 `--json` 출력이나 `mf api serve --stdio` JSONL 응답을 사용하세요. 안정적인 출력 형식을 설명하는 JSON 스키마는 `schemas/`에 있습니다.
 
 ## 명령 실행 정책
+
+`simple` 모드는 프로젝트에 이미 있는 검사 항목을 찾아냅니다. 아래의 명시적 명령 계약 설정은 `strict` 모드에 적용되거나, 직접 구성하기로 선택한 명령에 적용됩니다.
 
 에이전트가 명령어를 추측하지 않도록 실행 가능한 작업은 `.mustflow/config/commands.toml`에 명령 규칙으로 선언해야 합니다.
 

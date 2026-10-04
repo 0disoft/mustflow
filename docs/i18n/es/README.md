@@ -4,9 +4,43 @@ Idiomas: [Inglés](../../../README.md) · [Coreano](../ko/README.md) · [Chino](
 
 mustflow es una CLI de contrato de trabajo y verificación local del repositorio para agentes de codificación basados en LLM. No reemplaza la zona aislada, las aprobaciones, los puntos de control, el modelo ni las políticas de herramientas del agente anfitrión; ayuda a que los agentes respeten los límites explícitos de lectura, comandos y verificación del repositorio.
 
-El modelo central es sencillo: se coloca `AGENTS.md` en la raíz del proyecto y se guarda el flujo de trabajo detallado bajo `.mustflow/`. Los agentes comienzan en `AGENTS.md` y luego siguen, en orden, el contrato de comandos del repositorio, las habilidades, el contexto del proyecto y las reglas de verificación.
+## Modos de flujo de trabajo
+
+Las instalaciones nuevas usan el flujo simple de forma predeterminada. Las existentes conservan el modo
+registrado en su configuración, y una configuración sin sección `[workflow]` se trata como strict. El modo
+vive en `.mustflow/config/mustflow.toml`:
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+| Modo | Superficie instalada | Estilo de verificación |
+| --- | --- | --- |
+| `simple` | `AGENTS.md` breve más `mustflow.toml`, `commands.toml` y `preferences.toml`. No requiere skills ni documentos detallados. | Los comandos del proyecto se ejecutan directamente. `mf run` puede descubrir scripts de paquete comunes y comandos test, check y build de Go/Cargo. |
+| `strict` | Los documentos detallados del flujo de trabajo y las skills seleccionadas por perfil que aparecen en [Archivos instalados](#archivos-instalados). | El registro de intents, el sellado del manifest y el enrutado de skills forman parte del flujo diario. |
+
+Usa `mf init --yes --workflow strict` para el flujo detallado heredado, o
+`mf init --yes --workflow simple --merge` para migrar una instalación strict. Añade `--dry-run` para
+previsualizar el plan antes de escribir archivos.
+
+La migración conserva los contratos de comandos explícitos y las preferencias, además del locale y el
+perfil instalados, hace copia de seguridad de los archivos generados que reemplaza y mantiene las reglas
+propias de `AGENTS.md`. Los documentos strict antiguos no se eliminan automáticamente.
+
+En modo simple, `mf check` y `mf doctor` no requieren sellado del manifest ni archivos de skill.
+Prefiere `check:fast` en lugar de `check`, `typecheck` o `check:typecheck` para tipos, `lint` o
+`check:lint` para lint, y `test:related` antes de `test:fast` en cambios rutinarios. Reserva las
+ejecuciones completas de test y `check_full` para cambios de release, seguridad y datos. Las
+restricciones explícitas de intent y los valores predeterminados de timeout, output y environment
+escritos siguen teniendo prioridad, y los objetivos de Makefile o Taskfile se ejecutan directamente sin
+descubrirse de forma automática.
+
+El alias `check_full` está disponible cuando el proyecto tiene los scripts `check:fast` y `check` a la vez.
 
 ## Flujo de lectura del agente
+
+El orden de lectura detallado de esta sección se aplica al modo `strict`. El modo `simple` comienza con AGENTS.md y los archivos del proyecto relevantes para la tarea.
 
 ```mermaid
 flowchart TD
@@ -73,7 +107,8 @@ Se requiere Node.js 20 o superior. mustflow se distribuye como paquete npm, y la
 npm install -D mustflow
 npx mf init --dry-run
 npx mf init
-npx mf check --strict
+npx mf check
+npx mf doctor
 ```
 
 En una terminal interactiva, `mf init` permite elegir el idioma de los documentos, el perfil del proyecto y el idioma de los informes del agente. Usa `mf init --yes` para instalar valores predeterminados en inglés sin preguntas, ideal para scripts.
@@ -104,7 +139,24 @@ La ejecución con Deno usando `npm:` debe considerarse experimental hasta que se
 
 ## Archivos instalados
 
-`mf init` instala únicamente el flujo de trabajo para agentes en el directorio actual.
+`mf init` instala únicamente el flujo de trabajo para agentes en el directorio actual. Una instalación
+nueva usa el flujo simple y escribe un archivo de guía breve más la configuración:
+
+```text
+your-project/
+├─ AGENTS.md
+├─ .gitignore
+└─ .mustflow/
+   └─ config/
+      ├─ commands.toml
+      ├─ mustflow.toml
+      └─ preferences.toml
+```
+
+`manifest.lock.toml` se añade dentro de `.mustflow/config/` como línea base de instalación.
+
+Una instalación strict añade los documentos detallados del flujo de trabajo y las skills seleccionadas por
+perfil.
 
 ```text
 your-project/
@@ -155,11 +207,13 @@ Si un proyecto ya tiene archivos Markdown raíz opcionales como `README.md`, `PR
 
 ## Flujo básico
 
+Los comandos de clasificación, verificación, búsqueda y actualización que aparecen a continuación son herramientas opcionales. El modo `simple` no requiere ejecutar esta lista en cada edición.
+
 ```sh
 npx mf init --dry-run
 npx mf init
 npx mf doctor
-npx mf check --strict
+npx mf check
 npx mf map --write
 ```
 
@@ -190,7 +244,7 @@ mf run mustflow_update_apply
 
 | Comando                     | Propósito                                                                                     |
 |-----------------------------|-----------------------------------------------------------------------------------------------|
-| `mf init`                   | Instala `AGENTS.md` y `.mustflow/**`.                                                        |
+| `mf init`                   | Instala `AGENTS.md` y `.mustflow/**`. Las instalaciones nuevas usan simple de forma predeterminada; añade `--workflow strict` para el flujo detallado heredado. |
 | `mf init --dry-run`         | Muestra qué archivos se crearían sin escribirlos.                                            |
 | `mf init --merge`           | Fusiona el bloque gestionado por mustflow en un `AGENTS.md` existente.                        |
 | `mf init --force`           | Realiza una copia de seguridad de los archivos en conflicto y luego los sobrescribe.         |
@@ -231,6 +285,8 @@ mf run mustflow_update_apply
 Las automatizaciones y agentes deben usar la salida `--json` o las respuestas JSONL de `mf api serve --stdio` en lugar de analizar texto orientado a humanos. Los JSON Schemas para salidas estables se encuentran en `schemas/`.
 
 ## Política de ejecución de comandos
+
+El modo `simple` descubre las comprobaciones que ya existen en el proyecto. La configuración explícita del contrato de comandos que aparece a continuación se aplica al modo `strict` o a los comandos que decidas configurar.
 
 El trabajo ejecutable se declara en `.mustflow/config/commands.toml` para evitar que los agentes adivinen comandos.
 

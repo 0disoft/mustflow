@@ -7,7 +7,31 @@ description: 在用户仓库中初始化 mustflow 文档。
 
 它会在根目录创建 `AGENTS.md`，并将 mustflow 管理的文档与设置放在 `.mustflow/` 下。
 
-## 创建的结构
+## 简单安装
+
+`mf init --yes` 默认安装 simple 工作流。此时只写入简短的 `AGENTS.md` 和代理启动所需的配置：
+
+```text
+AGENTS.md
+.gitignore
+.mustflow/
+└─ config/
+   ├─ commands.toml
+   ├─ mustflow.toml
+   └─ preferences.toml
+```
+
+`manifest.lock.toml` 会作为安装基线写入 `.mustflow/config/`。不需要 skill 或详细工作流文档。
+
+若要沿用旧的详细工作流，请使用 `mf init --yes --workflow strict`；若要把已有的 strict 安装迁移到
+simple，请使用 `mf init --yes --workflow simple --merge`。迁移会保留显式命令合同和 preferences、
+已安装的 locale 与 profile，备份被覆盖的生成文件，并保留 `AGENTS.md` 中的自定义规则。旧的 strict
+文档不会自动删除。加上 `--dry-run` 可在写入文件前预览计划。
+
+## 创建的结构（strict 模式）
+
+在 strict 模式下，`mf init` 会安装详细工作流和 skill。确切的 skill 集合取决于所选 profile。以下
+展示的是稳定结构以及部分代表性 skill 文件，并非完整的 profile 列表。
 
 ```text
 AGENTS.md
@@ -48,7 +72,7 @@ AGENTS.md
 `manifest.lock.toml` 也会在 `mf init` 成功后生成，用于记录实际安装内容。
 mustflow 不会创建 `DESIGN.md`。如果项目中已经存在该文件，`mf map` 可将其视为可选视觉设计锚点。
 
-## 模板源布局
+## 模板源布局（strict 模式）
 
 安装目标路径保持一致，但包内模板按用途拆分：
 
@@ -74,6 +98,8 @@ templates/default/
 
 ## 规则
 
+以下规则针对 strict 安装。简单安装只需要上面的简短 `AGENTS.md` 和配置文件。
+
 - 复制的文件仅限于 LLM 代理直接读取的工作流文件。
 - 仅安装包本身不会修改用户文件。
 - 默认情况下，已有文件冲突会在写入任何文件前中止流程。
@@ -97,6 +123,8 @@ npx mf init
 npx mf init --yes
 npx mf init --dry-run
 npx mf init --interactive
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
 npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
@@ -107,6 +135,9 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 在交互式终端中，`mf init` 会询问文档语言、项目配置档案和代理报告语言。
 `--interactive` 会强制启用这个提问流程。启用高级偏好设置后，提示流程还可以设置
 自动暂存、自动提交、提交消息语言和提交消息建议默认值。`--yes` 会无提示安装英文默认值。
+
+`--workflow` 可选择 `simple` 或 `strict`。新安装默认为 `simple`，已有安装保留
+`.mustflow/config/mustflow.toml` 中记录的模模式，缺少 `[workflow]` 段的配置按 `strict` 处理。
 
 `--set` 可以在安装期间设置一小组允许的偏好项：
 

@@ -7,7 +7,35 @@ description: 사용자 저장소에 mustflow 워크플로우를 설치하고 초
 
 저장소 루트에는 `AGENTS.md`를 만들고, 자세한 가이드와 설정 파일은 `.mustflow/` 아래에 설치합니다.
 
-## 설치 디렉터리 구조
+## 간단 설치
+
+`mf init --yes`는 기본값으로 간단(simple) 워크플로우를 설치합니다. 이때 에이전트가 시작에 필요한
+짧은 `AGENTS.md`와 설정 파일만 만듭니다.
+
+```text
+AGENTS.md
+.gitignore
+.mustflow/
+└─ config/
+   ├─ commands.toml
+   ├─ mustflow.toml
+   └─ preferences.toml
+```
+
+`manifest.lock.toml`은 설치 기준선으로 `.mustflow/config/` 아래에 기록됩니다. 스킬이나 자세한
+워크플로우 문서는 필요하지 않습니다.
+
+기존의 자세한 워크플로우를 쓰려면 `mf init --yes --workflow strict`, 기존 strict 설치를 simple로
+옮기려면 `mf init --yes --workflow simple --merge`를 사용합니다. 마이그레이션은 직접 작성한 명령
+계약과 preferences, 설치된 로케일과 프로필을 그대로 유지하고, 덮어쓴 생성 파일은 백업하며,
+`AGENTS.md`에 추가한 규칙을 보존합니다. 예전 strict 문서는 자동으로 삭제하지 않습니다.
+`--dry-run`을 붙이면 파일을 쓰기 전에 계획을 미리 볼 수 있습니다.
+
+## 설치 디렉터리 구조 (strict 모드)
+
+strict 모드에서 `mf init`은 자세한 워크플로우와 스킬을 설치합니다. 정확한 스킬 집합은 선택한
+프로필에 따라 달라지며, 아래는 전체 목록이 아니라 안정적인 형태와 대표적인 스킬 파일 일부를 보여주는
+예시입니다.
 
 ```text
 AGENTS.md
@@ -48,7 +76,7 @@ AGENTS.md
 `manifest.lock.toml`은 설치 완료 후 실제 설치 상태를 기록하기 위해 자동으로 생성됩니다.
 `DESIGN.md`는 mustflow가 생성하지 않습니다. 파일이 이미 있다면 `mf map`이 이를 시각 설계 관련 앵커로 활용합니다.
 
-## 템플릿 소스 구조
+## 템플릿 소스 구조 (strict 모드)
 
 저장소에 설치되는 최종 경로는 고정되지만, 패키지 내부 템플릿 원본은 용도별로 나뉘어 관리됩니다.
 
@@ -74,6 +102,8 @@ templates/default/
 
 ## 작동 원칙 및 규칙
 
+아래 규칙은 strict 설치 기준입니다. 간단 설치에는 위에서 본 짧은 `AGENTS.md`와 설정 파일만 있으면 됩니다.
+
 - 설치 대상은 LLM 에이전트 전용 워크플로우 문서로 한정됩니다.
 - 패키지를 설치하는 행위 자체로는 사용자 파일을 바꾸지 않습니다.
 - 파일 충돌 발생 시 데이터 보호를 위해 작업을 중단하는 것이 기본 동작입니다.
@@ -97,6 +127,8 @@ npx mf init
 npx mf init --yes
 npx mf init --dry-run
 npx mf init --interactive
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
 npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
@@ -108,6 +140,10 @@ npx mf init --profile product --product-source-locale en --product-locale ko-KR
 언어를 선택할 수 있습니다. `--interactive`는 이 선택 흐름을 강제로 켜고,
 고급 설정을 켜면 자동 스테이징, 자동 커밋, 커밋 메시지 언어, 커밋 메시지 제안
 여부도 선택할 수 있습니다. `--yes`는 질문 없이 영어 기본값으로 설치합니다.
+
+`--workflow`는 `simple` 또는 `strict`를 고릅니다. 새 설치는 `simple`이 기본이고, 기존 설치는
+`.mustflow/config/mustflow.toml`에 기록된 모드를 유지하며, `[workflow]` 섹션이 없는 설정은
+`strict`로 봅니다.
 
 `--set`은 설치 중 일부 허용된 설정만 바꿀 수 있습니다.
 

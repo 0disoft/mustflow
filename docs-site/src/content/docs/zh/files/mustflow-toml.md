@@ -19,6 +19,7 @@ description: 声明 agent 读取顺序和受保护路径。
 - `authority`: 权威 mustflow 文档。
 - `read_order`: agent 的初始读取顺序。
 - `optional_read_order`: 存在时读取、缺失时跳过的文件。
+- `workflow`: simple 或 strict 执行模式。
 - `authority.workflow_preferences`: 仓库级默认偏好路径。
 - `map`: `REPO_MAP.md` 的生成方式以及可包含的锚点文件。
 - `workspace`: 在工作区根目录下发现独立嵌套仓库的限制。
@@ -40,6 +41,38 @@ description: 声明 agent 读取顺序和受保护路径。
 - `edit_policy.protected`: agent 默认不应编辑的路径。
 - `edit_policy.extra_care`: 编辑前需要额外谨慎的路径。
 - `reporting`: 最终工作报告中应包含的项目。
+
+## 工作流字段
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+`workflow.mode` 决定 mustflow 要求的结构量。
+
+| 模式 | 安装范围 | 验证方式 |
+| --- | --- | --- |
+| `simple` | 简短的 `AGENTS.md` 以及 `mustflow.toml`、`commands.toml`、`preferences.toml`。不需要 skill 或详细工作流文档。 | 直接运行项目命令。`mf run` 可以发现常见的 package script 以及 Go/Cargo 的 test、check、build 命令。 |
+| `strict` | 详细工作流文档和按 profile 选择的 skill。 | 命令 intent 注册、manifest 封存和 skill 路由是日常流程的一部分。 |
+
+新安装默认为 `simple`。已有安装保留这里记录的模式，缺少 `[workflow]` 段的配置按 `strict` 处理。
+
+```sh
+mf init --yes --workflow strict
+mf init --yes --workflow simple --merge
+```
+
+把 strict 安装迁移到 simple 会保留显式命令合同和 preferences、已安装的 locale 与 profile，备份被覆盖的
+生成文件，并保留 `AGENTS.md` 中的自定义规则。旧的 strict 文档不会自动删除。
+
+在简单模式下，`mf check` 和 `mf doctor` 不要求 manifest 封存或 skill 文件。优先使用
+`check:fast` 而不是 `check`，类型检查用 `typecheck` 或 `check:typecheck`，lint 用 `lint` 或
+`check:lint`，日常变更先用 `test:related` 再用 `test:fast`。发布、安全和数据变更保留完整 test 和
+`check_full`。显式声明的命令限制以及编写好的 timeout、output、environment 默认值始终优先；Makefile
+或 Taskfile 目标可以直接运行，但不会被自动发现。
+
+当项目同时具备 `check:fast` 和 `check` 脚本时，可以使用 `check_full` 别名。
 
 ## 读取顺序字段
 

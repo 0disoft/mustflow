@@ -7,7 +7,35 @@ description: उपयोगकर्ता रिपॉज़िटरी म�
 
 यह root पर `AGENTS.md` बनाता है और mustflow-managed documents और settings को `.mustflow/` के अंतर्गत रखता है।
 
-## बनाई गई संरचना
+## सरल इंस्टॉलेशन
+
+`mf init --yes` default रूप से simple workflow install करता है। एक सरल इंस्टॉलेशन केवल छोटा
+`AGENTS.md` और agent को शुरू करने के लिए ज़रूरी configuration लिखता है:
+
+```text
+AGENTS.md
+.gitignore
+.mustflow/
+└─ config/
+   ├─ commands.toml
+   ├─ mustflow.toml
+   └─ preferences.toml
+```
+
+`manifest.lock.toml` installation baseline के रूप में `.mustflow/config/` में लिखा जाता है। skills या
+विस्तृत workflow documents की ज़रूरत नहीं होती।
+
+legacy detailed workflow के लिए `mf init --yes --workflow strict` और मौजूदा strict installation को
+simple में migrate करने के लिए `mf init --yes --workflow simple --merge` इस्तेमाल करें। Migration
+explicit command contracts और preferences, installed locale और profile सुरक्षित रखता है, बदले गए
+generated files का backup लेता है, और `AGENTS.md` के custom rules बनाए रखता है। पुराने strict documents
+अपने आप delete नहीं होते। Files लिखने से पहले plan देखने के लिए `--dry-run` जोड़ें।
+
+## बनाई गई संरचना (strict मोड)
+
+strict मोड में `mf init` विस्तृत workflow और skills install करता है। सटीक skill set चुने गए profile पर
+निर्भर करता है। यह अंश stable shape और representative skill files का subset दिखाता है, पूरी profile list
+नहीं।
 
 ```text
 AGENTS.md
@@ -48,7 +76,7 @@ AGENTS.md
 सफल `mf init` के बाद `manifest.lock.toml` भी generate होता है; यह record करता है कि वास्तव में क्या install हुआ।
 `DESIGN.md` mustflow द्वारा create नहीं किया जाता। यदि project में यह पहले से मौजूद है, तो `mf map` इसे optional visual-design anchor मान सकता है।
 
-## टेम्पलेट स्रोत संरचना
+## टेम्पलेट स्रोत संरचना (strict मोड)
 
 installation target paths consistent रहते हैं, लेकिन package-side template उद्देश्य के अनुसार विभाजित होता है:
 
@@ -74,6 +102,8 @@ templates/default/
 
 ## नियम
 
+ये नियम strict installation के लिए हैं। सरल इंस्टॉलेशन के लिए ऊपर दिखाया गया छोटा `AGENTS.md` और configuration files ही काफ़ी हैं।
+
 - copied files केवल उन workflow files तक सीमित हैं जिन्हें LLM agents सीधे पढ़ते हैं।
 - केवल package install करने से user files modify नहीं होतीं।
 - default रूप से, existing file conflicts किसी भी file लिखने से पहले process abort कर देंगे।
@@ -97,6 +127,8 @@ npx mf init
 npx mf init --yes
 npx mf init --dry-run
 npx mf init --interactive
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
 npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
@@ -109,6 +141,10 @@ report language पूछता है। `--interactive` इस prompt flow क
 advanced preferences enable करने पर prompt automatic staging, automatic commits,
 commit message language और commit message suggestions भी set कर सकता है। `--yes`
 बिना prompts के English defaults install करता है।
+
+`--workflow` `simple` या `strict` चुनता है। नई installations का default `simple` होता है, मौजूदा
+installations `.mustflow/config/mustflow.toml` में दर्ज mode बनाए रखती हैं, और `[workflow]` section
+रहित configuration को `strict` माना जाता है।
 
 `--set` installation के दौरान preferences की छोटी allowlist set कर सकता है:
 

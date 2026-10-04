@@ -5,11 +5,35 @@ description: Initializes mustflow documents in a user repository.
 
 It creates `AGENTS.md` at the root and stores mustflow-managed documents and settings under `.mustflow/`.
 
-## Created Structure
+## Simple Installation
 
-The exact skill set depends on the selected profile. This excerpt shows the stable
-shape and a representative subset of installed skill files, not a complete profile
-listing.
+`mf init --yes` installs the simple workflow by default. A simple install writes only the short
+`AGENTS.md` and the configuration an agent needs to start:
+
+```text
+AGENTS.md
+.gitignore
+.mustflow/
+└─ config/
+   ├─ commands.toml
+   ├─ mustflow.toml
+   └─ preferences.toml
+```
+
+`manifest.lock.toml` is written inside `.mustflow/config/` as an installation baseline. No skills
+or detailed workflow documents are required.
+
+Use `mf init --yes --workflow strict` for the legacy detailed workflow, or
+`mf init --yes --workflow simple --merge` to migrate an existing strict install. Migration
+preserves explicit command contracts and preferences plus the installed locale and profile, backs up
+replaced generated files, and keeps custom `AGENTS.md` rules. Old strict documents are not deleted
+automatically. Add `--dry-run` to preview the plan before writing files.
+
+## Created Structure (strict mode)
+
+In strict mode, `mf init` installs the detailed workflow and skills. The exact skill set depends on
+the selected profile. This excerpt shows the stable shape and a representative subset of installed
+skill files, not a complete profile listing.
 
 ```text
 AGENTS.md
@@ -52,7 +76,7 @@ AGENTS.md
 `manifest.lock.toml` is also generated after a successful `mf init` to record the actual installation state.
 `DESIGN.md` is not created by mustflow. If a project already includes one, `mf map` can treat it as an optional visual-design anchor.
 
-## Template Source Layout
+## Template Source Layout (strict mode)
 
 The installation target paths remain consistent, but the package-side template is split by purpose:
 
@@ -81,6 +105,8 @@ updated independently as translations evolve.
 
 ## Rules
 
+These rules describe the strict-mode install. A simple install needs only the short `AGENTS.md` and the configuration files shown above.
+
 - Copied files are limited to workflow documents read directly by LLM agents.
 - Installing the package alone does not modify user files.
 - By default, existing file conflicts will cause the process to abort before any files are written.
@@ -104,6 +130,8 @@ npx mf init
 npx mf init --yes
 npx mf init --dry-run
 npx mf init --interactive
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
 npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
@@ -116,6 +144,10 @@ profile, and agent report language. `--interactive` forces that prompt flow.
 When advanced preferences are enabled, the prompt can also set automatic
 staging, automatic commits, commit message language, and commit suggestion
 defaults. `--yes` installs the default English settings without prompts.
+
+`--workflow` selects `simple` or `strict`. New installs default to `simple`, existing installs
+keep the mode already recorded in `.mustflow/config/mustflow.toml`, and a configuration without a
+`[workflow]` section is treated as `strict`.
 
 `--set` can set a small allowlist of preferences during installation:
 

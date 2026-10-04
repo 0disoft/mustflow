@@ -5,9 +5,38 @@
 
 mustflow 是面向大型语言模型（LLM）编码代理的仓库本地工作契约与验证命令行工具。它不会取代宿主代理的沙盒、审批、检查点、模型或工具策略，而是帮助代理遵守仓库中明确的阅读、命令和验证边界。
 
-核心模型非常简洁：在项目根目录放置 `AGENTS.md`，详细工作流则存放于 `.mustflow/` 目录。代理从 `AGENTS.md` 开始，依次读取仓库命令合同、技能、项目上下文和验证规则。
+## 工作流模式
+
+新安装默认使用 simple 工作流。已有安装保留配置中记录的模式，缺少 `[workflow]` 段的配置按 strict
+处理。模式位于 `.mustflow/config/mustflow.toml`：
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+| 模式 | 安装范围 | 验证方式 |
+| --- | --- | --- |
+| `simple` | 简短的 `AGENTS.md` 以及 `mustflow.toml`、`commands.toml`、`preferences.toml`。不需要 skill 或详细工作流文档。 | 直接运行项目命令。`mf run` 可以发现常见的 package script 以及 Go/Cargo 的 test、check、build 命令。 |
+| `strict` | [安装的文件](#安装的文件)中列出的详细工作流文档和按 profile 选择的 skill。 | 命令 intent 注册、manifest 封存和 skill 路由是日常流程的一部分。 |
+
+若要沿用旧的详细工作流，请使用 `mf init --yes --workflow strict`；若要把已有的 strict 安装迁移到
+simple，请使用 `mf init --yes --workflow simple --merge`。加上 `--dry-run` 可在写入文件前预览计划。
+
+迁移会保留显式命令合同和 preferences、已安装的 locale 与 profile，备份被覆盖的生成文件，并保留
+`AGENTS.md` 中的自定义规则。旧的 strict 文档不会自动删除。
+
+在简单模式下，`mf check` 和 `mf doctor` 不要求 manifest 封存或 skill 文件。优先使用
+`check:fast` 而不是 `check`，类型检查用 `typecheck` 或 `check:typecheck`，lint 用 `lint` 或
+`check:lint`，日常变更先用 `test:related` 再用 `test:fast`。发布、安全和数据变更保留完整 test 和
+`check_full`。显式声明的命令限制以及编写好的 timeout、output、environment 默认值始终优先；Makefile
+或 Taskfile 目标可以直接运行，但不会被自动发现。
+
+当项目同时具备 `check:fast` 和 `check` 脚本时，可以使用 `check_full` 别名。
 
 ## 代理读取流程
+
+本节中详细的阅读顺序适用于 `strict` 模式。`simple` 模式从 AGENTS.md 和与该任务相关的项目文件开始。
 
 ```mermaid
 flowchart TD
@@ -74,7 +103,8 @@ mustflow 不是自动项目编辑器，也不绑定任何特定代理产品。
 npm install -D mustflow
 npx mf init --dry-run
 npx mf init
-npx mf check --strict
+npx mf check
+npx mf doctor
 ```
 
 在交互式终端中，`mf init` 会引导你选择文档语言、项目配置档案和代理报告语言。若需无提示安装英文默认配置，请使用 `mf init --yes`。
@@ -105,7 +135,22 @@ Deno 的 `npm:` 执行功能仍属实验性质，建议先单独验证。
 
 ## 安装的文件
 
-`mf init` 仅会将代理工作流安装到当前目录。
+`mf init` 仅会将代理工作流安装到当前目录。新安装使用简单工作流，只写入简短的指导文件和配置：
+
+```text
+your-project/
+├─ AGENTS.md
+├─ .gitignore
+└─ .mustflow/
+   └─ config/
+      ├─ commands.toml
+      ├─ mustflow.toml
+      └─ preferences.toml
+```
+
+`manifest.lock.toml` 会作为安装基线写入 `.mustflow/config/`。
+
+strict 安装会增加详细工作流文档和按 profile 选择的 skill。
 
 ```text
 your-project/
@@ -156,11 +201,13 @@ your-project/
 
 ## 基本工作流
 
+下面的分类、验证、搜索和更新命令都是可选工具。`simple` 模式不要求每次编辑都运行这份列表。
+
 ```sh
 npx mf init --dry-run
 npx mf init
 npx mf doctor
-npx mf check --strict
+npx mf check
 npx mf map --write
 ```
 
@@ -192,7 +239,7 @@ mf run mustflow_update_apply
 
 | 命令 | 说明 |
 | --- | --- |
-| `mf init` | 安装 `AGENTS.md` 和 `.mustflow/**`。 |
+| `mf init` | 安装 `AGENTS.md` 和 `.mustflow/**`。新安装默认为 simple，详细工作流通过 `--workflow strict` 安装。 |
 | `mf init --dry-run` | 显示将创建的文件，但不写入。 |
 | `mf init --merge` | 将 mustflow 管理块合并到现有 `AGENTS.md`。 |
 | `mf init --force` | 备份冲突文件后覆盖。 |
@@ -233,6 +280,8 @@ mf run mustflow_update_apply
 自动化和代理应使用 `--json` 输出或 `mf api serve --stdio` JSONL 响应，避免解析面向人类的文本。稳定的 JSON Schema 位于 `schemas/`。
 
 ## 命令执行策略
+
+`simple` 模式会查找项目已有的检查。下面的显式命令契约配置适用于 `strict` 模式，也适用于你选择配置的命令。
 
 可执行命令在 `.mustflow/config/commands.toml` 中声明，避免代理猜测命令。
 

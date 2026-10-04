@@ -19,6 +19,7 @@ description: 에이전트가 읽을 기준 문서와 보호 경로를 선언하�
 - `authority`: 기준 문서의 위치입니다.
 - `read_order`: 에이전트가 처음 읽을 파일 순서입니다.
 - `optional_read_order`: 있으면 읽고, 없으면 건너뛰는 파일 순서입니다.
+- `workflow`: 간단(simple) 또는 strict 실행 모드입니다.
 - `authority.workflow_preferences`: 저장소별 기본 선호값 파일의 위치입니다.
 - `map`: `REPO_MAP.md` 생성 방식과 포함할 앵커 파일 기준입니다.
 - `workspace`: 작업대 루트에서 하위 독립 저장소를 제한적으로 찾기 위한 기준입니다.
@@ -41,6 +42,41 @@ description: 에이전트가 읽을 기준 문서와 보호 경로를 선언하�
 - `edit_policy.protected`: 기본적으로 수정하면 안 되는 경로입니다.
 - `edit_policy.extra_care`: 수정 전 더 신중해야 하는 경로입니다.
 - `reporting`: 작업 결과 보고에 포함할 항목입니다.
+
+## 워크플로우 필드
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+`workflow.mode`는 mustflow가 요구하는 구조의 양을 정합니다.
+
+| 모드 | 설치 범위 | 검증 방식 |
+| --- | --- | --- |
+| `simple` | 짧은 `AGENTS.md`와 `mustflow.toml`, `commands.toml`, `preferences.toml`. 스킬이나 자세한 워크플로우 문서는 필요하지 않습니다. | 프로젝트 명령을 직접 실행합니다. `mf run`은 흔한 package script와 Go/Cargo test, check, build 명령을 찾아 실행할 수 있습니다. |
+| `strict` | 자세한 워크플로우 문서와 프로필별 스킬. | 명령 의도 등록, manifest 봉인, 스킬 라우팅이 평소 흐름에 포함됩니다. |
+
+새 설치는 `simple`이 기본입니다. 기존 설치는 여기에 기록된 모드를 유지하고, `[workflow]` 섹션이 없는
+설정은 `strict`로 봅니다.
+
+```sh
+mf init --yes --workflow strict
+mf init --yes --workflow simple --merge
+```
+
+strict 설치를 simple로 옮기면 직접 작성한 명령 계약과 preferences, 설치된 로케일과 프로필을 유지하고,
+덮어쓴 생성 파일은 백업하며, `AGENTS.md`에 추가한 규칙을 보존합니다. 예전 strict 문서는 자동으로
+삭제하지 않습니다.
+
+간단 모드에서 `mf check`와 `mf doctor`는 manifest 봉인이나 스킬 파일을 요구하지 않습니다.
+`check`보다 `check:fast`를, 타입 검사는 `typecheck`나 `check:typecheck`를, 린트는 `lint`나
+`check:lint`를 우선하고, 일상적인 변경에는 `test:related` 다음 `test:fast`를 씁니다.
+릴리스·보안·데이터 변경에는 전체 test와 `check_full`을 유지합니다. 직접 선언한 명령 제한과 작성한
+timeout, output, environment 기본값이 항상 우선하며, Makefile이나 Taskfile 타깃은 자동으로 찾지 않고
+직접 실행합니다.
+
+`check_full` 별칭은 프로젝트에 `check:fast`와 `check` 스크립트가 모두 있을 때 사용할 수 있습니다.
 
 ## 읽기 순서 필드
 

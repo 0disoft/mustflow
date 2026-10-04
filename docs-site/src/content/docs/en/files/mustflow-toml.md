@@ -19,6 +19,7 @@ description: Declares the agent reading order and protected paths.
 - `authority`: Authoritative mustflow documents.
 - `read_order`: Initial reading order for agents.
 - `optional_read_order`: Files to read when present and skip when missing.
+- `workflow`: Simple or strict execution mode.
 - `authority.workflow_preferences`: Path to repository-level default preferences.
 - `map`: How `REPO_MAP.md` should be generated and which anchor files can be included.
 - `workspace`: Limits for discovering independent nested repositories under workspace roots.
@@ -41,6 +42,41 @@ description: Declares the agent reading order and protected paths.
 - `edit_policy.protected`: Paths agents should not edit by default.
 - `edit_policy.extra_care`: Paths that require extra caution before editing.
 - `reporting`: Items to include in the final work report.
+
+## Workflow Fields
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+`workflow.mode` selects how much structure mustflow expects:
+
+| Mode | Installed surface | Verification style |
+| --- | --- | --- |
+| `simple` | Short `AGENTS.md` plus `mustflow.toml`, `commands.toml`, and `preferences.toml`. No skills or detailed workflow docs required. | Project commands run directly. `mf run` can discover common package scripts and Go/Cargo test, check, and build commands. |
+| `strict` | Detailed workflow documents and profile-selected skills. | Command intents, manifest sealing, and skill routing stay part of the everyday flow. |
+
+New installs default to `simple`. Existing installs keep the mode recorded here, and a configuration
+without a `[workflow]` section is treated as `strict`.
+
+```sh
+mf init --yes --workflow strict
+mf init --yes --workflow simple --merge
+```
+
+Migrating a strict install to simple preserves explicit command contracts and preferences plus the
+installed locale and profile, backs up replaced generated files, and keeps custom `AGENTS.md` rules.
+Old strict documents are not deleted automatically.
+
+In simple mode, `mf check` and `mf doctor` do not require manifest sealing or skill files. Prefer
+`check:fast` over `check`, `typecheck` or `check:typecheck` for types, `lint` or
+`check:lint` for lint, and `test:related` before `test:fast` for routine changes. Keep full
+test and `check_full` runs for release, security, and data changes. Explicit intent restrictions and
+authored timeout, output, and environment defaults still take priority, and Makefile or Taskfile
+targets run directly without being auto-discovered.
+
+The `check_full` alias is available when the project has both `check:fast` and `check` scripts.
 
 ## Reading Order Fields
 

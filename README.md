@@ -4,8 +4,6 @@ Languages: [English](README.md) · [한국어](docs/i18n/ko/README.md) · [中�
 
 mustflow tells coding agents what to read and which repository commands they may run. The workflow lives with the project, while the host remains responsible for sandboxing, approvals, checkpoints, models, and tool policies.
 
-Place `AGENTS.md` at the project root and keep the detailed workflow under `.mustflow/`. An agent starts with `AGENTS.md`, then reads the command contract, relevant skills and project context before choosing verification.
-
 - Documentation site: <https://0disoft.github.io/mustflow/>
 - Human-readable project examples: [`examples/`](examples/)
 - Repository: <https://github.com/0disoft/mustflow>
@@ -14,6 +12,43 @@ Place `AGENTS.md` at the project root and keep the detailed workflow under `.mus
 - Security: [SECURITY.md](https://github.com/0disoft/mustflow/blob/main/SECURITY.md)
 - Changelog: [CHANGELOG.md](https://github.com/0disoft/mustflow/blob/main/CHANGELOG.md)
 
+## Workflow modes
+
+New installs default to the simple workflow. Existing installs keep the mode recorded in their
+configuration, and a configuration without a `[workflow]` section stays strict. The mode lives in
+`.mustflow/config/mustflow.toml`:
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+| Mode | Installed surface | Verification style |
+| --- | --- | --- |
+| `simple` | Short `AGENTS.md` plus `mustflow.toml`, `commands.toml`, and `preferences.toml`. No skills or detailed workflow docs required. | Project commands run directly. `mf run` can discover common package scripts and Go/Cargo test, check, and build commands. |
+| `strict` | The detailed workflow documents and profile-selected skills shown under [Installed files](#installed-files). | Command intents, manifest sealing, and skill routing stay part of the everyday flow. |
+
+Install strict explicitly, or migrate a strict install to simple:
+
+```sh
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
+npx mf init --yes --workflow simple --merge --dry-run
+```
+
+Migration keeps your explicit command contracts and preferences, keeps the installed locale and
+profile, and preserves custom `AGENTS.md` rules. Replaced generated files are backed up, and old
+strict documents are left in place instead of being deleted.
+
+In simple mode, `mf check` and `mf doctor` do not require manifest sealing or skill files. Prefer
+`check:fast` over `check`, `typecheck` or `check:typecheck` for types, and `lint` or
+`check:lint` for lint. Use `test:related` first and `test:fast` next for routine changes, and
+keep full test and `check_full` runs for release, security, and data changes. Explicit intent
+restrictions and authored timeout, output, and environment defaults still take priority, and
+Makefile or Taskfile targets run directly without being auto-discovered.
+
+The `check_full` alias is available when the project has both `check:fast` and `check` scripts.
+
 ## Choose your path
 
 - Use mustflow in your repository: start with [Quick start](#quick-start), then review [how commands are chosen](#how-commands-are-chosen) and [`examples/minimal-js/`](examples/minimal-js/).
@@ -21,6 +56,8 @@ Place `AGENTS.md` at the project root and keep the detailed workflow under `.mus
 - Build an AI coding tool or agent harness: use `AGENTS.md` and `mf context --json` for repository context, then consume JSON output and schemas from `mf api`, `mf classify`, `mf verify`, `mf run`, `mf dashboard`, and [`schemas/`](schemas/).
 
 ## How commands are chosen
+
+`simple` mode discovers the project's existing checks. The explicit command-contract setup below applies to `strict` mode or to commands you choose to configure.
 
 mustflow uses a short decision path:
 
@@ -33,10 +70,13 @@ mustflow uses a short decision path:
 ```sh
 npm install -D mustflow
 npx mf init --yes
-npx mf check --strict
 ```
 
-After changes to code, templates, schemas, or documentation, classify the changed paths and review the verification plan before running any commands.
+New installs use the simple workflow, so `npx mf check` is enough for a quick health check.
+Run `npx mf doctor` to diagnose the root, and reserve `npx mf check --strict` for strict
+installs that need the full contract audit.
+
+In strict mode, after changes to code, templates, schemas, or documentation, classify the changed paths and review the verification plan before running any commands.
 
 ```sh
 npx mf classify --changed --write .mustflow/state/change-classification.json
@@ -49,6 +89,8 @@ The plan is based on change classification and the `required_after` metadata in 
 Source anchors, maps, and SQLite search results serve as navigation aids only. They do not grant command permission, bypass validation, or override `AGENTS.md` and `.mustflow/config/commands.toml`.
 
 ## Agent Read Flow
+
+The detailed reading order in this section applies to `strict` mode. `simple` mode starts with AGENTS.md and the project files relevant to the task.
 
 ```mermaid
 flowchart TD
@@ -76,7 +118,8 @@ Node.js 20 or newer is required. mustflow is distributed as an npm package with 
 ```sh
 npm install -D mustflow
 npx mf init --yes
-npx mf check --strict
+npx mf check
+npx mf doctor
 ```
 
 In an interactive terminal, `mf init` prompts you to choose the document language, project profile, and agent report language. Use `mf init --yes` to install English defaults without prompts.
@@ -154,9 +197,26 @@ mustflow is not an automatic project editor and is not tied to a single agent pr
 
 ## Installed files
 
-`mf init` installs only the agent workflow into the current directory. The exact skill files depend
-on the selected profile; run `mf init --dry-run --profile <profile>` to preview the concrete plan
-for a project before writing files.
+`mf init` installs only the agent workflow into the current directory. A new install uses the simple
+workflow and writes a short guidance file plus configuration:
+
+```text
+your-project/
+├─ AGENTS.md
+├─ .gitignore
+└─ .mustflow/
+   └─ config/
+      ├─ commands.toml
+      ├─ mustflow.toml
+      └─ preferences.toml
+```
+
+`manifest.lock.toml` is added inside `.mustflow/config/` as an installation baseline when the
+install is recorded.
+
+A strict install adds the detailed workflow documents and profile-selected skills. The exact skill
+files depend on the selected profile; run `mf init --dry-run --workflow strict --profile <profile>` to preview the
+concrete plan for a project before writing files.
 
 ```text
 your-project/
@@ -194,10 +254,12 @@ If a project already has optional root Markdown files such as `README.md`, `PROJ
 
 ## Basic workflow
 
+The classification, verification, search and update commands below are optional tools. `simple` mode does not require running this list for every edit.
+
 ```sh
 npx mf init --yes
 npx mf doctor
-npx mf check --strict
+npx mf check
 npx mf classify --changed --write .mustflow/state/change-classification.json
 npx mf verify --from-classification .mustflow/state/change-classification.json --plan-only --json
 npx mf verify --from-classification .mustflow/state/change-classification.json --json
@@ -246,8 +308,8 @@ mf run mustflow_update_apply
 
 | Command | Purpose |
 | --- | --- |
-| `mf init` | Install `AGENTS.md` and the `.mustflow/**` workflow. Add `--dry-run` to preview or `--merge` to preserve an existing `AGENTS.md`. |
-| `mf check --strict` | Validate the installed workflow and command contract. |
+| `mf init` | Install `AGENTS.md` and the `.mustflow/**` workflow. New installs default to simple; add `--workflow strict` for the legacy detailed workflow, `--dry-run` to preview, or `--merge` to preserve an existing `AGENTS.md`. |
+| `mf check` | Validate the installed workflow and command contract. Add `--strict` for the full strict-mode audit. |
 | `mf doctor` | Diagnose the current Mustflow root without writing files. |
 | `mf status` | Show installed, changed, and missing workflow files. |
 | `mf classify --changed` | Identify changed-file categories and applicable verification reasons. |
@@ -284,8 +346,10 @@ therefore contributes an empty final line.
 
 ## Command execution policy
 
+`simple` mode discovers the project's existing checks. The explicit command-contract setup below applies to `strict` mode or to commands you choose to configure.
+
 Runnable work is declared in `.mustflow/config/commands.toml` so agents do not guess commands.
-New projects start with Bun-backed `test`, `test_related`, and `test_fast` intents so agents can run
+New strict installs start with Bun-backed `test`, `test_related`, and `test_fast` intents so agents can run
 basic verification immediately after `mf init`. Replace those defaults with narrower project-specific
 commands when a repository uses another runner or has a faster related-test entrypoint.
 

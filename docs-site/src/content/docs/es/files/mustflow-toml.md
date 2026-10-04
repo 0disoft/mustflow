@@ -19,6 +19,7 @@ description: Declara el orden de lectura de los agentes y las rutas protegidas.
 - `authority`: documentos mustflow autoritativos.
 - `read_order`: orden de lectura inicial para agentes.
 - `optional_read_order`: archivos que se leen cuando existen y se omiten cuando faltan.
+- `workflow`: modo de ejecución simple o strict.
 - `authority.workflow_preferences`: ruta a preferencias predeterminadas de nivel de repositorio.
 - `map`: cómo debe generarse `REPO_MAP.md` y qué archivos ancla pueden incluirse.
 - `workspace`: límites para descubrir repositorios independientes anidados bajo raíces de espacio de trabajo.
@@ -40,6 +41,43 @@ description: Declara el orden de lectura de los agentes y las rutas protegidas.
 - `edit_policy.protected`: rutas que los agentes no deben editar de forma predeterminada.
 - `edit_policy.extra_care`: rutas que requieren cautela adicional antes de editar.
 - `reporting`: elementos que se deben incluir en el informe final de trabajo.
+
+## Campos de flujo de trabajo
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+`workflow.mode` decide cuánta estructura espera mustflow.
+
+| Modo | Superficie instalada | Estilo de verificación |
+| --- | --- | --- |
+| `simple` | `AGENTS.md` breve más `mustflow.toml`, `commands.toml` y `preferences.toml`. No requiere skills ni documentos detallados del flujo de trabajo. | Los comandos del proyecto se ejecutan directamente. `mf run` puede descubrir scripts de paquete comunes y comandos test, check y build de Go/Cargo. |
+| `strict` | Documentos detallados del flujo de trabajo y skills seleccionadas por perfil. | El registro de intents, el sellado del manifest y el enrutado de skills forman parte del flujo diario. |
+
+Las instalaciones nuevas usan `simple` de forma predeterminada. Las existentes mantienen el modo
+registrado aquí, y una configuración sin sección `[workflow]` se trata como `strict`.
+
+```sh
+mf init --yes --workflow strict
+mf init --yes --workflow simple --merge
+```
+
+Migrar una instalación strict a simple conserva los contratos de comandos explícitos y las preferencias,
+además del locale y el perfil instalados, hace copia de seguridad de los archivos generados que reemplaza
+y mantiene las reglas propias de `AGENTS.md`. Los documentos strict antiguos no se eliminan
+automáticamente.
+
+En modo simple, `mf check` y `mf doctor` no requieren sellado del manifest ni archivos de skill.
+Prefiere `check:fast` en lugar de `check`, `typecheck` o `check:typecheck` para tipos, `lint` o
+`check:lint` para lint, y `test:related` antes de `test:fast` en cambios rutinarios. Reserva las
+ejecuciones completas de test y `check_full` para cambios de release, seguridad y datos. Las
+restricciones explícitas de intent y los valores predeterminados de timeout, output y environment
+escritos siguen teniendo prioridad, y los objetivos de Makefile o Taskfile se ejecutan directamente sin
+descubrirse de forma automática.
+
+El alias `check_full` está disponible cuando el proyecto tiene los scripts `check:fast` y `check` a la vez.
 
 ## Campos de orden de lectura
 

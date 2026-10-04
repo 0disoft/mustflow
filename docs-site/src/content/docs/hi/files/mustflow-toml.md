@@ -19,6 +19,7 @@ description: agent पढ़ने का क्रम और protected paths �
 - `authority`: authoritative mustflow documents।
 - `read_order`: agents के लिए प्रारंभिक पढ़ने का क्रम।
 - `optional_read_order`: मौजूद होने पर पढ़ी जाने वाली और missing होने पर skip की जाने वाली files।
+- `workflow`: simple या strict execution mode।
 - `authority.workflow_preferences`: repository-level default preferences का path।
 - `map`: `REPO_MAP.md` कैसे generate होगा और कौन सी anchor files शामिल हो सकती हैं।
 - `workspace`: workspace roots के नीचे independent nested repositories discover करने की limits।
@@ -40,6 +41,41 @@ description: agent पढ़ने का क्रम और protected paths �
 - `edit_policy.protected`: वे paths जिन्हें agents को default रूप से edit नहीं करना चाहिए।
 - `edit_policy.extra_care`: वे paths जिन्हें edit करने से पहले extra caution चाहिए।
 - `reporting`: final work report में शामिल items।
+
+## Workflow fields
+
+```toml
+[workflow]
+mode = "simple"
+```
+
+`workflow.mode` तय करता है कि mustflow कितनी structure की अपेक्षा करता है।
+
+| Mode | Installed surface | Verification style |
+| --- | --- | --- |
+| `simple` | छोटा `AGENTS.md` और `mustflow.toml`, `commands.toml`, `preferences.toml`। skills या विस्तृत workflow documents की ज़रूरत नहीं। | Project commands सीधे चलते हैं। `mf run` common package scripts और Go/Cargo test, check, build commands खोज सकता है। |
+| `strict` | विस्तृत workflow documents और profile के अनुसार चुनी गई skills। | command intent registration, manifest sealing और skill routing रोज़ के flow का हिस्सा रहते हैं। |
+
+नई installations का default `simple` होता है। मौजूदा installations यहाँ दर्ज mode बनाए रखती हैं, और
+`[workflow]` section रहित configuration को `strict` माना जाता है।
+
+```sh
+mf init --yes --workflow strict
+mf init --yes --workflow simple --merge
+```
+
+strict installation को simple में migrate करने पर explicit command contracts और preferences, installed
+locale और profile सुरक्षित रहते हैं, बदले गए generated files का backup लिया जाता है, और `AGENTS.md` के
+custom rules बनाए रहते हैं। पुराने strict documents अपने आप delete नहीं होते।
+
+simple mode में `mf check` और `mf doctor` को manifest sealing या skill files की ज़रूरत नहीं होती।
+`check` की जगह `check:fast`, types के लिए `typecheck` या `check:typecheck`, lint के लिए `lint` या
+`check:lint`, और रोज़ के changes के लिए पहले `test:related` फिर `test:fast` चुनें। release, security
+और data changes के लिए पूरे test और `check_full` रखें। explicit intent restrictions और लिखे गए
+timeout, output, environment defaults हमेशा प्राथमिकता रखते हैं, और Makefile या Taskfile targets सीधे
+चलते हैं, auto-discover नहीं होते।
+
+`check_full` उपनाम तब उपलब्ध होता है जब प्रोजेक्ट में `check:fast` और `check` दोनों स्क्रिप्ट मौजूद हों।
 
 ## पढ़ने के क्रम के fields
 

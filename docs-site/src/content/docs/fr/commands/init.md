@@ -7,7 +7,35 @@ description: Initialise les documents mustflow dans un dépôt utilisateur.
 
 Il crée `AGENTS.md` à la racine et stocke les documents et paramètres gérés par mustflow sous `.mustflow/`.
 
-## Structure créée
+## Installation simple
+
+`mf init --yes` installe le flux simple par défaut. Une installation simple n’écrit que le court
+`AGENTS.md` et la configuration dont un agent a besoin pour démarrer:
+
+```text
+AGENTS.md
+.gitignore
+.mustflow/
+└─ config/
+   ├─ commands.toml
+   ├─ mustflow.toml
+   └─ preferences.toml
+```
+
+`manifest.lock.toml` est écrit dans `.mustflow/config/` comme base d’installation. Aucune skill ni
+aucun document détaillé du flux de travail n’est requis.
+
+Utilisez `mf init --yes --workflow strict` pour le flux détaillé hérité, ou
+`mf init --yes --workflow simple --merge` pour migrer une installation strict. La migration conserve les
+contrats de commandes explicites et les préférences, ainsi que la locale et le profil installés, sauvegarde
+les fichiers générés remplacés et préserve les règles propres d’`AGENTS.md`. Les anciens documents strict
+ne sont pas supprimés automatiquement. Ajoutez `--dry-run` pour prévisualiser le plan.
+
+## Structure créée (mode strict)
+
+En mode strict, `mf init` installe le flux détaillé et les skills. L’ensemble exact de skills dépend du
+profil choisi. Cet extrait montre la forme stable et un sous-ensemble représentatif de fichiers de skill,
+pas une liste complète du profil.
 
 ```text
 AGENTS.md
@@ -48,7 +76,7 @@ AGENTS.md
 `manifest.lock.toml` est aussi généré après un `mf init` réussi; il enregistre ce qui a réellement été installé.
 mustflow ne crée pas `DESIGN.md`. Si un projet en possède déjà un, `mf map` peut le traiter comme ancre facultative de design visuel.
 
-## Disposition de la source du modèle
+## Disposition de la source du modèle (mode strict)
 
 Les chemins cibles d’installation restent cohérents, mais le modèle côté paquet est divisé par objectif:
 
@@ -74,6 +102,8 @@ templates/default/
 
 ## Règles
 
+Ces règles décrivent l’installation strict. Une installation simple n’a besoin que du court `AGENTS.md` et des fichiers de configuration montrés ci-dessus.
+
 - Les fichiers copiés sont limités aux fichiers de flux de travail lus directement par les agents LLM.
 - Installer le paquet seul ne modifie pas les fichiers utilisateur.
 - Par défaut, les conflits avec des fichiers existants font échouer le processus avant toute écriture.
@@ -97,6 +127,8 @@ npx mf init
 npx mf init --yes
 npx mf init --dry-run
 npx mf init --interactive
+npx mf init --yes --workflow strict
+npx mf init --yes --workflow simple --merge
 npx mf init --set git.auto_commit=true
 npx mf init --merge
 npx mf init --force
@@ -110,6 +142,11 @@ flux de questions. Lorsque les préférences avancées sont activées, l’assis
 peut aussi définir le staging automatique, les commits automatiques, la langue
 des messages de commit et les suggestions de messages de commit. `--yes`
 installe les valeurs par défaut en anglais sans poser de questions.
+
+`--workflow` choisit `simple` ou `strict`. Les nouvelles installations utilisent `simple` par
+défaut, les installations existantes gardent le mode enregistré dans
+`.mustflow/config/mustflow.toml`, et une configuration sans section `[workflow]` est traitée comme
+`strict`.
 
 `--set` peut définir une courte liste de préférences autorisées pendant
 l’installation:
