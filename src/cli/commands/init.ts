@@ -13,7 +13,7 @@ import {
 } from '../lib/filesystem.js';
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
-import { MANIFEST_LOCK_RELATIVE_PATH, sha256File } from '../lib/manifest-lock.js';
+import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File } from '../lib/manifest-lock.js';
 import { formatCliOptionParseError, hasCliOptionToken, parseCliOptions, type CliOptionSpec } from '../lib/option-parser.js';
 import {
 	isCommitMessageBodyTemplate,
@@ -26,6 +26,7 @@ import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '../lib/templates.js';
 import { readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveWorkflowPolicy, WORKFLOW_MODES, type WorkflowMode } from '../../core/workflow-policy.js';
+import { prepareSimpleWorkflowMigration } from '../lib/workflow-migration.js';
 
 type PlannedStatus = 'create' | 'unchanged' | 'conflict' | 'merge' | 'overwrite';
 
@@ -48,6 +49,7 @@ interface InitOptions {
 	readonly interactive: boolean;
 	readonly profile?: string;
 	readonly workflow?: WorkflowMode;
+	readonly migrateToSimple?: boolean;
 	readonly locale?: string;
 	readonly agentLang?: string;
 	readonly productSourceLocale?: string;
@@ -1137,7 +1139,9 @@ function buildPlannedFiles(
 	options: InitOptions,
 ): PlannedFile[] {
 	const selectedProfile = options.profile ?? template.manifest.defaultProfile;
-	const plannedFiles = getTemplateFiles(template, selectedLocale, selectedProfile, { workflow: options.workflow }).map((source): PlannedFile => {
+	const sources = getTemplateFiles(template, selectedLocale, selectedProfile, { workflow: options.workflow });
+	const migration = options.migrateToSimple ? prepareSimpleWorkflowMigration(targetRoot, sources) : undefined;
+	const plannedFiles = (migration?.sources ?? sources).map((source): PlannedFile => {
 		const targetPath = path.join(targetRoot, source.relativePath);
 
 		ensureInside(template.templateRoot, source.sourcePath);
@@ -1151,7 +1155,9 @@ function buildPlannedFiles(
 			sourceKind: source.sourceKind,
 			content: source.content,
 			targetPath,
-			status: planStatus(targetRoot, template.templateRoot, source, targetPath, options),
+			status: migration && (source.relativePath === '.mustflow/config/mustflow.toml'
+				|| (source.relativePath === 'AGENTS.md' && migration.replaceUnmodifiedAgents))
+				? 'overwrite' : planStatus(targetRoot, template.templateRoot, source, targetPath, options),
 			lock: true,
 		};
 	});
@@ -1459,7 +1465,14 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		return 1;
 	}
 
-	let options: InitOptions = { ...parsedOptions, workflow: initialWorkflow };
+	let options: InitOptions = { ...parsedOptions, workflow: initialWorkflow,
+		migrateToSimple: initialWorkflow === 'simple' && parsedOptions.merge && Boolean(existingConfig) && resolveWorkflowPolicy(existingConfig).mode === 'strict' };
+	if (options.migrateToSimple) {
+		const lock = readManifestLock(targetRoot);
+		if (lock.kind === 'present') options = { ...options,
+			locale: options.locale ?? lock.lock.templateLocale,
+			profile: options.profile ?? lock.lock.templateProfile };
+	}
 
 	if (shouldPromptForInit(args, parsedOptions)) {
 		const promptedOptions = await promptInitOptions(template, options, reporter, lang);
@@ -1496,7 +1509,7 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		return 1;
 	}
 
-	const backupRoot = options.force ? backupConflictingFiles(targetRoot, forceConflicts) : undefined;
+	const backupRoot = options.force || options.migrateToSimple ? backupConflictingFiles(targetRoot, forceConflicts) : undefined;
 
 	if (backupRoot) {
 		reporter.stdout(
@@ -1546,8 +1559,16 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 	}
 
 	const customizedFiles = new Set<string>();
+	if (options.migrateToSimple) {
+		customizedFiles.add('.mustflow/config/mustflow.toml');
+		for (const relativePath of ['.mustflow/config/commands.toml', '.mustflow/config/preferences.toml']) {
+			if (plannedFiles.find(file => file.relativePath === relativePath)?.status === 'unchanged') customizedFiles.add(relativePath);
+		}
+	}
 	const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
-	if (applyInitPreferences(targetRoot, preferencesPath, template, options)) {
+	const preferenceOptions = options.migrateToSimple && !options.interactive
+		? { ...options, locale: parsedOptions.locale, profile: parsedOptions.profile } : options;
+	if (applyInitPreferences(targetRoot, preferencesPath, template, preferenceOptions)) {
 		customizedFiles.add('.mustflow/config/preferences.toml');
 		reporter.stdout(t(lang, 'init.action.customizedPreferences'));
 	}

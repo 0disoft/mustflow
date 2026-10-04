@@ -1,4 +1,6 @@
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
+import { resolveWorkflowPolicy } from '../../core/workflow-policy.js';
+import { readMustflowConfigIfExists, readCommandContract } from '../../core/config-loading.js';
 import { isRecord, type TomlTable } from '../lib/command-contract.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { readMustflowTextFileIfExists } from '../lib/mustflow-read.js';
@@ -29,6 +31,9 @@ function renderMissing(relativePath: string, lang: CliLang): string {
 }
 
 function renderWorkflowHelp(projectRoot: string, lang: CliLang): string {
+	if (resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode === 'simple') {
+		return readTextIfExists(projectRoot, 'AGENTS.md') ?? renderMissing('AGENTS.md', lang);
+	}
 	return readTextIfExists(projectRoot, '.mustflow/docs/agent-workflow.md') ?? renderMissing('.mustflow/docs/agent-workflow.md', lang);
 }
 
@@ -37,7 +42,8 @@ function renderSkillsHelp(projectRoot: string, lang: CliLang): string {
 }
 
 function renderCommandsHelp(projectRoot: string, lang: CliLang): string {
-	const commands = readTomlIfExists(projectRoot, '.mustflow/config/commands.toml');
+	const simple = resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode === 'simple';
+	const commands = simple ? readCommandContract(projectRoot) : readTomlIfExists(projectRoot, '.mustflow/config/commands.toml');
 
 	if (!commands) {
 		return renderMissing('.mustflow/config/commands.toml', lang);

@@ -170,7 +170,7 @@ test('upgrade installs a newly bundled skill selected by the locked product prof
 	const oldTemplatePath = createTemplateWithoutProductSkill(skillName);
 
 	try {
-		const init = runCli(projectPath, ['init', '--profile', 'product', '--yes'], {
+		const init = runCli(projectPath, ['init', '--workflow', 'strict', '--profile', 'product', '--yes'], {
 			MUSTFLOW_DEV_TEMPLATE_ROOT: oldTemplatePath,
 			MUSTFLOW_ALLOW_DEV_TEMPLATE_ROOT: '1',
 		});

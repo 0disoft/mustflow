@@ -14,7 +14,7 @@ test('Sui SDK and Move procedures install and route in library but stay out of m
 	for (const profile of ['minimal', 'library']) {
 		const root = mkdtempSync(path.join(tmpdir(), 'mustflow-sui-install-'));
 		try {
-			const result = await runCliInProcess(root, ['init', '--yes', '--profile', profile]);
+			const result = await runCliInProcess(root, ['init', '--workflow', 'strict', '--yes', '--profile', profile]);
 			assert.equal(result.status, 0, result.stderr);
 			const catalog = JSON.parse(readFileSync(path.join(root, '.mustflow/skills/catalog.v2.json'), 'utf8'));
 			for (const name of [...names, ...moveNames]) {

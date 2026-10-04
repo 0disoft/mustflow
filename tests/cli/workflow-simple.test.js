@@ -40,6 +40,11 @@ test('new installs default to simple and work through check, doctor, context, ru
 		assert.ok(context.command_contract.runnable_intents.includes('check'));
 		assert.equal(context.effective_policy.project_commands_require_mf_run, false);
 		assert.equal(context.blocked_actions.includes('unconfigured_project_command'), false);
+		result = await runCliInProcess(root, ['help', 'workflow']);
+		assert.match(result.stdout, /simple/);
+		assert.doesNotMatch(result.stdout, /Missing|skills\/router/);
+		result = await runCliInProcess(root, ['help', 'commands']);
+		assert.match(result.stdout, /check: configured/);
 		// A stale optional lock must not impose sealing work on ordinary development.
 		writeFileSync(path.join(root, 'AGENTS.md'), '# Project rules\n');
 		result = await runCliInProcess(root, ['check', '--json']);
@@ -88,6 +93,43 @@ test('simple checks reject malformed policies and explicit command definitions',
 		result = await runCliInProcess(root, ['check', '--json']);
 		assert.notEqual(result.status, 0);
 		assert.match(result.stdout, /simple or strict/);
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('opting an existing strict install into simple preserves authored restrictions and preferences', async () => {
+	const root = mkdtempSync(path.join(tmpdir(), 'mustflow-simple-migration-'));
+	try {
+		let result = await runCliInProcess(root, ['init', '--yes', '--workflow', 'strict', '--locale', 'ko', '--profile', 'oss']);
+		assert.equal(result.status, 0, result.stderr);
+		const configPath = path.join(root, '.mustflow/config/mustflow.toml');
+		const commandsPath = path.join(root, '.mustflow/config/commands.toml');
+		const preferencesPath = path.join(root, '.mustflow/config/preferences.toml');
+		const configBefore = readFileSync(configPath, 'utf8');
+		const commandsBefore = readFileSync(commandsPath, 'utf8') + '\n[intents.project_secret]\nstatus = "manual_only"\n';
+		const preferencesBefore = readFileSync(preferencesPath, 'utf8') + '\n[project.custom]\nvalue = "keep"\n';
+		writeFileSync(commandsPath, commandsBefore);
+		writeFileSync(preferencesPath, preferencesBefore);
+		result = await runCliInProcess(root, ['init', '--yes', '--workflow', 'simple', '--merge', '--dry-run']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(readFileSync(configPath, 'utf8'), configBefore);
+		result = await runCliInProcess(root, ['init', '--yes', '--workflow', 'simple', '--merge']);
+		assert.equal(result.status, 0, result.stderr);
+		assert.equal(readFileSync(commandsPath, 'utf8'), commandsBefore);
+		assert.equal(readFileSync(preferencesPath, 'utf8'), preferencesBefore);
+		assert.match(readFileSync(configPath, 'utf8'), /mode = "simple"/);
+		assert.doesNotMatch(readFileSync(path.join(root, 'AGENTS.md'), 'utf8'), /skills\/router|docs\/agent-workflow/);
+		assert.equal(existsSync(path.join(root, '.mustflow/backups')), true);
+		assert.match(readFileSync(path.join(root, 'AGENTS.md'), 'utf8'), /locale: ko/);
+		result = await runCliInProcess(root, ['context', '--json']);
+		const context = JSON.parse(result.stdout);
+		assert.deepEqual(context.read_order.map(entry => entry.path), ['AGENTS.md']);
+		assert.equal(context.effective_policy.project_commands_require_mf_run, false);
+		assert.equal(readCommandContract(root).intents.project_secret.status, 'manual_only');
+		result = await runCliInProcess(root, ['update', '--apply', '--json']);
+		assert.equal(result.status, 0, result.stdout);
+		assert.equal(readFileSync(commandsPath, 'utf8'), commandsBefore);
+		assert.equal(readFileSync(preferencesPath, 'utf8'), preferencesBefore);
+		assert.match(readFileSync(configPath, 'utf8'), /mode = "simple"/);
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 

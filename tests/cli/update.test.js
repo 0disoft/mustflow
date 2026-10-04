@@ -556,7 +556,7 @@ test('keeps merged AGENTS.md under manual review until a block baseline exists',
 	try {
 		const existingAgents = '# Existing Agent Rules\n\nKeep this project rule.\n';
 		writeFileSync(path.join(projectPath, 'AGENTS.md'), existingAgents);
-		assert.equal(runCli(projectPath, ['init', '--merge', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--workflow', 'strict', '--merge', '--yes']).status, 0);
 
 		const mergedAgents = readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8');
 		const result = runCli(projectPath, ['update', '--dry-run', '--diff', '--json']);
@@ -735,7 +735,7 @@ test('preserves lock-tracked template skills outside the selected profile during
 	const projectPath = createTempProject();
 
 	try {
-		assert.equal(runCli(projectPath, ['init', '--profile', 'oss', '--yes']).status, 0);
+		assert.equal(runCli(projectPath, ['init', '--workflow', 'strict', '--profile', 'oss', '--yes']).status, 0);
 
 		const extraSkillPath = '.mustflow/skills/web-asset-optimization/SKILL.md';
 		const extraSkillContent = readFileSync(path.join(projectRoot, 'templates', 'default', 'locales', 'en', ...extraSkillPath.split('/')), 'utf8');
