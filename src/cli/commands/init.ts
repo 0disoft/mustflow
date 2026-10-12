@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdtempSync, readFileSync, readSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readSync } from 'node:fs';
 import path from 'node:path';
 import { stdin as processStdin, stdout as processStdout } from 'node:process';
 import { createInterface } from 'node:readline/promises';
@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline/promises';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import {
 	copyFileInsideWithoutSymlinks,
-	ensureDirectoryInsideWithoutSymlinks,
+	createBackupDirectory,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
 	readUtf8FileInsideWithoutSymlinks,
@@ -1187,10 +1187,7 @@ function backupConflictingFiles(projectRoot: string, conflicts: readonly Planned
 		return undefined;
 	}
 
-	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-	const backupsParent = path.join(projectRoot, '.mustflow', 'backups');
-	ensureDirectoryInsideWithoutSymlinks(projectRoot, backupsParent);
-	const backupRoot = mkdtempSync(path.join(backupsParent, `${timestamp}-`));
+	const backupRoot = createBackupDirectory(projectRoot);
 
 	for (const conflict of conflicts) {
 		const backupPath = path.join(backupRoot, conflict.relativePath);

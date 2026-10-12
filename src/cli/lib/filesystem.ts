@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import { existsSync, lstatSync, mkdtempSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 
 export {
@@ -13,6 +13,7 @@ export {
 } from '../../core/safe-filesystem.js';
 
 import {
+	ensureDirectoryInsideWithoutSymlinks,
 	ensureFileTargetInsideWithoutSymlinks,
 	readFileInsideWithoutSymlinks,
 	writeFileInsideWithoutSymlinks,
@@ -27,6 +28,13 @@ export interface CopyResult {
 
 export interface ListFilesOptions {
 	readonly ignoredDirectoryNames?: ReadonlySet<string>;
+}
+
+export function createBackupDirectory(projectRoot: string): string {
+	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+	const backupsParent = path.join(projectRoot, '.mustflow', 'backups');
+	ensureDirectoryInsideWithoutSymlinks(projectRoot, backupsParent);
+	return mkdtempSync(path.join(backupsParent, `${timestamp}-`));
 }
 
 export function toPosixPath(value: string): string {

@@ -6,6 +6,7 @@ import path from 'node:path';
 
 import {
 	copyFileInsideWithoutSymlinks,
+	createBackupDirectory,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
 	removeFileInsideWithoutSymlinks,
@@ -417,6 +418,10 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
+	if (!items.some((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')) {
+		return;
+	}
+
 	const updateItems = items.filter((item) => {
 		if (item.action === 'update') {
 			return true;
@@ -425,16 +430,12 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 		return item.action === 'remove' && existsSync(path.join(projectRoot, item.relativePath));
 	});
 
-	if (updateItems.length === 0) {
-		return;
-	}
+	const backupPaths = [...new Set([...updateItems.map((item) => item.relativePath), MANIFEST_LOCK_RELATIVE_PATH])];
+	const backupRoot = createBackupDirectory(projectRoot);
 
-	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-	const backupRoot = path.join(projectRoot, '.mustflow', 'backups', timestamp);
-
-	for (const item of updateItems) {
-		const sourcePath = path.join(projectRoot, item.relativePath);
-		const backupPath = path.join(backupRoot, item.relativePath);
+	for (const relativePath of backupPaths) {
+		const sourcePath = path.join(projectRoot, relativePath);
+		const backupPath = path.join(backupRoot, relativePath);
 
 		ensureInside(projectRoot, sourcePath);
 		ensureInside(backupRoot, backupPath);
@@ -443,8 +444,8 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 
 	reporter.stdout(
 		t(lang, 'update.backup.files', {
-			count: updateItems.length,
-			fileWord: t(lang, updateItems.length === 1 ? 'init.fileWord.singular' : 'init.fileWord.plural'),
+			count: backupPaths.length,
+			fileWord: t(lang, backupPaths.length === 1 ? 'init.fileWord.singular' : 'init.fileWord.plural'),
 			path: backupRoot,
 		}),
 	);

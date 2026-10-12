@@ -212,7 +212,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		['run', [...runTests]],
 		['search', ['search.test.js']],
 		['status', ['status.test.js']],
-		['update', ['update.test.js']],
+		['update', ['update.test.js', 'update-backup-isolation.test.js']],
 		['upgrade', ['upgrade.test.js', 'update.test.js', ...routerSmokeTests]],
 		['verify', [...verifyTests, 'explain-verify.test.js']],
 		['version', [...routerSmokeTests]],
