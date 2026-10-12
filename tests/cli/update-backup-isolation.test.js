@@ -40,9 +40,17 @@ globalThis.Date = class extends NativeDate {
 import path from 'node:path';
 import { syncBuiltinESMExports } from 'node:module';
 const rename = fs.renameSync;
+const mkdtemp = fs.mkdtempSync;
 const root = ${JSON.stringify(project)};
 const fault = ${JSON.stringify(fault)};
 let failed = false;
+fs.mkdtempSync = (prefix, options) => {
+  const directory = mkdtemp(prefix, options);
+  if (fault.beforeBackup && String(prefix).startsWith(path.join(root, '.mustflow', 'backups'))) {
+    fs.writeFileSync(path.join(root, fault.beforeBackup.path), fault.beforeBackup.content);
+  }
+  return directory;
+};
 fs.renameSync = (source, target) => {
   const relative = path.relative(root, String(target)).replaceAll('\\\\', '/');
   if (!failed && relative === fault.path) {
@@ -93,6 +101,55 @@ test('real update CLI preserves each recovery generation at the same timestamp',
 		const unchanged = JSON.parse(f.run(['update', '--apply', '--json']).stdout);
 		assert.equal(unchanged.wroteFiles, false);
 		assert.equal(readdirSync(f.backups).length, 2);
+	} finally { cleanup(f.root); }
+});
+
+test('update preserves edits made after planning and before the recovery backup', () => {
+	const f = fixture();
+	try {
+		const edit = '# User edit during backup reservation\nKeep my rules.\n';
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		const lockPath = path.join(f.project, '.mustflow/config/manifest.lock.toml');
+		const lockBefore = readFileSync(lockPath, 'utf8');
+		const result = f.run(['update', '--apply'], false, { beforeBackup: { path: 'AGENTS.md', content: edit } });
+		assert.equal(result.status, 1);
+		assert.equal(readFileSync(f.agents, 'utf8'), edit);
+		assert.equal(readFileSync(lockPath, 'utf8'), lockBefore);
+		assert.match(result.stderr, /changed after update planning/);
+	} finally { cleanup(f.root); }
+});
+
+test('update preserves obsolete files edited after planning instead of removing them', () => {
+	const f = fixture();
+	try {
+		const legacy = '.mustflow/skills/catalog.v1.json';
+		const original = '{"schema_version":"1","routes":[]}\n';
+		const target = path.join(f.project, legacy);
+		writeFileSync(target, original);
+		const lockPath = path.join(f.project, '.mustflow/config/manifest.lock.toml');
+		const hash = `sha256:${createHash('sha256').update(original).digest('hex')}`;
+		const lockBefore = readFileSync(lockPath, 'utf8') + `\n[files."${legacy}"]\nsource = "template_common"\nlast_action = "copied"\ncontent_hash = "${hash}"\n`;
+		writeFileSync(lockPath, lockBefore);
+		const edit = '{"schema_version":"1","routes":["user"]}\n';
+		const result = f.run(['update', '--apply'], false, { beforeBackup: { path: legacy, content: edit } });
+		assert.equal(result.status, 1);
+		assert.equal(readFileSync(target, 'utf8'), edit);
+		assert.equal(readFileSync(lockPath, 'utf8'), lockBefore);
+	} finally { cleanup(f.root); }
+});
+
+test('update preserves manifest changes made after planning', () => {
+	const f = fixture();
+	try {
+		const relativePath = '.mustflow/config/manifest.lock.toml';
+		const target = path.join(f.project, relativePath);
+		const edit = `${readFileSync(target, 'utf8')}\n# Concurrent operator note\n`;
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		const result = f.run(['update', '--apply'], false, { beforeBackup: { path: relativePath, content: edit } });
+		assert.equal(result.status, 1);
+		assert.equal(readFileSync(target, 'utf8'), edit);
+		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
+		assert.match(result.stderr, /changed after update planning/);
 	} finally { cleanup(f.root); }
 });
 

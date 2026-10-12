@@ -5,7 +5,6 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import {
-	copyFileInsideWithoutSymlinks,
 	createBackupDirectory,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
@@ -109,6 +108,7 @@ interface ApplyResult {
 
 interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
 	readonly source?: TemplateFileSource;
+	readonly baselineHash?: string | null;
 }
 
 type MutableTomlTable = Record<string, unknown>;
@@ -195,22 +195,24 @@ function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allo
 	}
 }
 
-function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason: string): InternalUpdatePlanItem {
+function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason: string, baselineHash?: string | null): InternalUpdatePlanItem {
 	return {
 		relativePath: source.relativePath,
 		sourceKind: source.sourceKind,
 		source,
 		action,
 		reason,
+		baselineHash,
 	};
 }
 
-function createObsoletePlanItem(lockedFile: LockedFile, action: UpdateAction, reason: string): InternalUpdatePlanItem {
+function createObsoletePlanItem(lockedFile: LockedFile, action: UpdateAction, reason: string, baselineHash?: string | null): InternalUpdatePlanItem {
 	return {
 		relativePath: lockedFile.relativePath,
 		sourceKind: 'manifest_lock',
 		action,
 		reason,
+		baselineHash,
 	};
 }
 
@@ -227,7 +229,19 @@ function publicPlanItems(items: readonly InternalUpdatePlanItem[]): UpdatePlanIt
 	return items.map((item) => publicPlanItem(item));
 }
 
-function createUpdatePlan(projectRoot: string): { readonly items: readonly InternalUpdatePlanItem[]; readonly error?: string } {
+function currentContentHash(projectRoot: string, relativePath: string): string | null {
+	const target = path.join(projectRoot, relativePath);
+	ensureFileTargetInsideWithoutSymlinks(projectRoot, target, { allowMissingLeaf: true });
+	return existsSync(target) ? `sha256:${createHash('sha256').update(readFileInsideWithoutSymlinks(projectRoot, target)).digest('hex')}` : null;
+}
+
+function createUpdatePlan(projectRoot: string): { readonly items: readonly InternalUpdatePlanItem[]; readonly error?: string; readonly manifestHash?: string } {
+	let manifestHash: string | null;
+	try {
+		manifestHash = currentContentHash(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
+	} catch (error) {
+		return { items: [], error: `Invalid manifest lock: ${error instanceof Error ? error.message : String(error)}` };
+	}
 	const lockResult = readManifestLock(projectRoot);
 
 	if (lockResult.kind === 'missing') {
@@ -236,6 +250,9 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 
 	if (lockResult.kind === 'invalid') {
 		return { items: [], error: `Invalid manifest lock: ${lockResult.message}` };
+	}
+	if (!manifestHash || currentContentHash(projectRoot, MANIFEST_LOCK_RELATIVE_PATH) !== manifestHash) {
+		return { items: [], error: 'Manifest lock changed during update planning' };
 	}
 
 	let template: ReturnType<typeof getDefaultTemplate>;
@@ -269,7 +286,7 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 				continue;
 			}
 
-			items.push(createPlanItem(source, 'create', 'target file is missing'));
+			items.push(createPlanItem(source, 'create', 'target file is missing', null));
 			continue;
 		}
 
@@ -297,7 +314,7 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		}
 
 		if (currentHash !== templateHash) {
-			items.push(createPlanItem(source, 'update', 'template content differs from current file'));
+			items.push(createPlanItem(source, 'update', 'template content differs from current file', currentHash));
 			continue;
 		}
 
@@ -325,7 +342,7 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		}
 
 		if (!existsSync(targetPath)) {
-			items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file is already absent; remove its stale manifest lock entry'));
+			items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file is already absent; remove its stale manifest lock entry', null));
 			continue;
 		}
 
@@ -339,10 +356,10 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 			continue;
 		}
 
-		items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file still matches the manifest lock baseline'));
+		items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file still matches the manifest lock baseline', lockedFile.contentHash));
 	}
 
-	return { items };
+	return { items, manifestHash };
 }
 
 export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
@@ -417,7 +434,7 @@ function copyTemplateFile(projectRoot: string, relativePath: string, recovery: U
 	writeTemplateFile(projectRoot, template.templateRoot, source, targetPath, recovery);
 }
 
-function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): string | undefined {
+function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined): string | undefined {
 	if (!items.some((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')) {
 		return;
 	}
@@ -432,6 +449,14 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 
 	const backupPaths = [...new Set([...updateItems.map((item) => item.relativePath), MANIFEST_LOCK_RELATIVE_PATH])];
 	const backupRoot = createBackupDirectory(projectRoot);
+	const baselines = new Map(items.filter((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')
+		.map((item) => [item.relativePath, item.baselineHash] as const));
+	baselines.set(MANIFEST_LOCK_RELATIVE_PATH, manifestHash);
+	for (const [relativePath, baseline] of baselines) {
+		if (baseline === undefined || currentContentHash(projectRoot, relativePath) !== baseline) {
+			throw new Error(`File changed after update planning: ${relativePath}`);
+		}
+	}
 
 	for (const relativePath of backupPaths) {
 		const sourcePath = path.join(projectRoot, relativePath);
@@ -439,7 +464,12 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 
 		ensureInside(projectRoot, sourcePath);
 		ensureInside(backupRoot, backupPath);
-		copyFileInsideWithoutSymlinks(projectRoot, sourcePath, projectRoot, backupPath);
+		const content = readFileInsideWithoutSymlinks(projectRoot, sourcePath);
+		const hash = `sha256:${createHash('sha256').update(content).digest('hex')}`;
+		if (hash !== baselines.get(relativePath)) {
+			throw new Error(`File changed after update planning: ${relativePath}`);
+		}
+		writeFileInsideWithoutSymlinks(projectRoot, backupPath, content);
 	}
 
 	reporter.stdout(
@@ -504,13 +534,13 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, content);
 }
 
-function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): ApplyResult {
+function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined): ApplyResult {
 	let created = 0;
 	let updated = 0;
 	let removed = 0;
 	const appliedItems: UpdatePlanItem[] = [];
 
-	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang);
+	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang, manifestHash);
 	if (!backupRoot) return { created, updated, removed, wroteFiles: false };
 	const recovery = new UpdateRecovery(projectRoot, backupRoot);
 
@@ -768,12 +798,12 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 			const applyResult = applyUpdate(projectRoot, applicableItems, {
 				stdout: () => undefined,
 				stderr: (message) => reporter.stderr(message),
-			}, lang);
+			}, lang, plan.manifestHash);
 			reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), undefined, applyResult.wroteFiles), 'apply'), null, 2));
 			return 0;
 		}
 
-		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang);
+		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang, plan.manifestHash);
 
 		if (!applyResult.wroteFiles) {
 			reporter.stdout(t(lang, 'update.plan.noUpdates'));
