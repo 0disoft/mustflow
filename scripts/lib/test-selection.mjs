@@ -202,7 +202,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		['help', [...routerSmokeTests]],
 		['impact', ['impact.test.js']],
 		['index', ['index-dry-run.test.js', ...indexTests]],
-		['init', ['init.test.js', 'init-default-template.test.js', 'workflow.test.js', 'workflow-simple.test.js']],
+		['init', ['init.test.js', 'init-backup-isolation.test.js', 'init-default-template.test.js', 'workflow.test.js', 'workflow-simple.test.js']],
 		['line-endings', ['line-endings.test.js']],
 		['map', ['map.test.js', 'workflow.test.js']],
 		['next', ['next.test.js']],

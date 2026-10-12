@@ -147,7 +147,7 @@ function readBoundedFileDescriptor(fileDescriptor: number, childPath: string, ma
 	}
 }
 
-function ensureDirectoryInsideWithoutSymlinks(parentPath: string, directoryPath: string): void {
+export function ensureDirectoryInsideWithoutSymlinks(parentPath: string, directoryPath: string): void {
 	ensureInside(parentPath, directoryPath);
 
 	const parent = path.resolve(parentPath);
@@ -177,7 +177,13 @@ function ensureDirectoryInsideWithoutSymlinks(parentPath: string, directoryPath:
 				throw error;
 			}
 
-			mkdirSync(currentPath);
+			try {
+				mkdirSync(currentPath);
+			} catch (mkdirError) {
+				if (!(mkdirError instanceof Error && 'code' in mkdirError && mkdirError.code === 'EEXIST')) {
+					throw mkdirError;
+				}
+			}
 			const stats = lstatSync(currentPath);
 			if (!stats.isDirectory() || stats.isSymbolicLink()) {
 				throw new Error(`Path component is not a directory: ${currentPath}`);

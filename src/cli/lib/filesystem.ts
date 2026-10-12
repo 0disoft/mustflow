@@ -2,6 +2,7 @@ import { existsSync, lstatSync, readdirSync, statSync, unlinkSync } from 'node:f
 import path from 'node:path';
 
 export {
+	ensureDirectoryInsideWithoutSymlinks,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
 	ensureInsideWithoutSymlinks,
