@@ -113,6 +113,12 @@ interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
 
 type MutableTomlTable = Record<string, unknown>;
 
+class UpdateApplyError extends Error {
+	constructor(message: string, readonly wroteFiles: boolean, cause: unknown) {
+		super(message, { cause });
+	}
+}
+
 export function getUpdateHelp(lang: CliLang = 'en'): string {
 	return renderHelp(
 		{
@@ -538,6 +544,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 	let created = 0;
 	let updated = 0;
 	let removed = 0;
+	let wroteFiles = false;
 	const appliedItems: UpdatePlanItem[] = [];
 
 	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang, manifestHash);
@@ -551,6 +558,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 			}
 
 			copyTemplateFile(projectRoot, item.relativePath, recovery);
+			wroteFiles = true;
 			appliedItems.push(item);
 
 			if (item.action === 'create') {
@@ -572,6 +580,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 			recovery.prepareRemoval(item.relativePath);
 			if (existsSync(targetPath)) {
 				removeFileInsideWithoutSymlinks(projectRoot, targetPath);
+				wroteFiles = true;
 			}
 			appliedItems.push(item);
 			removed += 1;
@@ -581,6 +590,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 		updateManifestLockAfterApply(projectRoot, appliedItems, recovery);
 
 		if (appliedItems.length > 0) {
+			wroteFiles = true;
 			reporter.stdout(t(lang, 'update.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
 		}
 
@@ -588,14 +598,14 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 			created,
 			updated,
 			removed,
-			wroteFiles: appliedItems.length > 0,
+			wroteFiles,
 		};
 	} catch (error) {
 		const failures = recovery.rollback();
 		const result = failures.length === 0
 			? 'Update changes rolled back.'
 			: `Automatic recovery incomplete: ${failures.join('; ')}.`;
-		throw new Error(`Update failed: ${error instanceof Error ? error.message : String(error)}. ${result} Recovery backup: ${backupRoot}`, { cause: error });
+		throw new UpdateApplyError(`Update failed: ${error instanceof Error ? error.message : String(error)}. ${result} Recovery backup: ${backupRoot}`, wroteFiles, error);
 	}
 }
 
@@ -744,16 +754,24 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		return 1;
 	}
 
-	const projectRoot = resolveMustflowRoot();
-	const activeLock = wantsApply ? acquireActiveCommandLock(projectRoot, 'mf update --apply', MUSTFLOW_UPDATE_APPLY_EFFECTS) : null;
-
-	if (activeLock && !activeLock.ok) {
-		reportActiveCommandLockConflict(reporter, 'mf update --apply', activeLock.conflicts, 'mf update --help', lang);
-		return 1;
-	}
-
+	let activeLock: ReturnType<typeof acquireActiveCommandLock> | null = null;
+	let plannedItems: readonly UpdatePlanItem[] = [];
 	try {
+		const projectRoot = resolveMustflowRoot();
+		activeLock = wantsApply ? acquireActiveCommandLock(projectRoot, 'mf update --apply', MUSTFLOW_UPDATE_APPLY_EFFECTS) : null;
+		if (activeLock && !activeLock.ok) {
+			if (wantsJson) {
+				const messages: string[] = [];
+				reportActiveCommandLockConflict({ stdout: message => messages.push(message), stderr: message => messages.push(message) },
+					'mf update --apply', activeLock.conflicts, 'mf update --help', lang);
+				reporter.stdout(JSON.stringify(withMode(planOutput([], messages.join('\n'), false), requestedMode), null, 2));
+			} else {
+				reportActiveCommandLockConflict(reporter, 'mf update --apply', activeLock.conflicts, 'mf update --help', lang);
+			}
+			return 1;
+		}
 		const plan = createUpdatePlan(projectRoot);
+		plannedItems = publicPlanItems(plan.items);
 
 		if (plan.error) {
 			if (wantsJson) {
@@ -815,6 +833,15 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 			t(lang, 'update.complete', { updated: applyResult.updated, created: applyResult.created, removed: applyResult.removed }),
 		);
 		return 0;
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		if (wantsJson) {
+			reporter.stdout(JSON.stringify(withMode(planOutput(plannedItems, message,
+				error instanceof UpdateApplyError && error.wroteFiles), requestedMode), null, 2));
+		} else {
+			reporter.stderr(message);
+		}
+		return 1;
 	} finally {
 		if (activeLock?.ok) {
 			activeLock.handle.release();

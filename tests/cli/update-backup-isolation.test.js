@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { acquireActiveCommandLock, MUSTFLOW_UPDATE_APPLY_EFFECTS } from '../../dist/cli/lib/active-command-lock.js';
 
 const repository = fileURLToPath(new URL('../..', import.meta.url));
 const cli = path.join(repository, 'dist/cli/index.js');
@@ -151,6 +152,107 @@ test('update preserves manifest changes made after planning', () => {
 		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
 		assert.match(result.stderr, /changed after update planning/);
 	} finally { cleanup(f.root); }
+});
+
+test('JSON runtime failure remains parseable after a successful rollback', () => {
+	const f = fixture();
+	try {
+		const workflow = '.mustflow/docs/agent-workflow.md';
+		const workflowSource = path.join(f.template, 'locales/en', workflow);
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		writeFileSync(workflowSource, `${readFileSync(workflowSource, 'utf8')}\n<!-- updated -->\n`);
+		const result = f.run(['update', '--apply', '--json'], false, { path: workflow });
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, true);
+		assert.equal(output.mode, 'apply');
+		assert.equal(output.schema_version, '2');
+		assert.match(output.error, /Update changes rolled back/);
+		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
+		assert.equal(result.stderr, '');
+		assert.equal(output.items.some(item => Object.hasOwn(item, 'baselineHash')), false);
+	} finally { cleanup(f.root); }
+});
+
+test('JSON pre-apply conflict reports failure without claiming writes', () => {
+	const f = fixture();
+	try {
+		const edit = '# Concurrent user rules\n';
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		const result = f.run(['update', '--apply', '--json'], false, { beforeBackup: { path: 'AGENTS.md', content: edit } });
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, false);
+		assert.match(output.error, /changed after update planning/);
+		assert.equal(readFileSync(f.agents, 'utf8'), edit);
+		assert.equal(result.stderr, '');
+	} finally { cleanup(f.root); }
+});
+
+test('JSON first-write failure does not claim an installed file was changed', () => {
+	const f = fixture();
+	try {
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		const result = f.run(['update', '--apply', '--json'], false, { path: 'AGENTS.md' });
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, false);
+		assert.match(output.error, /Update changes rolled back/);
+		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
+	} finally { cleanup(f.root); }
+});
+
+test('JSON planning errors remain parseable and do not mutate installed files', () => {
+	const f = fixture();
+	try {
+		writeFileSync(path.join(f.project, '.mustflow/config/mustflow.toml'), '[workflow\n');
+		const result = f.run(['update', '--dry-run', '--json'], false);
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, false);
+		assert.equal(output.mode, 'dry-run');
+		assert.ok(output.error.length > 0);
+		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
+		assert.equal(existsSync(f.backups), false);
+		assert.equal(result.stderr, '');
+	} finally { cleanup(f.root); }
+});
+
+test('JSON incomplete recovery reports remaining changes and the recovery backup', () => {
+	const f = fixture();
+	try {
+		const workflow = '.mustflow/docs/agent-workflow.md';
+		const workflowSource = path.join(f.template, 'locales/en', workflow);
+		writeFileSync(f.source, `${f.original}\n<!-- updated template -->\n`);
+		writeFileSync(workflowSource, `${readFileSync(workflowSource, 'utf8')}\n<!-- updated -->\n`);
+		const result = f.run(['update', '--apply', '--json'], false, { path: workflow, failRecovery: true });
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, true);
+		assert.match(output.error, /Automatic recovery incomplete/);
+		assert.ok(output.error.includes(f.backups));
+		assert.ok(readFileSync(f.agents, 'utf8') !== f.original);
+	} finally { cleanup(f.root); }
+});
+
+test('JSON lock conflict reports failure while another live process holds the update lock', () => {
+	const f = fixture();
+	const lock = acquireActiveCommandLock(f.project, 'test update owner', MUSTFLOW_UPDATE_APPLY_EFFECTS);
+	assert.equal(lock.ok, true);
+	try {
+		const result = f.run(['update', '--apply', '--json'], false);
+		assert.equal(result.status, 1);
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, false);
+		assert.match(output.error, /test update owner/);
+		assert.equal(result.stderr, '');
+	} finally { lock.handle.release(); cleanup(f.root); }
 });
 
 test('failed second write restores the first update and allows a clean retry', () => {
