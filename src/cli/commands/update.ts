@@ -9,7 +9,9 @@ import {
 	createBackupDirectory,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
+	readFileInsideWithoutSymlinks,
 	removeFileInsideWithoutSymlinks,
+	writeFileInsideWithoutSymlinks,
 	writeUtf8FileInsideWithoutSymlinks,
 } from '../lib/filesystem.js';
 import { MANIFEST_LOCK_RELATIVE_PATH, readManifestLock, sha256File, type LockedFile } from '../lib/manifest-lock.js';
@@ -32,6 +34,7 @@ import type { Reporter } from '../lib/reporter.js';
 import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type TemplateFileSource } from '../lib/templates.js';
 import { readMustflowTomlFile, stringifyToml } from '../lib/toml.js';
 import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPreview } from '../lib/update-diff-preview.js';
+import { UpdateRecovery } from '../lib/update-recovery.js';
 
 const UPDATE_SCHEMA_VERSION = '2';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
@@ -177,13 +180,10 @@ function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typ
 	);
 }
 
-function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string): void {
-	if (source.content !== undefined) {
-		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
-		return;
-	}
-
-	copyFileInsideWithoutSymlinks(templateRoot, source.sourcePath, projectRoot, targetPath);
+function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string, recovery: UpdateRecovery): void {
+	const content = source.content ?? readFileInsideWithoutSymlinks(templateRoot, source.sourcePath);
+	recovery.prepareWrite(source.relativePath, content);
+	writeFileInsideWithoutSymlinks(projectRoot, targetPath, content);
 }
 
 function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allowMissingLeaf: boolean): string | undefined {
@@ -399,7 +399,7 @@ function fileActionToLockAction(action: UpdateAction): 'created' | 'updated' {
 	return action === 'create' ? 'created' : 'updated';
 }
 
-function copyTemplateFile(projectRoot: string, relativePath: string): void {
+function copyTemplateFile(projectRoot: string, relativePath: string, recovery: UpdateRecovery): void {
 	const template = getDefaultTemplate();
 	const lockResult = readManifestLock(projectRoot);
 	const source = lockResult.kind === 'present'
@@ -414,10 +414,10 @@ function copyTemplateFile(projectRoot: string, relativePath: string): void {
 	ensureInside(template.templateRoot, source.sourcePath);
 	ensureInside(projectRoot, targetPath);
 	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
-	writeTemplateFile(projectRoot, template.templateRoot, source, targetPath);
+	writeTemplateFile(projectRoot, template.templateRoot, source, targetPath, recovery);
 }
 
-function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): void {
+function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): string | undefined {
 	if (!items.some((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')) {
 		return;
 	}
@@ -449,9 +449,10 @@ function backupUpdateFiles(projectRoot: string, items: readonly UpdatePlanItem[]
 			path: backupRoot,
 		}),
 	);
+	return backupRoot;
 }
 
-function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[]): void {
+function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[], recovery: UpdateRecovery): void {
 	if (appliedItems.length === 0) {
 		return;
 	}
@@ -498,7 +499,9 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	}
 
 	parsed.files = filesTable;
-	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, stringifyToml(parsed));
+	const content = stringifyToml(parsed);
+	recovery.prepareWrite(MANIFEST_LOCK_RELATIVE_PATH, content);
+	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, content);
 }
 
 function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], reporter: Reporter, lang: CliLang): ApplyResult {
@@ -507,52 +510,63 @@ function applyUpdate(projectRoot: string, items: readonly UpdatePlanItem[], repo
 	let removed = 0;
 	const appliedItems: UpdatePlanItem[] = [];
 
-	backupUpdateFiles(projectRoot, items, reporter, lang);
+	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang);
+	if (!backupRoot) return { created, updated, removed, wroteFiles: false };
+	const recovery = new UpdateRecovery(projectRoot, backupRoot);
 
-	for (const item of items) {
-		if (item.action !== 'create' && item.action !== 'update') {
-			continue;
+	try {
+		for (const item of items) {
+			if (item.action !== 'create' && item.action !== 'update') {
+				continue;
+			}
+
+			copyTemplateFile(projectRoot, item.relativePath, recovery);
+			appliedItems.push(item);
+
+			if (item.action === 'create') {
+				created += 1;
+				reporter.stdout(t(lang, 'update.action.created', { path: item.relativePath }));
+			} else {
+				updated += 1;
+				reporter.stdout(t(lang, 'update.action.updated', { path: item.relativePath }));
+			}
 		}
 
-		copyTemplateFile(projectRoot, item.relativePath);
-		appliedItems.push(item);
+		for (const item of items) {
+			if (item.action !== 'remove') {
+				continue;
+			}
 
-		if (item.action === 'create') {
-			created += 1;
-			reporter.stdout(t(lang, 'update.action.created', { path: item.relativePath }));
-		} else {
-			updated += 1;
-			reporter.stdout(t(lang, 'update.action.updated', { path: item.relativePath }));
+			const targetPath = path.join(projectRoot, item.relativePath);
+			ensureInside(projectRoot, targetPath);
+			recovery.prepareRemoval(item.relativePath);
+			if (existsSync(targetPath)) {
+				removeFileInsideWithoutSymlinks(projectRoot, targetPath);
+			}
+			appliedItems.push(item);
+			removed += 1;
+			reporter.stdout(t(lang, 'update.action.removed', { path: item.relativePath }));
 		}
+
+		updateManifestLockAfterApply(projectRoot, appliedItems, recovery);
+
+		if (appliedItems.length > 0) {
+			reporter.stdout(t(lang, 'update.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
+		}
+
+		return {
+			created,
+			updated,
+			removed,
+			wroteFiles: appliedItems.length > 0,
+		};
+	} catch (error) {
+		const failures = recovery.rollback();
+		const result = failures.length === 0
+			? 'Update changes rolled back.'
+			: `Automatic recovery incomplete: ${failures.join('; ')}.`;
+		throw new Error(`Update failed: ${error instanceof Error ? error.message : String(error)}. ${result} Recovery backup: ${backupRoot}`, { cause: error });
 	}
-
-	for (const item of items) {
-		if (item.action !== 'remove') {
-			continue;
-		}
-
-		const targetPath = path.join(projectRoot, item.relativePath);
-		ensureInside(projectRoot, targetPath);
-		if (existsSync(targetPath)) {
-			removeFileInsideWithoutSymlinks(projectRoot, targetPath);
-		}
-		appliedItems.push(item);
-		removed += 1;
-		reporter.stdout(t(lang, 'update.action.removed', { path: item.relativePath }));
-	}
-
-	updateManifestLockAfterApply(projectRoot, appliedItems);
-
-	if (appliedItems.length > 0) {
-		reporter.stdout(t(lang, 'update.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
-	}
-
-	return {
-		created,
-		updated,
-		removed,
-		wroteFiles: appliedItems.length > 0,
-	};
 }
 
 function planOutput(items: readonly UpdatePlanItem[], error: string | undefined, wroteFiles: boolean): UpdatePlanOutput {

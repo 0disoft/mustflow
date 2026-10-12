@@ -529,3 +529,10 @@ test('shared skill contract helper changes stay inside authoring contract covera
 	assert.equal([...selected].every((name) => name.startsWith('authoring-skill') || name === 'skill-install-surface-contracts.test.js'), true);
 	assert.ok(selected.size < full.selected.length);
 });
+
+test('update recovery changes select only their update lifecycle checks', () => {
+	assert.deepEqual(selectedFor(['src/cli/lib/update-recovery.ts']), new Set([
+		'update.test.js',
+		'update-backup-isolation.test.js',
+	]));
+});
