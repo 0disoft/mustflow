@@ -42,14 +42,52 @@ import path from 'node:path';
 import { syncBuiltinESMExports } from 'node:module';
 const rename = fs.renameSync;
 const mkdtemp = fs.mkdtempSync;
+const readFile = fs.readFileSync;
 const root = ${JSON.stringify(project)};
+const template = ${JSON.stringify(template)};
 const fault = ${JSON.stringify(fault)};
 let failed = false;
+let templateChanged = false;
+let manifestReads = 0;
+fs.readFileSync = (file, ...args) => {
+  if (typeof file === 'string' && path.resolve(file) === path.join(template, 'manifest.toml')) manifestReads++;
+  const result = readFile(file, ...args);
+  if (!templateChanged && typeof file === 'string' && path.relative(root, file).replaceAll('\\\\', '/') === fault.templateAfterRead) {
+    templateChanged = true;
+    changeTemplate(fault.templateAfterReadEntries);
+  }
+  return result;
+};
+if (fault.measureReads) process.on('exit', () => fs.writeFileSync(${JSON.stringify(path.join(root, 'reads.json'))}, JSON.stringify({ manifestReads })));
+const changeTemplate = entries => {
+  for (const entry of entries ?? []) fs.writeFileSync(path.join(template, entry.path), entry.content);
+};
+if (fault.templateAfterRead) {
+  const open = fs.openSync;
+  const close = fs.closeSync;
+  const opened = new Map();
+  fs.openSync = (file, ...args) => {
+    const descriptor = open(file, ...args);
+    if (typeof file === 'string') opened.set(descriptor, path.resolve(file));
+    return descriptor;
+  };
+  fs.closeSync = descriptor => {
+    const file = opened.get(descriptor);
+    const result = close(descriptor);
+    opened.delete(descriptor);
+    if (!templateChanged && file && path.relative(root, file).replaceAll('\\\\', '/') === fault.templateAfterRead) {
+      templateChanged = true;
+      changeTemplate(fault.templateAfterReadEntries);
+    }
+    return result;
+  };
+}
 fs.mkdtempSync = (prefix, options) => {
   const directory = mkdtemp(prefix, options);
   if (fault.beforeBackup && String(prefix).startsWith(path.join(root, '.mustflow', 'backups'))) {
     fs.writeFileSync(path.join(root, fault.beforeBackup.path), fault.beforeBackup.content);
   }
+  if (String(prefix).startsWith(path.join(root, '.mustflow', 'backups'))) changeTemplate(fault.templateBeforeBackup);
   return directory;
 };
 fs.renameSync = (source, target) => {
@@ -62,7 +100,12 @@ fs.renameSync = (source, target) => {
   if (failed && fault.failRecovery && relative === 'AGENTS.md') {
     throw Object.assign(new Error('Injected recovery failure'), { code: 'EACCES' });
   }
-  return rename(source, target);
+  const result = rename(source, target);
+  if (!templateChanged && relative === fault.templateAfterPath) {
+    templateChanged = true;
+    changeTemplate(fault.templateAfterWrite);
+  }
+  return result;
 };
 syncBuiltinESMExports();
 `);
@@ -102,6 +145,80 @@ test('real update CLI preserves each recovery generation at the same timestamp',
 		const unchanged = JSON.parse(f.run(['update', '--apply', '--json']).stdout);
 		assert.equal(unchanged.wroteFiles, false);
 		assert.equal(readdirSync(f.backups).length, 2);
+	} finally { cleanup(f.root); }
+});
+
+test('update applies the planned bytes and template version when source changes before backup', () => {
+	const f = fixture();
+	try {
+		const planned = `${f.original}\n<!-- planned revision -->\n`;
+		const late = `${f.original}\n<!-- unplanned revision -->\n`;
+		const manifest = readFileSync(path.join(f.template, 'manifest.toml'), 'utf8');
+		const version = manifest.match(/^version\s*=\s*"([^"]+)"/m)[1];
+		writeFileSync(f.source, planned);
+		const result = f.run(['update', '--apply', '--json'], true, { templateBeforeBackup: [
+			{ path: 'locales/en/AGENTS.md', content: late },
+			{ path: 'manifest.toml', content: manifest.replace(/^version\s*=\s*"[^"]+"/m, 'version = "99.0.0"') },
+		] });
+		assert.equal(JSON.parse(result.stdout).ok, true);
+		assert.ok(readFileSync(f.agents, 'utf8') === planned, 'only the planned revision may be applied');
+		const lock = readFileSync(path.join(f.project, '.mustflow/config/manifest.lock.toml'), 'utf8');
+		assert.ok(lock.includes(`version = "${version}"`));
+		assert.ok(!lock.includes('version = "99.0.0"'));
+		const next = JSON.parse(f.run(['update', '--dry-run', '--json']).stdout);
+		assert.equal(next.summary.wouldUpdate, 1);
+	} finally { cleanup(f.root); }
+});
+
+test('update uses one planned source revision for every file even when it changes mid-apply', () => {
+	const f = fixture();
+	try {
+		const workflow = '.mustflow/docs/agent-workflow.md';
+		const source = path.join(f.template, 'locales/en', workflow);
+		const original = readFileSync(source, 'utf8');
+		const planned = `${original}\n<!-- planned workflow revision -->\n`;
+		writeFileSync(f.source, `${f.original}\n<!-- planned agent revision -->\n`);
+		writeFileSync(source, planned);
+		const result = f.run(['update', '--apply', '--json'], true, { templateAfterPath: 'AGENTS.md', templateAfterWrite: [
+			{ path: `locales/en/${workflow}`, content: `${original}\n<!-- late workflow revision -->\n` },
+		] });
+		assert.equal(JSON.parse(result.stdout).ok, true);
+		assert.ok(readFileSync(path.join(f.project, workflow), 'utf8') === planned, 'later files must use the same planned source revision');
+	} finally { cleanup(f.root); }
+});
+
+test('multi-file update reads template metadata once for the complete operation', () => {
+	const f = fixture();
+	try {
+		const workflow = path.join(f.template, 'locales/en/.mustflow/docs/agent-workflow.md');
+		writeFileSync(f.source, `${f.original}\n<!-- agent revision -->\n`);
+		writeFileSync(workflow, `${readFileSync(workflow, 'utf8')}\n<!-- workflow revision -->\n`);
+		const result = f.run(['update', '--apply', '--json'], true, { measureReads: true });
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.summary.wouldUpdate, 2);
+		const reads = JSON.parse(readFileSync(path.join(f.root, 'reads.json'), 'utf8'));
+		assert.equal(reads.manifestReads, 1, 'the plan must supply metadata through apply and manifest persistence');
+		assert.equal(output.items.some(item => Object.hasOwn(item, 'plannedContent')), false);
+	} finally { cleanup(f.root); }
+});
+
+test('diff preview shows the planned source content when its file changes before rendering', () => {
+	const f = fixture();
+	try {
+		const planned = `${f.original}\n<!-- planned diff revision -->\n`;
+		writeFileSync(f.source, planned);
+		const result = f.run(['update', '--dry-run', '--diff', '--json'], true, {
+			templateAfterRead: '.mustflow/docs/agent-workflow.md',
+			templateAfterReadEntries: [{ path: 'locales/en/AGENTS.md', content: `${f.original}\n<!-- late diff revision -->\n` }],
+		});
+		const output = JSON.parse(result.stdout);
+		const diff = output.items.find(item => item.relativePath === 'AGENTS.md').diff_preview;
+		assert.equal(diff.available, true);
+		assert.ok(diff.lines.some(line => line.includes('planned diff revision')));
+		assert.ok(!diff.lines.some(line => line.includes('late diff revision')));
+		assert.ok(readFileSync(f.source, 'utf8').includes('late diff revision'), 'the source must actually change during planning');
+		assert.ok(readFileSync(f.agents, 'utf8') === f.original);
+		assert.equal(existsSync(f.backups), false);
 	} finally { cleanup(f.root); }
 });
 

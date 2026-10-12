@@ -109,6 +109,12 @@ interface ApplyResult {
 interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
 	readonly source?: TemplateFileSource;
 	readonly baselineHash?: string | null;
+	readonly plannedContent?: string | Buffer;
+}
+
+interface PlannedTemplateIdentity {
+	readonly id: string;
+	readonly version: string;
 }
 
 type MutableTomlTable = Record<string, unknown>;
@@ -154,12 +160,8 @@ function byRelativePath(files: readonly LockedFile[]): Map<string, LockedFile> {
 	return new Map(files.map((file) => [file.relativePath, file]));
 }
 
-function sha256Text(content: string): string {
+function sha256Content(content: string | Buffer): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
-}
-
-function templateFileHash(source: TemplateFileSource): string {
-	return source.content === undefined ? sha256File(source.sourcePath) : sha256Text(source.content);
 }
 
 function isTemplateManagedSource(source: string): boolean {
@@ -186,12 +188,6 @@ function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typ
 	);
 }
 
-function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string, recovery: UpdateRecovery): void {
-	const content = source.content ?? readFileInsideWithoutSymlinks(templateRoot, source.sourcePath);
-	recovery.prepareWrite(source.relativePath, content);
-	writeFileInsideWithoutSymlinks(projectRoot, targetPath, content);
-}
-
 function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allowMissingLeaf: boolean): string | undefined {
 	try {
 		ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf });
@@ -201,7 +197,7 @@ function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allo
 	}
 }
 
-function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason: string, baselineHash?: string | null): InternalUpdatePlanItem {
+function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason: string, baselineHash?: string | null, plannedContent?: string | Buffer): InternalUpdatePlanItem {
 	return {
 		relativePath: source.relativePath,
 		sourceKind: source.sourceKind,
@@ -209,6 +205,7 @@ function createPlanItem(source: TemplateFileSource, action: UpdateAction, reason
 		action,
 		reason,
 		baselineHash,
+		plannedContent,
 	};
 }
 
@@ -241,7 +238,7 @@ function currentContentHash(projectRoot: string, relativePath: string): string |
 	return existsSync(target) ? `sha256:${createHash('sha256').update(readFileInsideWithoutSymlinks(projectRoot, target)).digest('hex')}` : null;
 }
 
-function createUpdatePlan(projectRoot: string): { readonly items: readonly InternalUpdatePlanItem[]; readonly error?: string; readonly manifestHash?: string } {
+function createUpdatePlan(projectRoot: string): { readonly items: readonly InternalUpdatePlanItem[]; readonly error?: string; readonly manifestHash?: string; readonly templateIdentity?: PlannedTemplateIdentity } {
 	let manifestHash: string | null;
 	try {
 		manifestHash = currentContentHash(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
@@ -292,12 +289,14 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 				continue;
 			}
 
-			items.push(createPlanItem(source, 'create', 'target file is missing', null));
+			items.push(createPlanItem(source, 'create', 'target file is missing', null,
+				source.content ?? readFileInsideWithoutSymlinks(template.templateRoot, source.sourcePath)));
 			continue;
 		}
 
 		const currentHash = sha256File(targetPath);
-		const templateHash = templateFileHash(source);
+		const templateContent = source.content ?? readFileInsideWithoutSymlinks(template.templateRoot, source.sourcePath);
+		const templateHash = sha256Content(templateContent);
 
 		if (!lockedFile && currentHash !== templateHash) {
 			items.push(createPlanItem(source, 'blocked-local-change', 'target file exists but is not tracked by the manifest lock'));
@@ -320,7 +319,7 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		}
 
 		if (currentHash !== templateHash) {
-			items.push(createPlanItem(source, 'update', 'template content differs from current file', currentHash));
+			items.push(createPlanItem(source, 'update', 'template content differs from current file', currentHash, templateContent));
 			continue;
 		}
 
@@ -365,7 +364,7 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		items.push(createObsoletePlanItem(lockedFile, 'remove', 'obsolete managed file still matches the manifest lock baseline', lockedFile.contentHash));
 	}
 
-	return { items, manifestHash };
+	return { items, manifestHash, templateIdentity: { id: template.manifest.id, version: template.manifest.version } };
 }
 
 export function planUpdate(projectRoot: string): { readonly items: readonly UpdatePlanItem[]; readonly error?: string } {
@@ -397,7 +396,7 @@ function withDiffPreviews(projectRoot: string, items: readonly InternalUpdatePla
 			...publicItem,
 			diff_preview: createUpdateDiffPreview(projectRoot, {
 				relativePath: item.relativePath,
-				source: item.source,
+				source: item.plannedContent === undefined ? item.source : { ...item.source, content: item.plannedContent.toString() },
 			}),
 		};
 	});
@@ -420,24 +419,6 @@ function isMutableTable(value: unknown): value is MutableTomlTable {
 
 function fileActionToLockAction(action: UpdateAction): 'created' | 'updated' {
 	return action === 'create' ? 'created' : 'updated';
-}
-
-function copyTemplateFile(projectRoot: string, relativePath: string, recovery: UpdateRecovery): void {
-	const template = getDefaultTemplate();
-	const lockResult = readManifestLock(projectRoot);
-	const source = lockResult.kind === 'present'
-		? getInstalledTemplateFiles(projectRoot, template, lockResult.lock).find((file) => file.relativePath === relativePath)
-		: getTemplateFiles(template).find((file) => file.relativePath === relativePath);
-	const targetPath = path.join(projectRoot, relativePath);
-
-	if (!source) {
-		throw new Error(`Template source missing for ${relativePath}`);
-	}
-
-	ensureInside(template.templateRoot, source.sourcePath);
-	ensureInside(projectRoot, targetPath);
-	ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath, { allowMissingLeaf: true });
-	writeTemplateFile(projectRoot, template.templateRoot, source, targetPath, recovery);
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined): string | undefined {
@@ -488,7 +469,7 @@ function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePl
 	return backupRoot;
 }
 
-function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[], recovery: UpdateRecovery): void {
+function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[], recovery: UpdateRecovery, templateIdentity: PlannedTemplateIdentity): void {
 	if (appliedItems.length === 0) {
 		return;
 	}
@@ -502,10 +483,9 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 		throw new Error(`Invalid manifest lock: ${MANIFEST_LOCK_RELATIVE_PATH} must contain a TOML table`);
 	}
 
-	const template = getDefaultTemplate();
 	const templateTable = isMutableTable(parsed.template) ? parsed.template : {};
-	templateTable.id = template.manifest.id;
-	templateTable.version = template.manifest.version;
+	templateTable.id = templateIdentity.id;
+	templateTable.version = templateIdentity.version;
 	parsed.template = templateTable;
 
 	const filesTable = isMutableTable(parsed.files) ? parsed.files : {};
@@ -540,12 +520,13 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, content);
 }
 
-function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined): ApplyResult {
+function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined, templateIdentity: PlannedTemplateIdentity | undefined): ApplyResult {
 	let created = 0;
 	let updated = 0;
 	let removed = 0;
 	let wroteFiles = false;
 	const appliedItems: UpdatePlanItem[] = [];
+	if (!templateIdentity) throw new Error('Missing planned template identity');
 
 	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang, manifestHash);
 	if (!backupRoot) return { created, updated, removed, wroteFiles: false };
@@ -557,7 +538,9 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 				continue;
 			}
 
-			copyTemplateFile(projectRoot, item.relativePath, recovery);
+			if (item.plannedContent === undefined) throw new Error(`Missing planned template content: ${item.relativePath}`);
+			recovery.prepareWrite(item.relativePath, item.plannedContent);
+			writeFileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, item.relativePath), item.plannedContent);
 			wroteFiles = true;
 			appliedItems.push(item);
 
@@ -587,7 +570,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 			reporter.stdout(t(lang, 'update.action.removed', { path: item.relativePath }));
 		}
 
-		updateManifestLockAfterApply(projectRoot, appliedItems, recovery);
+		updateManifestLockAfterApply(projectRoot, appliedItems, recovery, templateIdentity);
 
 		if (appliedItems.length > 0) {
 			wroteFiles = true;
@@ -816,12 +799,12 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 			const applyResult = applyUpdate(projectRoot, applicableItems, {
 				stdout: () => undefined,
 				stderr: (message) => reporter.stderr(message),
-			}, lang, plan.manifestHash);
+			}, lang, plan.manifestHash, plan.templateIdentity);
 			reporter.stdout(JSON.stringify(withMode(planOutput(publicPlanItems(plan.items), undefined, applyResult.wroteFiles), 'apply'), null, 2));
 			return 0;
 		}
 
-		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang, plan.manifestHash);
+		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang, plan.manifestHash, plan.templateIdentity);
 
 		if (!applyResult.wroteFiles) {
 			reporter.stdout(t(lang, 'update.plan.noUpdates'));
