@@ -255,6 +255,24 @@ test('writes changed-file classification reports to repository-local paths', asy
 	}
 });
 
+test('writes classification reports to in-root names beginning with two dots', async () => {
+	const projectPath = createClassifyProject();
+
+	try {
+		for (const relativePath of ['..classification.json', '..reports/classification.json']) {
+			for (const inputPath of [relativePath, path.resolve(projectPath, relativePath)]) {
+				const result = await runCli(projectPath, ['classify', 'src/deleted.ts', '--write', inputPath, '--json']);
+				assert.equal(result.status, 0, result.stderr || result.stdout);
+				const written = JSON.parse(readFileSync(path.resolve(projectPath, relativePath), 'utf8'));
+				assert.deepEqual(written, JSON.parse(result.stdout));
+				assert.deepEqual(written.files, ['src/deleted.ts']);
+			}
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('classify write option uses shared CLI value parsing', async () => {
 	const projectPath = createClassifyProject();
 	const reportPath = path.join(projectPath, '.mustflow', 'state', 'inline-classification.json');
