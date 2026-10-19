@@ -230,6 +230,27 @@ test('evidence reads relative and absolute plan paths while rejecting outside pa
 	}
 });
 
+test('evidence rejects unrelated JSON plans even when their ID matches verified evidence', async () => {
+	const projectPath = createEvidenceProject();
+
+	try {
+		const planId = 'sha256:wrong-file';
+		writeLatestVerifyEvidence(projectPath, planId, []);
+		for (const value of [{ command: 'verify', verification_plan_id: planId }, {}, { name: 'package' }]) {
+			writeFileSync(path.join(projectPath, 'not-a-plan.json'), JSON.stringify(value));
+			const result = await runCli(projectPath, ['evidence', '--plan', 'not-a-plan.json', '--json']);
+			const output = JSON.parse(result.stdout);
+			assert.equal(result.status, 1, result.stdout);
+			assert.equal(output.status, 'unavailable');
+			assert.equal(output.plan.status, 'unavailable');
+			assert.equal(output.plan.verification_plan_id, null);
+			assert.match(output.plan.issues.join('\n'), /not a recognized mustflow verification-plan object/);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('evidence latest report summarizes missing latest evidence without raw output', async () => {
 	const projectPath = createEvidenceProject();
 

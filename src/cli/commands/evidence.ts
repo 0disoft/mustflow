@@ -520,6 +520,10 @@ function createPlanFromFile(mustflowRoot: string, planPath: string, latest: Evid
 
 	const apiVerificationPlan = readString(parsed, 'command') === 'api verification-plan';
 	const requirements = recordArray(parsed.requirements);
+	if (!apiVerificationPlan && requirements.length === 0) {
+		return unavailablePlan('plan_file', new Error('Plan file is not a recognized mustflow verification-plan object.'));
+	}
+
 	const candidates = recordArray(parsed.candidates);
 	const gaps = recordArray(parsed.gaps).map(toGapReport);
 	const schedule = isRecord(parsed.schedule) ? parsed.schedule : null;
@@ -560,7 +564,7 @@ function createPlanFromFile(mustflowRoot: string, planPath: string, latest: Evid
 				note: readString(testSelection, 'note') ?? null,
 			}
 			: null,
-		issues: apiVerificationPlan || requirements.length > 0 ? [] : ['Plan file is not a recognized mustflow verification-plan object.'],
+		issues: [],
 	};
 }
 
