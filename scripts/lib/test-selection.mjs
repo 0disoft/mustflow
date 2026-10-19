@@ -344,6 +344,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/cli\/commands\/verify\//u, tests: [...verifyTests, 'explain-verify.test.js'] },
 		{ match: /^src\/cli\/lib\/template/u, tests: ['init.test.js', 'update.test.js'] },
 		{ match: /^src\/cli\/lib\/update-recovery\.ts$/u, tests: ['update.test.js', 'update-backup-isolation.test.js'] },
+		{ match: /^src\/cli\/lib\/init-recovery\.ts$/u, tests: ['init.test.js', 'init-backup-isolation.test.js', 'workflow-simple.test.js'] },
+		{ match: /^src\/cli\/lib\/file-mutation-recovery\.ts$/u, tests: ['init-backup-isolation.test.js', 'update-backup-isolation.test.js'] },
 		{ match: /^src\/cli\/lib\/root/u, tests: ['root-discovery.test.js'] },
 		{ match: /^src\/cli\/lib\/schema/u, tests: schemaSmokeTests },
 		{ match: /^src\/core\/command-intent-eligibility\.ts$/u, tests: [...runTests, ...verifyTests, 'security-fuzz.test.js'] },

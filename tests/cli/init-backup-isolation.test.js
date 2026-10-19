@@ -19,13 +19,38 @@ globalThis.Date = class extends NativeDate {
 	static now() { return NativeDate.parse(${JSON.stringify(fixedTime)}); }
 };
 `);
-	const run = (args, success = true) => {
-		const result = spawnSync(process.execPath, ['--import', pathToFileURL(preload).href, cliPath, 'init', '--yes', ...args],
+	const run = (args, success = true, fault) => {
+		const imports = ['--import', pathToFileURL(preload).href];
+		if (fault) {
+			const injection = path.join(root, 'fault.mjs');
+			writeFileSync(injection, `import fs from 'node:fs';
+import path from 'node:path';
+import { syncBuiltinESMExports } from 'node:module';
+const root = ${JSON.stringify(root)};
+const fault = ${JSON.stringify(fault)};
+const rename = fs.renameSync;
+let failed = false;
+let matchedWrites = 0;
+fs.renameSync = (source, target) => {
+  const relative = path.relative(root, String(target)).replaceAll('\\\\', '/');
+  if (!failed && relative === fault.path && ++matchedWrites >= (fault.occurrence ?? 1)) {
+    failed = true;
+    if (fault.edit) fs.writeFileSync(path.join(root, 'AGENTS.md'), fault.edit);
+    throw Object.assign(new Error('Injected init write failure'), { code: 'EACCES' });
+  }
+  if (failed && fault.failRecovery && relative === 'AGENTS.md') throw Object.assign(new Error('Injected init recovery failure'), { code: 'EACCES' });
+  return rename(source, target);
+};
+syncBuiltinESMExports();
+`);
+			imports.push('--import', pathToFileURL(injection).href);
+		}
+		const result = spawnSync(process.execPath, [...imports, cliPath, 'init', '--yes', ...args],
 			{ cwd: root, encoding: 'utf8', timeout: 15000 });
 		if (success) assert.equal(result.status, 0, result.stderr || result.stdout);
 		return result;
 	};
-	try { run(initialArgs); } catch (error) { cleanup(root); throw error; }
+	try { if (initialArgs !== null) run(initialArgs); } catch (error) { cleanup(root); throw error; }
 	return { root, run, agentsPath: path.join(root, 'AGENTS.md'), backupsPath: path.join(root, '.mustflow/backups') };
 }
 function cleanup(root) {
@@ -140,6 +165,74 @@ for (const scenario of [
 			}
 			assert.equal(readFileSync(sentinel, 'utf8'), 'Do not change this target.\n');
 			assert.equal(existsSync(f.backupsPath), false, 'preflight must precede backup creation');
+		} finally { cleanup(f.root); }
+	});
+}
+
+test('failed init manifest write restores merged rules, preferences and newly created files', () => {
+	const f = fixture(['--workflow', 'strict']);
+	try {
+		writeFileSync(f.agentsPath, '# Consumer rules\nKeep the original.\n');
+		writeFileSync(path.join(f.root, '.gitignore'), '# Consumer ignore rules\nlocal-cache/\n');
+		const originals = new Map(['AGENTS.md', '.gitignore', '.mustflow/config/preferences.toml', '.mustflow/config/manifest.lock.toml']
+			.map(relative => [relative, readFileSync(path.join(f.root, relative), 'utf8')]));
+		const created = path.join(f.root, '.mustflow/docs/agent-workflow.md');
+		rmSync(created);
+		const result = f.run(['--merge', '--set', 'git.auto_commit=true'], false, { path: '.mustflow/config/manifest.lock.toml' });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Injected init write failure/);
+		for (const [relative, original] of originals) {
+			assert.ok(readFileSync(path.join(f.root, relative), 'utf8') === original, `${relative} must roll back`);
+		}
+		assert.equal(existsSync(created), false, 'newly installed file must be removed');
+		assert.match(result.stderr, /Init changes rolled back/);
+		assert.equal(f.run(['--merge', '--set', 'git.auto_commit=true']).status, 0, 'clean retry must succeed');
+	} finally { cleanup(f.root); }
+});
+
+test('failed migration restores the strict policy and its matching project rules', () => {
+	const f = fixture(['--workflow', 'strict']);
+	try {
+		const originals = new Map(['AGENTS.md', '.mustflow/config/mustflow.toml', '.mustflow/config/manifest.lock.toml']
+			.map(relative => [relative, readFileSync(path.join(f.root, relative), 'utf8')]));
+		const result = f.run(['--workflow', 'simple', '--merge'], false, { path: '.mustflow/config/manifest.lock.toml' });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Init changes rolled back/);
+		for (const [relative, original] of originals) assert.ok(readFileSync(path.join(f.root, relative), 'utf8') === original, `${relative} must roll back`);
+		f.run(['--workflow', 'simple', '--merge']);
+	} finally { cleanup(f.root); }
+});
+
+test('fresh init undoes the first preferences write when customizing the same file fails', () => {
+	const f = fixture(null);
+	try {
+		const result = f.run(['--set', 'git.auto_commit=true'], false, { path: '.mustflow/config/preferences.toml', occurrence: 2 });
+		assert.equal(result.status, 1);
+		assert.match(result.stderr, /Injected init write failure/);
+		assert.match(result.stderr, /Init changes rolled back/);
+		for (const relative of ['AGENTS.md', '.gitignore', '.mustflow/config/mustflow.toml', '.mustflow/config/commands.toml', '.mustflow/config/preferences.toml', '.mustflow/config/manifest.lock.toml']) {
+			assert.equal(existsSync(path.join(f.root, relative)), false, `${relative} must not remain installed`);
+		}
+		f.run(['--set', 'git.auto_commit=true']);
+	} finally { cleanup(f.root); }
+});
+
+for (const fault of [{ edit: '# Concurrent user edit\nKeep this.\n' }, { failRecovery: true }]) {
+	test(`init reports incomplete recovery and preserves originals when ${fault.edit ? 'a user edits concurrently' : 'restoring a file fails'}`, () => {
+		const f = fixture(['--workflow', 'strict']);
+		try {
+			const original = '# Consumer rules\nKeep the backup.\n';
+			writeFileSync(f.agentsPath, original);
+			const result = f.run(['--merge'], false, { path: '.mustflow/config/manifest.lock.toml', ...fault });
+			assert.equal(result.status, 1);
+			assert.match(result.stderr, /Automatic recovery incomplete/);
+			assert.ok(result.stderr.includes(f.backupsPath));
+			const archive = path.join(f.backupsPath, readdirSync(f.backupsPath)[0]);
+			assert.equal(readFileSync(path.join(archive, 'AGENTS.md'), 'utf8'), original);
+			if (fault.edit) {
+				assert.equal(readFileSync(f.agentsPath, 'utf8'), fault.edit);
+				assert.match(result.stderr, /preserved for manual recovery/);
+			} else assert.notEqual(readFileSync(f.agentsPath, 'utf8'), original);
 		} finally { cleanup(f.root); }
 	});
 }

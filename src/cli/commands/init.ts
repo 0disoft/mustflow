@@ -9,8 +9,8 @@ import {
 	createBackupDirectory,
 	ensureFileTargetInsideWithoutSymlinks,
 	ensureInside,
+	readFileInsideWithoutSymlinks,
 	readUtf8FileInsideWithoutSymlinks,
-	writeUtf8FileInsideWithoutSymlinks,
 } from '../lib/filesystem.js';
 import { localeMessage, t, type CliLang } from '../lib/i18n.js';
 import { isLocaleTag } from '../lib/locale-tags.js';
@@ -28,6 +28,7 @@ import { getDefaultTemplate, getTemplateFiles, type TemplateFileSource } from '.
 import { readMustflowConfigIfExists } from '../../core/config-loading.js';
 import { resolveWorkflowPolicy, WORKFLOW_MODES, type WorkflowMode } from '../../core/workflow-policy.js';
 import { prepareSimpleWorkflowMigration } from '../lib/workflow-migration.js';
+import { InitRecovery } from '../lib/init-recovery.js';
 
 type PlannedStatus = 'create' | 'unchanged' | 'conflict' | 'merge' | 'overwrite';
 
@@ -1040,17 +1041,8 @@ function planStatus(projectRoot: string, templateRoot: string, source: TemplateF
 	return 'conflict';
 }
 
-function writeTemplateFile(projectRoot: string, templateRoot: string, source: TemplateFileSource, targetPath: string): void {
-	if (source.content !== undefined) {
-		writeUtf8FileInsideWithoutSymlinks(projectRoot, targetPath, source.content);
-		return;
-	}
-
-	copyFileInsideWithoutSymlinks(templateRoot, source.sourcePath, projectRoot, targetPath);
-}
-
-function writePlannedFile(projectRoot: string, file: PlannedFile): void {
-	writeTemplateFile(projectRoot, file.sourceRoot, file, file.targetPath);
+function writePlannedFile(file: PlannedFile, recovery: InitRecovery): void {
+	recovery.write(file.relativePath, file.content ?? readFileInsideWithoutSymlinks(file.sourceRoot, file.sourcePath));
 }
 
 function gitignoreFragmentPath(template: ReturnType<typeof getDefaultTemplate>): string {
@@ -1292,6 +1284,7 @@ function applyInitPreferences(
 	preferencesPath: string,
 	template: ReturnType<typeof getDefaultTemplate>,
 	options: InitOptions,
+	recovery: InitRecovery,
 ): boolean {
 	if (!existsSync(preferencesPath)) {
 		return false;
@@ -1328,7 +1321,7 @@ function applyInitPreferences(
 		return false;
 	}
 
-	writeUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath, next);
+	recovery.write('.mustflow/config/preferences.toml', next);
 	return true;
 }
 
@@ -1431,10 +1424,11 @@ function writeManifestLock(
 	plannedFiles: readonly PlannedFile[],
 	options: InitOptions,
 	customizedFiles: ReadonlySet<string>,
+	recovery: InitRecovery,
 ): void {
 	const lockPath = path.join(projectRoot, MANIFEST_LOCK_RELATIVE_PATH);
 	ensureInside(projectRoot, lockPath);
-	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, renderManifestLock(template, plannedFiles, options, customizedFiles));
+	recovery.write(MANIFEST_LOCK_RELATIVE_PATH, renderManifestLock(template, plannedFiles, options, customizedFiles));
 }
 
 export async function runInit(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
@@ -1522,63 +1516,70 @@ export async function runInit(args: string[], reporter: Reporter, lang: CliLang 
 		);
 	}
 
-	for (const file of plannedFiles) {
-		if (file.status === 'create') {
-			writePlannedFile(targetRoot, file);
-			created += 1;
-			reporter.stdout(t(lang, 'init.action.created', { path: file.relativePath }));
-			continue;
+	const recovery = new InitRecovery(targetRoot, backupRoot);
+	try {
+		for (const file of plannedFiles) {
+			if (file.status === 'create') {
+				writePlannedFile(file, recovery);
+				created += 1;
+				reporter.stdout(t(lang, 'init.action.created', { path: file.relativePath }));
+				continue;
+			}
+
+			if (file.status === 'unchanged') {
+				unchanged += 1;
+				reporter.stdout(t(lang, 'init.action.unchanged', { path: file.relativePath }));
+				continue;
+			}
+
+			if (file.status === 'merge') {
+				ensureFileTargetInsideWithoutSymlinks(targetRoot, file.targetPath);
+				const mergedContent =
+					file.relativePath === GITIGNORE_RELATIVE_PATH
+						? mergeGitignoreContent(
+								readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath),
+								readTemplateSourceText(file.sourceRoot, file.sourcePath),
+							)
+						: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale, options.workflow === 'simple' ? file.content : undefined);
+
+				recovery.write(file.relativePath, mergedContent);
+				merged += 1;
+				reporter.stdout(t(lang, 'init.action.merged', { path: file.relativePath }));
+				continue;
+			}
+
+			if (file.status === 'overwrite') {
+				writePlannedFile(file, recovery);
+				overwritten += 1;
+				reporter.stdout(t(lang, 'init.action.overwrote', { path: file.relativePath }));
+			}
 		}
 
-		if (file.status === 'unchanged') {
-			unchanged += 1;
-			reporter.stdout(t(lang, 'init.action.unchanged', { path: file.relativePath }));
-			continue;
+		const customizedFiles = new Set<string>();
+		if (options.migrateToSimple) {
+			customizedFiles.add('.mustflow/config/mustflow.toml');
+			for (const relativePath of ['.mustflow/config/commands.toml', '.mustflow/config/preferences.toml']) {
+				if (plannedFiles.find(file => file.relativePath === relativePath)?.status === 'unchanged') customizedFiles.add(relativePath);
+			}
+		}
+		const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
+		const preferenceOptions = existingConfig && !options.interactive
+			? { ...options, locale: parsedOptions.locale, profile: parsedOptions.profile } : options;
+		if (applyInitPreferences(targetRoot, preferencesPath, template, preferenceOptions, recovery)) {
+			customizedFiles.add('.mustflow/config/preferences.toml');
+			reporter.stdout(t(lang, 'init.action.customizedPreferences'));
 		}
 
-		if (file.status === 'merge') {
-			ensureFileTargetInsideWithoutSymlinks(targetRoot, file.targetPath);
-			const mergedContent =
-				file.relativePath === GITIGNORE_RELATIVE_PATH
-					? mergeGitignoreContent(
-							readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath),
-							readTemplateSourceText(file.sourceRoot, file.sourcePath),
-						)
-					: mergeAgentsContent(readUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath), selectedLocale, options.workflow === 'simple' ? file.content : undefined);
+		recovery.assertApplied();
+		writeManifestLock(targetRoot, template, plannedFiles, options, customizedFiles, recovery);
+		recovery.assertApplied();
+		reporter.stdout(t(lang, 'init.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
 
-			writeUtf8FileInsideWithoutSymlinks(targetRoot, file.targetPath, mergedContent);
-			merged += 1;
-			reporter.stdout(t(lang, 'init.action.merged', { path: file.relativePath }));
-			continue;
-		}
-
-		if (file.status === 'overwrite') {
-			writePlannedFile(targetRoot, file);
-			overwritten += 1;
-			reporter.stdout(t(lang, 'init.action.overwrote', { path: file.relativePath }));
-		}
+		reporter.stdout(
+			t(lang, 'init.complete', { created, merged, overwritten, unchanged }),
+		);
+		return 0;
+	} catch (error) {
+		throw recovery.recover(error);
 	}
-
-	const customizedFiles = new Set<string>();
-	if (options.migrateToSimple) {
-		customizedFiles.add('.mustflow/config/mustflow.toml');
-		for (const relativePath of ['.mustflow/config/commands.toml', '.mustflow/config/preferences.toml']) {
-			if (plannedFiles.find(file => file.relativePath === relativePath)?.status === 'unchanged') customizedFiles.add(relativePath);
-		}
-	}
-	const preferencesPath = path.join(targetRoot, '.mustflow', 'config', 'preferences.toml');
-	const preferenceOptions = existingConfig && !options.interactive
-		? { ...options, locale: parsedOptions.locale, profile: parsedOptions.profile } : options;
-	if (applyInitPreferences(targetRoot, preferencesPath, template, preferenceOptions)) {
-		customizedFiles.add('.mustflow/config/preferences.toml');
-		reporter.stdout(t(lang, 'init.action.customizedPreferences'));
-	}
-
-	writeManifestLock(targetRoot, template, plannedFiles, options, customizedFiles);
-	reporter.stdout(t(lang, 'init.action.wrote', { path: MANIFEST_LOCK_RELATIVE_PATH }));
-
-	reporter.stdout(
-		t(lang, 'init.complete', { created, merged, overwritten, unchanged }),
-	);
-	return 0;
 }

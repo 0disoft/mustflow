@@ -530,9 +530,15 @@ test('shared skill contract helper changes stay inside authoring contract covera
 	assert.ok(selected.size < full.selected.length);
 });
 
-test('update recovery changes select only their update lifecycle checks', () => {
+test('recovery modules select only their focused lifecycle checks', () => {
 	assert.deepEqual(selectedFor(['src/cli/lib/update-recovery.ts']), new Set([
 		'update.test.js',
 		'update-backup-isolation.test.js',
+	]));
+	assert.deepEqual(selectedFor(['src/cli/lib/init-recovery.ts']), new Set([
+		'init.test.js', 'init-backup-isolation.test.js', 'workflow-simple.test.js',
+	]));
+	assert.deepEqual(selectedFor(['src/cli/lib/file-mutation-recovery.ts']), new Set([
+		'init-backup-isolation.test.js', 'update-backup-isolation.test.js',
 	]));
 });
