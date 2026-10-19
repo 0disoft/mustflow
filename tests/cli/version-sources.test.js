@@ -183,6 +183,37 @@ test('detects Go module version source only with a semver release tag', async ()
 	}
 });
 
+test('detects Go release tags from a linked Git common directory', async () => {
+	const projectPath = createVersionSourcesProject();
+
+	try {
+		unlinkSync(path.join(projectPath, '.mustflow', 'config', 'manifest.lock.toml'));
+		writeFileSync(path.join(projectPath, 'go.mod'), 'module example.com/app\n\ngo 1.22\n');
+		const commonDirectory = path.join(projectPath, 'git metadata');
+		const gitDirectory = path.join(commonDirectory, 'worktrees', 'linked');
+		mkdirSync(gitDirectory, { recursive: true });
+		mkdirSync(path.join(commonDirectory, 'refs', 'tags'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.git'), `gitdir: ${path.relative(projectPath, gitDirectory)}\n`);
+		const hash = '0'.repeat(40);
+		for (const absolutePointer of [false, true]) {
+			writeFileSync(path.join(gitDirectory, 'commondir'), `${absolutePointer ? commonDirectory : path.relative(gitDirectory, commonDirectory)}\n`);
+			const withoutTag = await runCli(projectPath, ['version-sources', '--json']);
+			assert.equal(withoutTag.status, 0);
+			assert.deepEqual(JSON.parse(withoutTag.stdout).sources, []);
+			for (const packed of [false, true]) {
+				const tagPath = path.join(commonDirectory, ...(packed ? ['packed-refs'] : ['refs', 'tags', 'v1.2.3']));
+				writeFileSync(tagPath, packed ? `${hash} refs/tags/v1.2.3\n` : `${hash}\n`);
+				const result = await runCli(projectPath, ['version-sources', '--json']);
+				assert.equal(result.status, 0);
+				assert.deepEqual(JSON.parse(result.stdout).sources, [{ path: 'go.mod', kind: 'package_manifest' }]);
+				unlinkSync(tagPath);
+			}
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('ignores package lockfiles unless a repository declares them as version sources', async () => {
 	const projectPath = createVersionSourcesProject();
 

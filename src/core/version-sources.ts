@@ -162,7 +162,17 @@ function hasSemverReleaseTag(projectRoot: string): boolean {
 		return false;
 	}
 
-	const tagRoot = path.join(gitDirectory, 'refs', 'tags');
+	let referenceDirectory = gitDirectory;
+	try {
+		const commonDirectory = readFileSync(path.join(gitDirectory, 'commondir'), 'utf8').trim();
+		if (commonDirectory) {
+			referenceDirectory = path.resolve(gitDirectory, commonDirectory);
+		}
+	} catch {
+		// Ordinary repositories store shared refs directly in their Git directory.
+	}
+
+	const tagRoot = path.join(referenceDirectory, 'refs', 'tags');
 
 	try {
 		for (const entry of readdirSync(tagRoot, { withFileTypes: true })) {
@@ -175,7 +185,7 @@ function hasSemverReleaseTag(projectRoot: string): boolean {
 	}
 
 	try {
-		const packedRefs = readFileSync(path.join(gitDirectory, 'packed-refs'), 'utf8');
+		const packedRefs = readFileSync(path.join(referenceDirectory, 'packed-refs'), 'utf8');
 		return packedRefs
 			.split(/\r?\n/u)
 			.some((line) => GO_RELEASE_TAG_PATTERN.test(line.replace(/^.*\srefs\/tags\//u, '').trim()));
