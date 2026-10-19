@@ -48,6 +48,7 @@ const template = ${JSON.stringify(template)};
 const fault = ${JSON.stringify(fault)};
 let failed = false;
 let templateChanged = false;
+let projectChanged = false;
 let manifestReads = 0;
 fs.readFileSync = (file, ...args) => {
   if (typeof file === 'string' && path.resolve(file) === path.join(template, 'manifest.toml')) manifestReads++;
@@ -101,6 +102,10 @@ fs.renameSync = (source, target) => {
     throw Object.assign(new Error('Injected recovery failure'), { code: 'EACCES' });
   }
   const result = rename(source, target);
+  if (!projectChanged && relative === fault.editAfterPath) {
+    projectChanged = true;
+    for (const entry of fault.editAfterWrite ?? []) fs.writeFileSync(path.join(root, entry.path), entry.content);
+  }
   if (!templateChanged && relative === fault.templateAfterPath) {
     templateChanged = true;
     changeTemplate(fault.templateAfterWrite);
@@ -460,6 +465,36 @@ test('recovery preserves a concurrent user edit instead of overwriting it', () =
 		assert.equal(readFileSync(f.agents, 'utf8'), userEdit);
 		const archive = path.join(f.backups, readdirSync(f.backups)[0]);
 		assert.ok(readFileSync(path.join(archive, 'AGENTS.md'), 'utf8') === f.original);
+	} finally { cleanup(f.root); }
+});
+
+test('update does not seal a concurrent edit as a template baseline after applying files', () => {
+	const f = fixture();
+	try {
+		const workflow = '.mustflow/docs/agent-workflow.md';
+		const workflowSource = path.join(f.template, 'locales/en', workflow);
+		const workflowTarget = path.join(f.project, workflow);
+		const originalWorkflow = readFileSync(workflowTarget, 'utf8');
+		const lockPath = path.join(f.project, '.mustflow/config/manifest.lock.toml');
+		const originalLock = readFileSync(lockPath, 'utf8');
+		const userEdit = '# Concurrent user rules\nKeep this change.\n';
+		writeFileSync(f.source, `${f.original}\n<!-- template update -->\n`);
+		writeFileSync(workflowSource, `${originalWorkflow}\n<!-- workflow update -->\n`);
+		const result = f.run(['update', '--apply', '--json'], false, {
+			editAfterPath: workflow,
+			editAfterWrite: [{ path: 'AGENTS.md', content: userEdit }],
+		});
+		assert.equal(result.status, 1, 'a user edit must not become an overwriteable template baseline');
+		const output = JSON.parse(result.stdout);
+		assert.equal(output.ok, false);
+		assert.equal(output.wroteFiles, true);
+		assert.match(output.error, /File changed after update write: AGENTS\.md/);
+		assert.match(output.error, /Automatic recovery incomplete/);
+		assert.equal(readFileSync(f.agents, 'utf8'), userEdit);
+		assert.equal(readFileSync(workflowTarget, 'utf8'), originalWorkflow);
+		assert.equal(readFileSync(lockPath, 'utf8'), originalLock);
+		const next = JSON.parse(f.run(['update', '--dry-run', '--json'], false).stdout);
+		assert.equal(next.items.find(item => item.relativePath === 'AGENTS.md').action, 'blocked-local-change');
 	} finally { cleanup(f.root); }
 });
 

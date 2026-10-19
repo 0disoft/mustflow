@@ -46,6 +46,14 @@ export class UpdateRecovery {
 		this.prepare(relativePath, null);
 	}
 
+	assertApplied(): void {
+		for (const [relativePath, mutation] of this.mutations) {
+			if (contentHash(this.read(path.join(this.projectRoot, relativePath))) !== mutation.nextHash) {
+				throw new Error(`File changed after update write: ${relativePath}`);
+			}
+		}
+	}
+
 	rollback(): string[] {
 		const failures: string[] = [];
 		for (const [relativePath, mutation] of [...this.mutations].reverse()) {

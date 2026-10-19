@@ -469,7 +469,7 @@ function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePl
 	return backupRoot;
 }
 
-function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly UpdatePlanItem[], recovery: UpdateRecovery, templateIdentity: PlannedTemplateIdentity): void {
+function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonly InternalUpdatePlanItem[], recovery: UpdateRecovery, templateIdentity: PlannedTemplateIdentity): void {
 	if (appliedItems.length === 0) {
 		return;
 	}
@@ -501,6 +501,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 		ensureFileTargetInsideWithoutSymlinks(projectRoot, targetPath);
 		const existing = filesTable[item.relativePath];
 		const existingTable = isMutableTable(existing) ? existing : {};
+		if (item.plannedContent === undefined) throw new Error(`Missing planned template content: ${item.relativePath}`);
 
 		filesTable[item.relativePath] = {
 			source:
@@ -510,12 +511,13 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 						? 'template_locale'
 						: 'template_common',
 			last_action: fileActionToLockAction(item.action),
-			content_hash: sha256File(targetPath),
+			content_hash: sha256Content(item.plannedContent),
 		};
 	}
 
 	parsed.files = filesTable;
 	const content = stringifyToml(parsed);
+	recovery.assertApplied();
 	recovery.prepareWrite(MANIFEST_LOCK_RELATIVE_PATH, content);
 	writeUtf8FileInsideWithoutSymlinks(projectRoot, lockPath, content);
 }
@@ -525,7 +527,7 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 	let updated = 0;
 	let removed = 0;
 	let wroteFiles = false;
-	const appliedItems: UpdatePlanItem[] = [];
+	const appliedItems: InternalUpdatePlanItem[] = [];
 	if (!templateIdentity) throw new Error('Missing planned template identity');
 
 	const backupRoot = backupUpdateFiles(projectRoot, items, reporter, lang, manifestHash);
