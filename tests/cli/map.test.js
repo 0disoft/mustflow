@@ -711,6 +711,10 @@ test('follows only in-root workspace symlinks when enabled', (t) => {
 			t.skip('directory symlinks are unavailable in this environment');
 			return;
 		}
+		if (!trySymlink(path.join(projectPath, 'projects'), path.join(projectPath, 'projects', 'loop'))) {
+			t.skip('directory symlinks are unavailable in this environment');
+			return;
+		}
 
 		const result = runMap(projectPath, ['--stdout']);
 
@@ -718,8 +722,28 @@ test('follows only in-root workspace symlinks when enabled', (t) => {
 		assert.match(result.stdout, /### `projects\/linked\/`/);
 		assert.match(result.stdout, /agent rules: `projects\/linked\/AGENTS\.md`/);
 		assert.doesNotMatch(result.stdout, /projects\/external/);
+		assert.doesNotMatch(result.stdout, /### `projects\/loop\//);
 	} finally {
 		removeTempProject(projectPath);
 		rmSync(outsidePath, { recursive: true, force: true });
 	}
+});
+
+test('overlapping workspace roots retain each root depth budget regardless of order', () => {
+	const projectPath = createTempProject();
+	try {
+		createMinimalRepositoryAt(path.join(projectPath, 'projects', 'group', 'level', 'leaf'), 'Leaf');
+		createMinimalRepositoryAt(path.join(projectPath, 'projects', 'group', 'level', 'more', 'too-deep'), 'Too deep');
+		for (const roots of [['projects', 'projects/group', 'projects/group'], ['projects/group', 'projects']]) {
+			writeWorkspaceMapConfig(projectPath);
+			const configPath = path.join(projectPath, '.mustflow/config/mustflow.toml');
+			writeFileSync(configPath, readFileSync(configPath, 'utf8')
+				.replace('roots = ["projects"]', `roots = ${JSON.stringify(roots)}`)
+				.replace('max_depth = 4', 'max_depth = 3'));
+			const result = runMap(projectPath, ['--stdout']);
+			assert.equal(result.status, 0);
+			assert.equal(result.stdout.split('### `projects/group/level/leaf/`').length - 1, 1, `missing or duplicate repository for roots ${roots}`);
+			assert.doesNotMatch(result.stdout, /### `projects\/group\/level\/more\/too-deep\//);
+		}
+	} finally { removeTempProject(projectPath); }
 });

@@ -984,7 +984,7 @@ export function discoverNestedRepositories(
 
 	const repositories: NestedRepository[] = [];
 	const seenRepositoryPaths = new Set<string>();
-	const seenDirectoryPaths = new Set<string>();
+	const seenDirectoryDepths = new Map<string, number>();
 	let projectRootRealPath: string;
 	try {
 		projectRootRealPath = realpathSync(projectRoot);
@@ -997,11 +997,13 @@ export function discoverNestedRepositories(
 			return;
 		}
 
-		if (seenDirectoryPaths.has(directoryTarget.realPath)) {
+		const previousDepth = seenDirectoryDepths.get(directoryTarget.realPath);
+		if (previousDepth !== undefined && previousDepth <= depth) {
 			return;
 		}
 
-		seenDirectoryPaths.add(directoryTarget.realPath);
+		// An overlapping root may reach the same directory with more depth remaining.
+		seenDirectoryDepths.set(directoryTarget.realPath, depth);
 
 		if (hasGitMarker(directoryTarget.logicalPath)) {
 			const resolvedRepositoryPath = directoryTarget.realPath;
