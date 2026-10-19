@@ -1017,7 +1017,8 @@ export function discoverNestedRepositories(
 		}
 
 		for (const entry of readdirSync(directoryTarget.logicalPath, { withFileTypes: true })) {
-			if (EXCLUDED_SEGMENTS.has(entry.name)) {
+			if (EXCLUDED_SEGMENTS.has(entry.name)
+				|| (!entry.isDirectory() && !(workspaceConfig.followSymlinks && entry.isSymbolicLink()))) {
 				continue;
 			}
 
