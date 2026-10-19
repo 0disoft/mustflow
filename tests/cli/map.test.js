@@ -578,6 +578,30 @@ test('surfaces ssealed-style scaffold anchors in nested repositories', () => {
 	}
 });
 
+test('excludes mustflow backups from nested repository anchors', () => {
+	const projectPath = createTempProject();
+
+	try {
+		writeWorkspaceMapConfig(projectPath);
+		createNestedRepository(projectPath);
+		const nestedPath = path.join(projectPath, 'projects', 'alpha');
+		for (const directory of ['backups', 'backups-current']) {
+			const snapshot = path.join(nestedPath, '.mustflow', directory, 'snapshot');
+			mkdirSync(snapshot, { recursive: true });
+			writeFileSync(path.join(snapshot, 'project.contract.json'), '{}\n');
+		}
+
+		const result = runMap(projectPath, ['--stdout']);
+
+		assert.equal(result.status, 0);
+		assert.doesNotMatch(result.stdout, /\.mustflow\/backups\//);
+		assert.match(result.stdout, /projects\/alpha\/project\.contract\.json/);
+		assert.match(result.stdout, /\.mustflow\/backups-current\/snapshot\/project\.contract\.json/);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('limits untracked filesystem discovery to anchor candidates', (t) => {
 	const projectPath = createTempProject();
 

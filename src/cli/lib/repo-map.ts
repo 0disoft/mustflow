@@ -547,6 +547,10 @@ function listAnchorCandidateFilesRecursive(
 			const entryPath = path.join(currentPath, entry.name);
 			const relativePath = toPosixPath(path.relative(rootPath, entryPath));
 
+			if (isUnderExcludedPrefix(relativePath, EXCLUDED_PREFIXES)) {
+				continue;
+			}
+
 			if (entry.isDirectory()) {
 				if (EXCLUDED_SEGMENTS.has(entry.name) || directoryDepth >= depth) {
 					continue;
