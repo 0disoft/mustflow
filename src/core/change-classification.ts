@@ -136,7 +136,7 @@ export function parseGitStatusOutput(output: string): string[] {
 }
 
 export function classifyChangePath(relativePath: string): ChangeClassification {
-	const normalizedPath = normalizeStatusPath(relativePath);
+	const normalizedPath = toPosixPath(relativePath);
 	const rule = CHANGE_CLASSIFICATION_RULES.find((candidate) => candidate.match.test(normalizedPath));
 
 	return {
@@ -161,7 +161,7 @@ export function createChangeClassificationReport(
 	source: ChangeSource,
 	relativePaths: readonly string[],
 ): ChangeClassificationReport {
-	const files = uniqueSorted(relativePaths.map(normalizeStatusPath).filter((filePath) => filePath.length > 0));
+	const files = uniqueSorted(relativePaths.map(toPosixPath).filter((filePath) => filePath.length > 0));
 	const classifications = files.map(classifyChangePath);
 
 	return {

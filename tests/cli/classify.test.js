@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { runClassify } from '../../dist/cli/commands/classify.js';
-import { parseGitStatusOutput } from '../../dist/core/change-classification.js';
+import { createChangeClassificationReport, parseGitStatusOutput } from '../../dist/core/change-classification.js';
 import {
 	cloneProjectFixture,
 	createTempProject,
@@ -188,6 +188,38 @@ test('parses nul-delimited git status without treating arrows in filenames as re
 	].join('\0');
 
 	assert.deepEqual(parseGitStatusOutput(output), ['docs/a -> b.md', 'docs/new name.md', 'docs/old name.md', 'README.md']);
+	const report = createChangeClassificationReport('changed', parseGitStatusOutput(output));
+	assert.deepEqual(report.files, ['docs/a -> b.md', 'docs/new name.md', 'docs/old name.md', 'README.md']);
+	assert.deepEqual(report.classifications.map((entry) => entry.path), report.files);
+});
+
+test('preserves Git paths for deleted, renamed and leading-space files', async () => {
+	const projectPath = createClassifyGitProject();
+
+	try {
+		mkdirSync(path.join(projectPath, 'docs'), { recursive: true });
+		mkdirSync(path.join(projectPath, ' docs'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'docs', 'old.md'), '# Rename\n');
+		writeFileSync(path.join(projectPath, 'docs', 'deleted.md'), '# Delete\n');
+		runGit(projectPath, ['add', '.']);
+		runGit(projectPath, ['commit', '-m', 'path fixture']);
+		runGit(projectPath, ['mv', 'docs/old.md', ' docs/renamed.md']);
+		runGit(projectPath, ['rm', 'docs/deleted.md']);
+		writeFileSync(path.join(projectPath, ' leading.md'), '# Untracked\n');
+
+		const result = await runCli(projectPath, ['classify', '--changed', '--json']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		const report = JSON.parse(result.stdout);
+		const expected = [' docs/renamed.md', ' leading.md', 'docs/deleted.md', 'docs/old.md'];
+		expected.sort((left, right) => left.localeCompare(right));
+		assert.deepEqual(report.files, expected);
+		assert.deepEqual(report.classifications.map((entry) => entry.path), expected);
+		const explicit = await runCli(projectPath, ['classify', ' leading.md', '--json']);
+		assert.equal(explicit.status, 0);
+		assert.deepEqual(JSON.parse(explicit.stdout).files, [' leading.md']);
+	} finally {
+		removeTempProject(projectPath);
+	}
 });
 
 test('classifies changed git status paths', async () => {
