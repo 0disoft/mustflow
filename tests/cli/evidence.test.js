@@ -199,6 +199,37 @@ test('evidence changed report links verification requirements to latest evidence
 	}
 });
 
+test('evidence reads relative and absolute plan paths while rejecting outside paths', async () => {
+	const projectPath = createEvidenceProject();
+	const outsideProject = createEvidenceProject();
+
+	try {
+		const plan = { command: 'api verification-plan', verification_plan_id: 'sha256:path-probe', requirements: [] };
+		const planPath = path.join(projectPath, 'saved plan.json');
+		const outsidePath = path.join(outsideProject, 'outside.json');
+		writeFileSync(planPath, JSON.stringify(plan));
+		writeFileSync(outsidePath, JSON.stringify(plan));
+		let expectedPlan;
+		for (const inputPath of ['saved plan.json', planPath]) {
+			const result = await runCli(projectPath, ['evidence', '--plan', inputPath, '--json']);
+			const output = JSON.parse(result.stdout);
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+			assert.equal(output.plan.status, 'available');
+			assert.equal(output.plan.verification_plan_id, plan.verification_plan_id);
+			if (expectedPlan) assert.deepEqual(output.plan, expectedPlan);
+			expectedPlan = output.plan;
+		}
+		for (const inputPath of [outsidePath, path.relative(projectPath, outsidePath)]) {
+			const result = await runCli(projectPath, ['evidence', '--plan', inputPath, '--json']);
+			assert.equal(result.status, 1);
+			assert.equal(JSON.parse(result.stdout).plan.status, 'unavailable');
+		}
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsideProject);
+	}
+});
+
 test('evidence latest report summarizes missing latest evidence without raw output', async () => {
 	const projectPath = createEvidenceProject();
 

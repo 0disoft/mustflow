@@ -564,9 +564,9 @@ function createPlanFromFile(mustflowRoot: string, planPath: string, latest: Evid
 	};
 }
 
-function readJsonInsideRoot(projectRoot: string, relativePath: string): unknown {
+function readJsonInsideRoot(projectRoot: string, filePath: string): unknown {
 	return JSON.parse(
-		readUtf8FileInsideWithoutSymlinks(projectRoot, path.join(projectRoot, ...relativePath.split('/')), {
+		readUtf8FileInsideWithoutSymlinks(projectRoot, path.resolve(projectRoot, filePath), {
 			maxBytes: MAX_JSON_BYTES,
 		}),
 	);
