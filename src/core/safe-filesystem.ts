@@ -78,7 +78,7 @@ export function ensureInside(parentPath: string, childPath: string): void {
 	const child = path.resolve(childPath);
 	const relative = path.relative(parent, child);
 
-	if (relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative))) {
+	if (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)) {
 		return;
 	}
 

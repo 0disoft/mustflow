@@ -158,6 +158,27 @@ test('toPosixPath normalizes mixed separators without host-specific path assumpt
 	assert.equal(toPosixPath('docs/site/page.md'), 'docs/site/page.md');
 });
 
+test('safe file copy accepts dot-prefixed names while rejecting parent and sibling escapes', async () => {
+	const { copyFileInsideWithoutSymlinks } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
+	const rootPath = createTempProject();
+	const sourceRoot = path.join(rootPath, 'source');
+	const targetRoot = path.join(rootPath, 'target');
+	try {
+		mkdirSync(sourceRoot);
+		mkdirSync(targetRoot);
+		const source = path.join(sourceRoot, '..notes.md');
+		const target = path.join(targetRoot, '..cache', '..notes.md');
+		writeFileSync(source, '# Valid hidden notes\n');
+		copyFileInsideWithoutSymlinks(sourceRoot, source, targetRoot, target);
+		assert.equal(readFileSync(target, 'utf8'), '# Valid hidden notes\n');
+		for (const outside of [path.join(rootPath, 'escaped.md'), path.join(rootPath, 'target-sibling', 'notes.md')]) {
+			assert.throws(() => copyFileInsideWithoutSymlinks(sourceRoot, source, targetRoot, outside), /Path escapes allowed directory/);
+			assert.equal(existsSync(outside), false);
+		}
+		assert.throws(() => copyFileInsideWithoutSymlinks(targetRoot, source, targetRoot, path.join(targetRoot, 'copy.md')), /Path escapes allowed directory/);
+	} finally { removeTempProject(rootPath); }
+});
+
 test('safe file copy rejects symlinked source and target paths', async (t) => {
 	const { copyFileInsideWithoutSymlinks } = await import(pathToFileURL(path.join(projectRoot, 'dist', 'cli', 'lib', 'filesystem.js')).href);
 	const rootPath = createTempProject();
