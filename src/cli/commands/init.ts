@@ -1139,6 +1139,7 @@ function buildPlannedFiles(
 	targetRoot: string,
 	options: InitOptions,
 ): PlannedFile[] {
+	ensureFileTargetInsideWithoutSymlinks(targetRoot, path.join(targetRoot, MANIFEST_LOCK_RELATIVE_PATH), { allowMissingLeaf: true });
 	const selectedProfile = options.profile ?? template.manifest.defaultProfile;
 	const sources = getTemplateFiles(template, selectedLocale, selectedProfile, { workflow: options.workflow });
 	const migration = options.migrateToSimple ? prepareSimpleWorkflowMigration(targetRoot, sources) : undefined;

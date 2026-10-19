@@ -101,3 +101,45 @@ test('real init CLI never overwrites a pre-existing timestamp recovery directory
 		assert.deepEqual(copies.sort(), [olderCopy, current].sort());
 	} finally { cleanup(root); }
 });
+
+for (const scenario of [
+	{ name: 'merge', args: ['--merge'], kind: 'directory' },
+	{ name: 'merge', args: ['--merge'], kind: 'symlink' },
+	{ name: 'force', args: ['--force'], kind: 'directory' },
+	{ name: 'strict-to-simple migration', args: ['--workflow', 'simple', '--merge'], kind: 'directory' },
+]) {
+	test(`${scenario.name} rejects a manifest ${scenario.kind} before changing project files`, (t) => {
+		const f = fixture(['--workflow', 'strict']);
+		try {
+			const lockPath = path.join(f.root, '.mustflow/config/manifest.lock.toml');
+			writeFileSync(f.agentsPath, '# Consumer rules\nKeep these exact bytes.\n');
+			writeFileSync(path.join(f.root, '.gitignore'), '# Consumer ignore rules\nlocal-cache/\n');
+			const originals = new Map(['AGENTS.md', '.gitignore', '.mustflow/config/mustflow.toml', '.mustflow/config/preferences.toml']
+				.map(relative => [relative, readFileSync(path.join(f.root, relative), 'utf8')]));
+			rmSync(lockPath);
+			let sentinel;
+			if (scenario.kind === 'directory') {
+				mkdirSync(lockPath);
+				sentinel = path.join(lockPath, 'keep.txt');
+				writeFileSync(sentinel, 'Do not change this target.\n');
+			} else {
+				sentinel = path.join(f.root, 'linked-lock.toml');
+				writeFileSync(sentinel, 'Do not change this target.\n');
+				try { symlinkSync(sentinel, lockPath, 'file'); }
+				catch (error) {
+					if (error.code !== 'EPERM') throw error;
+					t.skip('file symlinks are unavailable');
+					return;
+				}
+			}
+			const result = f.run(scenario.args, false);
+			assert.equal(result.status, 1);
+			assert.match(result.stderr + result.stdout, /regular file|symlinks/);
+			for (const [relative, original] of originals) {
+				assert.equal(readFileSync(path.join(f.root, relative), 'utf8'), original, `${relative} must remain unchanged`);
+			}
+			assert.equal(readFileSync(sentinel, 'utf8'), 'Do not change this target.\n');
+			assert.equal(existsSync(f.backupsPath), false, 'preflight must precede backup creation');
+		} finally { cleanup(f.root); }
+	});
+}
