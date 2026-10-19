@@ -539,6 +539,7 @@ function listAnchorCandidateFilesRecursive(
 	rootPath: string,
 	depth: number,
 	priorityPaths: ReadonlySet<string>,
+	excludedPrefixes: readonly string[] = EXCLUDED_PREFIXES,
 ): string[] {
 	const results: string[] = [];
 
@@ -547,7 +548,7 @@ function listAnchorCandidateFilesRecursive(
 			const entryPath = path.join(currentPath, entry.name);
 			const relativePath = toPosixPath(path.relative(rootPath, entryPath));
 
-			if (isUnderExcludedPrefix(relativePath, EXCLUDED_PREFIXES)) {
+			if (isUnderExcludedPrefix(relativePath, excludedPrefixes)) {
 				continue;
 			}
 
@@ -574,7 +575,12 @@ function listAnchorCandidateFilesRecursive(
 	return results.sort();
 }
 
-function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: ReadonlySet<string>): RepositoryFiles {
+function getRepositoryFiles(
+	projectRoot: string,
+	depth: number,
+	priorityPaths: ReadonlySet<string>,
+	excludedPrefixes: readonly string[],
+): RepositoryFiles {
 	const files = new Set<string>();
 	const gitFiles = discoverGitFilesForRepoMap(projectRoot);
 
@@ -582,7 +588,7 @@ function getRepositoryFiles(projectRoot: string, depth: number, priorityPaths: R
 		files.add(relativePath);
 	}
 
-	for (const relativePath of listAnchorCandidateFilesRecursive(projectRoot, depth, priorityPaths)) {
+	for (const relativePath of listAnchorCandidateFilesRecursive(projectRoot, depth, priorityPaths, excludedPrefixes)) {
 		files.add(relativePath);
 	}
 
@@ -727,7 +733,11 @@ function discoverAnchors(
 	nestedRepositories: readonly NestedRepository[],
 	excludedPrefixes: readonly string[],
 ): AnchorDiscovery {
-	const repositoryFiles = getRepositoryFiles(projectRoot, depth, priorityPaths);
+	const repositoryFiles = getRepositoryFiles(projectRoot, depth, priorityPaths, [
+		...EXCLUDED_PREFIXES,
+		...excludedPrefixes,
+		...nestedRepositories.map((repository) => repository.relativePath),
+	]);
 	const anchors = repositoryFiles.files
 		.filter(shouldIncludePath)
 		.filter((relativePath) => !isUnderNestedRepository(relativePath, nestedRepositories))
