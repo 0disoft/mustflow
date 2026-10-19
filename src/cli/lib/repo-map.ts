@@ -1027,12 +1027,16 @@ export function discoverNestedRepositories(
 				repositories.push(collectNestedRepository(projectRoot, directoryTarget.logicalPath, mapConfig.anchorFiles));
 			}
 
-			if (workspaceConfig.stopAtRepositoryRoot) {
+			if (workspaceConfig.stopAtRepositoryRoot || repositories.length >= workspaceConfig.maxRepositories) {
 				return;
 			}
 		}
 
 		for (const entry of readdirSync(directoryTarget.logicalPath, { withFileTypes: true })) {
+			if (repositories.length >= workspaceConfig.maxRepositories) {
+				break;
+			}
+
 			if (EXCLUDED_SEGMENTS.has(entry.name)
 				|| (!entry.isDirectory() && !(workspaceConfig.followSymlinks && entry.isSymbolicLink()))) {
 				continue;
@@ -1051,6 +1055,10 @@ export function discoverNestedRepositories(
 	}
 
 	for (const workspaceRoot of workspaceConfig.roots) {
+		if (repositories.length >= workspaceConfig.maxRepositories) {
+			break;
+		}
+
 		if (!isSafeWorkspaceRoot(projectRoot, workspaceRoot)) {
 			continue;
 		}
