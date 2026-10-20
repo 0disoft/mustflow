@@ -208,6 +208,46 @@ test('change-impact returns an empty report outside a git worktree', () => {
 	}
 });
 
+test('export-diff preserves Unicode and spaced paths in working-tree and committed comparisons', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		const tracked = 'src/기능.ts';
+		const added = 'src/새 기능.ts';
+		const leading = ' leading.ts';
+		writeFileSync(path.join(projectPath, tracked), 'export function value(): number { return 1; }\n');
+		commitGitBaseline(projectPath);
+		runGit(projectPath, ['config', 'core.quotePath', 'true']);
+		writeFileSync(path.join(projectPath, tracked), 'export function value(): string { return "2"; }\n');
+		writeFileSync(path.join(projectPath, added), 'export function added(): boolean { return true; }\n');
+		writeFileSync(path.join(projectPath, leading), 'export function leading(): number { return 1; }\n');
+		const expectedPaths = [tracked, added, leading].sort();
+		const { result, report } = runCodeExportDiffJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(report.files.map((file) => file.path).sort(), expectedPaths);
+		const changed = report.exports.find((entry) => entry.path === tracked && entry.name === 'value');
+		assert.equal(changed?.change, 'changed');
+		assert.equal(changed?.compatibility, 'return_changed');
+		assert.equal(changed?.before.return_type, 'number');
+		assert.equal(changed?.after.return_type, 'string');
+		for (const filePath of [added, leading]) {
+			assert.ok(report.exports.some((entry) => entry.path === filePath && entry.change === 'added'));
+		}
+		assert.deepEqual(report.summary, { files_changed: 3, added: 2, removed: 0, changed: 1, unchanged: 0 });
+		assert.deepEqual(report.findings, []);
+
+		commitGitBaseline(projectPath);
+		const committed = runCodeExportDiffJson(projectPath, ['--base', 'HEAD~1', '--head', 'HEAD']);
+		assert.equal(committed.result.status, 0, committed.result.stderr || committed.result.stdout);
+		assert.deepEqual(committed.report.files.map((file) => file.path).sort(), expectedPaths);
+		assert.deepEqual(committed.report.summary, report.summary);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('export-diff compares exported signatures and return metadata against the working tree', () => {
 	const projectPath = createTempProject();
 

@@ -1739,6 +1739,17 @@ test('export-diff json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'export-diff-report.schema.json', JSON.parse(result.stdout));
+
+		const unicodePath = 'src/한글 기능.ts';
+		writeFileSync(path.join(projectPath, unicodePath), 'export function unicode(): number { return 1; }\n');
+		const unicode = runCli(projectPath, [
+			'script-pack', 'run', 'code/export-diff', 'compare', unicodePath, '--base', 'HEAD', '--json',
+		]);
+		assert.equal(unicode.status, 0, unicode.stderr || unicode.stdout);
+		const unicodeReport = JSON.parse(unicode.stdout);
+		assert.equal(unicodeReport.files[0].path, unicodePath);
+		assert.equal(unicodeReport.exports[0].change, 'added');
+		assertMatchesSchema(schemaRoot, 'export-diff-report.schema.json', unicodeReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

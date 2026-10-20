@@ -200,15 +200,15 @@ function isSupportedPath(relativePath: string): boolean {
 
 function splitGitPaths(stdout: string): readonly string[] {
 	return stdout
-		.split(/\r?\n/u)
-		.map((entry) => normalizeRelativePath(entry.trim()))
+		.split('\0')
+		.map((entry) => normalizeRelativePath(entry))
 		.filter((entry) => entry.length > 0 && entry !== '.');
 }
 
 function collectChangedPaths(root: string, policy: ExportDiffPolicy, findings: ExportDiffFinding[], issues: string[]): readonly string[] {
 	const diffArgs = policy.head_ref
-		? ['diff', '--name-only', '--diff-filter=ACMRTD', policy.base_ref, policy.head_ref, '--', ...policy.path_filters]
-		: ['diff', '--name-only', '--diff-filter=ACMRTD', policy.base_ref, '--', ...policy.path_filters];
+		? ['diff', '--name-only', '-z', '--diff-filter=ACMRTD', policy.base_ref, policy.head_ref, '--', ...policy.path_filters]
+		: ['diff', '--name-only', '-z', '--diff-filter=ACMRTD', policy.base_ref, '--', ...policy.path_filters];
 	const diff = runGit(root, diffArgs);
 	if (!diff.ok) {
 		const detail = diff.stderr.trim() || diff.stdout.trim() || `git diff exited with ${diff.status}`;
@@ -219,7 +219,7 @@ function collectChangedPaths(root: string, policy: ExportDiffPolicy, findings: E
 
 	const changed = new Set(splitGitPaths(diff.stdout));
 	if (!policy.head_ref) {
-		const untracked = runGit(root, ['ls-files', '--others', '--exclude-standard', '--', ...policy.path_filters]);
+		const untracked = runGit(root, ['ls-files', '-z', '--others', '--exclude-standard', '--', ...policy.path_filters]);
 		if (untracked.ok) {
 			for (const entry of splitGitPaths(untracked.stdout)) {
 				changed.add(entry);
