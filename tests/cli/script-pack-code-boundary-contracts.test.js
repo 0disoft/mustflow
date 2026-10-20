@@ -94,6 +94,37 @@ test('dependency-graph scans runtime-suffixed TypeScript imports with bounded no
 	}
 });
 
+test('dependency-graph bounds initial and discovered nodes without dangling edges', async (t) => {
+	const projectPath = createTempProject();
+
+	try {
+		mkdirSync(path.join(projectPath, '.mustflow/config'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.mustflow/config/mustflow.toml'), 'schema_version = "1"\n');
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src/a.ts'), 'import "./b.js";\n');
+		writeFileSync(path.join(projectPath, 'src/b.ts'), 'export {};\n');
+		writeFileSync(path.join(projectPath, 'src/c.ts'), 'import "./a.js";\n');
+		for (const [target, limit, expectedPaths, truncated] of [
+			['src', 2, ['src/a.ts', 'src/b.ts'], true],
+			['src/a.ts', 1, ['src/a.ts'], true],
+			['src', 3, ['src/a.ts', 'src/b.ts', 'src/c.ts'], false],
+		]) {
+			await t.test(`${target} with max-nodes ${limit}`, () => {
+				const { result, report } = runCodeDependencyGraphJson(projectPath, [target, '--max-nodes', String(limit)]);
+				assert.equal(result.status, truncated ? 1 : 0, result.stderr || result.stdout);
+				assert.equal(report.truncated, truncated);
+				assert.deepEqual(report.nodes.map((node) => node.path), expectedPaths);
+				assert.equal(report.findings.some((finding) => finding.code === 'dependency_graph_max_nodes_exceeded'), truncated);
+				const nodes = new Set(expectedPaths);
+				assert.ok(report.edges.every((edge) => nodes.has(edge.source_path) && nodes.has(edge.target_path)));
+				assert.equal(report.edges.length, limit - 1);
+			});
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph reports import cycles as hints without failing the helper', () => {
 	const projectPath = createTempProject();
 

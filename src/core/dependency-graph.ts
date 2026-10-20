@@ -444,12 +444,23 @@ function buildIncludedGraph(
 	findings: DependencyGraphFinding[],
 	issues: string[],
 ): { readonly nodeDepth: ReadonlyMap<string, number>; readonly edges: readonly DependencyGraphEdge[] } {
-	const queue = startPaths.map((sourcePath) => ({ sourcePath, depth: 0 }));
+	const queue: { sourcePath: string; depth: number }[] = [];
 	const nodeDepth = new Map<string, number>();
 	const edgeMap = new Map<string, DependencyGraphEdge>();
 
 	for (const sourcePath of startPaths) {
+		if (nodeDepth.size >= policy.max_nodes) {
+			addGraphFinding(
+				findings,
+				issues,
+				'dependency_graph_max_nodes_exceeded',
+				sourcePath,
+				`Dependency graph found more than ${policy.max_nodes} nodes; remaining nodes were skipped.`,
+			);
+			break;
+		}
 		nodeDepth.set(sourcePath, 0);
+		queue.push({ sourcePath, depth: 0 });
 	}
 
 	while (queue.length > 0) {
@@ -459,7 +470,6 @@ function buildIncludedGraph(
 		}
 
 		for (const edge of dependencyEdgesFor(current.sourcePath, importMap)) {
-			addEdge(edgeMap, edge, policy, findings, issues);
 			if (!nodeDepth.has(edge.target_path)) {
 				if (nodeDepth.size >= policy.max_nodes) {
 					addGraphFinding(
@@ -474,6 +484,7 @@ function buildIncludedGraph(
 				nodeDepth.set(edge.target_path, current.depth + 1);
 				queue.push({ sourcePath: edge.target_path, depth: current.depth + 1 });
 			}
+			addEdge(edgeMap, edge, policy, findings, issues);
 		}
 	}
 
