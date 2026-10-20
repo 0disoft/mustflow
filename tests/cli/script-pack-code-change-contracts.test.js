@@ -71,6 +71,16 @@ test('change-impact reports changed surfaces, importers, and verification hints'
 		assert.deepEqual(selectorHint.expected_fallback_reasons, []);
 		assert.ok(report.script_hints.some((hint) => hint.script_ref === 'code/dependency-graph'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_related'));
+
+		const limited = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD', '--max-file-bytes', '8']);
+		assert.equal(limited.result.status, 1, limited.result.stderr || limited.result.stdout);
+		assert.equal(limited.report.status, 'failed');
+		assert.equal(limited.report.ok, false);
+		assert.equal(limited.report.truncated, false);
+		assert.ok(limited.report.findings.some((finding) => finding.code === 'change_impact_dependency_graph_error'
+			&& finding.path === 'src/consumer.ts' && finding.severity === 'high'));
+		assert.ok(limited.report.issues.some((issue) => issue.includes('dependency-graph:')
+			&& issue.includes('exceeds maximum size 8 bytes')));
 	} finally {
 		removeTempProject(projectPath);
 	}

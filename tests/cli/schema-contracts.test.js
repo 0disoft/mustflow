@@ -1607,6 +1607,15 @@ test('change-impact json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'change-impact-report.schema.json', JSON.parse(result.stdout));
+
+		const limited = runCli(projectPath, [
+			'script-pack', 'run', 'code/change-impact', 'analyze',
+			'--base', 'HEAD', '--max-file-bytes', '8', '--json',
+		]);
+		assert.equal(limited.status, 1, limited.stderr || limited.stdout);
+		const limitedReport = JSON.parse(limited.stdout);
+		assert.ok(limitedReport.findings.some((finding) => finding.code === 'change_impact_dependency_graph_error'));
+		assertMatchesSchema(schemaRoot, 'change-impact-report.schema.json', limitedReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

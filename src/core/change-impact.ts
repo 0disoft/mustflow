@@ -38,6 +38,7 @@ export type ChangeImpactRelationship =
 export type ChangeImpactFindingCode =
 	| 'change_impact_git_unavailable'
 	| 'change_impact_invalid_ref'
+	| 'change_impact_dependency_graph_error'
 	| 'change_impact_max_files_exceeded'
 	| 'change_impact_max_impacts_exceeded';
 
@@ -373,7 +374,7 @@ function addDependencyImpacts(
 		}
 	}
 	for (const dependencyFinding of dependencyReport.findings) {
-		const mappedFinding = mapDependencyGraphTruncationFinding(dependencyFinding);
+		const mappedFinding = mapDependencyGraphFinding(dependencyFinding);
 		if (mappedFinding === null) {
 			continue;
 		}
@@ -395,7 +396,15 @@ function addDependencyImpacts(
 	}
 }
 
-function mapDependencyGraphTruncationFinding(finding: DependencyGraphFinding): ChangeImpactFinding | null {
+function mapDependencyGraphFinding(finding: DependencyGraphFinding): ChangeImpactFinding | null {
+	if (finding.code === 'dependency_graph_unreadable_path' || finding.code === 'dependency_graph_path_outside_root') {
+		return makeFinding(
+			'change_impact_dependency_graph_error',
+			'high',
+			finding.path,
+			`Dependency graph could not inspect input while computing change impact: ${finding.message}`,
+		);
+	}
 	if (finding.code === 'dependency_graph_max_files_exceeded') {
 		return makeFinding(
 			'change_impact_max_files_exceeded',

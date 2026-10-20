@@ -171,6 +171,7 @@
           "enum": [
             "change_impact_git_unavailable",
             "change_impact_invalid_ref",
+            "change_impact_dependency_graph_error",
             "change_impact_max_files_exceeded",
             "change_impact_max_impacts_exceeded"
           ]
