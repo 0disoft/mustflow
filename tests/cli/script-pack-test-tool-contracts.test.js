@@ -1,3 +1,6 @@
+import { pathToFileURL } from 'node:url';
+import { cliPath } from './run-support.js';
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 import {
 	assert,
 	commitGitBaseline,
@@ -616,6 +619,66 @@ test('test-regression-selector selects changed tests and nearby source tests', (
 		assert.equal(exactFiles.report.changed_files.length, 3);
 		assert.equal(exactFiles.report.truncated, false);
 		assert.equal(exactFiles.report.summary.recommended_intent, 'test_related_cached');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('test-regression-selector falls back when untracked discovery fails', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		const tracked = 'tests/cli/known.test.js';
+		const added = 'tests/cli/new.test.js';
+		writeFileSync(path.join(projectPath, tracked), 'test("before", () => {});\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, tracked), 'test("after", () => {});\n');
+		writeFileSync(path.join(projectPath, added), 'test("new", () => {});\n');
+		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
+		writeFileSync(injection, `
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+const original = childProcess.spawnSync;
+childProcess.spawnSync = (command, args, options) => {
+  if (command === 'git' && args[0] === 'ls-files') {
+    return { status: 128, stdout: 'tests/cli/new.test.js\\0', stderr: 'fatal: injected untracked discovery failure' };
+  }
+  return original(command, args, options);
+};
+syncBuiltinESMExports();
+`);
+		const runInjected = () => {
+			const result = spawnSync(process.execPath, [
+				'--import', pathToFileURL(injection).href, cliPath,
+				'script-pack', 'run', 'test/regression-selector', 'select', '--base', 'HEAD', '--json',
+			], { cwd: projectPath, encoding: 'utf8' });
+			const report = JSON.parse(result.stdout);
+			assertMatchesSchema(path.resolve(path.dirname(cliPath), '..', '..', 'schemas'),
+				'test-regression-selector-report.schema.json', report);
+			assert.equal(result.status, 1, result.stderr || result.stdout);
+			assert.equal(report.ok, false);
+			assert.equal(report.summary.selection_status, 'fallback');
+			assert.equal(report.summary.confidence, 'low');
+			assert.equal(report.summary.recommended_intent, 'test');
+			assert.equal(report.run_hint, 'mf run test');
+			assert.ok(report.findings.some((finding) => finding.code === 'test_regression_selector_git_unavailable'
+				&& finding.severity === 'high' && finding.message.includes('injected untracked discovery failure')));
+			assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_unknown'));
+			assert.ok(!report.fallbacks.some((fallback) => fallback.reason === 'no_changed_files'));
+			return report;
+		};
+		assert.deepEqual(runInjected().selected_tests.map((test) => test.path), [tracked]);
+		writeFileSync(path.join(projectPath, tracked), 'test("before", () => {});\n');
+		assert.deepEqual(runInjected().changed_files, []);
+
+		const recovered = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(recovered.result.status, 0, recovered.result.stderr || recovered.result.stdout);
+		assert.deepEqual(recovered.report.findings, []);
+		assert.deepEqual(recovered.report.fallbacks, []);
+		assert.deepEqual(recovered.report.selected_tests.map((test) => test.path), [added]);
+		assert.equal(recovered.report.summary.recommended_intent, 'test_related_cached');
 	} finally {
 		removeTempProject(projectPath);
 	}
