@@ -334,6 +334,7 @@ function readImportsForFile(
 	projectRoot: string,
 	candidate: SourceFileCandidate,
 	policy: DependencyGraphPolicy,
+	findings: DependencyGraphFinding[],
 	issues: string[],
 ): readonly ImportReference[] {
 	if (!isSourceLanguage(candidate.language)) {
@@ -346,6 +347,7 @@ function readImportsForFile(
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		pushIssue(issues, `${candidate.relativePath}: ${message}`);
+		findings.push(makeFinding('dependency_graph_unreadable_path', 'high', candidate.relativePath, message));
 		return [];
 	}
 
@@ -652,7 +654,7 @@ export function inspectDependencyGraph(
 	const importerMap = new Map<string, DependencyGraphEdge[]>();
 
 	for (const file of sourceFiles) {
-		const references = readImportsForFile(root, file, policy, issues);
+		const references = readImportsForFile(root, file, policy, findings, issues);
 		importMap.set(file.relativePath, references);
 		for (const edge of dependencyEdgesFor(file.relativePath, importMap)) {
 			const importers = importerMap.get(edge.target_path) ?? [];

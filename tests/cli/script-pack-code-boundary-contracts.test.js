@@ -292,6 +292,18 @@ test('import-cycle reports runtime-suffixed TypeScript cycles with line evidence
 			['src/a.ts:1->src/b.ts', 'src/b.ts:1->src/a.ts'],
 		);
 		assert.ok(report.findings.some((finding) => finding.code === 'import_cycle_detected'));
+
+		for (const run of [runCodeImportCycleJson, runCodeDependencyGraphJson, runCodeModuleBoundaryJson]) {
+			const limited = run(projectPath, ['src', '--max-file-bytes', '8']);
+			assert.equal(limited.result.status, 1, limited.result.stderr || limited.result.stdout);
+			assert.equal(limited.report.status, 'error');
+			assert.equal(limited.report.ok, false);
+			for (const source of ['src/a.ts', 'src/b.ts']) {
+				assert.ok(limited.report.findings.some((finding) => finding.code === 'dependency_graph_unreadable_path'
+					&& finding.path === source), source);
+			}
+			assert.ok(limited.report.issues.some((issue) => issue.includes('exceeds maximum size 8 bytes')));
+		}
 	} finally {
 		removeTempProject(projectPath);
 	}
