@@ -125,6 +125,38 @@ test('dependency-graph bounds initial and discovered nodes without dangling edge
 	}
 });
 
+test('dependency-graph truncates only when eligible source files exceed max-files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		mkdirSync(path.join(projectPath, '.mustflow/config'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.mustflow/config/mustflow.toml'), 'schema_version = "1"\n');
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src/one.ts'), 'export {};\n');
+		writeFileSync(path.join(projectPath, 'src/z.log'), 'not a source file\n');
+		mkdirSync(path.join(projectPath, 'src/z-empty'));
+		mkdirSync(path.join(projectPath, 'src/z-empty/node_modules'));
+		writeFileSync(path.join(projectPath, 'src/z-empty/node_modules/ignored.ts'), 'export {};\n');
+
+		const exact = runCodeDependencyGraphJson(projectPath, ['src', '--max-files', '1']);
+		assert.equal(exact.result.status, 0, exact.result.stderr || exact.result.stdout);
+		assert.equal(exact.report.truncated, false);
+		assert.deepEqual(exact.report.nodes.map((node) => node.path), ['src/one.ts']);
+		assert.deepEqual(exact.report.findings, []);
+		assert.deepEqual(exact.report.issues, []);
+
+		mkdirSync(path.join(projectPath, 'src/z-extra'));
+		writeFileSync(path.join(projectPath, 'src/z-extra/two.ts'), 'export {};\n');
+		const overflow = runCodeDependencyGraphJson(projectPath, ['src', '--max-files', '1']);
+		assert.equal(overflow.result.status, 1, overflow.result.stderr || overflow.result.stdout);
+		assert.equal(overflow.report.truncated, true);
+		assert.deepEqual(overflow.report.nodes.map((node) => node.path), ['src/one.ts']);
+		assert.ok(overflow.report.findings.some((finding) => finding.code === 'dependency_graph_max_files_exceeded'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph reports import cycles as hints without failing the helper', () => {
 	const projectPath = createTempProject();
 
