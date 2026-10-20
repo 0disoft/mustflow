@@ -38,7 +38,7 @@ import {
 	uniqueSorted,
 	writeFileSync,
 } from './helpers/test-selection-contracts.js';
-import { utimesSync } from 'node:fs';
+import { cpSync, utimesSync } from 'node:fs';
 import { buildFreshnessReport, writeBuildFingerprintManifest } from '../../scripts/lib/build-freshness.mjs';
 
 test('profile timing order runs known slow tests first and keeps unknown tests stable', () => {
@@ -192,6 +192,52 @@ test('related profile does not fall back to the fast baseline without changed fi
 			note: 'no changed files and fallback is disabled',
 		},
 	]);
+});
+
+test('runner Git discovery preserves Unicode and leading-space paths', () => {
+	const tempRoot = mkdtempSync(path.join(tmpdir(), 'mustflow-runner-git-paths-'));
+	try {
+		mkdirSync(path.join(tempRoot, 'scripts'), { recursive: true });
+		mkdirSync(path.join(tempRoot, 'tests', 'cli'), { recursive: true });
+		cpSync(path.join(projectRoot, 'scripts', 'run-cli-tests.mjs'), path.join(tempRoot, 'scripts', 'run-cli-tests.mjs'));
+		cpSync(path.join(projectRoot, 'scripts', 'lib'), path.join(tempRoot, 'scripts', 'lib'), { recursive: true });
+		cpSync(path.join(projectRoot, 'node_modules', 'smol-toml'), path.join(tempRoot, 'node_modules', 'smol-toml'), { recursive: true, dereference: true });
+		const tracked = 'tests/cli/기존.test.js';
+		const staged = 'tests/cli/스테이지.test.js';
+		const added = 'tests/cli/새 테스트.test.js';
+		const leading = ' leading.md';
+		for (const file of [tracked, staged, 'tests/cli/router.test.js']) {
+			writeFileSync(path.join(tempRoot, file), '// before\n');
+		}
+		const git = (args) => {
+			const result = spawnSync('git', args, { cwd: tempRoot, encoding: 'utf8' });
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+		};
+		for (const args of [
+			['init'], ['config', 'user.name', 'mustflow tests'],
+			['config', 'user.email', 'mustflow-tests@example.invalid'], ['config', 'core.quotePath', 'true'],
+			['add', '.'], ['commit', '-m', 'baseline'],
+		]) git(args);
+		for (const file of [tracked, staged, added, leading]) {
+			writeFileSync(path.join(tempRoot, file), '// after\n');
+		}
+		git(['add', '--', staged]);
+		const env = { ...process.env };
+		delete env.MUSTFLOW_TEST_CHANGED_FILES;
+		for (const mode of ['related', 'related-cached']) {
+			const result = spawnSync(process.execPath, ['scripts/run-cli-tests.mjs', mode, '--list'], {
+				cwd: tempRoot, encoding: 'utf8', env,
+			});
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+			const report = JSON.parse(result.stdout);
+			assert.deepEqual([...report.changed_files].sort(), [tracked, staged, added, leading].sort());
+			for (const file of [tracked, staged, added]) {
+				assert.ok(report.selected.includes(path.basename(file)), `${mode} omitted ${file}`);
+			}
+		}
+	} finally {
+		rmSync(tempRoot, { recursive: true, force: true });
+	}
 });
 
 test('related cached list mirrors related selection without requiring a fresh dist build', () => {

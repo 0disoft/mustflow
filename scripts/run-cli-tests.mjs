@@ -59,8 +59,7 @@ function gitList(args) {
 		return [];
 	}
 	return result.stdout
-		.split(/\r?\n/u)
-		.map((line) => line.trim())
+		.split('\0')
 		.filter(Boolean)
 		.map((line) => line.replaceAll('\\', '/'));
 }
@@ -343,9 +342,9 @@ function changedFiles() {
 	}
 
 	return [
-		...gitList(['diff', '--name-only', '--relative']),
-		...gitList(['diff', '--name-only', '--cached', '--relative']),
-		...gitList(['ls-files', '--others', '--exclude-standard']),
+		...gitList(['diff', '--name-only', '-z', '--relative']),
+		...gitList(['diff', '--name-only', '-z', '--cached', '--relative']),
+		...gitList(['ls-files', '-z', '--others', '--exclude-standard']),
 	];
 }
 
