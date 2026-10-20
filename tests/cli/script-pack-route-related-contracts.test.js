@@ -364,6 +364,17 @@ test('related-files maps imports, importers, siblings, and parent config without
 		assert.equal(candidates.get('package_boundary:package.json')?.relationship, 'package_boundary');
 		assert.deepEqual(report.findings, []);
 		assert.deepEqual(report.issues, []);
+
+		const limited = runRelatedFilesJson(projectPath, ['src/feature.ts', '--max-file-bytes', '8']);
+		assert.equal(limited.result.status, 1, limited.result.stderr || limited.result.stdout);
+		assert.equal(limited.report.status, 'error');
+		assert.equal(limited.report.ok, false);
+		assert.equal(limited.report.truncated, false);
+		for (const file of ['feature.ts', 'helper.ts', 'consumer.ts', 'feature.test.ts']) {
+			assert.ok(limited.report.findings.some((finding) => finding.code === 'related_files_unreadable_path'
+				&& finding.path === `src/${file}` && finding.severity === 'high'), file);
+		}
+		assert.ok(limited.report.issues.some((issue) => issue.includes('exceeds maximum size 8 bytes')));
 	} finally {
 		removeTempProject(projectPath);
 	}

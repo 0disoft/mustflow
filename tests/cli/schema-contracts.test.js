@@ -2255,6 +2255,16 @@ test('related-files json output matches the published schema', () => {
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'related-files-report.schema.json', JSON.parse(result.stdout));
+
+		const limited = runCli(projectPath, [
+			'script-pack', 'run', 'repo/related-files', 'map',
+			'src/schema-related.ts', '--max-file-bytes', '8', '--json',
+		]);
+		assert.equal(limited.status, 1, limited.stderr || limited.stdout);
+		const limitedReport = JSON.parse(limited.stdout);
+		assert.equal(limitedReport.status, 'error');
+		assert.ok(limitedReport.findings.some((finding) => finding.code === 'related_files_unreadable_path'));
+		assertMatchesSchema(schemaRoot, 'related-files-report.schema.json', limitedReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

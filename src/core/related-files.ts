@@ -328,6 +328,7 @@ function readImportsForFile(
 	projectRoot: string,
 	candidate: SourceFileCandidate,
 	policy: RelatedFilesPolicy,
+	findings: RelatedFilesFinding[],
 	issues: string[],
 ): readonly ImportReference[] {
 	if (!isSourceLanguage(candidate.language)) {
@@ -340,6 +341,7 @@ function readImportsForFile(
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		pushIssue(issues, `${candidate.relativePath}: ${message}`);
+		findings.push(makeFinding('related_files_unreadable_path', 'high', candidate.relativePath, message));
 		return [];
 	}
 
@@ -615,7 +617,7 @@ export function inspectRelatedFiles(projectRoot: string, options: InspectRelated
 	const candidateMap = new Map<string, RelatedFileCandidate>();
 
 	for (const file of sourceFiles) {
-		importMap.set(file.relativePath, readImportsForFile(root, file, policy, issues));
+		importMap.set(file.relativePath, readImportsForFile(root, file, policy, findings, issues));
 	}
 
 	for (const target of targets) {
