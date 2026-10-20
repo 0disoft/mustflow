@@ -157,6 +157,37 @@ test('dependency-graph truncates only when eligible source files exceed max-file
 	}
 });
 
+test('dependency-graph keeps incoming neighbors within max-depth and retains included edges', async (t) => {
+	const projectPath = createTempProject();
+
+	try {
+		mkdirSync(path.join(projectPath, '.mustflow/config'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.mustflow/config/mustflow.toml'), 'schema_version = "1"\n');
+		mkdirSync(path.join(projectPath, 'src'));
+		writeFileSync(path.join(projectPath, 'src/a.ts'), 'import "./b.js";\n');
+		writeFileSync(path.join(projectPath, 'src/b.ts'), 'export {};\n');
+		writeFileSync(path.join(projectPath, 'src/c.ts'), 'import "./b.js";\n');
+		writeFileSync(path.join(projectPath, 'src/d.ts'), 'import "./a.js";\nimport "./b.js";\n');
+		for (const limit of [1, 2]) {
+			await t.test(`max-depth ${limit}`, () => {
+				const { result, report } = runCodeDependencyGraphJson(projectPath, ['src/a.ts', '--max-depth', String(limit)]);
+				assert.equal(result.status, 0, result.stderr || result.stdout);
+				assert.equal(report.truncated, false);
+				assert.ok(report.nodes.every((node) => node.depth <= limit));
+				assert.deepEqual(report.nodes.map((node) => [node.path, node.depth]), [
+					['src/a.ts', 0], ['src/b.ts', 1], ['src/d.ts', 1],
+					...(limit === 2 ? [['src/c.ts', 2]] : []),
+				]);
+				assert.ok(report.edges.some((edge) => edge.source_path === 'src/d.ts' && edge.target_path === 'src/b.ts'));
+				assert.equal(report.edges.length, limit === 2 ? 4 : 3);
+				assert.deepEqual(report.findings, []);
+			});
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph reports import cycles as hints without failing the helper', () => {
 	const projectPath = createTempProject();
 

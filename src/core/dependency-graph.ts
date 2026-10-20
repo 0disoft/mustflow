@@ -492,9 +492,13 @@ function buildIncludedGraph(
 	}
 
 	for (const sourcePath of [...nodeDepth.keys()]) {
+		const importerDepth = (nodeDepth.get(sourcePath) ?? 0) + 1;
 		for (const edge of importerMap.get(sourcePath) ?? []) {
 			if (nodeDepth.has(edge.source_path)) {
 				addEdge(edgeMap, edge, policy, findings, issues);
+				continue;
+			}
+			if (importerDepth > policy.max_depth) {
 				continue;
 			}
 			if (nodeDepth.size >= policy.max_nodes) {
@@ -507,7 +511,7 @@ function buildIncludedGraph(
 				);
 				continue;
 			}
-			nodeDepth.set(edge.source_path, Math.max(1, (nodeDepth.get(sourcePath) ?? 0) + 1));
+			nodeDepth.set(edge.source_path, importerDepth);
 			addEdge(edgeMap, edge, policy, findings, issues);
 		}
 	}
