@@ -1616,6 +1616,17 @@ test('change-impact json output matches the published schema', () => {
 		const limitedReport = JSON.parse(limited.stdout);
 		assert.ok(limitedReport.findings.some((finding) => finding.code === 'change_impact_dependency_graph_error'));
 		assertMatchesSchema(schemaRoot, 'change-impact-report.schema.json', limitedReport);
+
+		const unicodePath = 'src/한글 기능.ts';
+		writeFileSync(path.join(projectPath, unicodePath), 'export const unicode = 1;\n');
+		const unicode = runCli(projectPath, [
+			'script-pack', 'run', 'code/change-impact', 'analyze', unicodePath, '--base', 'HEAD', '--json',
+		]);
+		assert.equal(unicode.status, 0, unicode.stderr || unicode.stdout);
+		const unicodeReport = JSON.parse(unicode.stdout);
+		assert.equal(unicodeReport.changed_files[0].path, unicodePath);
+		assert.equal(unicodeReport.changed_files[0].surface, 'source');
+		assertMatchesSchema(schemaRoot, 'change-impact-report.schema.json', unicodeReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

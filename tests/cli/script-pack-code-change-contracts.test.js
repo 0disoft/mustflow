@@ -86,6 +86,48 @@ test('change-impact reports changed surfaces, importers, and verification hints'
 	}
 });
 
+test('change-impact preserves Unicode and spaced Git paths including renames', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		mkdirSync(path.join(projectPath, 'docs'));
+		const source = 'src/기능.ts';
+		writeFileSync(path.join(projectPath, source), 'export const feature = 1;\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import { feature } from "./기능";\n');
+		commitGitBaseline(projectPath);
+		runGit(projectPath, ['config', 'core.quotePath', 'true']);
+		runGit(projectPath, ['config', 'diff.renames', 'true']);
+		writeFileSync(path.join(projectPath, source), 'export const feature = 2;\n');
+		const untracked = ['docs/새 문서.md', ' leading.md'];
+		for (const filePath of untracked) {
+			writeFileSync(path.join(projectPath, filePath), '# Documentation\n');
+		}
+		const expectedPaths = [source, ...untracked].sort();
+		const { result, report } = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(report.changed_files.map((file) => file.path).sort(), expectedPaths);
+		assert.equal(report.changed_files.find((file) => file.path === source)?.surface, 'source');
+		assert.ok(report.impacts.some((impact) => impact.path === 'src/consumer.ts'
+			&& impact.relationship === 'imports_changed_file' && impact.exists));
+		assert.deepEqual(report.findings, []);
+
+		commitGitBaseline(projectPath);
+		const committed = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD~1', '--head', 'HEAD']);
+		assert.equal(committed.result.status, 0, committed.result.stderr || committed.result.stdout);
+		assert.deepEqual(committed.report.changed_files.map((file) => file.path).sort(), expectedPaths);
+		const renamed = 'src/새 기능.ts';
+		runGit(projectPath, ['mv', source, renamed]);
+		const renameReport = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(renameReport.result.status, 0, renameReport.result.stderr || renameReport.result.stdout);
+		assert.deepEqual(renameReport.report.changed_files.map((file) => [file.status, file.previous_path, file.path]),
+			[['renamed', source, renamed]]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('change-impact reports dependency-graph truncation in its own truncation flag', () => {
 	const projectPath = createTempProject();
 

@@ -179,11 +179,14 @@ function surfaceForPath(relativePath: string): ChangeImpactSurface {
 
 function parseNameStatus(stdout: string): ChangeImpactChangedFile[] {
 	const files: ChangeImpactChangedFile[] = [];
-	for (const line of stdout.split(/\r?\n/u)) {
-		if (!line.trim()) {
+	const fields = stdout.split('\0');
+	for (let index = 0; index < fields.length;) {
+		const statusCode = fields[index++] ?? '';
+		const firstPath = fields[index++] ?? '';
+		const secondPath = /^[RC]/u.test(statusCode) ? fields[index++] ?? '' : '';
+		if (!firstPath) {
 			continue;
 		}
-		const [statusCode = 'M', firstPath = '', secondPath = ''] = line.split('\t');
 		const currentPath = normalizeRelativePath(secondPath || firstPath);
 		const previousPath = secondPath ? normalizeRelativePath(firstPath) : null;
 		files.push({
@@ -197,13 +200,13 @@ function parseNameStatus(stdout: string): ChangeImpactChangedFile[] {
 }
 
 function addUntrackedFiles(root: string, paths: readonly string[], files: ChangeImpactChangedFile[]): void {
-	const untracked = runGit(root, ['ls-files', '--others', '--exclude-standard', '--', ...paths]);
+	const untracked = runGit(root, ['ls-files', '-z', '--others', '--exclude-standard', '--', ...paths]);
 	if (!untracked.ok) {
 		return;
 	}
 	const known = new Set(files.map((file) => file.path));
-	for (const line of untracked.stdout.split(/\r?\n/u)) {
-		const relativePath = normalizeRelativePath(line.trim());
+	for (const filePath of untracked.stdout.split('\0')) {
+		const relativePath = normalizeRelativePath(filePath);
 		if (!relativePath || relativePath === '.' || known.has(relativePath)) {
 			continue;
 		}
@@ -511,8 +514,8 @@ function collectChangedFiles(
 	}
 
 	const diffArgs = policy.head_ref
-		? ['diff', '--name-status', '--diff-filter=ACMRTD', policy.base_ref, policy.head_ref, '--', ...policy.path_filters]
-		: ['diff', '--name-status', '--diff-filter=ACMRTD', policy.base_ref, '--', ...policy.path_filters];
+		? ['diff', '--name-status', '-z', '--diff-filter=ACMRTD', policy.base_ref, policy.head_ref, '--', ...policy.path_filters]
+		: ['diff', '--name-status', '-z', '--diff-filter=ACMRTD', policy.base_ref, '--', ...policy.path_filters];
 	const diff = runGit(root, diffArgs);
 	if (!diff.ok) {
 		const detail = diff.stderr.trim() || diff.stdout.trim() || `git diff exited with ${diff.status}`;
