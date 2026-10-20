@@ -1815,6 +1815,19 @@ test('test-regression-selector json output matches the published schema', () => 
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', JSON.parse(result.stdout));
+
+		mkdirSync(path.join(projectPath, 'tests'));
+		for (const name of ['first.test.js', 'second.test.js']) {
+			writeFileSync(path.join(projectPath, 'tests', name), 'test("selector", () => {});\n');
+		}
+		const limited = runCli(projectPath, [
+			'script-pack', 'run', 'test/regression-selector', 'select',
+			'--base', 'HEAD', '--max-tests', '1', '--json',
+		]);
+		assert.equal(limited.status, 0, limited.stderr || limited.stdout);
+		const limitedReport = JSON.parse(limited.stdout);
+		assert.equal(limitedReport.summary.recommended_intent, 'test');
+		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', limitedReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

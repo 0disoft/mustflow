@@ -487,6 +487,12 @@ export function createTestRegressionSelectorReport(
 		const message = `Regression selector found more than ${policy.max_tests} existing test candidates.`;
 		findings.push(makeFinding('test_regression_selector_max_tests_exceeded', 'medium', '.', message));
 		issues.push(message);
+		fallbackMap.set('fallback_truncated:.', {
+			reason: 'fallback_truncated',
+			path: '.',
+			message,
+			recommended_intent: 'test',
+		});
 	}
 
 	const fallbacks = [...fallbackMap.values()].sort(

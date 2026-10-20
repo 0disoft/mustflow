@@ -583,6 +583,25 @@ test('test-regression-selector selects changed tests and nearby source tests', (
 		assert.equal(report.fallbacks.length, 0);
 		assert.match(report.run_hint, /test_related_cached/u);
 		assert.match(report.input_hash, /^sha256:[a-f0-9]{64}$/u);
+
+		writeFileSync(path.join(projectPath, 'tests', 'cli', 'other.test.js'), 'test("other", () => {});\n');
+		const limited = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD', '--max-tests', '1']);
+		assert.equal(limited.result.status, 0, limited.result.stderr || limited.result.stdout);
+		assert.equal(limited.report.selected_tests.length, 1);
+		assert.equal(limited.report.truncated, true);
+		assert.equal(limited.report.summary.selection_status, 'fallback');
+		assert.equal(limited.report.summary.confidence, 'low');
+		assert.equal(limited.report.summary.recommended_intent, 'test');
+		assert.ok(limited.report.fallbacks.some((fallback) => fallback.reason === 'fallback_truncated'));
+		assert.equal(limited.report.run_hint, 'mf run test');
+
+		const exact = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD', '--max-tests', '2']);
+		assert.equal(exact.result.status, 0, exact.result.stderr || exact.result.stdout);
+		assert.equal(exact.report.selected_tests.length, 2);
+		assert.equal(exact.report.truncated, false);
+		assert.equal(exact.report.summary.selection_status, 'selected');
+		assert.equal(exact.report.summary.recommended_intent, 'test_related_cached');
+		assert.deepEqual(exact.report.fallbacks, []);
 	} finally {
 		removeTempProject(projectPath);
 	}
