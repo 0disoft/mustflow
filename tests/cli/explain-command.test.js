@@ -128,6 +128,9 @@ test('explains command preconditions without running the satisfy intent', () => 
 	try {
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
 		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
+		mkdirSync(path.join(projectPath, '..dist'), { recursive: true });
+		writeFileSync(path.join(projectPath, '..ready'), 'ready');
+		writeFileSync(path.join(projectPath, '..dist', 'fresh.js'), 'artifact');
 		writeFileSync(path.join(projectPath, 'src', 'fresh.ts'), 'source');
 		writeFileSync(path.join(projectPath, 'dist', 'fresh.js'), 'artifact');
 		writeFileSync(path.join(projectPath, 'src', 'stale.ts'), 'source');
@@ -136,6 +139,7 @@ test('explains command preconditions without running the satisfy intent', () => 
 		const newTime = new Date('2024-01-02T00:00:00Z');
 		utimesSync(path.join(projectPath, 'src', 'fresh.ts'), oldTime, oldTime);
 		utimesSync(path.join(projectPath, 'dist', 'fresh.js'), newTime, newTime);
+		utimesSync(path.join(projectPath, '..dist', 'fresh.js'), newTime, newTime);
 		utimesSync(path.join(projectPath, 'src', 'stale.ts'), newTime, newTime);
 		utimesSync(path.join(projectPath, 'dist', 'stale.js'), oldTime, oldTime);
 		appendFileSync(
@@ -160,6 +164,10 @@ preconditions = [
   { kind = "path_exists", path = "dist/generated.js", satisfy_intent = "mustflow_check" },
   { kind = "artifact_freshness", artifact = "dist/fresh.js", sources = ["src/fresh.ts"], satisfy_intent = "mustflow_check" },
   { kind = "artifact_freshness", artifact = "dist/stale.js", sources = ["src/stale.ts"], satisfy_intent = "manual_build" },
+  { kind = "path_exists", path = "..ready" },
+  { kind = "artifact_freshness", artifact = "..dist/fresh.js", sources = ["src/fresh.ts"] },
+  { kind = "path_exists", path = "../outside.js" },
+  { kind = "artifact_freshness", artifact = "../outside.js", sources = ["src/fresh.ts"] },
 ]
 network = false
 destructive = false
@@ -168,7 +176,7 @@ destructive = false
 
 		const result = runCli(projectPath, ['explain', 'command', 'needs_artifact', '--json']);
 		const report = JSON.parse(result.stdout);
-		const [missingPrecondition, satisfiedPrecondition, stalePrecondition] = report.decision.intent.preconditions;
+		const [missingPrecondition, satisfiedPrecondition, stalePrecondition, inRootPath, inRootArtifact, outsidePath, outsideArtifact] = report.decision.intent.preconditions;
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(missingPrecondition.kind, 'path_exists');
@@ -184,6 +192,11 @@ destructive = false
 		assert.equal(stalePrecondition.newestSource, 'src/stale.ts');
 		assert.equal(stalePrecondition.satisfyIntent.intent, 'manual_build');
 		assert.equal(stalePrecondition.satisfyIntent.runnable, false);
+		assert.equal(inRootPath.status, 'satisfied');
+		assert.equal(inRootArtifact.status, 'satisfied');
+		assert.equal(inRootArtifact.newestSource, 'src/fresh.ts');
+		assert.equal(outsidePath.status, 'invalid');
+		assert.equal(outsideArtifact.status, 'invalid');
 		assert.equal(existsSync(path.join(projectPath, 'dist', 'generated.js')), false);
 	} finally {
 		removeTempProject(projectPath);

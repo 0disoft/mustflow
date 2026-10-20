@@ -88,7 +88,7 @@ function resolveProjectPath(projectRoot: string, relativePath: string): string |
 	const resolved = path.resolve(projectRoot, ...normalizeRelativePath(relativePath).split('/'));
 	const relative = path.relative(path.resolve(projectRoot), resolved);
 
-	return relative.startsWith('..') || path.isAbsolute(relative) ? null : resolved;
+	return relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) ? null : resolved;
 }
 
 function readPreconditionDeclarations(intent: TomlTable): readonly CommandPreconditionDeclaration[] {
