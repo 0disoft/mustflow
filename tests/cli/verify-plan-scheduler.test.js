@@ -245,18 +245,21 @@ escalate_to = ["test"]
 	}
 });
 
-test('artifact freshness preconditions support single-character source globs', async () => {
+test('artifact freshness preconditions support single-character and recursive source globs', async () => {
 	const projectPath = createSchedulerProject();
 
 	try {
 		mkdirSync(path.join(projectPath, 'dist'), { recursive: true });
 		mkdirSync(path.join(projectPath, 'src'), { recursive: true });
+		mkdirSync(path.join(projectPath, 'src', 'nested'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'nested', 'old.ts'), 'older nested source\n');
 		writeFileSync(path.join(projectPath, 'dist', 'out.js'), 'old artifact\n');
 		writeFileSync(path.join(projectPath, 'src', 'a1.ts'), 'matched source\n');
 		writeFileSync(path.join(projectPath, 'src', 'abc.ts'), 'unmatched newer source\n');
 		utimesSync(path.join(projectPath, 'dist', 'out.js'), new Date('2020-01-01T00:00:00.000Z'), new Date('2020-01-01T00:00:00.000Z'));
 		utimesSync(path.join(projectPath, 'src', 'a1.ts'), new Date('2021-01-01T00:00:00.000Z'), new Date('2021-01-01T00:00:00.000Z'));
 		utimesSync(path.join(projectPath, 'src', 'abc.ts'), new Date('2022-01-01T00:00:00.000Z'), new Date('2022-01-01T00:00:00.000Z'));
+		utimesSync(path.join(projectPath, 'src', 'nested', 'old.ts'), new Date('2019-01-01T00:00:00.000Z'), new Date('2019-01-01T00:00:00.000Z'));
 		appendIntent(
 			projectPath,
 			`
@@ -273,6 +276,7 @@ success_exit_codes = [0]
 writes = []
 preconditions = [
   { kind = "artifact_freshness", artifact = "dist/out.js", sources = ["src/a?.ts"] },
+  { kind = "artifact_freshness", artifact = "dist/out.js", sources = ["src/**/*.ts"] },
 ]
 network = false
 destructive = false
@@ -289,6 +293,15 @@ required_after = ["freshness_glob"]
 		assert.equal(precondition.status, 'stale');
 		assert.equal(precondition.newestSource, 'src/a1.ts');
 		assert.equal(precondition.detail, 'artifact "dist/out.js" is older than source "src/a1.ts".');
+		const recursive = report.schedule.entries[0].preconditions[1];
+		assert.equal(recursive.status, 'stale');
+		assert.equal(recursive.newestSource, 'src/abc.ts');
+		utimesSync(path.join(projectPath, 'src', 'nested', 'old.ts'), new Date('2023-01-01T00:00:00.000Z'), new Date('2023-01-01T00:00:00.000Z'));
+		const nestedResult = await runCli(projectPath, ['verify', '--reason', 'freshness_glob', '--plan-only', '--json']);
+		assert.equal(nestedResult.status, 0, nestedResult.stderr || nestedResult.stdout);
+		const nested = JSON.parse(nestedResult.stdout).schedule.entries[0].preconditions[1];
+		assert.equal(nested.status, 'stale');
+		assert.equal(nested.newestSource, 'src/nested/old.ts');
 	} finally {
 		removeTempProject(projectPath);
 	}
