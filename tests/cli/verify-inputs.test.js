@@ -284,6 +284,59 @@ required_after = ["input_change"]
 	}
 });
 
+for (const corruption of ['checksum', 'status', 'intent']) {
+	test(`reruns verification for inconsistent cached receipt ${corruption}`, async () => {
+		const projectPath = createTempProject();
+		try {
+			await initProject(projectPath);
+			writeFileSync(path.join(projectPath, 'README.md'), 'unchanged input');
+			writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+			appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Count actual verification runs."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.appendFileSync("runs.txt", "run\\n");']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["runs.txt"]
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+			const args = ['verify', '--from-classification', 'classification.json', '--json'];
+			const first = await runCli(projectPath, args);
+			assert.equal(first.status, 0, first.stderr || first.stdout);
+			const unchanged = await runCli(projectPath, args);
+			assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
+			const previous = JSON.parse(unchanged.stdout);
+			assert.equal(previous.results[0].reason, 'reused_input_hash');
+			const receiptPath = path.join(projectPath, previous.results[0].receipt_path);
+			const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+			if (corruption === 'status') receipt.status = 'failed';
+			else if (corruption === 'intent') receipt.intent = 'different_intent';
+			else receipt.finished_at = 'changed receipt contents';
+			const content = `${JSON.stringify(receipt, null, 2)}\n`;
+			writeFileSync(receiptPath, content);
+			if (corruption !== 'checksum') {
+				const manifestPath = path.join(projectPath, previous.manifest_path);
+				const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+				manifest.receipts[0].receipt_sha256 = `sha256:${createHash('sha256').update(content).digest('hex')}`;
+				writeFileSync(manifestPath, JSON.stringify(manifest));
+			}
+			const result = await runCli(projectPath, args);
+			assert.equal(result.status, 0, result.stderr || result.stdout);
+			assert.notEqual(JSON.parse(result.stdout).results[0].reason, 'reused_input_hash');
+			assert.equal(readFileSync(path.join(projectPath, 'runs.txt'), 'utf8'), 'run\nrun\n');
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 

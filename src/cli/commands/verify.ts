@@ -74,7 +74,10 @@ function readReusableVerificationResults(projectRoot: string, verificationPlanId
 		const manifest = JSON.parse(readFileSync(path.join(projectRoot, latest.manifest_path), 'utf8')) as { receipts?: Array<Record<string, unknown>> };
 		for (const entry of manifest.receipts ?? []) {
 			if (typeof entry.intent !== 'string' || typeof entry.receipt_path !== 'string' || entry.status !== 'passed') continue;
-			const receipt = JSON.parse(readFileSync(path.join(projectRoot, entry.receipt_path), 'utf8')) as VerificationReceipt;
+			const receiptContent = readFileSync(path.join(projectRoot, entry.receipt_path), 'utf8');
+			if (hashTextSha256(receiptContent) !== entry.receipt_sha256) continue;
+			const receipt = JSON.parse(receiptContent) as VerificationReceipt;
+			if (receipt.schema_version !== '1' || receipt.command !== 'run' || receipt.status !== 'passed' || receipt.intent !== entry.intent) continue;
 			if (receipt.current_state_hash !== currentStateHash || receipt.verification_plan_id !== verificationPlanId) continue;
 			const drift = objectField(receipt.write_drift);
 			if (drift?.has_undeclared_changes === true) continue;
