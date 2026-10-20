@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { cliPath } from './run-support.js';
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 import {
 	assert,
 	commitGitBaseline,
@@ -181,6 +182,50 @@ test('change-impact classifies schema changes with release verification hints', 
 		assert.ok(selectorHint.expected_fallback_reasons.includes('fallback_generated_contract'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'test_release'));
 		assert.ok(report.verification_hints.some((hint) => hint.intent === 'docs_validate_fast'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('change-impact reports incomplete untracked discovery instead of a clean result', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'new.ts'), 'export const added = 1;\n');
+		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
+		writeFileSync(injection, `
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+const original = childProcess.spawnSync;
+childProcess.spawnSync = (command, args, options) => {
+  if (command === 'git' && args[0] === 'ls-files') {
+    return { status: 128, stdout: 'new.ts\\0', stderr: 'fatal: injected untracked discovery failure' };
+  }
+  return original(command, args, options);
+};
+syncBuiltinESMExports();
+`);
+		const result = spawnSync(process.execPath, [
+			'--import', pathToFileURL(injection).href, cliPath,
+			'script-pack', 'run', 'code/change-impact', 'analyze', '--base', 'HEAD', '--json',
+		], { cwd: projectPath, encoding: 'utf8' });
+		const report = JSON.parse(result.stdout);
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.ok, false);
+		assert.ok(report.findings.some((finding) => finding.code === 'change_impact_git_unavailable'
+			&& finding.severity === 'high' && finding.message.includes('injected untracked discovery failure')));
+		assert.ok(report.issues.some((issue) => issue.includes('Could not discover untracked files')));
+		assert.deepEqual(report.changed_files, []);
+		assertMatchesSchema(path.resolve(path.dirname(cliPath), '..', '..', 'schemas'), 'change-impact-report.schema.json', report);
+
+		const recovered = runCodeChangeImpactJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(recovered.result.status, 0, recovered.result.stderr || recovered.result.stdout);
+		assert.deepEqual(recovered.report.findings, []);
+		assert.deepEqual(recovered.report.changed_files.map((file) => file.path), ['new.ts']);
+		assert.ok(recovered.report.impacts.some((impact) => impact.path === 'new.ts'));
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -148,9 +148,9 @@ function runGit(root: string, args: readonly string[]): GitResult {
 		maxBuffer: 16 * 1024 * 1024,
 	});
 	return {
-		ok: result.status === 0,
+		ok: result.status === 0 && !result.error,
 		stdout: result.stdout ?? '',
-		stderr: result.stderr ?? '',
+		stderr: result.stderr || result.error?.message || '',
 		status: result.status,
 	};
 }
@@ -199,9 +199,19 @@ function parseNameStatus(stdout: string): ChangeImpactChangedFile[] {
 	return files;
 }
 
-function addUntrackedFiles(root: string, paths: readonly string[], files: ChangeImpactChangedFile[]): void {
+function addUntrackedFiles(
+	root: string,
+	paths: readonly string[],
+	files: ChangeImpactChangedFile[],
+	findings: ChangeImpactFinding[],
+	issues: string[],
+): void {
 	const untracked = runGit(root, ['ls-files', '-z', '--others', '--exclude-standard', '--', ...paths]);
 	if (!untracked.ok) {
+		const detail = untracked.stderr.trim() || `git ls-files exited with ${untracked.status}`;
+		const message = `Could not discover untracked files: ${detail}`;
+		findings.push(makeFinding('change_impact_git_unavailable', 'high', '.', message));
+		issues.push(message);
 		return;
 	}
 	const known = new Set(files.map((file) => file.path));
@@ -526,7 +536,7 @@ function collectChangedFiles(
 
 	const files = parseNameStatus(diff.stdout);
 	if (!policy.head_ref) {
-		addUntrackedFiles(root, policy.path_filters, files);
+		addUntrackedFiles(root, policy.path_filters, files, findings, issues);
 	}
 	files.sort((left, right) => left.path.localeCompare(right.path));
 	if (files.length > policy.max_files) {
