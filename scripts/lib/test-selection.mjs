@@ -433,6 +433,10 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^tests\/cli\/helpers\/ops-profiler\.js$/u, tests: ['test-ops-profiler.test.js'] },
 		{ match: /^tests\/cli\/helpers\/test-selection-contracts\.js$/u, tests: testSelectionTests },
 		{ match: /^tests\/cli\/helpers\/local-index-fixtures\.js$/u, tests: localIndexTests },
+		{
+			match: /^tests\/cli\/helpers\/git-discovery-failure\.js$/u,
+			tests: ['script-pack-code-change-contracts.test.js', 'script-pack-test-tool-contracts.test.js'],
+		},
 		{ match: /^tests\/cli\/index-support\.js$/u, tests: indexTests },
 		{ match: /^tests\/cli\/index\.test\.js$/u, tests: indexTests },
 		{ match: /^tests\/cli\/run-support\.js$/u, tests: runTests },

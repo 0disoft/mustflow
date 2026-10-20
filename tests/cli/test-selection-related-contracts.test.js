@@ -276,6 +276,17 @@ test('related selection covers selection test helpers without full fallback', ()
 	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
 });
 
+test('related selection limits Git discovery fixture changes to its consumers', () => {
+	const changedFile = 'tests/cli/helpers/git-discovery-failure.js';
+	const report = selectRelated([changedFile]);
+	assert.deepEqual([...report.selected].sort(), [
+		'script-pack-code-change-contracts.test.js',
+		'script-pack-test-tool-contracts.test.js',
+	]);
+	assert.equal(reasonsFor(report, 'fallback_full_tests').length, 0);
+	assert.ok(reasonsFor(report, 'related_rule').some((reason) => reason.changed_file === changedFile));
+});
+
 test('related selection covers the extracted selector module itself', () => {
 	const report = selectRelated(['scripts/lib/test-selection.mjs']);
 	const selected = new Set(report.selected);
