@@ -127,6 +127,12 @@ const DEFAULT_MAX_CANDIDATES = 200;
 const MAX_ISSUES = 50;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const RESOLVE_EXTENSIONS = [...SOURCE_EXTENSIONS, '.json'] as const;
+const SOURCE_EXTENSION_FALLBACKS: Readonly<Record<string, readonly string[]>> = {
+	'.js': ['.ts', '.tsx'],
+	'.jsx': ['.tsx'],
+	'.mjs': ['.mts'],
+	'.cjs': ['.cts'],
+};
 const RELATED_EXTENSIONS = [...RESOLVE_EXTENSIONS, '.d.ts', '.md', '.mdx', '.css', '.scss', '.sass', '.less'] as const;
 const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const CONFIG_FILE_PATTERNS = [
@@ -338,8 +344,12 @@ function resolveRelativeImport(projectRoot: string, sourceAbsolutePath: string, 
 	}
 
 	const base = path.resolve(path.dirname(sourceAbsolutePath), specifier);
+	const extension = path.extname(base);
 	const candidates = [
 		base,
+		...(SOURCE_EXTENSION_FALLBACKS[extension] ?? []).map((sourceExtension) =>
+			`${base.slice(0, -extension.length)}${sourceExtension}`,
+		),
 		...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`),
 		...RESOLVE_EXTENSIONS.map((extension) => path.join(base, `index${extension}`)),
 	];

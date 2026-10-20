@@ -369,6 +369,47 @@ test('related-files maps imports, importers, siblings, and parent config without
 	}
 });
 
+test('related-files maps runtime import suffixes to TypeScript sources when output files are absent', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		const dependencies = [
+			['helper.js', 'helper.ts'],
+			['view.js', 'view.tsx'],
+			['component.jsx', 'component.tsx'],
+			['module.mjs', 'module.mts'],
+			['common.cjs', 'common.cts'],
+			['native.js', 'native.js'],
+		];
+		writeFileSync(path.join(projectPath, 'src/entry.ts'),
+			dependencies.map(([specifier]) => `import "./${specifier}";`).join('\n'));
+		for (const [, source] of dependencies) {
+			writeFileSync(path.join(projectPath, 'src', source), 'export {};\n');
+		}
+		writeFileSync(path.join(projectPath, 'src/native.ts'), 'export {};\n');
+		const { result, report } = runRelatedFilesJson(projectPath, [
+			'src/entry.ts', ...dependencies.map(([, source]) => `src/${source}`),
+		]);
+
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(report.issues, []);
+		for (const [index, [, source]] of dependencies.entries()) {
+			assert.ok(report.candidates.some((candidate) => candidate.relationship === 'import'
+				&& candidate.path === `src/${source}` && candidate.target_path === 'src/entry.ts'
+				&& candidate.line === index + 1), `import ${source}`);
+			assert.ok(report.candidates.some((candidate) => candidate.relationship === 'importer'
+				&& candidate.path === 'src/entry.ts' && candidate.target_path === `src/${source}`
+				&& candidate.line === index + 1), `importer of ${source}`);
+		}
+		assert.ok(!report.candidates.some((candidate) => candidate.relationship === 'import'
+			&& candidate.path === 'src/native.ts'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('related-files reports scan truncation with stable finding metadata', () => {
 	const projectPath = createTempProject();
 
