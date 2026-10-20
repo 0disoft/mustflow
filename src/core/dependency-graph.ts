@@ -8,6 +8,7 @@ import {
 	type ScriptCheckStatus,
 } from './script-check-result.js';
 import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
+import { resolveRelativeImport } from './relative-import-resolution.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const DEPENDENCY_GRAPH_PACK_ID = 'code';
@@ -326,44 +327,6 @@ function extractImportSpecifiers(text: string): readonly ImportSpecifierMatch[] 
 	return results.sort((left, right) => left.index - right.index || left.specifier.localeCompare(right.specifier));
 }
 
-function isRelativeSpecifier(specifier: string): boolean {
-	return specifier.startsWith('./') || specifier.startsWith('../');
-}
-
-function fileExists(absolutePath: string): boolean {
-	try {
-		return lstatSync(absolutePath).isFile();
-	} catch {
-		return false;
-	}
-}
-
-function resolveRelativeImport(projectRoot: string, sourceAbsolutePath: string, specifier: string): string | null {
-	if (!isRelativeSpecifier(specifier)) {
-		return null;
-	}
-
-	const base = path.resolve(path.dirname(sourceAbsolutePath), specifier);
-	const candidates = [
-		base,
-		...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`),
-		...RESOLVE_EXTENSIONS.map((extension) => path.join(base, `index${extension}`)),
-	];
-
-	for (const candidate of candidates) {
-		try {
-			ensureInside(projectRoot, candidate);
-			if (fileExists(candidate)) {
-				return normalizeRelativePath(path.relative(projectRoot, candidate));
-			}
-		} catch {
-			return null;
-		}
-	}
-
-	return null;
-}
-
 function readImportsForFile(
 	projectRoot: string,
 	candidate: SourceFileCandidate,
@@ -388,7 +351,7 @@ function readImportsForFile(
 		specifier: entry.specifier,
 		line: lineNumberAtIndex(text, entry.index),
 		kind: entry.kind,
-		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier),
+		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
 	}));
 }
 

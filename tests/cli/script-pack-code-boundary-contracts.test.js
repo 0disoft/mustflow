@@ -43,7 +43,7 @@ import {
 	writeFileSync,
 } from './helpers/text-budget-contracts.js';
 
-test('dependency-graph scans relative imports with bounded node and edge metadata', () => {
+test('dependency-graph scans runtime-suffixed TypeScript imports with bounded node and edge metadata', () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -52,15 +52,15 @@ test('dependency-graph scans relative imports with bounded node and edge metadat
 		writeFileSync(
 			path.join(projectPath, 'src', 'feature.ts'),
 			[
-				'import { helper } from "./helper";',
-				'export { value } from "./value";',
+				'import { helper } from "./helper.js";',
+				'export { value } from "./value.js";',
 				'export function feature() { return helper(); }',
 				'',
 			].join('\n'),
 		);
-		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'const value = require("./value");\nexport function helper() { return value; }\n');
+		writeFileSync(path.join(projectPath, 'src', 'helper.ts'), 'const value = require("./value.js");\nexport function helper() { return value; }\n');
 		writeFileSync(path.join(projectPath, 'src', 'value.ts'), 'export const value = 1;\n');
-		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import("./feature");\n');
+		writeFileSync(path.join(projectPath, 'src', 'consumer.ts'), 'import("./feature.js");\n');
 
 		const { result, report } = runCodeDependencyGraphJson(projectPath, ['src/feature.ts', '--max-depth', '2']);
 
@@ -83,6 +83,7 @@ test('dependency-graph scans relative imports with bounded node and edge metadat
 
 		const edges = new Map(report.edges.map((edge) => [`${edge.kind}:${edge.source_path}->${edge.target_path}`, edge]));
 		assert.equal(edges.get('static_import:src/feature.ts->src/helper.ts')?.line, 1);
+		assert.equal(edges.get('static_import:src/feature.ts->src/helper.ts')?.specifier, './helper.js');
 		assert.equal(edges.get('static_export:src/feature.ts->src/value.ts')?.line, 2);
 		assert.equal(edges.get('require:src/helper.ts->src/value.ts')?.line, 1);
 		assert.equal(edges.get('dynamic_import:src/consumer.ts->src/feature.ts')?.line, 1);
@@ -171,14 +172,14 @@ test('script-pack scanners skip nested ignored directories consistently', () => 
 	}
 });
 
-test('import-cycle reports cycles with line evidence', () => {
+test('import-cycle reports runtime-suffixed TypeScript cycles with line evidence', () => {
 	const projectPath = createTempProject();
 
 	try {
 		initProject(projectPath);
 		mkdirSync(path.join(projectPath, 'src'));
-		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'import { b } from "./b";\nexport const a = b;\n');
-		writeFileSync(path.join(projectPath, 'src', 'b.ts'), 'import { a } from "./a";\nexport const b = a;\n');
+		writeFileSync(path.join(projectPath, 'src', 'a.ts'), 'import { b } from "./b.js";\nexport const a = b;\n');
+		writeFileSync(path.join(projectPath, 'src', 'b.ts'), 'import { a } from "./a.js";\nexport const b = a;\n');
 
 		const { result, report } = runCodeImportCycleJson(projectPath, ['src']);
 

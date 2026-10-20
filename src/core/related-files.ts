@@ -8,6 +8,7 @@ import {
 	type ScriptCheckStatus,
 } from './script-check-result.js';
 import { DEFAULT_IGNORED_DIRECTORIES, isIgnoredDirectoryPath } from './ignored-directories.js';
+import { resolveRelativeImport } from './relative-import-resolution.js';
 import { ensureInside, ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 export const RELATED_FILES_PACK_ID = 'repo';
@@ -127,12 +128,6 @@ const DEFAULT_MAX_CANDIDATES = 200;
 const MAX_ISSUES = 50;
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const RESOLVE_EXTENSIONS = [...SOURCE_EXTENSIONS, '.json'] as const;
-const SOURCE_EXTENSION_FALLBACKS: Readonly<Record<string, readonly string[]>> = {
-	'.js': ['.ts', '.tsx'],
-	'.jsx': ['.tsx'],
-	'.mjs': ['.mts'],
-	'.cjs': ['.cts'],
-};
 const RELATED_EXTENSIONS = [...RESOLVE_EXTENSIONS, '.d.ts', '.md', '.mdx', '.css', '.scss', '.sass', '.less'] as const;
 const IGNORED_DIRECTORIES = DEFAULT_IGNORED_DIRECTORIES;
 const CONFIG_FILE_PATTERNS = [
@@ -329,48 +324,6 @@ function extractImportSpecifiers(text: string): readonly ImportSpecifierMatch[] 
 	return results.sort((left, right) => left.index - right.index || left.specifier.localeCompare(right.specifier));
 }
 
-function isRelativeSpecifier(specifier: string): boolean {
-	return specifier.startsWith('./') || specifier.startsWith('../');
-}
-
-function fileExists(absolutePath: string): boolean {
-	try {
-		return lstatSync(absolutePath).isFile();
-	} catch {
-		return false;
-	}
-}
-
-function resolveRelativeImport(projectRoot: string, sourceAbsolutePath: string, specifier: string): string | null {
-	if (!isRelativeSpecifier(specifier)) {
-		return null;
-	}
-
-	const base = path.resolve(path.dirname(sourceAbsolutePath), specifier);
-	const extension = path.extname(base);
-	const candidates = [
-		base,
-		...(SOURCE_EXTENSION_FALLBACKS[extension] ?? []).map((sourceExtension) =>
-			`${base.slice(0, -extension.length)}${sourceExtension}`,
-		),
-		...RESOLVE_EXTENSIONS.map((extension) => `${base}${extension}`),
-		...RESOLVE_EXTENSIONS.map((extension) => path.join(base, `index${extension}`)),
-	];
-
-	for (const candidate of candidates) {
-		try {
-			ensureInside(projectRoot, candidate);
-			if (fileExists(candidate)) {
-				return normalizeRelativePath(path.relative(projectRoot, candidate));
-			}
-		} catch {
-			return null;
-		}
-	}
-
-	return null;
-}
-
 function readImportsForFile(
 	projectRoot: string,
 	candidate: SourceFileCandidate,
@@ -394,7 +347,7 @@ function readImportsForFile(
 	return extractImportSpecifiers(text).map((entry) => ({
 		specifier: entry.specifier,
 		line: lineNumberAtIndex(text, entry.index),
-		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier),
+		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
 	}));
 }
 
