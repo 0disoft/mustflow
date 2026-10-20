@@ -239,10 +239,10 @@ function collectFilesFromDirectory(
 	issues: string[],
 	policy: RelatedFilesPolicy,
 	extensions: readonly string[],
-): void {
+): boolean {
 	const relativeDirectory = normalizeRelativePath(path.relative(projectRoot, absoluteDirectory));
 	if (isIgnoredDirectory(relativeDirectory)) {
-		return;
+		return false;
 	}
 
 	let entries;
@@ -253,24 +253,17 @@ function collectFilesFromDirectory(
 		const message = error instanceof Error ? error.message : String(error);
 		pushIssue(issues, `${relativeDirectory}: ${message}`);
 		findings.push(makeFinding('related_files_unreadable_path', 'high', relativeDirectory, message));
-		return;
+		return false;
 	}
 
 	for (const entry of entries) {
-		if (candidates.length >= policy.max_files) {
-			const message = `Related-files scan matched more than ${policy.max_files} files; remaining files were skipped.`;
-			pushIssue(issues, `${relativeDirectory}: ${message}`);
-			if (!findings.some((finding) => finding.code === 'related_files_max_files_exceeded')) {
-				findings.push(makeFinding('related_files_max_files_exceeded', 'medium', relativeDirectory, message));
-			}
-			return;
-		}
-
 		const absoluteEntry = path.join(absoluteDirectory, entry.name);
 		const relativeEntry = normalizeRelativePath(path.relative(projectRoot, absoluteEntry));
 
 		if (entry.isDirectory()) {
-			collectFilesFromDirectory(projectRoot, absoluteEntry, candidates, findings, issues, policy, extensions);
+			if (collectFilesFromDirectory(projectRoot, absoluteEntry, candidates, findings, issues, policy, extensions)) {
+				return true;
+			}
 			continue;
 		}
 
@@ -278,8 +271,18 @@ function collectFilesFromDirectory(
 			continue;
 		}
 
+		if (candidates.length >= policy.max_files) {
+			const message = `Related-files scan matched more than ${policy.max_files} files; remaining files were skipped.`;
+			pushIssue(issues, `${relativeDirectory}: ${message}`);
+			if (!findings.some((finding) => finding.code === 'related_files_max_files_exceeded')) {
+				findings.push(makeFinding('related_files_max_files_exceeded', 'medium', relativeDirectory, message));
+			}
+			return true;
+		}
+
 		candidates.push({ absolutePath: absoluteEntry, relativePath: relativeEntry, language: languageForPath(absoluteEntry) });
 	}
+	return false;
 }
 
 function collectCandidateFiles(

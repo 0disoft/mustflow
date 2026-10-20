@@ -410,14 +410,27 @@ test('related-files maps runtime import suffixes to TypeScript sources when outp
 	}
 });
 
-test('related-files reports scan truncation with stable finding metadata', () => {
+test('related-files reports scan truncation only when eligible files exceed the limit', () => {
 	const projectPath = createTempProject();
 
 	try {
-		initProject(projectPath);
+		mkdirSync(path.join(projectPath, '.mustflow/config'), { recursive: true });
+		writeFileSync(path.join(projectPath, '.mustflow/config/mustflow.toml'), 'schema_version = "1"\n');
 		mkdirSync(path.join(projectPath, 'src'));
 		writeFileSync(path.join(projectPath, 'src', 'one.ts'), 'export const one = 1;\n');
-		writeFileSync(path.join(projectPath, 'src', 'two.ts'), 'export const two = 2;\n');
+		writeFileSync(path.join(projectPath, 'src', 'z.log'), 'not a source file\n');
+		mkdirSync(path.join(projectPath, 'src', 'node_modules'));
+		writeFileSync(path.join(projectPath, 'src', 'node_modules', 'ignored.ts'), 'export {};\n');
+		mkdirSync(path.join(projectPath, 'src', 'z-empty'));
+
+		const exact = runRelatedFilesJson(projectPath, ['src/one.ts', '--max-files', '1']);
+		assert.equal(exact.result.status, 0, exact.result.stderr || exact.result.stdout);
+		assert.equal(exact.report.truncated, false);
+		assert.deepEqual(exact.report.findings, []);
+		assert.deepEqual(exact.report.issues, []);
+
+		mkdirSync(path.join(projectPath, 'src', 'z-extra'));
+		writeFileSync(path.join(projectPath, 'src', 'z-extra', 'two.ts'), 'export const two = 2;\n');
 
 		const { result, report } = runRelatedFilesJson(projectPath, ['src/one.ts', '--max-files', '1']);
 
