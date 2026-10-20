@@ -1,6 +1,6 @@
-import { pathToFileURL } from 'node:url';
 import { cliPath } from './run-support.js';
 import { assertMatchesSchema } from '../helpers/json-schema.js';
+import { runCliWithUntrackedDiscoveryFailure } from './helpers/git-discovery-failure.js';
 import {
 	assert,
 	commitGitBaseline,
@@ -40,7 +40,6 @@ import {
 	runTestPerformanceReportJson,
 	runTestRegressionSelectorJson,
 	runTextBudgetJson,
-	spawnSync,
 	test,
 	unlinkSync,
 	writeFileSync,
@@ -636,24 +635,10 @@ test('test-regression-selector falls back when untracked discovery fails', () =>
 		commitGitBaseline(projectPath);
 		writeFileSync(path.join(projectPath, tracked), 'test("after", () => {});\n');
 		writeFileSync(path.join(projectPath, added), 'test("new", () => {});\n');
-		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
-		writeFileSync(injection, `
-import childProcess from 'node:child_process';
-import { syncBuiltinESMExports } from 'node:module';
-const original = childProcess.spawnSync;
-childProcess.spawnSync = (command, args, options) => {
-  if (command === 'git' && args[0] === 'ls-files') {
-    return { status: 128, stdout: 'tests/cli/new.test.js\\0', stderr: 'fatal: injected untracked discovery failure' };
-  }
-  return original(command, args, options);
-};
-syncBuiltinESMExports();
-`);
 		const runInjected = () => {
-			const result = spawnSync(process.execPath, [
-				'--import', pathToFileURL(injection).href, cliPath,
+			const result = runCliWithUntrackedDiscoveryFailure(projectPath, [
 				'script-pack', 'run', 'test/regression-selector', 'select', '--base', 'HEAD', '--json',
-			], { cwd: projectPath, encoding: 'utf8' });
+			], `${added}\0`);
 			const report = JSON.parse(result.stdout);
 			assertMatchesSchema(path.resolve(path.dirname(cliPath), '..', '..', 'schemas'),
 				'test-regression-selector-report.schema.json', report);

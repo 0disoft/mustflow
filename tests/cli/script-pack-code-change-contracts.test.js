@@ -1,6 +1,6 @@
-import { pathToFileURL } from 'node:url';
 import { cliPath } from './run-support.js';
 import { assertMatchesSchema } from '../helpers/json-schema.js';
+import { runCliWithUntrackedDiscoveryFailure } from './helpers/git-discovery-failure.js';
 import {
 	assert,
 	commitGitBaseline,
@@ -40,7 +40,6 @@ import {
 	runTestPerformanceReportJson,
 	runTestRegressionSelectorJson,
 	runTextBudgetJson,
-	spawnSync,
 	test,
 	unlinkSync,
 	writeFileSync,
@@ -194,23 +193,9 @@ test('change-impact reports incomplete untracked discovery instead of a clean re
 		initProject(projectPath);
 		commitGitBaseline(projectPath);
 		writeFileSync(path.join(projectPath, 'new.ts'), 'export const added = 1;\n');
-		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
-		writeFileSync(injection, `
-import childProcess from 'node:child_process';
-import { syncBuiltinESMExports } from 'node:module';
-const original = childProcess.spawnSync;
-childProcess.spawnSync = (command, args, options) => {
-  if (command === 'git' && args[0] === 'ls-files') {
-    return { status: 128, stdout: 'new.ts\\0', stderr: 'fatal: injected untracked discovery failure' };
-  }
-  return original(command, args, options);
-};
-syncBuiltinESMExports();
-`);
-		const result = spawnSync(process.execPath, [
-			'--import', pathToFileURL(injection).href, cliPath,
+		const result = runCliWithUntrackedDiscoveryFailure(projectPath, [
 			'script-pack', 'run', 'code/change-impact', 'analyze', '--base', 'HEAD', '--json',
-		], { cwd: projectPath, encoding: 'utf8' });
+		], 'new.ts\0');
 		const report = JSON.parse(result.stdout);
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.equal(report.status, 'failed');
@@ -304,23 +289,9 @@ test('export-diff reports failures to discover untracked files', () => {
 		commitGitBaseline(projectPath);
 		writeFileSync(path.join(projectPath, 'added.ts'), 'export const added = 2;\n');
 		writeFileSync(path.join(projectPath, 'api.ts'), 'export const value = 2;\n');
-		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
-		writeFileSync(injection, `
-import childProcess from 'node:child_process';
-import { syncBuiltinESMExports } from 'node:module';
-const original = childProcess.spawnSync;
-childProcess.spawnSync = (command, args, options) => {
-  if (command === 'git' && args[0] === 'ls-files') {
-    return { status: 128, stdout: 'added.ts\\0', stderr: 'fatal: injected untracked discovery failure' };
-  }
-  return original(command, args, options);
-};
-syncBuiltinESMExports();
-`);
-		const result = spawnSync(process.execPath, [
-			'--import', pathToFileURL(injection).href, cliPath,
+		const result = runCliWithUntrackedDiscoveryFailure(projectPath, [
 			'script-pack', 'run', 'code/export-diff', 'compare', '--base', 'HEAD', '--json',
-		], { cwd: projectPath, encoding: 'utf8' });
+		], 'added.ts\0');
 		const report = JSON.parse(result.stdout);
 		assert.equal(result.status, 1, result.stderr || result.stdout);
 		assert.equal(report.status, 'error');
