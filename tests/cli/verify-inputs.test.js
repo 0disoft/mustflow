@@ -389,6 +389,25 @@ required_after = ["input_change"]
 	}
 });
 
+test('accepts in-root classification paths beginning with two dots', async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		for (const relativePath of ['..classification.json', '..plans/classification.json']) {
+			const absolutePath = path.join(projectPath, relativePath);
+			mkdirSync(path.dirname(absolutePath), { recursive: true });
+			writeFileSync(absolutePath, JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+			for (const inputPath of [relativePath, absolutePath]) {
+				const result = await runCli(projectPath, ['verify', '--from-classification', inputPath, '--plan-only', '--json']);
+				assert.equal(result.status, 0, result.stderr || result.stdout);
+				assert.deepEqual(JSON.parse(result.stdout).files, ['README.md']);
+			}
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 

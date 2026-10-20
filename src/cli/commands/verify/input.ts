@@ -201,7 +201,7 @@ export function resolveVerifyInputPath(projectRoot: string, inputPath: string): 
 	const resolved = path.resolve(projectRoot, inputPath);
 	const relative = path.relative(projectRoot, resolved);
 
-	if (relative.startsWith('..') || path.isAbsolute(relative)) {
+	if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
 		throw new Error('plan_path_outside_root');
 	}
 
