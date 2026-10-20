@@ -159,6 +159,50 @@ required_after = ["input_change"]
 	}
 });
 
+for (const initiallyExists of [true, false]) {
+	test(`distinguishes missing files from literal sentinel contents after ${initiallyExists ? 'deletion' : 'creation'}`, async () => {
+		const projectPath = createTempProject();
+		try {
+			await initProject(projectPath);
+			const inputPath = path.join(projectPath, 'README.md');
+			if (initiallyExists) writeFileSync(inputPath, '<missing>');
+			else rmSync(inputPath, { force: true });
+			writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+			appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify whether the input exists."
+argv = ['${process.execPath}', '-e', 'if (require("node:fs").existsSync("README.md") !== ${initiallyExists}) process.exit(1);']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+			const args = ['verify', '--from-classification', 'classification.json', '--json'];
+			const first = await runCli(projectPath, args);
+			assert.equal(first.status, 0, first.stderr || first.stdout);
+			const unchanged = await runCli(projectPath, args);
+			assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
+			assert.equal(JSON.parse(unchanged.stdout).results[0].reason, 'reused_input_hash');
+			if (initiallyExists) rmSync(inputPath);
+			else writeFileSync(inputPath, '<missing>');
+			const changed = await runCli(projectPath, args);
+			const report = JSON.parse(changed.stdout);
+			assert.equal(changed.status, 1, `verification should rerun after existence changes; reason=${report.results[0].reason}`);
+			assert.equal(report.results[0].status, 'failed');
+			assert.notEqual(report.results[0].reason, 'reused_input_hash');
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 

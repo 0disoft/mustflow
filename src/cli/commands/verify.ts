@@ -49,9 +49,11 @@ function createVerificationCurrentStateHash(projectRoot: string, report: ChangeV
 	if (report.files.length === 0) return null;
 	const hash = createHash('sha256').update(verificationPlanId);
 	for (const relativePath of [...report.files].sort()) {
-		hash.update(`\0${relativePath}\0`);
 		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
-		hash.update(existsSync(absolutePath) ? readFileSync(absolutePath) : Buffer.from('<missing>'));
+		const content = existsSync(absolutePath) ? readFileSync(absolutePath) : null;
+		// Frame each input by path and byte length; null distinguishes missing from empty.
+		hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
+		if (content !== null) hash.update(content);
 	}
 	return `sha256:${hash.digest('hex')}`;
 }
