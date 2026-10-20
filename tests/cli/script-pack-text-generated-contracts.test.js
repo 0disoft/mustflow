@@ -278,6 +278,47 @@ test('generated-boundary reports generated manifest-lock paths', () => {
 	}
 });
 
+test('generated-boundary applies recursive policy patterns to direct and nested children', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.mustflow/config/mustflow.toml'), [
+			'[document_roots]',
+			'generated = ["outputs/**/*.txt"]',
+			'ignored = ["scratch/**/*.txt"]',
+			'[edit_policy]',
+			'protected = ["**/protected/**/*.txt"]',
+		].join('\n'));
+		const expected = [
+			['outputs/direct.txt', 'generated'],
+			['outputs/nested/child.txt', 'generated'],
+			['scratch/direct.txt', 'ignored'],
+			['scratch/nested/child.txt', 'ignored'],
+			['protected/direct.txt', 'protected'],
+			['policy/protected/direct.txt', 'protected'],
+			['policy/protected/nested/child.txt', 'protected'],
+		];
+		const ordinary = ['outputs/ordinary.md', 'src/direct.txt'];
+		const { result, report } = runGeneratedBoundaryJson(projectPath, [
+			...expected.map(([target]) => target), ...ordinary,
+		]);
+
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'failed');
+		for (const [target, category] of expected) {
+			const inspected = report.targets.find((entry) => entry.path === target);
+			assert.deepEqual(inspected?.matched_boundaries, [category], target);
+			assert.equal(inspected.matched_patterns[0].source, 'mustflow_config');
+		}
+		for (const target of ordinary) {
+			assert.deepEqual(report.targets.find((entry) => entry.path === target)?.matched_boundaries, [], target);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('generated-boundary reports vendor paths', () => {
 	const projectPath = createTempProject();
 
