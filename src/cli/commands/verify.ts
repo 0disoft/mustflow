@@ -1,7 +1,7 @@
 import type { VerificationReceipt, VerificationResult, VerificationResultStatus, VerificationSummary } from './verify/result-types.js';
 import { summarizeResults, objectField, createFailureFingerprintForVerify, riskCodesForFailureFingerprint } from './verify/result-analysis.js';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { ClassifyOutput } from './classify.js';
 import { createChangeVerificationReport, type ChangeVerificationReport } from '../../core/change-verification.js';
@@ -48,12 +48,19 @@ function hashTextSha256(content: string): string {
 function createVerificationCurrentStateHash(projectRoot: string, report: ChangeVerificationReport, verificationPlanId: string): string | null {
 	if (report.files.length === 0) return null;
 	const hash = createHash('sha256').update(verificationPlanId);
-	for (const relativePath of [...report.files].sort()) {
-		const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
-		const content = existsSync(absolutePath) ? readFileSync(absolutePath) : null;
-		// Frame each input by path and byte length; null distinguishes missing from empty.
-		hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
-		if (content !== null) hash.update(content);
+	try {
+		for (const relativePath of [...report.files].sort()) {
+			const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
+			const stats = statSync(absolutePath, { throwIfNoEntry: false });
+			if (stats && !stats.isFile()) return null;
+			const content = stats ? readFileSync(absolutePath) : null;
+			// Frame each input by path and byte length; null distinguishes missing from empty.
+			hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
+			if (content !== null) hash.update(content);
+		}
+	} catch {
+		// Cache availability must not prevent verification or discard completed results.
+		return null;
 	}
 	return `sha256:${hash.digest('hex')}`;
 }

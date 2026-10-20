@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -197,6 +197,46 @@ required_after = ["input_change"]
 			assert.equal(changed.status, 1, `verification should rerun after existence changes; reason=${report.results[0].reason}`);
 			assert.equal(report.results[0].status, 'failed');
 			assert.notEqual(report.results[0].reason, 'reused_input_hash');
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
+
+for (const initiallyDirectory of [true, false]) {
+	test(`preserves verification results when input is a directory ${initiallyDirectory ? 'before' : 'after'} execution`, async () => {
+		const projectPath = createTempProject();
+		try {
+			await initProject(projectPath);
+			const inputPath = path.join(projectPath, 'input.md');
+			if (initiallyDirectory) mkdirSync(inputPath);
+			else writeFileSync(inputPath, 'input');
+			writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change', 'input.md')));
+			appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify an input that can be a directory."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); if (!fs.statSync("input.md").isDirectory()) { fs.unlinkSync("input.md"); fs.mkdirSync("input.md"); } console.log("verified directory");']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["input.md"]
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+			for (let run = 0; run < 2; run += 1) {
+				const result = await runCli(projectPath, ['verify', '--from-classification', 'classification.json', '--json']);
+				assert.equal(result.status, 0, result.stderr || result.stdout);
+				const report = JSON.parse(result.stdout);
+				assert.equal(report.results[0].status, 'passed');
+				assert.notEqual(report.results[0].reason, 'reused_input_hash');
+				assert.equal(report.results[0].receipt.current_state_hash, undefined);
+				assert.ok(report.results[0].receipt_path);
+			}
 		} finally {
 			removeTempProject(projectPath);
 		}
