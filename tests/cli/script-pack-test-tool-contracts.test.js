@@ -671,6 +671,48 @@ test('test-regression-selector falls back when importer inspection is incomplete
 	}
 });
 
+test('test-regression-selector preserves Unicode and spaced Git paths including renames', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		const tracked = 'tests/cli/기존.test.js';
+		const untracked = 'tests/cli/ 새 테스트.test.js';
+		const leadingSpace = ' leading.test.js';
+		const expectedPaths = [tracked, untracked, leadingSpace].sort();
+		writeFileSync(path.join(projectPath, tracked), 'test("before", () => {});\n');
+		commitGitBaseline(projectPath);
+		runGit(projectPath, ['config', 'core.quotePath', 'true']);
+		runGit(projectPath, ['config', 'diff.renames', 'true']);
+		writeFileSync(path.join(projectPath, tracked), 'test("after", () => {});\n');
+		writeFileSync(path.join(projectPath, untracked), 'test("new", () => {});\n');
+		writeFileSync(path.join(projectPath, leadingSpace), 'test("leading", () => {});\n');
+		const { result, report } = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.deepEqual(report.changed_files.map((file) => file.path).sort(), expectedPaths);
+		assert.deepEqual(report.selected_tests.map((candidate) => candidate.path).sort(), expectedPaths);
+		assert.ok(report.selected_tests.every((candidate) => candidate.exists));
+		assert.equal(report.summary.recommended_intent, 'test_related_cached');
+		assert.deepEqual(report.fallbacks, []);
+
+		commitGitBaseline(projectPath);
+		const committed = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD~1', '--head', 'HEAD']);
+		assert.equal(committed.result.status, 0, committed.result.stderr || committed.result.stdout);
+		assert.deepEqual(committed.report.changed_files.map((file) => file.path).sort(), expectedPaths);
+		assert.deepEqual(committed.report.selected_tests.map((candidate) => candidate.path).sort(), expectedPaths);
+		const renamed = 'tests/cli/새 이름.test.js';
+		runGit(projectPath, ['mv', tracked, renamed]);
+		const renameReport = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(renameReport.result.status, 0, renameReport.result.stderr || renameReport.result.stdout);
+		assert.deepEqual(renameReport.report.changed_files.map((file) => [file.status, file.previous_path, file.path]),
+			[['renamed', tracked, renamed]]);
+		assert.ok(renameReport.report.fallbacks.some((fallback) => fallback.reason === 'fallback_renamed'));
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('test-regression-selector falls back for package and workflow changes', () => {
 	const projectPath = createTempProject();
 

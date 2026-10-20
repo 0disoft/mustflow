@@ -1838,6 +1838,16 @@ test('test-regression-selector json output matches the published schema', () => 
 		assert.equal(changedLimitReport.truncated, true);
 		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', changedLimitReport);
 
+		const unicodePath = 'tests/한글 이름.test.js';
+		writeFileSync(path.join(projectPath, unicodePath), 'test("unicode", () => {});\n');
+		const unicode = runCli(projectPath, [
+			'script-pack', 'run', 'test/regression-selector', 'select', unicodePath, '--base', 'HEAD', '--json',
+		]);
+		assert.equal(unicode.status, 0, unicode.stderr || unicode.stdout);
+		const unicodeReport = JSON.parse(unicode.stdout);
+		assert.equal(unicodeReport.selected_tests[0].path, unicodePath);
+		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', unicodeReport);
+
 		writeFileSync(path.join(projectPath, 'src', 'importer.ts'), `import "./selector";\n//${'x'.repeat(256 * 1024)}\n`);
 		const incomplete = runCli(projectPath, [
 			'script-pack', 'run', 'test/regression-selector', 'select', '--base', 'HEAD', '--json',
