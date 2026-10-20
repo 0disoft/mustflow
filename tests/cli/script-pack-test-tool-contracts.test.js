@@ -607,6 +607,56 @@ test('test-regression-selector selects changed tests and nearby source tests', (
 	}
 });
 
+test('test-regression-selector falls back when importer inspection is incomplete', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		mkdirSync(path.join(projectPath, 'src'));
+		mkdirSync(path.join(projectPath, 'tests', 'cli'), { recursive: true });
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export const session = 1;\n');
+		const consumerPath = path.join(projectPath, 'src', 'consumer.ts');
+		writeFileSync(consumerPath, `import "./session";\n//${'x'.repeat(256 * 1024)}\n`);
+		for (const name of ['session', 'consumer']) {
+			writeFileSync(path.join(projectPath, 'tests', 'cli', `${name}.test.js`), 'test("selector", () => {});\n');
+		}
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export const session = 2;\n');
+
+		const { result, report } = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(result.status, 0, result.stderr || result.stdout);
+		assert.ok(report.issues.some((issue) => issue.includes('exceeds maximum size')));
+		assert.ok(!report.selected_tests.some((candidate) => candidate.path === 'tests/cli/consumer.test.js'));
+		assert.equal(report.summary.selection_status, 'fallback');
+		assert.equal(report.summary.confidence, 'low');
+		assert.equal(report.summary.recommended_intent, 'test');
+		assert.ok(report.fallbacks.some((fallback) => fallback.reason === 'fallback_dependency_graph_incomplete'));
+		assert.equal(report.run_hint, 'mf run test');
+
+		writeFileSync(consumerPath, 'import "./session";\n');
+		const repaired = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(repaired.result.status, 0, repaired.result.stderr || repaired.result.stdout);
+		assert.deepEqual(repaired.report.issues, []);
+		assert.deepEqual(repaired.report.fallbacks, []);
+		assert.equal(repaired.report.summary.recommended_intent, 'test_related_cached');
+
+		mkdirSync(path.join(projectPath, 'src', 'extra'));
+		for (let index = 0; index < 50; index++) {
+			writeFileSync(path.join(projectPath, 'src', 'extra', `filler-${index}.ts`), 'export {};\n');
+		}
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'src', 'session.ts'), 'export const session = 3;\n');
+		const capped = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(capped.result.status, 0, capped.result.stderr || capped.result.stdout);
+		assert.ok(capped.report.issues.some((issue) => issue.includes('matched more than 50 files')));
+		assert.ok(capped.report.fallbacks.some((fallback) => fallback.reason === 'fallback_dependency_graph_incomplete'));
+		assert.equal(capped.report.summary.recommended_intent, 'test');
+		assert.equal(capped.report.run_hint, 'mf run test');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('test-regression-selector falls back for package and workflow changes', () => {
 	const projectPath = createTempProject();
 

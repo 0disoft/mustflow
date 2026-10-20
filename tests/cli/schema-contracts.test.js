@@ -1828,6 +1828,15 @@ test('test-regression-selector json output matches the published schema', () => 
 		const limitedReport = JSON.parse(limited.stdout);
 		assert.equal(limitedReport.summary.recommended_intent, 'test');
 		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', limitedReport);
+
+		writeFileSync(path.join(projectPath, 'src', 'importer.ts'), `import "./selector";\n//${'x'.repeat(256 * 1024)}\n`);
+		const incomplete = runCli(projectPath, [
+			'script-pack', 'run', 'test/regression-selector', 'select', '--base', 'HEAD', '--json',
+		]);
+		assert.equal(incomplete.status, 0, incomplete.stderr || incomplete.stdout);
+		const incompleteReport = JSON.parse(incomplete.stdout);
+		assert.ok(incompleteReport.fallbacks.some((fallback) => fallback.reason === 'fallback_dependency_graph_incomplete'));
+		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', incompleteReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

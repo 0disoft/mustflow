@@ -29,7 +29,7 @@ export type TestRegressionSelectorSurface = ChangeSurface;
 export type TestRegressionSelectorFileStatus = ChangedPathStatus;
 export type TestRegressionSelectorStatus = 'selected' | 'fallback' | 'empty';
 export type TestRegressionSelectorConfidence = 'high' | 'medium' | 'low';
-export type TestRegressionSelectorReason = SelectorFallbackReason;
+export type TestRegressionSelectorReason = SelectorFallbackReason | 'fallback_dependency_graph_incomplete';
 export type TestRegressionSelectorFindingCode =
 	| 'test_regression_selector_git_unavailable'
 	| 'test_regression_selector_invalid_ref'
@@ -331,12 +331,12 @@ function addImporterCandidates(
 	changedFiles: readonly TestRegressionSelectorChangedFile[],
 	candidates: Map<string, TestRegressionSelectorTestCandidate>,
 	issues: string[],
-): void {
+): TestRegressionSelectorFallback | null {
 	const sourcePaths = changedFiles
 		.filter((file) => file.surface === 'source' && file.status !== 'deleted')
 		.map((file) => file.path);
 	if (sourcePaths.length === 0) {
-		return;
+		return null;
 	}
 
 	const dependencyReport = inspectDependencyGraph(root, {
@@ -362,6 +362,12 @@ function addImporterCandidates(
 			addTestCandidate(root, candidates, candidatePath, 'importer_sibling_test', edge.target_path, 0.6);
 		}
 	}
+	return dependencyReport.ok ? null : {
+		reason: 'fallback_dependency_graph_incomplete',
+		path: '.',
+		message: 'Dependency graph inspection was incomplete; importer test candidates may be missing.',
+		recommended_intent: 'test',
+	};
 }
 
 function fallbackForChangedFile(changedFile: TestRegressionSelectorChangedFile): TestRegressionSelectorFallback | null {
@@ -451,9 +457,12 @@ export function createTestRegressionSelectorReport(
 	const candidates = new Map<string, TestRegressionSelectorTestCandidate>();
 
 	addChangedFileCandidates(root, changedFiles, candidates);
-	addImporterCandidates(root, changedFiles, candidates, issues);
+	const dependencyFallback = addImporterCandidates(root, changedFiles, candidates, issues);
 
 	const fallbackMap = new Map<string, TestRegressionSelectorFallback>();
+	if (dependencyFallback) {
+		fallbackMap.set(`${dependencyFallback.reason}:${dependencyFallback.path}`, dependencyFallback);
+	}
 	for (const changedFile of changedFiles) {
 		const fallback = fallbackForChangedFile(changedFile);
 		if (fallback) {

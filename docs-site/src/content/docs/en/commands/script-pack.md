@@ -142,7 +142,10 @@ When a source, test, schema, package, template, workflow, config, or unknown sur
 script hints include `test/regression-selector` so agents can ask for likely tests and explicit
 fallback reasons before trusting a cached related-test shortcut.
 
-If dependency inputs cannot be inspected, the report fails with
+`test/regression-selector` recommends the full `test` intent with
+`fallback_dependency_graph_incomplete` when dependency inspection is incomplete.
+
+If dependency inputs cannot be inspected, `code/change-impact` fails with
 `change_impact_dependency_graph_error` findings that identify the affected paths.
 
 Use it after edits when you need a compact checklist for what to inspect or verify next. It is a

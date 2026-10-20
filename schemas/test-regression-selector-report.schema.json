@@ -79,6 +79,7 @@
         "fallback_deleted_or_renamed",
         "fallback_unknown",
         "fallback_truncated",
+        "fallback_dependency_graph_incomplete",
         "no_changed_files"
       ]
     },
