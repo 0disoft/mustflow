@@ -602,6 +602,20 @@ test('test-regression-selector selects changed tests and nearby source tests', (
 		assert.equal(exact.report.summary.selection_status, 'selected');
 		assert.equal(exact.report.summary.recommended_intent, 'test_related_cached');
 		assert.deepEqual(exact.report.fallbacks, []);
+
+		const changedLimit = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD', '--max-files', '1']);
+		assert.equal(changedLimit.result.status, 1, changedLimit.result.stderr || changedLimit.result.stdout);
+		assert.equal(changedLimit.report.changed_files.length, 1);
+		assert.equal(changedLimit.report.truncated, true);
+		assert.equal(changedLimit.report.summary.recommended_intent, 'test');
+		assert.ok(changedLimit.report.findings.some((finding) => finding.code === 'test_regression_selector_max_files_exceeded'));
+		assert.ok(!changedLimit.report.findings.some((finding) => finding.code === 'test_regression_selector_max_tests_exceeded'));
+
+		const exactFiles = runTestRegressionSelectorJson(projectPath, ['--base', 'HEAD', '--max-files', '3']);
+		assert.equal(exactFiles.result.status, 0, exactFiles.result.stderr || exactFiles.result.stdout);
+		assert.equal(exactFiles.report.changed_files.length, 3);
+		assert.equal(exactFiles.report.truncated, false);
+		assert.equal(exactFiles.report.summary.recommended_intent, 'test_related_cached');
 	} finally {
 		removeTempProject(projectPath);
 	}

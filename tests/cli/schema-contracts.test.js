@@ -1829,6 +1829,15 @@ test('test-regression-selector json output matches the published schema', () => 
 		assert.equal(limitedReport.summary.recommended_intent, 'test');
 		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', limitedReport);
 
+		const changedLimit = runCli(projectPath, [
+			'script-pack', 'run', 'test/regression-selector', 'select',
+			'--base', 'HEAD', '--max-files', '1', '--json',
+		]);
+		assert.equal(changedLimit.status, 1, changedLimit.stderr || changedLimit.stdout);
+		const changedLimitReport = JSON.parse(changedLimit.stdout);
+		assert.equal(changedLimitReport.truncated, true);
+		assertMatchesSchema(schemaRoot, 'test-regression-selector-report.schema.json', changedLimitReport);
+
 		writeFileSync(path.join(projectPath, 'src', 'importer.ts'), `import "./selector";\n//${'x'.repeat(256 * 1024)}\n`);
 		const incomplete = runCli(projectPath, [
 			'script-pack', 'run', 'test/regression-selector', 'select', '--base', 'HEAD', '--json',

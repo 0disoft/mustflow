@@ -469,7 +469,8 @@ export function createTestRegressionSelectorReport(
 			fallbackMap.set(`${fallback.reason}:${fallback.path}`, fallback);
 		}
 	}
-	if (findings.some((finding) => finding.code === 'test_regression_selector_max_files_exceeded')) {
+	const changedFilesTruncated = findings.some((finding) => finding.code === 'test_regression_selector_max_files_exceeded');
+	if (changedFilesTruncated) {
 		fallbackMap.set('fallback_truncated:.', {
 			reason: 'fallback_truncated',
 			path: '.',
@@ -491,8 +492,8 @@ export function createTestRegressionSelectorReport(
 	);
 	const selectedTests = sortedCandidates.filter((candidate) => candidate.exists).slice(0, policy.max_tests);
 	const missingCandidates = sortedCandidates.filter((candidate) => !candidate.exists).slice(0, policy.max_tests);
-	const truncated = sortedCandidates.filter((candidate) => candidate.exists).length > selectedTests.length;
-	if (truncated) {
+	const testsTruncated = sortedCandidates.filter((candidate) => candidate.exists).length > selectedTests.length;
+	if (testsTruncated) {
 		const message = `Regression selector found more than ${policy.max_tests} existing test candidates.`;
 		findings.push(makeFinding('test_regression_selector_max_tests_exceeded', 'medium', '.', message));
 		issues.push(message);
@@ -540,7 +541,7 @@ export function createTestRegressionSelectorReport(
 		missing_candidates: missingCandidates,
 		fallbacks,
 		run_hint: createRunHint(selectedTests, recommendedIntent),
-		truncated,
+		truncated: changedFilesTruncated || testsTruncated,
 		findings,
 		issues,
 	};
