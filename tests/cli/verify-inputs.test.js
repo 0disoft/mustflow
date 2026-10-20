@@ -243,6 +243,47 @@ required_after = ["input_change"]
 	});
 }
 
+test('reruns cached verification when a declared prerequisite disappears', async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), 'unchanged input');
+		writeFileSync(path.join(projectPath, 'required.txt'), 'required artifact');
+		writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+		appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify with a required artifact."
+argv = ['${process.execPath}', '-e', 'require("node:fs").readFileSync("required.txt");']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+preconditions = [{ kind = "path_exists", path = "required.txt" }]
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+		const args = ['verify', '--from-classification', 'classification.json', '--json'];
+		const first = await runCli(projectPath, args);
+		assert.equal(first.status, 0, first.stderr || first.stdout);
+		const unchanged = await runCli(projectPath, args);
+		assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
+		assert.equal(JSON.parse(unchanged.stdout).results[0].reason, 'reused_input_hash');
+		rmSync(path.join(projectPath, 'required.txt'));
+		const changed = await runCli(projectPath, args);
+		const report = JSON.parse(changed.stdout);
+		assert.equal(changed.status, 1, `missing prerequisite must rerun verification; reason=${report.results[0].reason}`);
+		assert.equal(report.results[0].status, 'failed');
+		assert.notEqual(report.results[0].reason, 'reused_input_hash');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 

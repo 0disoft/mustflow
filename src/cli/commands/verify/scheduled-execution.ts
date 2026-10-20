@@ -5,6 +5,8 @@ import type { RunReceipt } from '../../../core/run-receipt.js';
 import { type ChangeVerificationCandidate, type ChangeVerificationReport } from '../../../core/change-verification.js';
 import { finishRunWriteBatchTracking, startRunWriteBatchTracking, type RunWriteBatchIntent, type RunWriteDriftReceipt } from '../../../core/run-write-drift.js';
 import { createCommandEnv } from '../../../core/command-env.js';
+import { readCommandContract } from '../../../core/config-loading.js';
+import { evaluateCommandPreconditions } from '../../../core/command-preconditions.js';
 import type { VerificationCandidate } from '../../../core/verification-plan.js';
 import { type CliLang } from '../../lib/i18n.js';
 import type { Reporter } from '../../lib/reporter.js';
@@ -315,6 +317,7 @@ export async function runScheduledVerificationIntents(
 	reusableResults: ReadonlyMap<string, VerificationResult> = new Map(),
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
+	const contract = reusableResults.size > 0 ? readCommandContract(projectRoot) : null;
 
 	for (let batchIndex = 0; batchIndex < report.schedule.batches.length; batchIndex += 1) {
 		const batch = report.schedule.batches[batchIndex] as VerificationScheduleBatch;
@@ -323,8 +326,12 @@ export async function runScheduledVerificationIntents(
 			continue;
 		}
 
-		const reused = entries.flatMap((entry) => reusableResults.get(entry.intent) ?? []);
-		const runnableEntries = entries.filter((entry) => !reusableResults.has(entry.intent));
+		const reusableIntents = new Set(entries
+			.filter((entry) => reusableResults.has(entry.intent) && contract !== null &&
+				evaluateCommandPreconditions(projectRoot, contract, entry.intent).every((condition) => condition.status === 'satisfied'))
+			.map((entry) => entry.intent));
+		const reused = entries.flatMap((entry) => reusableIntents.has(entry.intent) ? reusableResults.get(entry.intent) ?? [] : []);
+		const runnableEntries = entries.filter((entry) => !reusableIntents.has(entry.intent));
 		let batchResults: VerificationResult[];
 		if (runnableEntries.length === 0) {
 			results.push(...reused);
