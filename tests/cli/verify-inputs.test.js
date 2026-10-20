@@ -337,6 +337,58 @@ required_after = ["input_change"]
 	});
 }
 
+test('invalidates later cached batches when an earlier batch changes classified input', async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), 'good');
+		writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+		for (const [intent, script, writes] of [
+			['a_prepare', 'const fs = require("node:fs"); if (fs.existsSync("mutate.flag")) fs.writeFileSync("README.md", "bad");', '["README.md"]'],
+			['b_check', 'if (require("node:fs").readFileSync("README.md", "utf8") !== "good") process.exit(1);', '[]'],
+		]) {
+			appendIntent(projectPath, `
+[intents.${intent}]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify ordered input changes."
+argv = ['${process.execPath}', '-e', '${script}']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ${writes}
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+		}
+		const args = ['verify', '--from-classification', 'classification.json', '--json'];
+		const plan = await runCli(projectPath, [...args, '--plan-only']);
+		assert.equal(plan.status, 0, plan.stderr || plan.stdout);
+		assert.deepEqual(JSON.parse(plan.stdout).schedule.batches.map((batch) => batch.intents), [['a_prepare'], ['b_check']]);
+		const first = await runCli(projectPath, args);
+		assert.equal(first.status, 0, first.stderr || first.stdout);
+		const unchanged = await runCli(projectPath, args);
+		assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
+		const previous = JSON.parse(unchanged.stdout);
+		assert.ok(previous.results.every((result) => result.reason === 'reused_input_hash'));
+		const prepareReceiptPath = path.join(projectPath, previous.results.find((result) => result.intent === 'a_prepare').receipt_path);
+		writeFileSync(prepareReceiptPath, `${readFileSync(prepareReceiptPath, 'utf8')}\n`);
+		writeFileSync(path.join(projectPath, 'mutate.flag'), 'change the input');
+		const changed = await runCli(projectPath, args);
+		const report = JSON.parse(changed.stdout);
+		const check = report.results.find((result) => result.intent === 'b_check');
+		assert.equal(readFileSync(path.join(projectPath, 'README.md'), 'utf8'), 'bad');
+		assert.equal(changed.status, 1, `later batch must verify the changed input; reason=${check.reason}`);
+		assert.equal(check.status, 'failed');
+		assert.notEqual(check.reason, 'reused_input_hash');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 

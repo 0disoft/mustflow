@@ -314,7 +314,8 @@ export async function runScheduledVerificationIntents(
 	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
 	parallelism: number,
-	reusableResults: ReadonlyMap<string, VerificationResult> = new Map(),
+	reusableResults: ReadonlyMap<string, VerificationResult>,
+	reuseInputsUnchanged: () => boolean,
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 	const contract = reusableResults.size > 0 ? readCommandContract(projectRoot) : null;
@@ -326,8 +327,9 @@ export async function runScheduledVerificationIntents(
 			continue;
 		}
 
+		const inputsUnchanged = entries.some((entry) => reusableResults.has(entry.intent)) && reuseInputsUnchanged();
 		const reusableIntents = new Set(entries
-			.filter((entry) => reusableResults.has(entry.intent) && contract !== null &&
+			.filter((entry) => inputsUnchanged && reusableResults.has(entry.intent) && contract !== null &&
 				evaluateCommandPreconditions(projectRoot, contract, entry.intent).every((condition) => condition.status === 'satisfied'))
 			.map((entry) => entry.intent));
 		const reused = entries.flatMap((entry) => reusableIntents.has(entry.intent) ? reusableResults.get(entry.intent) ?? [] : []);

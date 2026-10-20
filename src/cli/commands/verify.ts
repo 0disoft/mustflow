@@ -577,7 +577,10 @@ async function createVerifyOutput(
 	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, verificationPlanId);
 	const mayReuse = profile !== 'release' && !['high', 'critical'].includes(report.risk_assessment.level);
 	const reusableResults = mayReuse ? readReusableVerificationResults(projectRoot, verificationPlanId, currentStateHash) : new Map<string, VerificationResult>();
-	const results = await runScheduledVerificationIntents(report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism, reusableResults);
+	const results = await runScheduledVerificationIntents(
+		report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism, reusableResults,
+		() => currentStateHash !== null && createVerificationCurrentStateHash(projectRoot, report, verificationPlanId) === currentStateHash,
+	);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
 	const summary = summarizeResults(results);
