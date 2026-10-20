@@ -6,6 +6,15 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.141.2 - 2026-10-21
+
+- Preserve backup generations and recover partial initialization or template updates without overwriting concurrent edits.
+- Revalidate cached verification inputs, prerequisites, and receipts before reusing results.
+- Preserve literal Git paths, including Unicode and spaces, throughout classification, change analysis, exports, and test selection.
+- Report incomplete discovery and unreadable inputs; fall back to full regression checks when selective coverage cannot be established.
+- Correct recursive boundary matching, TypeScript import resolution, and dependency graph limits while reducing redundant workspace scans.
+- Refresh compatible CLI and documentation dependencies.
+
 ## 2.141.1 - 2026-10-04
 
 - New installs default to simple mode; existing installs with no `[workflow]` section stay on strict.
