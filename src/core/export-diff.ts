@@ -174,9 +174,9 @@ function runGit(root: string, args: readonly string[]): GitResult {
 		maxBuffer: 16 * 1024 * 1024,
 	});
 	return {
-		ok: result.status === 0,
+		ok: result.status === 0 && !result.error,
 		stdout: result.stdout ?? '',
-		stderr: result.stderr ?? '',
+		stderr: result.stderr || result.error?.message || '',
 		status: result.status,
 	};
 }
@@ -243,7 +243,14 @@ function collectChangedPaths(root: string, policy: ExportDiffPolicy, findings: E
 function readGitSnapshot(root: string, ref: string, relativePath: string, maxFileBytes: number): FileSnapshot {
 	const result = runGit(root, ['show', `${ref}:${relativePath}`]);
 	if (!result.ok) {
-		return { exists: false, text: null, sha256: null };
+		// Missing paths are expected for added/deleted files. A failed blob read
+		// alone cannot establish absence (for example, the output buffer may fill).
+		const tree = runGit(root, ['ls-tree', '-z', ref, '--', relativePath]);
+		if (tree.ok && tree.stdout.length === 0) {
+			return { exists: false, text: null, sha256: null };
+		}
+		const detail = result.stderr.trim() || `git show exited with ${result.status}`;
+		throw new Error(`Unable to read ${relativePath} at ${ref}: ${detail}`);
 	}
 
 	const bytes = Buffer.byteLength(result.stdout, 'utf8');

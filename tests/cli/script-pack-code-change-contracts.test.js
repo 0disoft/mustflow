@@ -248,6 +248,41 @@ test('export-diff preserves Unicode and spaced paths in working-tree and committ
 	}
 });
 
+test('export-diff reports Git snapshot read failures instead of absent files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		const source = 'api.ts';
+		// Exceed the Git reader's 16 MiB output buffer with a real committed blob.
+		writeFileSync(path.join(projectPath, source), `/*${'x'.repeat(17 * 1024 * 1024)}*/\nexport const value = 1;\n`);
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, source), 'export const value = 2;\n');
+		commitGitBaseline(projectPath);
+
+		for (const refs of [['HEAD~1', 'HEAD'], ['HEAD', 'HEAD~1']]) {
+			const { result, report } = runCodeExportDiffJson(projectPath, ['--base', refs[0], '--head', refs[1]]);
+			assert.equal(result.status, 1, result.stderr || result.stdout);
+			assert.equal(report.status, 'error');
+			assert.equal(report.ok, false);
+			assert.ok(report.findings.some((finding) => finding.code === 'export_diff_unreadable_path' && finding.path === source));
+			assert.deepEqual(report.files, []);
+			assert.deepEqual(report.exports, []);
+		}
+
+		unlinkSync(path.join(projectPath, source));
+		commitGitBaseline(projectPath);
+		const deleted = runCodeExportDiffJson(projectPath, ['--base', 'HEAD~1', '--head', 'HEAD']);
+		assert.equal(deleted.result.status, 0, deleted.result.stderr || deleted.result.stdout);
+		assert.deepEqual(deleted.report.findings, []);
+		assert.equal(deleted.report.files[0].base_exists, true);
+		assert.equal(deleted.report.files[0].head_exists, false);
+		assert.equal(deleted.report.exports[0].change, 'removed');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('export-diff compares exported signatures and return metadata against the working tree', () => {
 	const projectPath = createTempProject();
 

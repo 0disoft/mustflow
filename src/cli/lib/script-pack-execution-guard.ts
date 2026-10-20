@@ -35,7 +35,7 @@ interface GuardContext {
 }
 
 const MAX_RECORDED_DENIALS = 20;
-const READ_ONLY_GIT_SUBCOMMANDS = new Set(['check-ignore', 'config', 'diff', 'ls-files', 'rev-parse', 'show', 'status']);
+const READ_ONLY_GIT_SUBCOMMANDS = new Set(['check-ignore', 'config', 'diff', 'ls-files', 'ls-tree', 'rev-parse', 'show', 'status']);
 const GIT_WRITE_SUBCOMMANDS = new Set([
 	'add',
 	'am',
