@@ -100,6 +100,11 @@ function globToRegExp(pattern: string): RegExp {
 
 	for (let index = 0; index < normalized.length; ) {
 		if (normalized.startsWith('**', index)) {
+			if (normalized[index + 2] === '/') {
+				source += '(?:.*/)?';
+				index += 3;
+				continue;
+			}
 			source += '.*';
 			index += 2;
 			continue;

@@ -215,9 +215,10 @@ select = { intent = "source_related", fallback_intent = "source_fast" }
 	}
 });
 
-test('treats project-declared test selection matches as a minimum selected set', async () => {
+test('treats recursive project-declared test selection matches as a minimum selected set', async () => {
 	const projectPath = createChangedProject();
 	const fixturePath = path.join(projectPath, 'tests', 'fixtures', 'selection-manifest.txt');
+	const nestedFixturePath = path.join(projectPath, 'tests', 'fixtures', 'nested', 'selection-manifest.txt');
 	const selectionPath = path.join(projectPath, '.mustflow', 'config', 'test-selection.toml');
 
 	try {
@@ -280,10 +281,12 @@ schema_version = "1"
 id = "fixture-selection"
 risk = "medium"
 reason = "Fixture changes use the project-declared related tests."
-match = { paths = ["tests/fixtures/**"], surfaces = ["test_fixture"] }
+match = { paths = ["tests/fixtures/**/*.txt"], surfaces = ["test_fixture"] }
 select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_targets = ["tests/fixtures"] }
 `,
 		);
+		mkdirSync(path.dirname(nestedFixturePath), { recursive: true });
+		writeFileSync(nestedFixturePath, 'before\n');
 		mkdirSync(path.dirname(fixturePath), { recursive: true });
 		writeFileSync(fixturePath, 'before\n');
 		commitProjectBaseline(projectPath);
@@ -332,6 +335,13 @@ select = { intent = "manifest_related", fallback_intent = "manifest_fast", test_
 			report.schedule.entries.map((entry) => entry.intent),
 			['manifest_broad', 'manifest_related'],
 		);
+		writeFileSync(nestedFixturePath, 'after\n');
+		const nestedResult = await runCli(projectPath, ['verify', '--changed', '--plan-only', '--json']);
+		assert.equal(nestedResult.status, 0, nestedResult.stderr || nestedResult.stdout);
+		assert.deepEqual(JSON.parse(nestedResult.stdout).test_selection.matches[0].files, [
+			'tests/fixtures/nested/selection-manifest.txt',
+			'tests/fixtures/selection-manifest.txt',
+		]);
 	} finally {
 		removeTempProject(projectPath);
 	}
