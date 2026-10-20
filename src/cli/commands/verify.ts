@@ -348,8 +348,10 @@ function writeVerifyRunReceipts(
 	validationRatchetRisks: readonly ValidationRatchetRisk[],
 	reproEvidence: ReproEvidenceReport | null,
 	externalChecks: readonly ExternalEvidenceCheck[],
+	inputStateHash: string | null,
 ): VerificationOutput {
 	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, output.verification_plan_id);
+	const reusableStateHash = currentStateHash === inputStateHash ? currentStateHash : null;
 	const statePaths = createVerifyRunStatePaths(projectRoot);
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
 	const results: VerificationResult[] = [];
@@ -362,10 +364,11 @@ function writeVerifyRunReceipts(
 		if (result.intent && result.receipt) {
 			const receiptStatePath = createVerifyIntentReceiptPath(statePaths, index + 1, result.intent);
 			receiptPath = receiptStatePath.receiptPath;
+			const { current_state_hash: previousStateHash, ...receiptWithoutStateHash } = result.receipt;
 			receipt = {
-				...result.receipt,
+				...receiptWithoutStateHash,
 				verification_plan_id: output.verification_plan_id,
-				...(currentStateHash ? { current_state_hash: currentStateHash } : {}),
+				...(reusableStateHash ? { current_state_hash: reusableStateHash } : {}),
 				receipt_path: receiptPath,
 			};
 			const receiptContent = `${JSON.stringify(receipt, null, 2)}\n`;
@@ -653,6 +656,7 @@ async function createVerifyOutput(
 		validationRatchetRisks,
 		reproEvidence,
 		externalChecks,
+		currentStateHash,
 	);
 }
 

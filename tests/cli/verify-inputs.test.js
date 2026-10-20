@@ -86,6 +86,79 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
+test('does not reuse verification when a command changes the classified input', async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), 'good');
+		writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+		appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Check the input before updating it."
+argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); if (fs.readFileSync("README.md", "utf8") !== "good") process.exit(1); fs.writeFileSync("README.md", "bad");']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = ["README.md"]
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+		const args = ['verify', '--from-classification', 'classification.json', '--json'];
+		const first = await runCli(projectPath, args);
+		assert.equal(first.status, 0, first.stderr || first.stdout);
+		assert.equal(readFileSync(path.join(projectPath, 'README.md'), 'utf8'), 'bad');
+		const second = await runCli(projectPath, args);
+		const report = JSON.parse(second.stdout);
+		assert.equal(second.status, 1, second.stderr || second.stdout);
+		assert.equal(report.results[0].status, 'failed');
+		assert.notEqual(report.results[0].reason, 'reused_input_hash');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('reuses unchanged verification inputs and reruns after an edit', async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), 'good');
+		writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+		appendIntent(projectPath, `
+[intents.verify_input]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Check the input without updating it."
+argv = ['${process.execPath}', '-e', 'if (require("node:fs").readFileSync("README.md", "utf8") !== "good") process.exit(1);']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["input_change"]
+`);
+		const args = ['verify', '--from-classification', 'classification.json', '--json'];
+		const first = await runCli(projectPath, args);
+		assert.equal(first.status, 0, first.stderr || first.stdout);
+		const second = await runCli(projectPath, args);
+		assert.equal(second.status, 0, second.stderr || second.stdout);
+		assert.equal(JSON.parse(second.stdout).results[0].reason, 'reused_input_hash');
+		writeFileSync(path.join(projectPath, 'README.md'), 'bad');
+		const third = await runCli(projectPath, args);
+		assert.equal(third.status, 1, third.stderr || third.stdout);
+		assert.equal(JSON.parse(third.stdout).results[0].status, 'failed');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('documents from-plan as a deprecated classification-report alias', async () => {
 	const result = await runCli(projectRoot, ['verify', '--help']);
 
