@@ -224,6 +224,11 @@ function collectChangedPaths(root: string, policy: ExportDiffPolicy, findings: E
 			for (const entry of splitGitPaths(untracked.stdout)) {
 				changed.add(entry);
 			}
+		} else {
+			const detail = untracked.stderr.trim() || `git ls-files exited with ${untracked.status}`;
+			const message = `Could not discover untracked files: ${detail}`;
+			issues.push(message);
+			findings.push(makeFinding('export_diff_unreadable_path', 'high', '.', message));
 		}
 	}
 

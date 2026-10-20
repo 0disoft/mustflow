@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url';
+import { cliPath } from './run-support.js';
 import {
 	assert,
 	commitGitBaseline,
@@ -243,6 +245,52 @@ test('export-diff preserves Unicode and spaced paths in working-tree and committ
 		assert.equal(committed.result.status, 0, committed.result.stderr || committed.result.stdout);
 		assert.deepEqual(committed.report.files.map((file) => file.path).sort(), expectedPaths);
 		assert.deepEqual(committed.report.summary, report.summary);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('export-diff reports failures to discover untracked files', () => {
+	const projectPath = createTempProject();
+
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'api.ts'), 'export const value = 1;\n');
+		commitGitBaseline(projectPath);
+		writeFileSync(path.join(projectPath, 'added.ts'), 'export const added = 2;\n');
+		writeFileSync(path.join(projectPath, 'api.ts'), 'export const value = 2;\n');
+		const injection = path.join(projectPath, '.git', 'fail-untracked.mjs');
+		writeFileSync(injection, `
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+const original = childProcess.spawnSync;
+childProcess.spawnSync = (command, args, options) => {
+  if (command === 'git' && args[0] === 'ls-files') {
+    return { status: 128, stdout: 'added.ts\\0', stderr: 'fatal: injected untracked discovery failure' };
+  }
+  return original(command, args, options);
+};
+syncBuiltinESMExports();
+`);
+		const result = spawnSync(process.execPath, [
+			'--import', pathToFileURL(injection).href, cliPath,
+			'script-pack', 'run', 'code/export-diff', 'compare', '--base', 'HEAD', '--json',
+		], { cwd: projectPath, encoding: 'utf8' });
+		const report = JSON.parse(result.stdout);
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.equal(report.status, 'error');
+		assert.equal(report.ok, false);
+		assert.ok(report.findings.some((finding) => finding.code === 'export_diff_unreadable_path'
+			&& finding.path === '.' && finding.message.includes('injected untracked discovery failure')));
+		assert.ok(report.issues.some((issue) => issue.includes('Could not discover untracked files')));
+		assert.deepEqual(report.files.map((file) => file.path), ['api.ts']);
+		assert.ok(report.exports.every((entry) => entry.path !== 'added.ts'));
+
+		const recovered = runCodeExportDiffJson(projectPath, ['--base', 'HEAD']);
+		assert.equal(recovered.result.status, 0, recovered.result.stderr || recovered.result.stdout);
+		assert.deepEqual(recovered.report.findings, []);
+		assert.deepEqual(recovered.report.files.map((file) => file.path).sort(), ['added.ts', 'api.ts']);
+		assert.ok(recovered.report.exports.some((entry) => entry.name === 'added' && entry.change === 'added'));
 	} finally {
 		removeTempProject(projectPath);
 	}
