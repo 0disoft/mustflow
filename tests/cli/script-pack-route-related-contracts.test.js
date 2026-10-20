@@ -450,6 +450,16 @@ test('related-files reports scan truncation only when eligible files exceed the 
 		assert.equal(report.ok, false);
 		assert.equal(report.truncated, true);
 		assert.ok(report.findings.some((finding) => finding.code === 'related_files_max_files_exceeded'));
+
+		for (const name of ['a-first.md', 'b-second.md', 'c-third.md']) {
+			writeFileSync(path.join(projectPath, name), '# Documentation\n');
+		}
+		writeFileSync(path.join(projectPath, 'src', 'z-extra', 'two.ts'), 'import "../one";\n');
+		const separateLimits = runRelatedFilesJson(projectPath, ['src/one.ts', '--max-files', '2']);
+		assert.equal(separateLimits.result.status, 1, separateLimits.result.stderr || separateLimits.result.stdout);
+		assert.equal(separateLimits.report.truncated, true);
+		assert.ok(separateLimits.report.candidates.some((candidate) => candidate.relationship === 'importer'
+			&& candidate.path === 'src/z-extra/two.ts'));
 	} finally {
 		removeTempProject(projectPath);
 	}

@@ -229,11 +229,10 @@ function targetKind(absolutePath: string): { readonly exists: boolean; readonly 
 function collectFilesFromDirectory(
 	projectRoot: string,
 	absoluteDirectory: string,
-	candidates: SourceFileCandidate[],
+	collections: { extensions: readonly string[]; files: SourceFileCandidate[]; truncated: boolean }[],
 	findings: RelatedFilesFinding[],
 	issues: string[],
 	policy: RelatedFilesPolicy,
-	extensions: readonly string[],
 ): boolean {
 	const relativeDirectory = normalizeRelativePath(path.relative(projectRoot, absoluteDirectory));
 	if (isIgnoredDirectory(relativeDirectory)) {
@@ -256,26 +255,35 @@ function collectFilesFromDirectory(
 		const relativeEntry = normalizeRelativePath(path.relative(projectRoot, absoluteEntry));
 
 		if (entry.isDirectory()) {
-			if (collectFilesFromDirectory(projectRoot, absoluteEntry, candidates, findings, issues, policy, extensions)) {
+			if (collectFilesFromDirectory(projectRoot, absoluteEntry, collections, findings, issues, policy)) {
 				return true;
 			}
 			continue;
 		}
 
-		if (!entry.isFile() || !extensions.includes(path.extname(entry.name).toLowerCase())) {
+		if (!entry.isFile()) {
 			continue;
 		}
 
-		if (candidates.length >= policy.max_files) {
-			const message = `Related-files scan matched more than ${policy.max_files} files; remaining files were skipped.`;
-			pushIssue(issues, `${relativeDirectory}: ${message}`);
-			if (!findings.some((finding) => finding.code === 'related_files_max_files_exceeded')) {
-				findings.push(makeFinding('related_files_max_files_exceeded', 'medium', relativeDirectory, message));
+		const extension = path.extname(entry.name).toLowerCase();
+		for (const collection of collections) {
+			if (collection.truncated || !collection.extensions.includes(extension)) {
+				continue;
 			}
+			if (collection.files.length >= policy.max_files) {
+				collection.truncated = true;
+				const message = `Related-files scan matched more than ${policy.max_files} files; remaining files were skipped.`;
+				pushIssue(issues, `${relativeDirectory}: ${message}`);
+				if (!findings.some((finding) => finding.code === 'related_files_max_files_exceeded')) {
+					findings.push(makeFinding('related_files_max_files_exceeded', 'medium', relativeDirectory, message));
+				}
+				continue;
+			}
+			collection.files.push({ absolutePath: absoluteEntry, relativePath: relativeEntry, language: languageForPath(absoluteEntry) });
+		}
+		if (collections.every((collection) => collection.truncated)) {
 			return true;
 		}
-
-		candidates.push({ absolutePath: absoluteEntry, relativePath: relativeEntry, language: languageForPath(absoluteEntry) });
 	}
 	return false;
 }
@@ -285,11 +293,11 @@ function collectCandidateFiles(
 	findings: RelatedFilesFinding[],
 	issues: string[],
 	policy: RelatedFilesPolicy,
-	extensions: readonly string[],
-): readonly SourceFileCandidate[] {
-	const candidates: SourceFileCandidate[] = [];
-	collectFilesFromDirectory(projectRoot, projectRoot, candidates, findings, issues, policy, extensions);
-	return candidates.slice(0, policy.max_files);
+): { sourceFiles: readonly SourceFileCandidate[]; relatedFiles: readonly SourceFileCandidate[] } {
+	const source = { extensions: SOURCE_EXTENSIONS, files: [] as SourceFileCandidate[], truncated: false };
+	const related = { extensions: RELATED_EXTENSIONS, files: [] as SourceFileCandidate[], truncated: false };
+	collectFilesFromDirectory(projectRoot, projectRoot, [source, related], findings, issues, policy);
+	return { sourceFiles: source.files, relatedFiles: related.files };
 }
 
 function lineNumberAtIndex(text: string, index: number): number {
@@ -611,8 +619,7 @@ export function inspectRelatedFiles(projectRoot: string, options: InspectRelated
 		});
 	}
 
-	const sourceFiles = collectCandidateFiles(root, findings, issues, policy, SOURCE_EXTENSIONS);
-	const relatedFiles = collectCandidateFiles(root, findings, issues, policy, RELATED_EXTENSIONS);
+	const { sourceFiles, relatedFiles } = collectCandidateFiles(root, findings, issues, policy);
 	const importMap = new Map<string, readonly ImportReference[]>();
 	const candidateMap = new Map<string, RelatedFileCandidate>();
 
