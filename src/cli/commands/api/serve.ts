@@ -1,4 +1,5 @@
 import { apiReportActionSpec, isApiReportAction, type ApiReportAction } from './actions.js';
+import { DependencyFailure, formatDependencyFailure } from '../../../core/dependency-diagnostics.js';
 import { printUsageError } from '../../lib/cli-output.js';
 import {
 	formatCliOptionParseError,
@@ -76,6 +77,7 @@ interface ApiServeInputLine {
 export interface ApiServeRuntime {
 	readonly createReport: (action: ApiReportAction) => unknown;
 	readonly getHelp: (lang: CliLang) => string;
+	readonly onError?: (error: DependencyFailure) => void;
 }
 
 function createApiServePolicy(): ApiServePolicy {
@@ -178,7 +180,7 @@ function parseApiServeRequestLine(line: string): ParsedApiServeRequestLine {
 	};
 }
 
-function createApiServeResponse(request: ApiServeRequest, runtime: ApiServeRuntime): ApiServeResponse {
+function createApiServeResponse(request: ApiServeRequest, runtime: ApiServeRuntime, reporter: Reporter): ApiServeResponse {
 	const id = typeof request.id === 'string' || typeof request.id === 'number' || request.id === null ? request.id : null;
 
 	if (typeof request.action !== 'string') {
@@ -200,7 +202,10 @@ function createApiServeResponse(request: ApiServeRequest, runtime: ApiServeRunti
 
 	try {
 		return createApiServeSuccess(id, runtime.createReport(request.action));
-	} catch {
+	} catch (cause) {
+		const error = new DependencyFailure('API report', request.action, cause);
+		runtime.onError?.(error);
+		reporter.stderr(formatDependencyFailure(error));
 		return createApiServeError(id, 'report_unavailable', 'Report is unavailable for this action.');
 	}
 }
@@ -314,7 +319,7 @@ export async function runApiServe(
 			continue;
 		}
 
-		writeApiServeResponse(createApiServeResponse(parsed.request, runtime), reporter);
+		writeApiServeResponse(createApiServeResponse(parsed.request, runtime, reporter), reporter);
 	}
 
 	return 0;

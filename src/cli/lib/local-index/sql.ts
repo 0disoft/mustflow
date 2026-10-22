@@ -1,4 +1,6 @@
 import { createRequire } from 'node:module';
+import { withDependencyDeadline } from '../../../core/dependency-read.js';
+import { throwIfInterrupted } from '../../../core/cancellation.js';
 
 export type SqlValue = number | string | Uint8Array | null;
 
@@ -39,11 +41,13 @@ async function initializeSqlJs(): Promise<SqlJsStatic> {
 	});
 }
 
-export async function loadSqlJs(): Promise<SqlJsStatic> {
-	sqlJsPromise ??= initializeSqlJs().catch((error: unknown) => {
+export async function loadSqlJs(options: { readonly signal?: AbortSignal } = {}): Promise<SqlJsStatic> {
+	throwIfInterrupted(options.signal);
+	sqlJsPromise ??= withDependencyDeadline({ timeoutMs: 10_000 }, initializeSqlJs).catch((error: unknown) => {
 		sqlJsPromise = null;
 		throw error;
 	});
 
-	return sqlJsPromise;
+	// A cancelled caller stops waiting without aborting initialization shared by other requests.
+	return options.signal ? withDependencyDeadline({ signal: options.signal, timeoutMs: 10_000 }, () => sqlJsPromise!) : sqlJsPromise;
 }

@@ -114,6 +114,8 @@ export interface LocalIndexResult {
 export interface LocalSearchOptions {
 	readonly limit?: number;
 	readonly scope?: LocalSearchScope;
+	readonly signal?: AbortSignal;
+	readonly onError?: (error: Error) => void;
 }
 
 export type CacheLayer = 'stable' | 'task' | 'volatile';
@@ -151,6 +153,12 @@ export interface LocalSearchItem {
 }
 
 export interface LocalSearchResult {
+	readonly degraded?: {
+		readonly code: 'local_index_unavailable';
+		readonly diagnostic_id: string;
+		readonly failure_stage: 'runtime_load' | 'database_read' | 'database_open' | 'query';
+		readonly unavailable_scopes: readonly 'source'[];
+	};
 	readonly schema_version: string;
 	readonly command: 'search';
 	readonly ok: boolean;

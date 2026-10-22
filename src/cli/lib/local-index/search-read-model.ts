@@ -4,6 +4,8 @@ import path from 'node:path';
 import { isRecord, readStringArray, type TomlTable } from '../command-contract.js';
 import { toPosixPath } from '../filesystem.js';
 import type { NormalizedCommandEffect } from '../../../core/command-effects.js';
+import { DependencyFailure } from '../../../core/dependency-diagnostics.js';
+import { throwIfInterrupted } from '../../../core/cancellation.js';
 import type { SourceAnchorStatus } from '../../../core/source-anchor-status.js';
 import {
 	DEFAULT_PROMPT_CACHE_STABLE_READ,
@@ -617,6 +619,7 @@ function searchLocalWorkflowFilesDirectly(
  * risk: cache, config
  */
 export async function searchLocalIndex(projectRoot: string, query: string, options: LocalSearchOptions = {}): Promise<LocalSearchResult> {
+	throwIfInterrupted(options.signal);
 	const normalizedQuery = normalizeSearchText(query);
 	const limit = Math.max(1, Math.min(options.limit ?? 10, 50));
 	const scope = options.scope ?? 'workflow';
@@ -626,23 +629,39 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		throw new Error('Search query must not be empty.');
 	}
 
+	let failureStage: NonNullable<LocalSearchResult['degraded']>['failure_stage'] = 'runtime_load';
+	const fallback = (cause: unknown): LocalSearchResult => {
+		throwIfInterrupted(options.signal);
+		const error = new DependencyFailure('Local mustflow index', failureStage, cause);
+		options.onError?.(error);
+		if (scope === 'source') throw error;
+		return { ...searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope),
+			degraded: { code: 'local_index_unavailable', diagnostic_id: error.diagnosticId,
+				failure_stage: failureStage, unavailable_scopes: scope === 'all' ? ['source'] : [] } };
+	};
 	if (!existsSync(databasePath)) {
-		return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+		if (scope === 'workflow') return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+		failureStage = 'database_read';
+		return fallback(Object.assign(new Error('Local index is missing; refresh with mf index --source'), { code: 'ENOENT' }));
 	}
 
 	let database: SqlJsDatabase;
-
 	try {
-		const SQL = await loadSqlJs();
-		database = new SQL.Database(readFileSync(databasePath));
-	} catch {
-		return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+		const SQL = await loadSqlJs({ signal: options.signal });
+		throwIfInterrupted(options.signal);
+		failureStage = 'database_read';
+		const bytes = readFileSync(databasePath);
+		failureStage = 'database_open';
+		database = new SQL.Database(bytes);
+	} catch (error) {
+		return fallback(error);
 	}
 
 	let capabilities = searchCapabilities(false);
 	const results: LocalSearchItem[] = [];
 
 	try {
+		failureStage = 'query';
 		const cacheLayers = readCacheLayerSets(projectRoot);
 		const stalePaths = getStalePaths(projectRoot, database, { includeState: false });
 		capabilities = readStoredSearchCapabilities(database);
@@ -912,7 +931,7 @@ export async function searchLocalIndex(projectRoot: string, query: string, optio
 		}
 
 		if (isLocalIndexRuntimeUnavailableError(error)) {
-			return searchLocalWorkflowFilesDirectly(projectRoot, databasePath, normalizedQuery, limit, scope);
+			return fallback(error);
 		}
 
 		throw error;

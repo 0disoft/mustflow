@@ -1,4 +1,5 @@
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
+import { DependencyFailure, formatDependencyFailure } from '../../core/dependency-diagnostics.js';
 import { t, type CliLang, type MessageKey, type MessageParams } from '../lib/i18n.js';
 import { searchLocalIndex, type LocalSearchResult, type LocalSearchScope } from '../lib/local-index.js';
 import {
@@ -167,8 +168,14 @@ export async function runSearch(args: string[], reporter: Reporter, lang: CliLan
 		return 1;
 	}
 
+	let diagnostic: Error | undefined;
 	try {
-		const result = await searchLocalIndex(resolveMustflowRoot(), options.query, { limit: options.limit, scope: options.scope });
+		const result = await searchLocalIndex(resolveMustflowRoot(), options.query, { limit: options.limit, scope: options.scope,
+			onError: (error) => { diagnostic = error; } });
+		if (result.degraded) {
+			reporter.stderr(`${diagnostic instanceof DependencyFailure ? formatDependencyFailure(diagnostic) : 'Local mustflow index unavailable'}; using workflow files.${
+				result.degraded.unavailable_scopes.length ? ' Source search is unavailable.' : ''}`);
+		}
 
 		if (options.json) {
 			reporter.stdout(JSON.stringify(result, null, 2));
@@ -178,7 +185,7 @@ export async function runSearch(args: string[], reporter: Reporter, lang: CliLan
 		reporter.stdout(renderSearchSummary(result, lang));
 		return 0;
 	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
+		const message = error instanceof DependencyFailure ? formatDependencyFailure(error) : error instanceof Error ? error.message : String(error);
 		reporter.stderr(t(lang, 'cli.error.prefix', { message }));
 		return 1;
 	}

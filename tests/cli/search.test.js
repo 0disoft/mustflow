@@ -199,11 +199,12 @@ test('falls back to bounded workflow file search when local index is corrupt', (
 		const result = runCli(projectPath, ['search', 'mustflow_check', '--json']);
 
 		assert.equal(result.status, 0);
-		assert.equal(result.stderr, '');
+		assert.match(result.stderr, /Local mustflow index unavailable.*diagnostic/u);
 
 		const output = JSON.parse(result.stdout);
 		assert.equal(output.ok, true);
 		assert.equal(output.index_fresh, false);
+		assert.ok(['database_open', 'query'].includes(output.degraded.failure_stage));
 		assert.equal(output.search_backend, 'table_scan');
 		assert.equal(output.search_fts5_available, false);
 		assert.equal(

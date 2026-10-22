@@ -36,6 +36,17 @@
     },
     "search_backend": { "enum": ["fts5", "table_scan"] },
     "search_fts5_available": { "type": "boolean" },
+    "degraded": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "diagnostic_id", "failure_stage", "unavailable_scopes"],
+      "properties": {
+        "code": { "const": "local_index_unavailable" },
+        "diagnostic_id": { "type": "string", "minLength": 1 },
+        "failure_stage": { "enum": ["runtime_load", "database_read", "database_open", "query"] },
+        "unavailable_scopes": { "type": "array", "uniqueItems": true, "items": { "const": "source" } }
+      }
+    },
     "result_count": { "type": "integer", "minimum": 0 },
     "results": {
       "type": "array",
