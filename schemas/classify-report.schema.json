@@ -96,6 +96,7 @@
       ],
       "properties": {
         "kind": { "type": "string" },
+        "riskLevel": { "enum": ["low", "medium", "high", "critical"] },
         "category": { "type": "string" },
         "isPublicSurface": { "type": "boolean" },
         "validationReasons": {

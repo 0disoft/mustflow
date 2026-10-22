@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { CHANGE_RISK_LEVELS } from '../../../core/project-change-classification.js';
+import type { VerificationRiskLevel } from '../../../core/risk-priced-evidence.js';
 
 import { createClassifyOutput, type ClassifyOutput } from '../classify.js';
 import {
@@ -101,6 +103,7 @@ function readStrictClassification(value: unknown): ChangeClassification | null {
 	}
 
 	if (
+		(surface.riskLevel !== undefined && !CHANGE_RISK_LEVELS.includes(surface.riskLevel as VerificationRiskLevel)) ||
 		typeof surface.kind !== 'string' ||
 		typeof surface.category !== 'string' ||
 		typeof surface.isPublicSurface !== 'boolean' ||
@@ -117,6 +120,7 @@ function readStrictClassification(value: unknown): ChangeClassification | null {
 		changeKinds: [...value.changeKinds],
 		surface: {
 			kind: surface.kind,
+			...(surface.riskLevel !== undefined ? { riskLevel: surface.riskLevel as VerificationRiskLevel } : {}),
 			category: surface.category,
 			isPublicSurface: surface.isPublicSurface,
 			validationReasons: [...surface.validationReasons],

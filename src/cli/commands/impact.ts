@@ -77,7 +77,7 @@ function parseImpactArgs(args: readonly string[]): ParsedImpactArgs {
 function createImpactOutput(projectRoot: string, parsed: ParsedImpactArgs): ImpactOutput {
 	const source = parsed.changed ? 'changed' : 'paths';
 	const files = parsed.changed ? requireGitChangedFiles(projectRoot) : parsed.paths;
-	const classificationReport = createChangeClassificationReport(source, files);
+	const classificationReport = createChangeClassificationReport(source, files, projectRoot);
 	const versionSources = detectVersionSources(projectRoot);
 
 	return {

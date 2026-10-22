@@ -229,8 +229,20 @@ export const CHANGE_CLASSIFICATION_RULE_DEFINITIONS: readonly ChangeClassificati
 		),
 	),
 	rule(
+		'database_migration',
+		/(?:^|\/)(?:migrations?|db\/migrate)\//iu,
+		['migration'],
+		{ ...surface('database_migration', 'data', false, ['migration_change'], ['database schema'], 'not_applicable', ['migration verification']), riskLevel: 'critical' },
+	),
+	rule(
+		'security_implementation',
+		/(?:^|\/)(?:auth|authentication|authorization|permissions?|security|secrets?|credentials?|payments?|billing|ledger|privacy)(?:\/|[._-]|$)/iu,
+		['implementation', 'security'],
+		{ ...surface('security_implementation', 'security', false, ['code_change', 'security_change'], ['security-sensitive behavior'], 'not_applicable', ['security verification']), riskLevel: 'high' },
+	),
+	rule(
 		'implementation',
-		/^(src|scripts)\//u,
+		/^(src|scripts|app|apps|packages|services|lib|libs|server|backend|frontend)\//u,
 		['implementation'],
 		surface(
 			'implementation',

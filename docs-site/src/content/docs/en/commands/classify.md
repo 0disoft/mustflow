@@ -20,6 +20,32 @@ npx mf classify --changed --write .mustflow/state/change-classification.json
 
 The output path must stay inside the current mustflow root.
 
+## Project Rules
+
+Source roots include `src/`, `app/`, `apps/`, `packages/`, `services/`, `lib/`,
+`libs/`, `server/`, `backend/`, and `frontend/`. Authentication, authorization,
+permissions, and payment paths add `security_change`; migration directories add
+`migration_change`. Risk uses explicit reasons and declared levels, not words in
+descriptions.
+
+Add project-specific rules to `.mustflow/config/mustflow.toml`:
+
+```toml
+[[classification.rules]]
+id = "payroll"
+paths = ["services/payroll/**"]
+reasons = ["business_change"]
+risk = "high"
+```
+
+Paths are repository-relative globs: `*` matches within one segment, `**` matches
+across directories, and `?` matches one character. All matching rules contribute
+reasons. Configure commands with the corresponding `required_after` reasons.
+Rules cannot remove built-in reasons or reduce built-in risk. Levels are `low`,
+`medium`, `high`, and `critical`. Output includes `surface.riskLevel` and the rule
+IDs; saved classification reports preserve these levels when passed to verify.
+Invalid rules stop classification.
+
 ## Output
 
 - `mustflow root`: Current mustflow root.

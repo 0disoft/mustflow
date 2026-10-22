@@ -614,6 +614,7 @@ export function createChangeVerificationReport(
 		.filter((gap): gap is ChangeVerificationGap => gap !== null);
 	const riskAssessment = createVerificationRiskAssessment({
 		classificationSummary: classificationReport.summary,
+		declaredRisks: classificationReport.classifications.flatMap((classification) => classification.surface.riskLevel ? [{ path: classification.path, level: classification.surface.riskLevel }] : []),
 		requirements,
 		candidates,
 		gaps,

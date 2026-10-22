@@ -50,6 +50,7 @@ export interface CreateVerificationRiskAssessmentInput {
 	readonly gaps: readonly RiskAssessmentGap[];
 	readonly commandContract: CommandContract;
 	readonly selectedIntents: readonly string[];
+	readonly declaredRisks?: readonly { readonly path: string; readonly level: VerificationRiskLevel }[];
 }
 
 const LEVEL_RANK: Record<VerificationRiskLevel, number> = {
@@ -95,41 +96,6 @@ const MEDIUM_RISK_REASONS = new Set([
 	'dependency_change',
 ]);
 
-const HIGH_RISK_TEXT = [
-	'auth',
-	'authorization',
-	'permission',
-	'security',
-	'privacy',
-	'pii',
-	'token',
-	'credential',
-	'payment',
-	'refund',
-	'ledger',
-	'billing',
-	'public api',
-	'json schema',
-	'machine-readable output',
-	'package',
-	'release',
-	'deployment',
-	'production',
-	'data contract',
-];
-
-const CRITICAL_RISK_TEXT = [
-	'destructive',
-	'delete',
-	'drop table',
-	'secret',
-	'credential',
-	'private key',
-	'database migration',
-	'payment settlement',
-	'ledger mutation',
-];
-
 function uniqueSorted(values: Iterable<string | null | undefined>): string[] {
 	return [...new Set([...values].filter((value): value is string => typeof value === 'string' && value.length > 0))].sort(
 		(left, right) => left.localeCompare(right),
@@ -138,11 +104,6 @@ function uniqueSorted(values: Iterable<string | null | undefined>): string[] {
 
 function maxLevel(left: VerificationRiskLevel, right: VerificationRiskLevel): VerificationRiskLevel {
 	return LEVEL_RANK[right] > LEVEL_RANK[left] ? right : left;
-}
-
-function includesAnySignal(values: readonly string[], signals: readonly string[]): boolean {
-	const normalizedValues = values.map((value) => value.toLowerCase());
-	return signals.some((signal) => normalizedValues.some((value) => value.includes(signal)));
 }
 
 function readBoolean(record: Record<string, unknown>, key: string): boolean | null {
@@ -170,18 +131,6 @@ function classifyReasonSignals(input: CreateVerificationRiskAssessmentInput): {
 	let level: VerificationRiskLevel = 'low';
 	const reasons: string[] = [];
 	const validationReasons = input.classificationSummary.validationReasons;
-	const signalText = uniqueSorted([
-		...validationReasons,
-		...input.classificationSummary.changeKinds,
-		...input.classificationSummary.affectedContracts,
-		...input.classificationSummary.driftChecks,
-		...input.requirements.flatMap((requirement) => [
-			requirement.reason,
-			...requirement.surfaces,
-			...requirement.affectedContracts,
-			...requirement.driftChecks,
-		]),
-	]);
 
 	for (const reason of validationReasons) {
 		if (CRITICAL_RISK_REASONS.has(reason)) {
@@ -196,12 +145,9 @@ function classifyReasonSignals(input: CreateVerificationRiskAssessmentInput): {
 		}
 	}
 
-	if (includesAnySignal(signalText, CRITICAL_RISK_TEXT)) {
-		level = maxLevel(level, 'critical');
-		reasons.push('critical contract or surface signal');
-	} else if (includesAnySignal(signalText, HIGH_RISK_TEXT)) {
-		level = maxLevel(level, 'high');
-		reasons.push('high contract or surface signal');
+	for (const risk of input.declaredRisks ?? []) {
+		level = maxLevel(level, risk.level);
+		reasons.push(`declared ${risk.level} risk: ${risk.path}`);
 	}
 
 	if (input.gaps.length > 0) {

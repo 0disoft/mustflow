@@ -4,6 +4,8 @@ import {
 	listChangeClassificationPolicyRuleDescriptors,
 	type ChangeClassificationPolicyRuleDefinition,
 } from './change-classification-policy.js';
+import { applyProjectClassificationRules, readProjectClassificationRules } from './project-change-classification.js';
+import type { VerificationRiskLevel } from './risk-priced-evidence.js';
 
 export type ChangeSource = 'changed' | 'paths';
 
@@ -16,6 +18,7 @@ export const PUBLIC_SURFACE_UPDATE_POLICIES = [
 ] as const satisfies readonly PublicSurfaceUpdatePolicy[];
 
 export interface PublicSurfaceContract {
+	readonly riskLevel?: VerificationRiskLevel;
 	readonly kind: string;
 	readonly category: string;
 	readonly isPublicSurface: boolean;
@@ -160,9 +163,11 @@ export function listChangeClassificationValidationReasons(): readonly string[] {
 export function createChangeClassificationReport(
 	source: ChangeSource,
 	relativePaths: readonly string[],
+	projectRoot?: string,
 ): ChangeClassificationReport {
 	const files = uniqueSorted(relativePaths.map(toPosixPath).filter((filePath) => filePath.length > 0));
-	const classifications = files.map(classifyChangePath);
+	const projectRules = projectRoot ? readProjectClassificationRules(projectRoot) : [];
+	const classifications = files.map((file) => applyProjectClassificationRules(classifyChangePath(file), projectRules));
 
 	return {
 		source,

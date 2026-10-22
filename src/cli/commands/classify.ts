@@ -90,7 +90,7 @@ export function createClassifyOutput(
 		command: 'classify',
 		correlation_id: createCorrelationId('classify'),
 		mustflow_root: projectRoot,
-		...createChangeClassificationReport(source, files),
+		...createChangeClassificationReport(source, files, projectRoot),
 	};
 }
 

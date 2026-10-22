@@ -205,7 +205,7 @@ export function createDashboardVerificationSnapshot(
 		return createEmptyDashboardVerificationSnapshot(allChangedFiles);
 	}
 
-	const classificationReport = createChangeClassificationReport('changed', allChangedFiles);
+	const classificationReport = createChangeClassificationReport('changed', allChangedFiles, projectRoot);
 	const verificationReport = createChangeVerificationReport(classificationReport, rawCommandContract, projectRoot);
 	const commandByName = new Map(commandIntents.map((intent) => [intent.name, intent]));
 	const recommendations: DashboardVerificationRecommendation[] = [];
