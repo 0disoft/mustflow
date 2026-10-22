@@ -23,6 +23,10 @@ witnesses = ["tests/cli/test-selection-related-contracts.test.js", "tests/cli/te
 kind = "executable"
 witnesses = ["tests/cli/test-audit.test.js"]
 
+[verification_targets."scripts/benchmark-command-conflicts.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/performance-index.test.js"]
+
 [verification_targets."scripts/benchmark-skill-routes.ts"]
 kind = "executable"
 witnesses = ["tests/cli/skill-route.test.js", "tests/cli/test-selection-runner-contracts.test.js"]
