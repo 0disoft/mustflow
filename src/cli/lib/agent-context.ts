@@ -14,7 +14,7 @@ import {
 import { readRetentionStore } from '../../core/retention-policy.js';
 import { toPosixPath } from './filesystem.js';
 import { readLocalIndexPromptContext, type LocalIndexPromptContext } from './local-index.js';
-import { inspectManifestLock } from './manifest-lock.js';
+import { inspectManifestLock, type ManifestLockInspection } from './manifest-lock.js';
 import {
 	MUSTFLOW_JSON_MAX_BYTES,
 	readMustflowTextFile,
@@ -2296,6 +2296,19 @@ export async function getPromptCacheProfileContext(
 	return {
 		...output,
 		volatile_suffix: readVolatilePromptCacheLayer(mustflow),
+	};
+}
+
+export function getAgentStatusContext(
+	projectRoot: string,
+	lockInspection: ManifestLockInspection,
+): Pick<AgentContext, 'installed' | 'manifest_lock' | 'template' | 'latest_run'> {
+	const lock = lockInspection.readResult.kind === 'present' ? lockInspection.readResult.lock : undefined;
+	return {
+		installed: safeExists(projectRoot, 'AGENTS.md') && safeExists(projectRoot, '.mustflow'),
+		manifest_lock: lockInspection.readResult.kind,
+		template: lock ? { id: lock.templateId, version: lock.templateVersion } : null,
+		latest_run: readLatestRunContext(projectRoot),
 	};
 }
 

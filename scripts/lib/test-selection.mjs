@@ -230,6 +230,7 @@ export function createTestSelection(allCliTests, options = {}) {
 			tests: ['verification-resource-budget.test.js', 'process-start-token-cache.test.js'] },
 		{ match: /^src\/core\/cancellation\.ts$/u, tests: ['run-cancellation.test.js'] },
 		{ match: /^src\/cli\/lib\/external-skill-(?:import|downloads)\.ts$/u, tests: ['performance-downloads.test.js', 'skill-import.test.js', 'dependency-read.test.js'] },
+		{ match: /^src\/cli\/(?:commands\/dashboard|lib\/(?:dashboard-snapshot-cache|git-changes|agent-context))\.ts$/u, tests: ['performance-dashboard.test.js'] },
 		{ match: /^src\/cli\/lib\/local-index\/(?:effect-graph-read-model|read-session|index)\.ts$/u, tests: ['performance-index.test.js', 'index-workflow.test.js', 'index-verification-evidence.test.js', 'explain-command.test.js', ...dashboardTests] },
 		{ match: /^src\/core\/active-run-locks\.ts$/u, tests: ['active-run-locks.test.js', ...dashboardTests] },
 		{ match: /^src\/core\/dependency-read\.ts$/u, tests: ['dependency-read.test.js', 'skill-import.test.js'] },

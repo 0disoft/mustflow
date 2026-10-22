@@ -33,8 +33,9 @@ import {
 } from '../../core/dashboard-verification.js';
 import { redactSecretLikeText } from '../../core/secret-redaction.js';
 import { parseSkillIndexRoutes } from '../../core/skill-route-alignment.js';
-import { getAgentContext } from '../lib/agent-context.js';
-import { readGitChangedFiles } from '../lib/git-changes.js';
+import { getAgentStatusContext } from '../lib/agent-context.js';
+import { readGitChangedFilesAsync } from '../lib/git-changes.js';
+import { DashboardSnapshotCache } from '../lib/dashboard-snapshot-cache.js';
 import {
 	isRecord,
 	readCommandContract,
@@ -136,6 +137,8 @@ interface DashboardStatusBlockCacheEntry<T> {
 }
 
 const dashboardStatusBlockCache = new Map<string, DashboardStatusBlockCacheEntry<unknown>>();
+const dashboardAsyncStatusBlockCache = new DashboardSnapshotCache(STATUS_BLOCK_CACHE_TTL_MS);
+const dashboardGitRequests = new DashboardSnapshotCache(0);
 
 function dashboardStatusBlockCacheKey(projectRoot: string, blockName: DashboardStatusBlockName): string {
 	return `${path.resolve(projectRoot)}\0${blockName}`;
@@ -197,20 +200,7 @@ async function readDashboardStatusBlockAsync<T>(
 	readBlock: () => Promise<T>,
 ): Promise<T> {
 	const key = dashboardStatusBlockCacheKey(projectRoot, blockName);
-	const cached = dashboardStatusBlockCache.get(key);
-	const now = Date.now();
-
-	if (cached && cached.signature === signature && cached.expiresAt > now) {
-		return cached.value as T;
-	}
-
-	const value = await readBlock();
-	dashboardStatusBlockCache.set(key, {
-		signature,
-		expiresAt: Date.now() + STATUS_BLOCK_CACHE_TTL_MS,
-		value,
-	});
-	return value;
+	return dashboardAsyncStatusBlockCache.read(key, signature, readBlock);
 }
 
 function readFrontmatterLines(content: string): string[] {
@@ -797,13 +787,13 @@ async function renderStatusResponse(projectRoot: string): Promise<DashboardStatu
 }
 
 async function renderStatusSnapshot(projectRoot: string): Promise<DashboardStatusSnapshot> {
-	const context = getAgentContext(projectRoot);
 	const manifest = readDashboardStatusBlock(
 		projectRoot,
 		'manifest',
 		readStatusBlockSignature(projectRoot, [MANIFEST_LOCK_RELATIVE_PATH]),
 		() => inspectManifestLock(projectRoot),
 	);
+	const context = getAgentStatusContext(projectRoot, manifest);
 	const lock = manifest.readResult.kind === 'present' ? manifest.readResult.lock : undefined;
 	const activeDocuments = readDashboardStatusBlock(
 		projectRoot,
@@ -824,7 +814,7 @@ async function renderStatusSnapshot(projectRoot: string): Promise<DashboardStatu
 		`${rawCommandContractSignature}|${readLocalIndexSignature(projectRoot)}`,
 		() => renderCommandContractResponse(projectRoot, rawCommandContract),
 	);
-	const gitChangedFilesResult = readGitChangedFiles(projectRoot);
+	const gitChangedFilesResult = await dashboardGitRequests.read(path.resolve(projectRoot), 'git-status', () => readGitChangedFilesAsync(projectRoot));
 	const gitChangedFiles = gitChangedFilesResult.ok ? gitChangedFilesResult.files : [];
 	const packageMetadata = readPackageMetadata();
 	const verification = createDashboardVerificationSnapshot(
@@ -881,7 +871,7 @@ async function renderStatusSnapshot(projectRoot: string): Promise<DashboardStatu
 		changed_files: manifest.changedFiles,
 		missing_files: manifest.missingFiles,
 		issues: manifest.issues,
-		runnable_intents: context.command_contract.runnable_intents,
+		runnable_intents: commandContract.intents.filter((intent) => intent.runnable).map((intent) => intent.name),
 		command_contract: commandContract,
 		verification: {
 			...verification,
