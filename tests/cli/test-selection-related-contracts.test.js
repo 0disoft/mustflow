@@ -41,6 +41,13 @@ import {
 
 test('execution boundary changes select their focused regression coverage', () => {
 	for (const [file, expected] of [
+		['src/core/verification-decision-graph.ts', 'performance-lookups.test.js'],
+		['src/core/source-anchor-candidates.ts', 'performance-lookups.test.js'],
+		['src/cli/lib/local-index/effect-graph-read-model.ts', 'performance-index.test.js'],
+		['src/cli/lib/local-index/read-session.ts', 'performance-index.test.js'],
+		['src/cli/lib/external-skill-downloads.ts', 'performance-downloads.test.js'],
+		['src/cli/lib/external-skill-import.ts', 'performance-downloads.test.js'],
+		['src/core/active-run-locks.ts', 'active-run-locks.test.js'],
 		['src/core/verification-resource-budget.ts', 'verification-resource-budget.test.js'],
 		['src/core/process-start-token-cache.ts', 'process-start-token-cache.test.js'],
 		['src/core/cancellation.ts', 'run-cancellation.test.js'],
