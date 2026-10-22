@@ -232,6 +232,8 @@ export const enMessages = {
   "adapters.label.adapterSurfaces": "Adapter surfaces present",
   "adapters.label.compatibilityNotes": "Compatibility notes",
   "adapters.label.requiredChanges": "Required changes",
+  "adapters.label.status": "Compatibility status",
+  "adapters.help.option.strict": "Fail on conflicting instructions or an incomplete compatibility scan",
   "adapters.label.commandAuthority": "Command authority",
 
   "dashboard.help.summary":

@@ -23,6 +23,7 @@
     "schema_version": { "const": "1" },
     "command": { "const": "adapters_status" },
     "ok": { "type": "boolean" },
+    "compatibility_status": { "enum": ["compatible", "conflicts", "incomplete"] },
     "mustflow_root": { "type": "string" },
     "agents_file": { "$ref": "#/$defs/agentsFile" },
     "summary": { "$ref": "#/$defs/summary" },

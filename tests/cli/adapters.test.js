@@ -47,6 +47,9 @@ test('adapters status reports default compatibility without generating adapter f
 		assert.equal(report.command, 'adapters_status');
 		assert.equal(report.agents_file.present, true);
 		assert.equal(report.summary.required_changes, 0);
+		assert.equal(report.compatibility_status, 'compatible');
+		const strict = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+		assert.equal(strict.status, 0, strict.stderr || strict.stdout);
 		assert.equal(report.boundaries.command_authority, '.mustflow/config/commands.toml');
 		assert.equal(report.boundaries.host_files_are_command_authority, false);
 		assert.ok(report.host_files.some((file) => file.path === 'CLAUDE.md' && file.status === 'absent'));
@@ -115,6 +118,26 @@ test('adapters status reports host instruction conflicts as required changes', a
 		assert.equal(requiredChange.required_change, true);
 		assert.equal(report.summary.required_changes, 1);
 		assert.equal(report.summary.conflicts, 1);
+		assert.equal(report.ok, true);
+		assert.equal(report.compatibility_status, 'conflicts');
+		const strict = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+		assert.equal(strict.status, 1);
+		assert.equal(JSON.parse(strict.stdout).compatibility_status, 'conflicts');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('strict compatibility is incomplete when a host file cannot be inspected', async () => {
+	const projectPath = createAdaptersProject();
+	try {
+		writeFileSync(path.join(projectPath, 'CLAUDE.md'), 'x'.repeat(256 * 1024 + 1));
+		const result = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+		assert.equal(result.status, 1);
+		const report = JSON.parse(result.stdout);
+		assert.equal(report.ok, true);
+		assert.equal(report.compatibility_status, 'incomplete');
+		assertMatchesSchema(schemaRoot, 'adapter-compatibility-report.schema.json', report);
 	} finally {
 		removeTempProject(projectPath);
 	}

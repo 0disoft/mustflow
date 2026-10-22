@@ -73,6 +73,7 @@ export interface AdapterCompatibilityReport {
 	readonly schema_version: string;
 	readonly command: 'adapters_status';
 	readonly ok: boolean;
+	readonly compatibility_status: 'compatible' | 'conflicts' | 'incomplete';
 	readonly mustflow_root: string;
 	readonly agents_file: AdapterAgentsFile;
 	readonly summary: AdapterCompatibilitySummary;
@@ -404,6 +405,9 @@ export function inspectAdapterCompatibility(projectRoot: string): AdapterCompati
 		schema_version: ADAPTER_SCHEMA_VERSION,
 		command: 'adapters_status',
 		ok: true,
+		compatibility_status: requiredChanges.length > 0 ? 'conflicts'
+			: !fileExists(projectRoot, 'AGENTS.md') || hostFiles.some((file) => file.status !== 'present' && file.status !== 'absent') ? 'incomplete'
+			: 'compatible',
 		mustflow_root: projectRoot,
 		agents_file: {
 			path: 'AGENTS.md',

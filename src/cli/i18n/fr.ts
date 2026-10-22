@@ -234,6 +234,8 @@ export const frMessages = {
   "adapters.label.adapterSurfaces": "Surfaces d'adaptateur présentes",
   "adapters.label.compatibilityNotes": "Notes de compatibilité",
   "adapters.label.requiredChanges": "Changements requis",
+  "adapters.label.status": "État de compatibilité",
+  "adapters.help.option.strict": "Échoue en cas de conflit ou de vérification incomplète",
   "adapters.label.commandAuthority": "Autorité des commandes",
 
   "dashboard.help.summary":

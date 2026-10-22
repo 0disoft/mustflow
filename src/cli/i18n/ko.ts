@@ -233,6 +233,8 @@ export const koMessages = {
   "adapters.label.adapterSurfaces": "존재하는 어댑터 표면",
   "adapters.label.compatibilityNotes": "호환성 메모",
   "adapters.label.requiredChanges": "필수 변경",
+  "adapters.label.status": "호환 상태",
+  "adapters.help.option.strict": "지침 충돌이 있거나 호환성 검사가 불완전하면 실패합니다",
   "adapters.label.commandAuthority": "명령 권한 기준",
 
   "dashboard.help.summary":

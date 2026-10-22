@@ -12,11 +12,13 @@ import type { Reporter } from '../lib/reporter.js';
 
 const ADAPTERS_STATUS_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
+	{ name: '--strict', kind: 'boolean' },
 ] as const;
 
 interface ParsedAdaptersArgs {
 	readonly action: 'status';
 	readonly json: boolean;
+	readonly strict?: boolean;
 	readonly error?: string;
 }
 
@@ -26,6 +28,7 @@ export function getAdaptersHelp(lang: CliLang = 'en'): string {
 			usage: 'mf adapters status [options]',
 			summary: t(lang, 'adapters.help.summary'),
 			options: [
+				{ label: '--strict', description: t(lang, 'adapters.help.option.strict') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
 			],
@@ -68,13 +71,14 @@ function parseAdaptersArgs(args: readonly string[], lang: CliLang): ParsedAdapte
 		return { action, json, error: t(lang, 'cli.error.unexpectedArgument', { argument: parsed.positionals[0] ?? '' }) };
 	}
 
-	return { action, json };
+	return { action, json, strict: hasParsedCliOption(parsed, '--strict') };
 }
 
 function renderAdapterReport(report: AdapterCompatibilityReport, lang: CliLang): string {
 	const lines = [
 		t(lang, 'adapters.title'),
 		`${t(lang, 'label.mustflowRoot')}: ${report.mustflow_root}`,
+		`${t(lang, 'adapters.label.status')}: ${report.compatibility_status}`,
 		`${t(lang, 'adapters.label.agents')}: ${report.agents_file.present ? t(lang, 'value.yes') : t(lang, 'value.no')}`,
 		`${t(lang, 'adapters.label.hostInstructionFiles')}: ${report.summary.host_instruction_files}`,
 		`${t(lang, 'adapters.label.adapterSurfaces')}: ${report.summary.adapter_surfaces_present}`,
@@ -117,9 +121,9 @@ export function runAdapters(args: string[], reporter: Reporter, lang: CliLang = 
 
 	if (options.json) {
 		reporter.stdout(JSON.stringify(report, null, 2));
-		return 0;
+		return options.strict && report.compatibility_status !== 'compatible' ? 1 : 0;
 	}
 
 	reporter.stdout(renderAdapterReport(report, lang));
-	return 0;
+	return options.strict && report.compatibility_status !== 'compatible' ? 1 : 0;
 }

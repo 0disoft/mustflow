@@ -234,6 +234,8 @@ export const zhMessages = {
   "adapters.label.adapterSurfaces": "已存在的适配器表面",
   "adapters.label.compatibilityNotes": "兼容性说明",
   "adapters.label.requiredChanges": "必要更改",
+  "adapters.label.status": "兼容状态",
+  "adapters.help.option.strict": "指令存在冲突或兼容性检查不完整时失败",
   "adapters.label.commandAuthority": "命令权限来源",
 
   "dashboard.help.summary":

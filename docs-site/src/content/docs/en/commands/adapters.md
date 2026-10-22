@@ -14,11 +14,14 @@ change host configuration.
 ```sh
 mf adapters status
 mf adapters status --json
+mf adapters status --strict --json
 ```
 
 ## JSON Fields
 
 - `mustflow_root` (`string`): Current mustflow root.
+- `ok` (`boolean`): Whether the diagnostic report was produced; this is not a compatibility verdict.
+- `compatibility_status`: `compatible`, `conflicts`, or `incomplete` for repository-visible instructions. An absent `AGENTS.md` or an unread host file makes the scan incomplete. This does not confirm host installation, runtime policy, or execution integration.
 - `agents_file` (`object`): Presence and compatibility state for `AGENTS.md`.
 - `summary` (`object`): Counts for host instruction files, adapter surfaces, notes, and required changes.
 - `required_changes` (`object[]`): Findings that need action before compatibility is clean.
@@ -32,4 +35,4 @@ mf adapters --help
 ```
 
 - Exit code `0`: Adapter compatibility was inspected.
-- Exit code `1`: The command received invalid input.
+- Exit code `1`: Invalid input, or `--strict` found conflicts or an incomplete scan. Without `--strict`, a produced report still exits `0`.

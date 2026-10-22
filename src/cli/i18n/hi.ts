@@ -234,6 +234,8 @@ export const hiMessages = {
   "adapters.label.adapterSurfaces": "मौजूद एडाप्टर सतहें",
   "adapters.label.compatibilityNotes": "संगतता नोट",
   "adapters.label.requiredChanges": "ज़रूरी बदलाव",
+  "adapters.label.status": "संगतता स्थिति",
+  "adapters.help.option.strict": "निर्देश टकराने या जाँच अधूरी होने पर विफल हों",
   "adapters.label.commandAuthority": "कमांड अधिकार",
 
   "dashboard.help.summary":

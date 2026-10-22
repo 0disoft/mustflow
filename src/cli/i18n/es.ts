@@ -234,6 +234,8 @@ export const esMessages = {
   "adapters.label.adapterSurfaces": "Superficies de adaptador presentes",
   "adapters.label.compatibilityNotes": "Notas de compatibilidad",
   "adapters.label.requiredChanges": "Cambios requeridos",
+  "adapters.label.status": "Estado de compatibilidad",
+  "adapters.help.option.strict": "Falla si hay instrucciones en conflicto o una revisión incompleta",
   "adapters.label.commandAuthority": "Autoridad de comandos",
 
   "dashboard.help.summary":
