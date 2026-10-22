@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { mapExternalSkillFiles, withExternalSkillReadSlot } from './external-skill-downloads.js';
 import { httpFailure, readBoundedResponseText, readHttp, withDependencyDeadline, type DependencyReadOptions } from '../../core/dependency-read.js';
 
 import {
@@ -498,13 +499,13 @@ async function readResponseText(response: Response, url: string, signal: AbortSi
 }
 
 async function fetchJson(fetchImpl: typeof fetch, url: string, options: DependencyReadOptions): Promise<unknown> {
-	return readHttp(url, async (response, signal) => {
+	return withExternalSkillReadSlot(options.signal, () => readHttp(url, async (response, signal) => {
 		if (!response.ok) throw httpFailure(response, `GitHub request failed (${response.status}) for ${url}`);
 		return JSON.parse(await readBoundedResponseText(response, 2 * 1024 * 1024, signal)) as unknown;
 	}, { ...options, timeoutMs: 10_000, fetch: fetchImpl, headers: {
 			accept: 'application/vnd.github+json',
 			'user-agent': 'mustflow-external-skill-import',
-	} });
+	} }));
 }
 
 function apiContentsUrl(parsed: ParsedExternalSkillUrl, relativePath: string): string {
@@ -535,20 +536,24 @@ function assertGitHubContentEntry(value: unknown): GitHubContentEntry {
 	return record as unknown as GitHubContentEntry;
 }
 
-async function loadGitHubFile(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string, options: DependencyReadOptions): Promise<LoadedExternalSkillFile> {
+async function loadGitHubFile(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string, options: DependencyReadOptions, listedEntry?: GitHubContentEntry): Promise<LoadedExternalSkillFile> {
 	const normalizedRelativePath = validateImportRelativeFilePath(relativePath);
 	const apiUrl = apiContentsUrl(parsed, normalizedRelativePath);
-	const entry = assertGitHubContentEntry(await fetchJson(fetchImpl, apiUrl, options));
+	const entry = listedEntry && (listedEntry.download_url || listedEntry.encoding === 'base64')
+		? listedEntry : assertGitHubContentEntry(await fetchJson(fetchImpl, apiUrl, options));
 
 	if (entry.type !== 'file') {
 		throw new Error(`Expected a file in GitHub contents API response: ${normalizedRelativePath}`);
 	}
 
 	const content = entry.download_url
-		? await readHttp(entry.download_url, (response, signal) => readResponseText(response, entry.download_url!, signal),
-			{ ...options, timeoutMs: 10_000, fetch: fetchImpl })
+		? await withExternalSkillReadSlot(options.signal, () => readHttp(entry.download_url!, (response, signal) => readResponseText(response, entry.download_url!, signal),
+			{ ...options, timeoutMs: 10_000, fetch: fetchImpl }))
 		: decodeGitHubFileContent(entry);
 
+	if (Buffer.byteLength(content, 'utf8') > MAX_FILE_BYTES) {
+		throw new Error(`External skill file exceeds ${MAX_FILE_BYTES} bytes: ${normalizedRelativePath}`);
+	}
 	return {
 		relativePath: normalizedRelativePath,
 		kind: kindForRelativePath(normalizedRelativePath),
@@ -566,12 +571,12 @@ async function listGitHubDirectory(fetchImpl: typeof fetch, parsed: ParsedExtern
 	return value.map(assertGitHubContentEntry);
 }
 
-async function loadSupportDirectory(
+async function listSupportFiles(
 	fetchImpl: typeof fetch,
 	parsed: ParsedExternalSkillUrl,
 	directory: string,
 	options: DependencyReadOptions,
-): Promise<LoadedExternalSkillFile[]> {
+): Promise<{ readonly relativePath: string; readonly entry: GitHubContentEntry }[]> {
 	let entries: GitHubContentEntry[];
 	try {
 		entries = await listGitHubDirectory(fetchImpl, parsed, directory, options);
@@ -582,17 +587,10 @@ async function loadSupportDirectory(
 		throw error;
 	}
 
-	const files: LoadedExternalSkillFile[] = [];
-	const pending = entries
+	return entries
 		.filter((entry) => entry.type === 'file')
-		.map((entry) => `${directory}/${entry.name}`)
-		.sort((left, right) => left.localeCompare(right));
-
-	for (const relativePath of pending) {
-		files.push(await loadGitHubFile(fetchImpl, parsed, relativePath, options));
-	}
-
-	return files;
+		.map((entry) => ({ relativePath: validateImportRelativeFilePath(`${directory}/${entry.name}`), entry }))
+		.sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 }
 
 async function loadExternalSkillFiles(
@@ -600,23 +598,24 @@ async function loadExternalSkillFiles(
 	parsed: ParsedExternalSkillUrl,
 	options: DependencyReadOptions,
 ): Promise<LoadedExternalSkillFile[]> {
-	const files = [
-		await loadGitHubFile(fetchImpl, parsed, 'SKILL.md', options),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'assets', options)),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'references', options)),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'scripts', options)),
-	].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
-
-	if (files.length > MAX_IMPORTED_FILES) {
-		throw new Error(`External skill import exceeds ${MAX_IMPORTED_FILES} files.`);
+	const mainFile = await loadGitHubFile(fetchImpl, parsed, 'SKILL.md', options);
+	const pending: { readonly relativePath: string; readonly entry: GitHubContentEntry }[] = [];
+	for (const directory of ALLOWED_SUPPORT_DIRECTORIES) {
+		pending.push(...await listSupportFiles(fetchImpl, parsed, directory, options));
+		if (pending.length + 1 > MAX_IMPORTED_FILES) {
+			throw new Error(`External skill import exceeds ${MAX_IMPORTED_FILES} files.`);
+		}
 	}
-
-	const totalBytes = files.reduce((total, file) => total + Buffer.byteLength(file.content, 'utf8'), 0);
-	if (totalBytes > MAX_TOTAL_BYTES) {
-		throw new Error(`External skill import exceeds ${MAX_TOTAL_BYTES} bytes.`);
-	}
-
-	return files;
+	let totalBytes = Buffer.byteLength(mainFile.content, 'utf8');
+	const files = await mapExternalSkillFiles(pending, options.signal, async ({ relativePath, entry }, signal) => {
+		const file = await loadGitHubFile(fetchImpl, parsed, relativePath, { ...options, signal }, entry);
+		totalBytes += Buffer.byteLength(file.content, 'utf8');
+		if (totalBytes > MAX_TOTAL_BYTES) {
+			throw new Error(`External skill import exceeds ${MAX_TOTAL_BYTES} bytes.`);
+		}
+		return file;
+	});
+	return [mainFile, ...files].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 }
 
 function fileReports(files: readonly LoadedExternalSkillFile[]): ExternalSkillImportedFile[] {
