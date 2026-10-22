@@ -9,6 +9,7 @@ import { acquireActiveRunLock, listActiveRunLocks } from '../../dist/core/active
 import { readCommandContract } from '../../dist/core/config-loading.js';
 import { createMinimalWorkflowProject } from './index-support.js';
 import { projectRoot, removeTempProject, runCliCommand } from './helpers/cli-harness.js';
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 
 const silent = { stdout() {}, stderr() {} };
 const request = { intentName: 'a_wait', outputMode: 'silent', allowUntrustedRoot: false, allowApprovals: [], wait: true, waitTimeoutSeconds: 60 };
@@ -104,6 +105,7 @@ test('verification abort stops subsequent intents and restores parent signal lis
 			(args, reporter) => runVerify(args, reporter, 'en', { signal: controller.signal }));
 		assert.equal(result.status, 1, result.stderr);
 		const report = JSON.parse(result.stdout);
+		assertMatchesSchema(path.join(projectRoot, 'schemas'), 'verify-report.schema.json', report);
 		assert.equal(report.results.find((entry) => entry.intent === 'a_wait').status, 'failed', JSON.stringify(report.results));
 		assert.equal(report.results.find((entry) => entry.intent === 'b_later').reason, 'cancelled');
 		assert.equal(process.listenerCount('SIGINT'), before);

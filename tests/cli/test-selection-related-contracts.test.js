@@ -39,6 +39,21 @@ import {
 	writeFileSync,
 } from './helpers/test-selection-contracts.js';
 
+test('execution boundary changes select their focused regression coverage', () => {
+	for (const [file, expected] of [
+		['src/core/verification-resource-budget.ts', 'verification-resource-budget.test.js'],
+		['src/core/process-start-token-cache.ts', 'process-start-token-cache.test.js'],
+		['src/core/cancellation.ts', 'run-cancellation.test.js'],
+		['src/core/command-time-limits.ts', 'command-time-limits.test.js'],
+		['src/cli/commands/run/executor.ts', 'run-cancellation.test.js'],
+		['src/cli/commands/verify/scheduled-execution.ts', 'run-cancellation.test.js'],
+		['src/cli/commands/verify/reuse-inputs.ts', 'verify-reuse-policy.test.js'],
+		['schemas/commands.schema.json', 'command-time-limits.test.js'],
+	]) {
+		assert.ok(selectedFor([file]).has(expected), `${file}: ${expected}`);
+	}
+});
+
 test('related selection uses explicit command test contracts without router fallback', () => {
 	const selected = selectedFor(['src/cli/commands/verify.ts']);
 
