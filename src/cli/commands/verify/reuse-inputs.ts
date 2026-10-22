@@ -8,6 +8,8 @@ import { createCommandEnv, resolveCommandEnv } from '../../../core/command-env.j
 import { ACTIVE_RUN_LOCK_ID_ENV } from '../../../core/active-run-locks.js';
 import { ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
 
+const VERIFICATION_REUSE_POLICY = Object.freeze({ gitTimeoutMs: 5_000, maxInputBytes: 16 * 1024 * 1024 });
+
 /** A declaration is an assertion that these exact files contain all local inputs. */
 export function createVerificationCurrentStateHash(
 	projectRoot: string,
@@ -20,7 +22,7 @@ export function createVerificationCurrentStateHash(
 	const hash = createHash('sha256').update('mustflow.verify_inputs.v3').update(verificationPlanId);
 	try {
 		const head = spawnSync('git', ['rev-parse', '--verify', 'HEAD'], {
-			cwd: projectRoot, encoding: 'utf8', timeout: 5000, windowsHide: true,
+			cwd: projectRoot, encoding: 'utf8', timeout: VERIFICATION_REUSE_POLICY.gitTimeoutMs, windowsHide: true,
 		});
 		if (head.status !== 0 && existsSync(path.join(projectRoot, '.git'))) return null;
 		hash.update(JSON.stringify([head.status === 0 ? head.stdout.trim() : null, process.versions, process.platform, process.arch]));
@@ -54,7 +56,7 @@ export function createVerificationCurrentStateHash(
 			ensureInsideWithoutSymlinks(projectRoot, absolutePath, { allowMissingDescendant: true });
 			const stats = statSync(absolutePath, { throwIfNoEntry: false });
 			if (stats && !stats.isFile()) return null;
-			const content = stats ? readFileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: 16 * 1024 * 1024 }) : null;
+			const content = stats ? readFileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: VERIFICATION_REUSE_POLICY.maxInputBytes }) : null;
 			hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
 			if (content !== null) hash.update(content);
 		}

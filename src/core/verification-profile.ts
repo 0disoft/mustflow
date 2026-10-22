@@ -15,10 +15,15 @@ const FULL_VERIFICATION_REASONS = new Set([
 	'packaging_change', 'release_risk', 'before_publish',
 ]);
 
+const PROFILE_POLICIES = Object.freeze({
+	edit: Object.freeze({ budgetSeconds: 15, description: 'Fast feedback with the smallest sufficient configured checks.' }),
+	commit: Object.freeze({ budgetSeconds: 60, description: 'Commit confidence with bounded related checks.' }),
+	release: Object.freeze({ budgetSeconds: null, description: 'Full applicable release and high-risk verification.' }),
+});
+
 export function resolveVerificationProfile(profile: VerificationProfile): VerificationProfilePolicy {
-	if (profile === 'edit') return { profile, budgetSeconds: 15, description: 'Fast feedback with the smallest sufficient configured checks.' };
-	if (profile === 'commit') return { profile, budgetSeconds: 60, description: 'Commit confidence with bounded related checks.' };
-	return { profile, budgetSeconds: null, description: 'Full applicable release and high-risk verification.' };
+	const policy = profile === 'edit' || profile === 'commit' ? PROFILE_POLICIES[profile] : PROFILE_POLICIES.release;
+	return { profile, ...policy };
 }
 
 function expectedSeconds(contract: CommandContract, intent: string): number | null {

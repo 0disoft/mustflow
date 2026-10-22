@@ -72,6 +72,7 @@ export interface RunCommandExecutionResult {
 }
 
 const ACTIVE_LOCK_WAIT_POLL_MS = 1_000;
+const RUN_PROGRESS_NOTICE_RATIOS = [0.5, 0.8] as const;
 
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
 	return plan.detail ?? t(lang, fallbackKey);
@@ -250,7 +251,7 @@ function createRunProgressReporter(input: {
 	input.reporter.stderr(t(input.lang, 'run.progress.started', { intent: input.intentName, seconds: input.timeoutSeconds }));
 
 	const timers: NodeJS.Timeout[] = [];
-	for (const ratio of [0.5, 0.8]) {
+	for (const ratio of RUN_PROGRESS_NOTICE_RATIOS) {
 		const delayMs = Math.max(1, Math.floor(input.timeoutSeconds * 1000 * ratio));
 		const elapsedSeconds = Math.max(1, Math.round(input.timeoutSeconds * ratio));
 		const timer = setTimeout(() => {

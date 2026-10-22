@@ -1,13 +1,15 @@
 import { performance } from 'node:perf_hooks';
 import { processStartTokensProveMismatch } from './process-identity.js';
 
+const DEFAULT_PROCESS_START_TOKEN_CACHE_TTL_MS = 1_000;
+
 /** Cached observations can confirm an owner, but cannot prove that it is stale. */
 export class ProcessStartTokenCache {
 	readonly #cache = new Map<number, { readAt: number; token: string | null }>();
 	constructor(
 		readonly readToken: (pid: number) => string | null,
 		readonly now: () => number = () => performance.now(),
-		readonly ttlMs = 1000,
+		readonly ttlMs = DEFAULT_PROCESS_START_TOKEN_CACHE_TTL_MS,
 	) {}
 
 	readForOwner(pid: number, expectedToken: string): string | null {

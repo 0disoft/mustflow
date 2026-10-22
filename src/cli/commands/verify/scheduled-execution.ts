@@ -331,6 +331,43 @@ function verificationResultFailed(result: VerificationResult): boolean {
 	);
 }
 
+interface VerificationBatchContext {
+	readonly projectRoot: string;
+	readonly lang: CliLang;
+	readonly verificationPlanId: string;
+	readonly correlationId: string;
+	readonly scheduledTestTargets: ReadonlyMap<string, readonly string[]>;
+	readonly parallelism: number;
+	readonly signal?: AbortSignal;
+}
+
+function partitionVerificationBatch(
+	entries: readonly VerificationScheduleEntry[],
+	reusableResults: ReadonlyMap<string, VerificationResult>,
+	reusableIntents: ReadonlySet<string>,
+): { reused: VerificationResult[]; runnable: VerificationScheduleEntry[] } {
+	const reused: VerificationResult[] = [];
+	const runnable: VerificationScheduleEntry[] = [];
+	for (const entry of entries) {
+		if (!reusableIntents.has(entry.intent)) {
+			runnable.push(entry);
+			continue;
+		}
+		const result = reusableResults.get(entry.intent);
+		if (result) reused.push(result);
+	}
+	return { reused, runnable };
+}
+
+function executeVerificationBatch(entries: readonly VerificationScheduleEntry[], context: VerificationBatchContext): Promise<VerificationResult[]> {
+	const { projectRoot, parallelism, lang, verificationPlanId, correlationId, scheduledTestTargets, signal } = context;
+	const canRunInParallel = parallelism > 1 && entries.length > 1 && entries.every((entry) => entry.parallelEligible);
+	if (!canRunInParallel) {
+		return runVerificationEntriesSequentially(entries, lang, verificationPlanId, correlationId, scheduledTestTargets, signal);
+	}
+	return runVerificationEntriesInParallelChunks(projectRoot, entries, parallelism, lang, verificationPlanId, correlationId, scheduledTestTargets, signal);
+}
+
 export async function runScheduledVerificationIntents(
 	report: ChangeVerificationReport,
 	projectRoot: string,
@@ -345,6 +382,7 @@ export async function runScheduledVerificationIntents(
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 	const contract = reusableResults.size > 0 ? readCommandContract(projectRoot) : null;
+	const context: VerificationBatchContext = { projectRoot, lang, verificationPlanId, correlationId, scheduledTestTargets, parallelism, signal: options.signal };
 
 	for (let batchIndex = 0; batchIndex < report.schedule.batches.length; batchIndex += 1) {
 		const batch = report.schedule.batches[batchIndex] as VerificationScheduleBatch;
@@ -362,31 +400,12 @@ export async function runScheduledVerificationIntents(
 			.filter((entry) => inputsUnchanged && reusableResults.has(entry.intent) && contract !== null &&
 				evaluateCommandPreconditions(projectRoot, contract, entry.intent).every((condition) => condition.status === 'satisfied'))
 			.map((entry) => entry.intent));
-		const reused = entries.flatMap((entry) => reusableIntents.has(entry.intent) ? reusableResults.get(entry.intent) ?? [] : []);
-		const runnableEntries = entries.filter((entry) => !reusableIntents.has(entry.intent));
-		let batchResults: VerificationResult[];
-		if (runnableEntries.length === 0) {
+		const { reused, runnable } = partitionVerificationBatch(entries, reusableResults, reusableIntents);
+		if (runnable.length === 0) {
 			results.push(...reused);
 			continue;
 		}
-		if (runnableEntries.length > 1 && runnableEntries.every((entry) => entry.parallelEligible)) {
-			batchResults =
-				parallelism > 1
-					? await runVerificationEntriesInParallelChunks(
-							projectRoot,
-							runnableEntries,
-							parallelism,
-							lang,
-							verificationPlanId,
-							correlationId,
-							scheduledTestTargets,
-							options.signal,
-						)
-					: await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets, options.signal);
-		} else {
-			batchResults = await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets, options.signal);
-		}
-		batchResults = [...reused, ...batchResults];
+		const batchResults = [...reused, ...await executeVerificationBatch(runnable, context)];
 
 		results.push(...batchResults);
 		if (!batchResults.some(verificationResultFailed)) {
