@@ -229,6 +229,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/(?:verification-resource-budget|process-start-token-cache)\.ts$/u,
 			tests: ['verification-resource-budget.test.js', 'process-start-token-cache.test.js'] },
 		{ match: /^src\/core\/cancellation\.ts$/u, tests: ['run-cancellation.test.js'] },
+		{ match: /^src\/core\/dependency-read\.ts$/u, tests: ['dependency-read.test.js', 'skill-import.test.js'] },
+		{ match: /^src\/cli\/(?:lib\/(?:npm-version-check|external-skill-import)|commands\/(?:version|upgrade|tech|skill))\.ts$/u, tests: ['dependency-read.test.js'] },
 		{ match: /^src\/core\/command-time-limits\.ts$/u, tests: ['command-time-limits.test.js', 'run-cancellation.test.js'] },
 		{ match: /^src\/cli\/commands\/run\/(?:execution|executor)\.ts$/u,
 			tests: ['run-cancellation.test.js', 'command-time-limits.test.js'] },

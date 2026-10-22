@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { httpFailure, readBoundedResponseText, readHttp, withDependencyDeadline, type DependencyReadOptions } from '../../core/dependency-read.js';
 
 import {
 	readCommandContract,
@@ -142,15 +143,16 @@ export interface ExternalSkillUpdateCheckState {
 	readonly stale_before_command: boolean;
 }
 
-export interface ExternalSkillImportOptions {
+export interface ExternalSkillImportOptions extends DependencyReadOptions {
 	readonly mode: ExternalSkillImportMode;
 	readonly name?: string | null;
 	readonly ref?: string | null;
 	readonly trustScripts?: boolean;
 	readonly fetch?: typeof fetch;
+	readonly onError?: (error: unknown) => void;
 }
 
-export interface ExternalSkillUpdateOptions {
+export interface ExternalSkillUpdateOptions extends DependencyReadOptions {
 	readonly action: 'outdated' | 'update';
 	readonly mode?: ExternalSkillUpdateMode;
 	readonly skillNames?: readonly string[];
@@ -158,6 +160,7 @@ export interface ExternalSkillUpdateOptions {
 	readonly trustScripts?: boolean;
 	readonly fetch?: typeof fetch;
 	readonly now?: Date;
+	readonly onError?: (error: unknown) => void;
 }
 
 interface ParsedExternalSkillUrl {
@@ -481,12 +484,12 @@ function isGitHubNotFoundError(error: unknown): boolean {
 	return error instanceof Error && /\(404\)/u.test(error.message);
 }
 
-async function readResponseText(response: Response, url: string): Promise<string> {
+async function readResponseText(response: Response, url: string, signal: AbortSignal): Promise<string> {
 	if (!response.ok) {
-		throw new Error(`GitHub request failed (${response.status}) for ${url}`);
+		throw httpFailure(response, `GitHub request failed (${response.status}) for ${url}`);
 	}
 
-	const text = await response.text();
+	const text = await readBoundedResponseText(response, MAX_FILE_BYTES, signal);
 	if (Buffer.byteLength(text, 'utf8') > MAX_FILE_BYTES) {
 		throw new Error(`External skill file exceeds ${MAX_FILE_BYTES} bytes: ${url}`);
 	}
@@ -494,19 +497,14 @@ async function readResponseText(response: Response, url: string): Promise<string
 	return normalizeTextContent(text);
 }
 
-async function fetchJson(fetchImpl: typeof fetch, url: string): Promise<unknown> {
-	const response = await fetchImpl(url, {
-		headers: {
+async function fetchJson(fetchImpl: typeof fetch, url: string, options: DependencyReadOptions): Promise<unknown> {
+	return readHttp(url, async (response, signal) => {
+		if (!response.ok) throw httpFailure(response, `GitHub request failed (${response.status}) for ${url}`);
+		return JSON.parse(await readBoundedResponseText(response, 2 * 1024 * 1024, signal)) as unknown;
+	}, { ...options, timeoutMs: 10_000, fetch: fetchImpl, headers: {
 			accept: 'application/vnd.github+json',
 			'user-agent': 'mustflow-external-skill-import',
-		},
-	});
-
-	if (!response.ok) {
-		throw new Error(`GitHub request failed (${response.status}) for ${url}`);
-	}
-
-	return response.json() as Promise<unknown>;
+	} });
 }
 
 function apiContentsUrl(parsed: ParsedExternalSkillUrl, relativePath: string): string {
@@ -537,17 +535,18 @@ function assertGitHubContentEntry(value: unknown): GitHubContentEntry {
 	return record as unknown as GitHubContentEntry;
 }
 
-async function loadGitHubFile(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string): Promise<LoadedExternalSkillFile> {
+async function loadGitHubFile(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string, options: DependencyReadOptions): Promise<LoadedExternalSkillFile> {
 	const normalizedRelativePath = validateImportRelativeFilePath(relativePath);
 	const apiUrl = apiContentsUrl(parsed, normalizedRelativePath);
-	const entry = assertGitHubContentEntry(await fetchJson(fetchImpl, apiUrl));
+	const entry = assertGitHubContentEntry(await fetchJson(fetchImpl, apiUrl, options));
 
 	if (entry.type !== 'file') {
 		throw new Error(`Expected a file in GitHub contents API response: ${normalizedRelativePath}`);
 	}
 
 	const content = entry.download_url
-		? await readResponseText(await fetchImpl(entry.download_url), entry.download_url)
+		? await readHttp(entry.download_url, (response, signal) => readResponseText(response, entry.download_url!, signal),
+			{ ...options, timeoutMs: 10_000, fetch: fetchImpl })
 		: decodeGitHubFileContent(entry);
 
 	return {
@@ -557,9 +556,9 @@ async function loadGitHubFile(fetchImpl: typeof fetch, parsed: ParsedExternalSki
 	};
 }
 
-async function listGitHubDirectory(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string): Promise<GitHubContentEntry[]> {
+async function listGitHubDirectory(fetchImpl: typeof fetch, parsed: ParsedExternalSkillUrl, relativePath: string, options: DependencyReadOptions): Promise<GitHubContentEntry[]> {
 	const apiUrl = apiContentsUrl(parsed, relativePath);
-	const value = await fetchJson(fetchImpl, apiUrl);
+	const value = await fetchJson(fetchImpl, apiUrl, options);
 	if (!Array.isArray(value)) {
 		throw new Error(`Expected a directory in GitHub contents API response: ${relativePath || '.'}`);
 	}
@@ -571,10 +570,11 @@ async function loadSupportDirectory(
 	fetchImpl: typeof fetch,
 	parsed: ParsedExternalSkillUrl,
 	directory: string,
+	options: DependencyReadOptions,
 ): Promise<LoadedExternalSkillFile[]> {
 	let entries: GitHubContentEntry[];
 	try {
-		entries = await listGitHubDirectory(fetchImpl, parsed, directory);
+		entries = await listGitHubDirectory(fetchImpl, parsed, directory, options);
 	} catch (error) {
 		if (isGitHubNotFoundError(error)) {
 			return [];
@@ -589,7 +589,7 @@ async function loadSupportDirectory(
 		.sort((left, right) => left.localeCompare(right));
 
 	for (const relativePath of pending) {
-		files.push(await loadGitHubFile(fetchImpl, parsed, relativePath));
+		files.push(await loadGitHubFile(fetchImpl, parsed, relativePath, options));
 	}
 
 	return files;
@@ -598,12 +598,13 @@ async function loadSupportDirectory(
 async function loadExternalSkillFiles(
 	fetchImpl: typeof fetch,
 	parsed: ParsedExternalSkillUrl,
+	options: DependencyReadOptions,
 ): Promise<LoadedExternalSkillFile[]> {
 	const files = [
-		await loadGitHubFile(fetchImpl, parsed, 'SKILL.md'),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'assets')),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'references')),
-		...(await loadSupportDirectory(fetchImpl, parsed, 'scripts')),
+		await loadGitHubFile(fetchImpl, parsed, 'SKILL.md', options),
+		...(await loadSupportDirectory(fetchImpl, parsed, 'assets', options)),
+		...(await loadSupportDirectory(fetchImpl, parsed, 'references', options)),
+		...(await loadSupportDirectory(fetchImpl, parsed, 'scripts', options)),
 	].sort((left, right) => left.relativePath.localeCompare(right.relativePath));
 
 	if (files.length > MAX_IMPORTED_FILES) {
@@ -1349,7 +1350,7 @@ function rejectedUpdateItem(skillName: string, issue: string): ExternalSkillUpda
 async function createExternalSkillUpdateItem(
 	projectRoot: string,
 	skillName: string,
-	options: Required<Pick<ExternalSkillUpdateOptions, 'action'>> & Pick<ExternalSkillUpdateOptions, 'mode' | 'trustScripts' | 'fetch'>,
+	options: Required<Pick<ExternalSkillUpdateOptions, 'action'>> & Pick<ExternalSkillUpdateOptions, 'mode' | 'trustScripts' | 'fetch' | 'signal' | 'maxRetries' | 'onError'>,
 ): Promise<ExternalSkillUpdateItem> {
 	const target = createTarget(skillName);
 	try {
@@ -1380,7 +1381,7 @@ async function createExternalSkillUpdateItem(
 		}
 
 		if (options.action === 'update') assertTrustedScriptFragmentUnchanged(projectRoot, target, provenance);
-		const remoteSourceFiles = await loadExternalSkillFiles(fetchImpl, sourceToParsed(provenance.source));
+		const remoteSourceFiles = await loadExternalSkillFiles(fetchImpl, sourceToParsed(provenance.source), options);
 		const normalizedRemoteFiles = normalizeImportedSkillFiles(remoteSourceFiles);
 		const remoteReports = fileReports(normalizedRemoteFiles);
 		const changedFiles = collectFileChanges(provenance.files, remoteReports);
@@ -1467,6 +1468,8 @@ async function createExternalSkillUpdateItem(
 			wrote_files: applyUpdate,
 		};
 	} catch (error) {
+		options.signal?.throwIfAborted();
+		options.onError?.(error);
 		return rejectedUpdateItem(skillName, error instanceof Error ? error.message : String(error));
 	}
 }
@@ -1480,6 +1483,14 @@ function selectedExternalSkillNames(projectRoot: string, options: ExternalSkillU
 }
 
 export async function createExternalSkillUpdateReport(
+	projectRoot: string,
+	options: ExternalSkillUpdateOptions,
+): Promise<ExternalSkillUpdateReport> {
+	return withDependencyDeadline({ signal: options.signal, timeoutMs: options.timeoutMs ?? 60_000 },
+		(signal) => createExternalSkillUpdateReportWithSignal(projectRoot, { ...options, signal }));
+}
+
+async function createExternalSkillUpdateReportWithSignal(
 	projectRoot: string,
 	options: ExternalSkillUpdateOptions,
 ): Promise<ExternalSkillUpdateReport> {
@@ -1531,11 +1542,15 @@ export async function createExternalSkillUpdateReport(
 	];
 
 	for (const skillName of existingNames) {
+		options.signal?.throwIfAborted();
 		skills.push(await createExternalSkillUpdateItem(projectRoot, skillName, {
 			action,
 			mode,
 			trustScripts: options.trustScripts,
 			fetch: options.fetch,
+			signal: options.signal,
+			maxRetries: options.maxRetries,
+			onError: options.onError,
 		}));
 	}
 
@@ -1572,6 +1587,15 @@ export async function createExternalSkillImportReport(
 	inputUrl: string,
 	options: ExternalSkillImportOptions,
 ): Promise<ExternalSkillImportReport> {
+	return withDependencyDeadline({ signal: options.signal, timeoutMs: options.timeoutMs ?? 60_000 },
+		(signal) => createExternalSkillImportReportWithSignal(projectRoot, inputUrl, { ...options, signal }));
+}
+
+async function createExternalSkillImportReportWithSignal(
+	projectRoot: string,
+	inputUrl: string,
+	options: ExternalSkillImportOptions,
+): Promise<ExternalSkillImportReport> {
 	const mode = options.mode;
 
 	try {
@@ -1581,7 +1605,8 @@ export async function createExternalSkillImportReport(
 			throw new Error('This runtime does not provide fetch.');
 		}
 
-		const sourceFiles = await loadExternalSkillFiles(fetchImpl, parsed);
+		const sourceFiles = await loadExternalSkillFiles(fetchImpl, parsed, options);
+		options.signal?.throwIfAborted();
 		const skillName = targetNameForSkill(sourceFiles, parsed, options.name);
 		const target = createTarget(skillName);
 		const source = externalSkillSourceFromParsed(inputUrl, parsed);
@@ -1632,6 +1657,8 @@ export async function createExternalSkillImportReport(
 			wrote_files: mode === 'install',
 		};
 	} catch (error) {
+		options.signal?.throwIfAborted();
+		options.onError?.(error);
 		return rejectionReport(mode, error instanceof Error ? error.message : String(error));
 	}
 }

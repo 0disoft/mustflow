@@ -1,3 +1,4 @@
+import type { DependencyReadOptions } from "../../core/dependency-read.js";
 import path from 'node:path';
 
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
@@ -340,6 +341,7 @@ function findExistingIndex(preferences: readonly TechnologyPreference[], candida
 async function verifyNpmPackages(
 	options: ParsedTechOptions,
 	reporter: Reporter,
+	dependencyOptions: DependencyReadOptions,
 ): Promise<readonly NpmPackageRealityCheck[] | null> {
 	if (!options.verify) {
 		return [];
@@ -363,13 +365,14 @@ async function verifyNpmPackages(
 	const checks: NpmPackageRealityCheck[] = [];
 	for (const packageName of options.packages) {
 		try {
-			const check = await checkNpmPackageExists(packageName);
+			const check = await checkNpmPackageExists(packageName, dependencyOptions);
 			if (!check.exists) {
 				reporter.stderr(renderCliError(`npm package not found: ${packageName}`, 'mf tech --help'));
 				return null;
 			}
 			checks.push(check);
 		} catch (error) {
+			dependencyOptions.signal?.throwIfAborted();
 			const message = error instanceof Error ? error.message : String(error);
 			reporter.stderr(renderCliError(`Could not verify npm package ${packageName}: ${message}`, 'mf tech --help'));
 			return null;
@@ -383,7 +386,7 @@ function renderVerifiedPackageNames(checks: readonly NpmPackageRealityCheck[]): 
 	return checks.map((check) => check.resolvedName ?? check.packageName).join(', ');
 }
 
-async function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Reporter): Promise<number> {
+async function runAdd(projectRoot: string, options: ParsedTechOptions, reporter: Reporter, dependencyOptions: DependencyReadOptions): Promise<number> {
 	const [kindToken, nameToken] = options.positionals;
 	if (!isTechnologyKind(kindToken ?? null)) {
 		reporter.stderr(renderCliError('Missing or unsupported technology kind', 'mf tech --help'));
@@ -425,7 +428,7 @@ async function runAdd(projectRoot: string, options: ParsedTechOptions, reporter:
 	const preferences = [...file.preferences];
 	const existingIndex = findExistingIndex(preferences, candidate);
 	const action = existingIndex === -1 ? 'created' : 'updated';
-	const verifiedPackages = await verifyNpmPackages(options, reporter);
+	const verifiedPackages = await verifyNpmPackages(options, reporter, dependencyOptions);
 
 	if (verifiedPackages === null) {
 		return 1;
@@ -497,7 +500,7 @@ function runRemove(projectRoot: string, options: ParsedTechOptions, reporter: Re
 	return 0;
 }
 
-export async function runTech(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runTech(args: string[], reporter: Reporter, lang: CliLang = 'en', dependencyOptions: DependencyReadOptions = {}): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getTechHelp(lang));
 		return 0;
@@ -520,7 +523,7 @@ export async function runTech(args: string[], reporter: Reporter, lang: CliLang 
 	}
 
 	if (options.action === 'add') {
-		return runAdd(projectRoot, options, reporter);
+		return runAdd(projectRoot, options, reporter, dependencyOptions);
 	}
 
 	return runRemove(projectRoot, options, reporter);

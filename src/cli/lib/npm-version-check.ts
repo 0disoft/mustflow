@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { httpFailure, readBoundedResponseText, readHttp, type DependencyReadOptions } from '../../core/dependency-read.js';
 
 import type { PackageMetadata } from './package-info.js';
 
@@ -217,68 +218,64 @@ function buildPackageMetadataUrl(registryUrl: string, packageName: string): stri
 	return `${trimmedRegistryUrl}/${encodedPackageName}`;
 }
 
-export async function checkNpmPackageExists(packageName: string): Promise<NpmPackageRealityCheck> {
+export async function checkNpmPackageExists(packageName: string, options: DependencyReadOptions = {}): Promise<NpmPackageRealityCheck> {
 	const registryUrl = getRegistryUrl();
-	const response = await fetch(buildPackageMetadataUrl(registryUrl, packageName), {
-		headers: { accept: 'application/json' },
-		signal: AbortSignal.timeout(getTimeoutMs()),
-	});
+	return readHttp(buildPackageMetadataUrl(registryUrl, packageName), async (response, signal) => {
 
-	if (response.status === 404) {
+		if (response.status === 404) {
+			return {
+				packageName,
+				registryUrl,
+				exists: false,
+				resolvedName: null,
+			};
+		}
+
+		if (!response.ok) {
+			throw httpFailure(response, `npm registry returned HTTP ${response.status}`);
+		}
+
+		const body: unknown = JSON.parse(await readBoundedResponseText(response, 8 * 1024 * 1024, signal));
+		const resolvedName = isRecord(body) && typeof body.name === 'string' ? body.name : null;
+
+		if (!resolvedName) {
+			throw new Error('npm registry response did not include a package name');
+		}
+
 		return {
 			packageName,
 			registryUrl,
-			exists: false,
-			resolvedName: null,
+			exists: true,
+			resolvedName,
 		};
-	}
-
-	if (!response.ok) {
-		throw new Error(`npm registry returned HTTP ${response.status}`);
-	}
-
-	const body: unknown = await response.json();
-	const resolvedName = isRecord(body) && typeof body.name === 'string' ? body.name : null;
-
-	if (!resolvedName) {
-		throw new Error('npm registry response did not include a package name');
-	}
-
-	return {
-		packageName,
-		registryUrl,
-		exists: true,
-		resolvedName,
-	};
+	}, { timeoutMs: getTimeoutMs(), ...options, headers: { accept: 'application/json' } });
 }
 
-export async function checkNpmLatestVersion(metadata: PackageMetadata): Promise<PackageVersionCheck> {
+export async function checkNpmLatestVersion(metadata: PackageMetadata, options: DependencyReadOptions = {}): Promise<PackageVersionCheck> {
 	const registryUrl = getRegistryUrl();
-	const response = await fetch(buildLatestPackageUrl(registryUrl, metadata.name), {
-		headers: { accept: 'application/json' },
-		signal: AbortSignal.timeout(getTimeoutMs()),
-	});
+	return readHttp(buildLatestPackageUrl(registryUrl, metadata.name), async (response, signal) => {
 
-	if (!response.ok) {
-		throw new Error(`npm registry returned HTTP ${response.status}`);
-	}
+		if (!response.ok) {
+			throw httpFailure(response, `npm registry returned HTTP ${response.status}`);
+		}
 
-	const body: unknown = await response.json();
-	const latestVersion = isRecord(body) && typeof body.version === 'string' ? body.version : '';
+		const body: unknown = JSON.parse(await readBoundedResponseText(response, 1024 * 1024, signal));
+		const latestVersion = isRecord(body) && typeof body.version === 'string' ? body.version : '';
 
-	if (!latestVersion) {
-		throw new Error('npm registry response did not include a version');
-	}
+		if (!latestVersion) {
+			throw new Error('npm registry response did not include a version');
+		}
 
-	const updateCommands = getPackageInstallCommands(metadata.name);
+		const updateCommands = getPackageInstallCommands(metadata.name);
 
-	return {
-		packageName: metadata.name,
-		currentVersion: metadata.version,
-		latestVersion,
-		updateAvailable: comparePackageVersions(metadata.version, latestVersion) < 0,
-		registryUrl,
-		updateCommand: updateCommands[0]?.command ?? `npm install -g ${metadata.name}@latest`,
-		updateCommands,
-	};
+		return {
+			packageName: metadata.name,
+			currentVersion: metadata.version,
+			latestVersion,
+			updateAvailable: comparePackageVersions(metadata.version, latestVersion) < 0,
+			registryUrl,
+			updateCommand: updateCommands[0]?.command ?? `npm install -g ${metadata.name}@latest`,
+			updateCommands,
+		};
+	}, { timeoutMs: getTimeoutMs(), ...options, headers: { accept: 'application/json' } });
 }

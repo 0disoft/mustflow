@@ -1,3 +1,4 @@
+import type { DependencyReadOptions } from "../../core/dependency-read.js";
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { checkNpmLatestVersion, type PackageVersionCheck } from '../lib/npm-version-check.js';
@@ -51,7 +52,7 @@ function printPackageCheck(check: PackageVersionCheck, reporter: Reporter, lang:
 	}
 }
 
-export async function runUpgrade(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runUpgrade(args: string[], reporter: Reporter, lang: CliLang = 'en', dependencyOptions: DependencyReadOptions = {}): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getUpgradeHelp(lang));
 		return 0;
@@ -70,7 +71,7 @@ export async function runUpgrade(args: string[], reporter: Reporter, lang: CliLa
 	reporter.stdout(t(lang, 'upgrade.packageSection'));
 
 	try {
-		const packageCheck = await checkNpmLatestVersion(readPackageMetadata());
+		const packageCheck = await checkNpmLatestVersion(readPackageMetadata(), dependencyOptions);
 		printPackageCheck(packageCheck, reporter, lang);
 
 		if (packageCheck.updateAvailable) {
@@ -80,6 +81,7 @@ export async function runUpgrade(args: string[], reporter: Reporter, lang: CliLa
 			return 1;
 		}
 	} catch (error) {
+		dependencyOptions.signal?.throwIfAborted();
 		const message = error instanceof Error ? error.message : String(error);
 		reporter.stderr(renderCliError(t(lang, 'upgrade.warning.versionCheckFailed', { message }), 'mf version --check', lang));
 		reporter.stderr(t(lang, 'upgrade.warning.continueWithBundledTemplate'));

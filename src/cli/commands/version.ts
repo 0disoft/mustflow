@@ -1,3 +1,4 @@
+import type { DependencyReadOptions } from "../../core/dependency-read.js";
 import { printUsageError, renderCliError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import { checkNpmLatestVersion, type PackageVersionCheck } from '../lib/npm-version-check.js';
@@ -52,7 +53,7 @@ function renderVersionCheck(check: PackageVersionCheck, lang: CliLang): string {
 	return lines.join('\n');
 }
 
-export async function runVersion(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runVersion(args: string[], reporter: Reporter, lang: CliLang = 'en', dependencyOptions: DependencyReadOptions = {}): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getVersionHelp(lang));
 		return 0;
@@ -78,9 +79,10 @@ export async function runVersion(args: string[], reporter: Reporter, lang: CliLa
 	}
 
 	try {
-		reporter.stdout(renderVersionCheck(await checkNpmLatestVersion(metadata), lang));
+		reporter.stdout(renderVersionCheck(await checkNpmLatestVersion(metadata, dependencyOptions), lang));
 		return 0;
 	} catch (error) {
+		dependencyOptions.signal?.throwIfAborted();
 		const message = error instanceof Error ? error.message : String(error);
 		reporter.stderr(renderCliError(t(lang, 'version.error.checkFailed', { message }), 'mf version --help', lang));
 		return 1;

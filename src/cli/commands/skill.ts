@@ -1,3 +1,4 @@
+import type { DependencyReadOptions } from "../../core/dependency-read.js";
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import { t, type CliLang } from '../lib/i18n.js';
 import {
@@ -376,7 +377,7 @@ function parseImportMode(parsed: ParsedSkillArgs): ExternalSkillImportMode | nul
 	return parsed.install ? 'install' : 'dry_run';
 }
 
-export async function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runSkill(args: string[], reporter: Reporter, lang: CliLang = 'en', dependencyOptions: DependencyReadOptions = {}): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getSkillHelp(lang));
 		return 0;
@@ -484,6 +485,7 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		}
 
 		const report = await createExternalSkillImportReport(resolveMustflowRoot(), parsed.sourceUrl, {
+			...dependencyOptions,
 			mode,
 			name: parsed.name,
 			ref: parsed.ref,
@@ -523,6 +525,7 @@ export async function runSkill(args: string[], reporter: Reporter, lang: CliLang
 		}
 
 		const report = await createExternalSkillUpdateReport(resolveMustflowRoot(), {
+			...dependencyOptions,
 			action: parsed.action,
 			mode: parsed.action === 'outdated' ? 'check' : parsed.dryRun ? 'dry_run' : 'install',
 			skillNames: parsed.skillNames,
