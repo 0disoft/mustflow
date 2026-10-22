@@ -1676,6 +1676,7 @@ export const hiMessages = {
   "verify.help.option.parallel":
     "Safe और non-conflicting schedule batches को इतने commands तक साथ चलाएं, local limits से capped; default 4 है",
   "verify.help.option.profile": "edit, commit, या release verification चुनें; default edit है",
+  "verify.help.option.noReuse": "पिछली सफलता का पुन: उपयोग किए बिना चुनी गई जाँच फिर चलाएँ",
   "verify.help.option.planOnly": "Commands चलाए बिना verification plan print करें; --json चाहिए",
   "verify.help.exit.ok": "सभी selected verification intents pass हुए",
   "verify.help.exit.fail":

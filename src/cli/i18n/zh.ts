@@ -1666,6 +1666,7 @@ export const zhMessages = {
   "verify.help.option.parallel":
     "最多并行执行这个数量的安全、无冲突计划批次命令，并受本地上限限制；默认值为 4",
   "verify.help.option.profile": "选择 edit、commit 或 release 验证；默认为 edit",
+  "verify.help.option.noReuse": "重新运行所选检查，不复用之前的成功结果",
   "verify.help.option.planOnly": "仅输出验证计划，不执行命令；需要 --json",
   "verify.help.exit.ok": "选中的所有验证意图均已通过",
   "verify.help.exit.fail":

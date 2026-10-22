@@ -1,7 +1,7 @@
 import type { VerificationReceipt, VerificationResult, VerificationResultStatus, VerificationSummary } from './verify/result-types.js';
 import { summarizeResults, objectField, createFailureFingerprintForVerify, riskCodesForFailureFingerprint } from './verify/result-analysis.js';
 import { createHash } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ClassifyOutput } from './classify.js';
 import { createChangeVerificationReport, type ChangeVerificationReport } from '../../core/change-verification.js';
@@ -35,6 +35,7 @@ import type { Reporter } from '../lib/reporter.js';
 
 import { createSkippedResults, testTargetsByScheduledIntent, runScheduledVerificationIntents } from './verify/scheduled-execution.js';
 import { createCompletionVerdictForResults } from './verify/completion-evidence.js';
+import { createVerificationCurrentStateHash } from './verify/reuse-inputs.js';
 
 
 export { planErrorMessageKey, readInputFromClassificationReport } from './verify/input.js';
@@ -43,26 +44,6 @@ const VERIFY_SCHEMA_VERSION = '1';
 
 function hashTextSha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
-}
-
-function createVerificationCurrentStateHash(projectRoot: string, report: ChangeVerificationReport, verificationPlanId: string): string | null {
-	if (report.files.length === 0) return null;
-	const hash = createHash('sha256').update(verificationPlanId);
-	try {
-		for (const relativePath of [...report.files].sort()) {
-			const absolutePath = path.join(projectRoot, ...relativePath.split('/'));
-			const stats = statSync(absolutePath, { throwIfNoEntry: false });
-			if (stats && !stats.isFile()) return null;
-			const content = stats ? readFileSync(absolutePath) : null;
-			// Frame each input by path and byte length; null distinguishes missing from empty.
-			hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
-			if (content !== null) hash.update(content);
-		}
-	} catch {
-		// Cache availability must not prevent verification or discard completed results.
-		return null;
-	}
-	return `sha256:${hash.digest('hex')}`;
 }
 
 function readReusableVerificationResults(projectRoot: string, verificationPlanId: string, currentStateHash: string | null): ReadonlyMap<string, VerificationResult> {
@@ -224,6 +205,7 @@ export function getVerifyHelp(lang: CliLang = 'en'): string {
 				{ label: '--external-evidence <path>', description: t(lang, 'verify.help.option.externalEvidence') },
 				{ label: '--parallel <count>', description: t(lang, 'verify.help.option.parallel') },
 				{ label: '--profile <edit|commit|release>', description: t(lang, 'verify.help.option.profile') },
+				{ label: '--no-reuse', description: t(lang, 'verify.help.option.noReuse') },
 				{ label: '--plan-only', description: t(lang, 'verify.help.option.planOnly') },
 				{ label: '--json', description: t(lang, 'cli.option.json') },
 				{ label: '-h, --help', description: t(lang, 'cli.option.help') },
@@ -362,7 +344,7 @@ function writeVerifyRunReceipts(
 	externalChecks: readonly ExternalEvidenceCheck[],
 	inputStateHash: string | null,
 ): VerificationOutput {
-	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, output.verification_plan_id);
+	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, output.verification_plan_id, readCommandContract(projectRoot));
 	const reusableStateHash = currentStateHash === inputStateHash ? currentStateHash : null;
 	const statePaths = createVerifyRunStatePaths(projectRoot);
 	const receipts: VerifyRunReceiptManifestEntry[] = [];
@@ -561,6 +543,7 @@ async function createVerifyOutput(
 	parallelism = DEFAULT_VERIFY_PARALLELISM,
 	parallelismReport: VerificationParallelismReport | null = null,
 	profile: VerificationProfile = 'edit',
+	noReuse = false,
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot, profile);
@@ -574,12 +557,12 @@ async function createVerifyOutput(
 	const reproEvidenceRisks = createReproEvidenceRisks(reproEvidence, { verificationPlanId });
 	const reproEvidenceVerdictEffects = countReproEvidenceVerdictEffects(reproEvidenceRisks);
 	const externalEvidenceRisks = createExternalEvidenceRisks(externalChecks);
-	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, verificationPlanId);
-	const mayReuse = profile !== 'release' && !['high', 'critical'].includes(report.risk_assessment.level);
+	const currentStateHash = createVerificationCurrentStateHash(projectRoot, report, verificationPlanId, contract);
+	const mayReuse = !noReuse && profile !== 'release' && !['high', 'critical'].includes(report.risk_assessment.level);
 	const reusableResults = mayReuse ? readReusableVerificationResults(projectRoot, verificationPlanId, currentStateHash) : new Map<string, VerificationResult>();
 	const results = await runScheduledVerificationIntents(
 		report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism, reusableResults,
-		() => currentStateHash !== null && createVerificationCurrentStateHash(projectRoot, report, verificationPlanId) === currentStateHash,
+		() => currentStateHash !== null && createVerificationCurrentStateHash(projectRoot, report, verificationPlanId, readCommandContract(projectRoot)) === currentStateHash,
 	);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
@@ -917,6 +900,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		parallelismSettings.effective,
 		parallelismReport,
 		parsed.profile,
+		parsed.noReuse,
 	);
 
 	if (parsed.json) {

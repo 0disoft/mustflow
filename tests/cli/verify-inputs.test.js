@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -86,6 +87,57 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
+for (const dependencyMode of ['undeclared', 'declared', 'uncommitted', 'head-only']) {
+test(`reruns ${dependencyMode} dependency changes while the classified file stays unchanged`, async () => {
+	const projectPath = createTempProject();
+	try {
+		await initProject(projectPath);
+		writeFileSync(path.join(projectPath, 'README.md'), 'work in progress');
+		writeFileSync(path.join(projectPath, 'lib.cjs'), 'module.exports = 1;');
+		writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'dependency_change')));
+		appendIntent(projectPath, `
+[intents.check_dependency]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Verify a dependency outside the classified files."
+argv = ['${process.execPath}', '-e', 'require("node:assert/strict").equal(require("./lib.cjs"), 1)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["dependency_change"]
+${dependencyMode === 'undeclared' ? '' : dependencyMode === 'head-only' ? 'reuse = { inputs = ["README.md"] }' : 'reuse = { inputs = ["lib.cjs", "README.md"] }'}
+`);
+		const git = (...args) => execFileSync('git', ['-C', projectPath, ...args], { stdio: 'pipe' });
+		git('init');
+		git('config', 'user.name', 'Mustflow test');
+		git('config', 'user.email', 'test@example.invalid');
+		git('add', 'lib.cjs');
+		git('commit', '-m', 'baseline dependency');
+		const args = ['verify', '--from-classification', 'classification.json', '--json'];
+		const first = await runCli(projectPath, args);
+		assert.equal(first.status, 0, first.stderr || first.stdout);
+		writeFileSync(path.join(projectPath, 'lib.cjs'), 'module.exports = 0;');
+		if (dependencyMode !== 'uncommitted') {
+			git('add', 'lib.cjs');
+			git('commit', '-m', 'change dependency');
+		}
+		const second = await runCli(projectPath, args);
+		assert.equal(second.status, 1, second.stderr || second.stdout);
+		const report = JSON.parse(second.stdout);
+		assert.equal(report.results[0].status, 'failed');
+		assert.notEqual(report.results[0].reason, 'reused_input_hash');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+}
+
 test('does not reuse verification when a command changes the classified input', async () => {
 	const projectPath = createTempProject();
 	try {
@@ -107,6 +159,7 @@ writes = ["README.md"]
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -143,6 +196,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -150,6 +204,9 @@ required_after = ["input_change"]
 		const second = await runCli(projectPath, args);
 		assert.equal(second.status, 0, second.stderr || second.stdout);
 		assert.equal(JSON.parse(second.stdout).results[0].reason, 'reused_input_hash');
+		const forced = await runCli(projectPath, [...args, '--no-reuse']);
+		assert.equal(forced.status, 0, forced.stderr || forced.stdout);
+		assert.notEqual(JSON.parse(forced.stdout).results[0].reason, 'reused_input_hash');
 		writeFileSync(path.join(projectPath, 'README.md'), 'bad');
 		const third = await runCli(projectPath, args);
 		assert.equal(third.status, 1, third.stderr || third.stdout);
@@ -183,6 +240,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 			const args = ['verify', '--from-classification', 'classification.json', '--json'];
 			const first = await runCli(projectPath, args);
@@ -227,6 +285,7 @@ writes = ["input.md"]
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 			for (let run = 0; run < 2; run += 1) {
 				const result = await runCli(projectPath, ['verify', '--from-classification', 'classification.json', '--json']);
@@ -266,6 +325,7 @@ preconditions = [{ kind = "path_exists", path = "required.txt" }]
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -297,15 +357,16 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Count actual verification runs."
-argv = ['${process.execPath}', '-e', 'const fs = require("node:fs"); fs.appendFileSync("runs.txt", "run\\n");']
+argv = ['${process.execPath}', '-e', 'console.log("ran verification");']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
 success_exit_codes = [0]
-writes = ["runs.txt"]
+writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 			const args = ['verify', '--from-classification', 'classification.json', '--json'];
 			const first = await runCli(projectPath, args);
@@ -330,14 +391,14 @@ required_after = ["input_change"]
 			const result = await runCli(projectPath, args);
 			assert.equal(result.status, 0, result.stderr || result.stdout);
 			assert.notEqual(JSON.parse(result.stdout).results[0].reason, 'reused_input_hash');
-			assert.equal(readFileSync(path.join(projectPath, 'runs.txt'), 'utf8'), 'run\nrun\n');
+			assert.equal(JSON.parse(result.stdout).results[0].receipt.stdout.tail.trim(), "ran verification");
 		} finally {
 			removeTempProject(projectPath);
 		}
 	});
 }
 
-test('invalidates later cached batches when an earlier batch changes classified input', async () => {
+test('never caches write-bearing batches and checks their changed input', async () => {
 	const projectPath = createTempProject();
 	try {
 		await initProject(projectPath);
@@ -362,6 +423,7 @@ writes = ${writes}
 network = false
 destructive = false
 required_after = ["input_change"]
+reuse = { inputs = ["README.md"] }
 `);
 		}
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
@@ -373,7 +435,7 @@ required_after = ["input_change"]
 		const unchanged = await runCli(projectPath, args);
 		assert.equal(unchanged.status, 0, unchanged.stderr || unchanged.stdout);
 		const previous = JSON.parse(unchanged.stdout);
-		assert.ok(previous.results.every((result) => result.reason === 'reused_input_hash'));
+		assert.ok(previous.results.every((result) => result.reason !== 'reused_input_hash'));
 		const prepareReceiptPath = path.join(projectPath, previous.results.find((result) => result.intent === 'a_prepare').receipt_path);
 		writeFileSync(prepareReceiptPath, `${readFileSync(prepareReceiptPath, 'utf8')}\n`);
 		writeFileSync(path.join(projectPath, 'mutate.flag'), 'change the input');

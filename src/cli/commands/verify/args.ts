@@ -17,6 +17,7 @@ export const VERIFY_PARALLEL_EXECUTION_ENABLED = true;
 const VERIFY_OPTIONS = [
 	{ name: '--json', kind: 'boolean' },
 	{ name: '--plan-only', kind: 'boolean' },
+	{ name: '--no-reuse', kind: 'boolean' },
 	{ name: '--changed', kind: 'boolean' },
 	{ name: '--reason', kind: 'string' },
 	{ name: '--parallel', kind: 'string' },
@@ -52,6 +53,7 @@ export interface VerifyParallelismSettings {
 export interface ParsedVerifyArgs {
 	readonly json: boolean;
 	readonly planOnly: boolean;
+	readonly noReuse: boolean;
 	readonly changed: boolean;
 	readonly reason?: string;
 	readonly fromClassification?: string;
@@ -103,6 +105,7 @@ function createParsedVerifyArgsBase(parsed: ParsedCliOptions): Omit<ParsedVerify
 	return {
 		json: hasParsedCliOption(parsed, '--json'),
 		planOnly: hasParsedCliOption(parsed, '--plan-only'),
+		noReuse: hasParsedCliOption(parsed, '--no-reuse'),
 		changed: hasParsedCliOption(parsed, '--changed'),
 		reason: getParsedCliStringOption(parsed, '--reason') ?? undefined,
 		fromClassification: getParsedCliStringOption(parsed, '--from-classification') ?? undefined,

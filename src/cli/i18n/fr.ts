@@ -1676,6 +1676,7 @@ Lisez ces fichiers avant de travailler :
   "verify.help.option.parallel":
     "Exécute les lots planifiés sûrs et sans conflit avec au plus ce nombre de commandes, plafonné par les limites locales ; valeur par défaut : 4",
   "verify.help.option.profile": "Choisit la vérification edit, commit ou release ; la valeur par défaut est edit",
+  "verify.help.option.noReuse": "Relance les vérifications sans réutiliser les résultats précédents",
   "verify.help.option.planOnly": "Affiche le plan de vérification sans exécuter de commandes; nécessite --json",
   "verify.help.exit.ok": "Toutes les intentions de vérification sélectionnées ont réussi",
   "verify.help.exit.fail":

@@ -1668,6 +1668,7 @@ export const koMessages = {
   "verify.help.option.parallel":
     "안전하고 서로 충돌하지 않는 예정 실행 묶음을 이 개수까지 함께 실행하되, 로컬 상한을 적용합니다. 기본값은 4입니다",
   "verify.help.option.profile": "edit(빠른 반복), commit(제한된 확신), release(전체) 검증을 선택합니다. 기본값은 edit입니다",
+  "verify.help.option.noReuse": "이전 성공 결과를 재사용하지 않고 선택한 검사를 다시 실행합니다",
   "verify.help.option.planOnly": "명령을 실행하지 않고 검증 계획만 출력합니다. --json이 필요합니다",
   "verify.help.exit.ok": "선택된 모든 검증 의도가 통과했습니다",
   "verify.help.exit.fail":

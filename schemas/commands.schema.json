@@ -233,6 +233,14 @@
           "items": { "type": "string" }
         },
         "covers": { "$ref": "#/$defs/coverageHints" },
+        "reuse": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["inputs"],
+          "properties": {
+            "inputs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
         "selection": { "$ref": "#/$defs/selectionHints" },
         "inputs": { "$ref": "#/$defs/intentInputs" },
         "preconditions": {

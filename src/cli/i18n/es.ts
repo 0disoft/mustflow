@@ -1676,6 +1676,7 @@ Lee estos archivos antes de trabajar:
   "verify.help.option.parallel":
     "Ejecuta lotes programados seguros y sin conflictos con hasta esta cantidad de comandos, limitada por topes locales; el valor predeterminado es 4",
   "verify.help.option.profile": "Elige verificación edit, commit o release; el valor predeterminado es edit",
+  "verify.help.option.noReuse": "Vuelve a ejecutar las comprobaciones sin reutilizar resultados anteriores",
   "verify.help.option.planOnly": "Imprime el plan de verificación sin ejecutar comandos; requiere --json",
   "verify.help.exit.ok": "Todas las intenciones de verificación seleccionadas pasaron",
   "verify.help.exit.fail":

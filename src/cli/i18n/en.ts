@@ -1671,6 +1671,7 @@ Read these files before working:
   "verify.help.option.parallel":
     "Run safe non-conflicting schedule batches with up to this many commands, capped by local limits; default is 4",
   "verify.help.option.profile": "Choose edit (fast), commit (bounded), or release (full) verification; default is edit",
+  "verify.help.option.noReuse": "Run selected checks again without reusing previous success",
   "verify.help.option.planOnly": "Print the verification plan without running commands; requires --json",
   "verify.help.exit.ok": "All selected verification intents passed",
   "verify.help.exit.fail":
