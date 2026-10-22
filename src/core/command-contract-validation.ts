@@ -748,6 +748,9 @@ function validateCommandIntent(
 	validatePositiveIntegerField(intent, 'kill_after_seconds', `[commands.intents.${intentName}].kill_after_seconds`, issues);
 	validateCommandIntentSelection(intentName, intent, issues);
 	if (hasOwn(intent, 'reuse')) {
+		if (isRecord(intent.reuse)) {
+			validateBooleanField(intent.reuse, 'run_environment_independent', `[commands.intents.${intentName}.reuse].run_environment_independent`, issues);
+		}
 		if (!isRecord(intent.reuse) || !Array.isArray(intent.reuse.inputs) || intent.reuse.inputs.length === 0 ||
 			intent.reuse.inputs.some((input) => typeof input !== 'string' || input.length === 0 || path.isAbsolute(input) || /[*?\[\]{}]/u.test(input) || input.split(/[\\/]/u).includes('..'))) {
 			issues.push(commandContractIssue(`[commands.intents.${intentName}.reuse].inputs must list exact repository-relative input files`));

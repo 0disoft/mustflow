@@ -87,6 +87,46 @@ function createClassifyPlan(projectPath, reason, filePath = 'README.md') {
 	};
 }
 
+for (const declaration of ['', ', run_environment_independent = false']) {
+	test(`run-specific environment disables reuse without an independence assertion (${declaration || 'omitted'})`, async () => {
+		const projectPath = createTempProject();
+		try {
+			await initProject(projectPath);
+			writeFileSync(path.join(projectPath, 'README.md'), 'unchanged');
+			writeFileSync(path.join(projectPath, 'classification.json'), JSON.stringify(createClassifyPlan(projectPath, 'input_change')));
+			appendIntent(projectPath, `
+[intents.read_run_environment]
+status = "configured"
+lifecycle = "oneshot"
+run_policy = "agent_allowed"
+description = "Read the actual child run namespace."
+argv = ['${process.execPath}', '-e', 'console.log(process.env.MUSTFLOW_RUN_NAMESPACE)']
+cwd = "."
+timeout_seconds = 10
+stdin = "closed"
+success_exit_codes = [0]
+writes = []
+network = false
+destructive = false
+required_after = ["input_change"]
+reuse = { inputs = ["README.md"]${declaration} }
+`);
+			const args = ['verify', '--from-classification', 'classification.json', '--json'];
+			const first = await runCli(projectPath, args);
+			const second = await runCli(projectPath, args);
+			assert.equal(first.status, 0, first.stderr || first.stdout);
+			assert.equal(second.status, 0, second.stderr || second.stdout);
+			const before = JSON.parse(first.stdout).results[0];
+			const after = JSON.parse(second.stdout).results[0];
+			assert.notEqual(after.reason, 'reused_input_hash');
+			assert.notEqual(after.receipt.stdout.tail, before.receipt.stdout.tail);
+			assert.equal(after.receipt.current_state_hash, undefined);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
+
 for (const dependencyMode of ['undeclared', 'declared', 'uncommitted', 'head-only']) {
 test(`reruns ${dependencyMode} dependency changes while the classified file stays unchanged`, async () => {
 	const projectPath = createTempProject();
@@ -110,7 +150,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["dependency_change"]
-${dependencyMode === 'undeclared' ? '' : dependencyMode === 'head-only' ? 'reuse = { inputs = ["README.md"] }' : 'reuse = { inputs = ["lib.cjs", "README.md"] }'}
+${dependencyMode === 'undeclared' ? '' : dependencyMode === 'head-only' ? 'reuse = { inputs = ["README.md"], run_environment_independent = true }' : 'reuse = { inputs = ["lib.cjs", "README.md"], run_environment_independent = true }'}
 `);
 		const git = (...args) => execFileSync('git', ['-C', projectPath, ...args], { stdio: 'pipe' });
 		git('init');
@@ -159,7 +199,7 @@ writes = ["README.md"]
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -196,7 +236,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -240,7 +280,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 			const args = ['verify', '--from-classification', 'classification.json', '--json'];
 			const first = await runCli(projectPath, args);
@@ -285,7 +325,7 @@ writes = ["input.md"]
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 			for (let run = 0; run < 2; run += 1) {
 				const result = await runCli(projectPath, ['verify', '--from-classification', 'classification.json', '--json']);
@@ -325,7 +365,7 @@ preconditions = [{ kind = "path_exists", path = "required.txt" }]
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];
 		const first = await runCli(projectPath, args);
@@ -366,7 +406,7 @@ writes = []
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 			const args = ['verify', '--from-classification', 'classification.json', '--json'];
 			const first = await runCli(projectPath, args);
@@ -423,7 +463,7 @@ writes = ${writes}
 network = false
 destructive = false
 required_after = ["input_change"]
-reuse = { inputs = ["README.md"] }
+reuse = { inputs = ["README.md"], run_environment_independent = true }
 `);
 		}
 		const args = ['verify', '--from-classification', 'classification.json', '--json'];

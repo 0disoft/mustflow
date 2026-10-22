@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { ChangeVerificationReport } from '../../../core/change-verification.js';
 import { isRecord, type CommandContract } from '../../../core/config-loading.js';
 import { createCommandEnv, resolveCommandEnv } from '../../../core/command-env.js';
-import { ensureInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
+import { ACTIVE_RUN_LOCK_ID_ENV } from '../../../core/active-run-locks.js';
+import { ensureInsideWithoutSymlinks, readFileInsideWithoutSymlinks } from '../../../core/safe-filesystem.js';
 
 /** A declaration is an assertion that these exact files contain all local inputs. */
 export function createVerificationCurrentStateHash(
@@ -16,7 +17,7 @@ export function createVerificationCurrentStateHash(
 ): string | null {
 	if (report.files.length === 0 || report.schedule.entries.length === 0) return null;
 	const files = new Set(report.files);
-	const hash = createHash('sha256').update('mustflow.verify_inputs.v2').update(verificationPlanId);
+	const hash = createHash('sha256').update('mustflow.verify_inputs.v3').update(verificationPlanId);
 	try {
 		const head = spawnSync('git', ['rev-parse', '--verify', 'HEAD'], {
 			cwd: projectRoot, encoding: 'utf8', timeout: 5000, windowsHide: true,
@@ -26,6 +27,9 @@ export function createVerificationCurrentStateHash(
 		for (const entry of report.schedule.entries) {
 			const intent = contract.intents[entry.intent];
 			if (!isRecord(intent) || !isRecord(intent.reuse) || !Array.isArray(intent.reuse.inputs) || intent.reuse.inputs.length === 0) return null;
+			// Run IDs and output paths are deliberately different for every execution.
+			// Reuse requires an explicit assertion that the result does not depend on them.
+			if (intent.reuse.run_environment_independent !== true) return null;
 			if (intent.network !== false || intent.destructive !== false || !Array.isArray(intent.writes) || intent.writes.length !== 0) return null;
 			if (Array.isArray(intent.effects) && intent.effects.some((effect) => !isRecord(effect) || effect.type !== 'read')) return null;
 			if (!Array.isArray(intent.argv) || typeof intent.argv[0] !== 'string' || !path.isAbsolute(intent.argv[0])) return null;
@@ -35,6 +39,9 @@ export function createVerificationCurrentStateHash(
 			const resolution = resolveCommandEnv(contract, intent);
 			if (resolution.policy === 'inherit') return null;
 			const env = createCommandEnv(projectRoot, resolution);
+			delete env[ACTIVE_RUN_LOCK_ID_ENV];
+			delete env.MUSTFLOW_RUN_NAMESPACE;
+			delete env.MUSTFLOW_OUTPUT_DIR;
 			// Only a digest is persisted; environment values never enter receipts or output.
 			hash.update(JSON.stringify(Object.keys(env).sort().map((key) => [key, env[key]])));
 			for (const input of intent.reuse.inputs) {
@@ -47,7 +54,7 @@ export function createVerificationCurrentStateHash(
 			ensureInsideWithoutSymlinks(projectRoot, absolutePath, { allowMissingDescendant: true });
 			const stats = statSync(absolutePath, { throwIfNoEntry: false });
 			if (stats && !stats.isFile()) return null;
-			const content = stats ? readFileSync(absolutePath) : null;
+			const content = stats ? readFileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes: 16 * 1024 * 1024 }) : null;
 			hash.update(JSON.stringify([relativePath, content?.byteLength ?? null]));
 			if (content !== null) hash.update(content);
 		}
