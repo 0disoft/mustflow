@@ -1,9 +1,10 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import http from 'node:http';
 import type { AddressInfo, Socket } from 'node:net';
 import path from 'node:path';
 
+import { createDashboardRequestHandler, DASHBOARD_HTTP_POLICY } from '../lib/dashboard-http.js';
 import { openUrlInBrowser } from '../lib/browser-open.js';
 import { printUsageError, renderHelp } from '../lib/cli-output.js';
 import {
@@ -88,7 +89,6 @@ interface DashboardOptions {
 
 const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
-const MAX_REQUEST_BYTES = 64 * 1024;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 const DASHBOARD_OPTIONS: readonly CliOptionSpec[] = [
 	{ name: '--host', kind: 'string' },
@@ -376,81 +376,6 @@ function lastOptionTokenName(args: readonly string[], names: readonly string[]):
 function optionTokenName(arg: string): string {
 	const separatorIndex = arg.indexOf('=');
 	return separatorIndex === -1 ? arg : arg.slice(0, separatorIndex);
-}
-
-function sendJson(response: ServerResponse, statusCode: number, value: unknown): void {
-	response.writeHead(statusCode, {
-		'cache-control': 'no-store',
-		'content-type': 'application/json; charset=utf-8',
-	});
-	response.end(JSON.stringify(value));
-}
-
-function sendText(response: ServerResponse, statusCode: number, value: string): void {
-	response.writeHead(statusCode, {
-		'cache-control': 'no-store',
-		'content-type': 'text/plain; charset=utf-8',
-	});
-	response.end(value);
-}
-
-function sendBadRequest(response: ServerResponse): void {
-	sendText(response, 400, 'Bad request');
-}
-
-function isDashboardBadRequestError(error: unknown, message: string): boolean {
-	return (
-		error instanceof SyntaxError ||
-		message === 'Request body is too large.' ||
-		message === 'Invalid review status.' ||
-		message === 'Request body must be a JSON object.' ||
-		message === 'Request body must include an updates array.' ||
-		message === 'Each update must be a JSON object.' ||
-		message === 'Each update must include an id.' ||
-		message === 'Bulk documentation review updates require a separate confirmed flow.' ||
-		message.startsWith('Unknown dashboard preference: ') ||
-		message.endsWith(' is locked in the dashboard.') ||
-		message.endsWith(' is required.') ||
-		message.endsWith(' must be a boolean.') ||
-		message.endsWith(' must be an integer.') ||
-		message.endsWith(' must be a string.') ||
-		message.endsWith(' must not be empty.') ||
-		/^.+ must be at (?:least|most) \d+\.$/u.test(message) ||
-		/^.+ must be one of: .+\.$/u.test(message) ||
-		message.startsWith('status must be ') ||
-		message.startsWith('reviewerKind must be ')
-	);
-}
-
-function isAuthorized(request: IncomingMessage, token: string): boolean {
-	const rawToken = request.headers['x-mustflow-dashboard-token'];
-	const candidate = Array.isArray(rawToken) ? rawToken[0] : rawToken;
-	if (typeof candidate !== 'string') {
-		return false;
-	}
-
-	const expected = Buffer.from(token);
-	const actual = Buffer.from(candidate);
-	return expected.byteLength === actual.byteLength && timingSafeEqual(actual, expected);
-}
-
-async function readRequestJson(request: IncomingMessage): Promise<unknown> {
-	const chunks: Buffer[] = [];
-	let totalBytes = 0;
-
-	for await (const chunk of request) {
-		const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-		totalBytes += buffer.byteLength;
-
-		if (totalBytes > MAX_REQUEST_BYTES) {
-			throw new Error('Request body is too large.');
-		}
-
-		chunks.push(buffer);
-	}
-
-	const rawBody = Buffer.concat(chunks).toString('utf8');
-	return rawBody.trim().length === 0 ? {} : JSON.parse(rawBody);
 }
 
 function renderDocReviewResponse(projectRoot: string, requestUrl: URL): {
@@ -1005,124 +930,26 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 		}
 	}
 
-	const token = randomBytes(18).toString('base64url');
+	const token = randomBytes(DASHBOARD_HTTP_POLICY.tokenBytes).toString('base64url');
 	const initialSnapshot = readDashboardPreferences(projectRoot);
-	const server = http.createServer(async (request, response) => {
-		const requestUrl = new URL(request.url ?? '/', 'http://localhost');
-
-		try {
-			if (request.method === 'GET' && requestUrl.pathname === '/') {
-				response.writeHead(200, {
-					'cache-control': 'no-store',
-					'content-type': 'text/html; charset=utf-8',
-				});
-				response.end(
-					renderDashboardHtml(
-						readDashboardPreferences(projectRoot),
-						token,
-						await renderStatusResponse(projectRoot),
-						renderDocReviewResponse(projectRoot, new URL('/api/docs/review', 'http://localhost')),
-					),
-				);
-				return;
-			}
-
-			if (request.method === 'GET' && requestUrl.pathname === '/favicon.ico') {
-				response.writeHead(204, { 'cache-control': 'no-store' });
-				response.end();
-				return;
-			}
-
-			if (requestUrl.pathname === '/api/status') {
-				if (!isAuthorized(request, token)) {
-					sendText(response, 403, 'Forbidden');
-					return;
-				}
-
-				if (request.method === 'GET') {
-					sendJson(response, 200, await renderStatusResponse(projectRoot));
-					return;
-				}
-			}
-
-			if (requestUrl.pathname === '/api/preferences') {
-				if (!isAuthorized(request, token)) {
-					sendText(response, 403, 'Forbidden');
-					return;
-				}
-
-				if (request.method === 'GET') {
-					sendJson(response, 200, readDashboardPreferences(projectRoot));
-					return;
-				}
-
-				if (request.method === 'POST') {
-					const body = await readRequestJson(request);
-					sendJson(response, 200, updateDashboardPreferencesFromPayload(projectRoot, body));
-					return;
-				}
-			}
-
-			if (requestUrl.pathname === '/api/open-mustflow') {
-				if (!isAuthorized(request, token)) {
-					sendText(response, 403, 'Forbidden');
-					return;
-				}
-
-				if (request.method !== 'POST') {
-					sendText(response, 405, 'Method not allowed');
-					return;
-				}
-
-				const openResult = openDashboardMustflowFolder(projectRoot);
-				if (openResult === 'missing') {
-					sendText(response, 404, '.mustflow folder not found');
-					return;
-				}
-
-				if (openResult === 'unavailable') {
-					sendText(response, 500, 'No file manager opener is available for this platform');
-					return;
-				}
-
-				sendJson(response, 200, { opened: true });
-				return;
-			}
-
-			if (requestUrl.pathname === '/api/docs/review') {
-				if (!isAuthorized(request, token)) {
-					sendText(response, 403, 'Forbidden');
-					return;
-				}
-
-				if (request.method === 'GET') {
-					sendJson(response, 200, renderDocReviewResponse(projectRoot, requestUrl));
-					return;
-				}
-
-				if (request.method === 'POST') {
-					const body = await readRequestJson(request);
-					markDashboardDocReviewFromPayload(projectRoot, body);
-					sendJson(response, 200, renderDocReviewResponse(projectRoot, requestUrl));
-					return;
-				}
-			}
-
-			sendText(response, 404, 'Not found');
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			if (isDashboardBadRequestError(error, message)) {
-				sendBadRequest(response);
-				return;
-			}
-
-			reporter.stderr(message);
-			sendText(response, 500, 'Internal server error');
-		}
-	});
-	server.headersTimeout = 10_000;
-	server.requestTimeout = 30_000;
-	server.keepAliveTimeout = 1_000;
+	const server = http.createServer(createDashboardRequestHandler({
+		token,
+		reporter,
+		renderHome: async () => renderDashboardHtml(
+			readDashboardPreferences(projectRoot), token,
+			await renderStatusResponse(projectRoot),
+			renderDocReviewResponse(projectRoot, new URL('/api/docs/review', 'http://localhost')),
+		),
+		readStatus: () => renderStatusResponse(projectRoot),
+		readPreferences: () => readDashboardPreferences(projectRoot),
+		updatePreferences: (body) => updateDashboardPreferencesFromPayload(projectRoot, body),
+		readDocReview: (url) => renderDocReviewResponse(projectRoot, url),
+		markDocReview: (body) => markDashboardDocReviewFromPayload(projectRoot, body),
+		openMustflow: () => openDashboardMustflowFolder(projectRoot),
+	}));
+	server.headersTimeout = DASHBOARD_HTTP_POLICY.headersTimeoutMs;
+	server.requestTimeout = DASHBOARD_HTTP_POLICY.requestTimeoutMs;
+	server.keepAliveTimeout = DASHBOARD_HTTP_POLICY.keepAliveTimeoutMs;
 
 	return new Promise((resolve) => {
 		let resolved = false;

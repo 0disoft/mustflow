@@ -492,13 +492,12 @@ function coerceUpdateValue(definition: DashboardSettingDefinition, value: unknow
 	return trimmedValue;
 }
 
-export function updateDashboardPreferences(
-	projectRoot: string,
+export function applyDashboardPreferenceUpdates(
+	initialContent: string,
 	updates: readonly DashboardPreferenceUpdate[],
-): DashboardPreferencesSnapshot {
-	const preferencesPath = getPreferencesPath(projectRoot);
+): string {
 	const definitionsById = new Map(DASHBOARD_PREFERENCE_SETTINGS.map((definition) => [definition.id, definition]));
-	let content = readUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath);
+	let content = initialContent;
 
 	for (const update of updates) {
 		const definition = definitionsById.get(update.id);
@@ -510,7 +509,15 @@ export function updateDashboardPreferences(
 		const value = coerceUpdateValue(definition, update.value);
 		content = setTomlScalar(content, definition.path, value);
 	}
+	return content;
+}
 
+export function updateDashboardPreferences(
+	projectRoot: string,
+	updates: readonly DashboardPreferenceUpdate[],
+): DashboardPreferencesSnapshot {
+	const preferencesPath = getPreferencesPath(projectRoot);
+	const content = applyDashboardPreferenceUpdates(readUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath), updates);
 	ensureManifestLockTargetSafe(projectRoot);
 	writeUtf8FileInsideWithoutSymlinks(projectRoot, preferencesPath, content);
 	markManifestLockFileCustomized(projectRoot, PREFERENCES_RELATIVE_PATH);
