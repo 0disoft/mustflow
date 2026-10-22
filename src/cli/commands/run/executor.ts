@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { interruptionError } from '../../../core/cancellation.js';
 
 import { BoundedOutputBuffer, type BoundedOutputSnapshot } from '../../../core/bounded-output.js';
 import {
@@ -22,6 +23,10 @@ import { createWindowsCommandScriptSpawn } from './windows-command-script.js';
 
 const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
 const TERMINATION_CONFIRMATION_POLL_MS = 25;
+
+export interface CommandExecutionOptions {
+	readonly signal?: AbortSignal;
+}
 
 export interface CommandResult {
 	readonly status: number | null;
@@ -94,7 +99,12 @@ function runSpawnedCommandStreaming(
 	reporter: Reporter,
 	streamOutput: boolean,
 	enforceOutputLimit: boolean,
+	options: CommandExecutionOptions = {},
 ): Promise<CommandResult> {
+	if (options.signal?.aborted) {
+		return Promise.resolve({ status: null, signal: null, error: interruptionError(),
+			stdout: createEmptyOutputSnapshot(stdoutTailBytes), stderr: createEmptyOutputSnapshot(stderrTailBytes), termination: null });
+	}
 	if (command.executable.trim().length === 0) {
 		return Promise.resolve({
 			status: null,
@@ -166,6 +176,7 @@ function runSpawnedCommandStreaming(
 				clearTimeout(terminationPollTimeout);
 			}
 			clearParentSignalHandlers();
+			options.signal?.removeEventListener('abort', onAbort);
 			const supervisorSnapshot = supervisor?.snapshot() ?? null;
 			const termination = supervisorSnapshot === null ? null : (({ pid: _pid, ...receipt }) => receipt)(supervisorSnapshot);
 			resolve({
@@ -228,6 +239,14 @@ function runSpawnedCommandStreaming(
 			}
 			beginTermination('output_limit');
 		};
+
+		const onAbort = (): void => {
+			if (settled || terminationStarted) return;
+			childError = interruptionError();
+			beginTermination('parent_signal');
+		};
+		options.signal?.addEventListener('abort', onAbort, { once: true });
+		if (options.signal?.aborted) onAbort();
 
 		const writeOutputLimitMarkerOnce = (): void => {
 			if (!streamOutput || outputLimitMarkerWritten) {
@@ -321,6 +340,7 @@ export function runArgvCommandStreaming(
 	reporter: Reporter,
 	streamOutput: boolean,
 	enforceOutputLimit: boolean,
+	options: CommandExecutionOptions = {},
 ): Promise<CommandResult> {
 	return runSpawnedCommandStreaming(
 		{
@@ -339,6 +359,7 @@ export function runArgvCommandStreaming(
 		reporter,
 		streamOutput,
 		enforceOutputLimit,
+		options,
 	);
 }
 
@@ -354,6 +375,7 @@ export function runShellCommandStreaming(
 	reporter: Reporter,
 	streamOutput: boolean,
 	enforceOutputLimit: boolean,
+	options: CommandExecutionOptions = {},
 ): Promise<CommandResult> {
 	return runSpawnedCommandStreaming(
 		{ executable: command ?? '', shell: true },
@@ -367,6 +389,7 @@ export function runShellCommandStreaming(
 		reporter,
 		streamOutput,
 		enforceOutputLimit,
+		options,
 	);
 }
 

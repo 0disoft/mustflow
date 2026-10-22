@@ -73,6 +73,11 @@ function stoppedAfterFailedBatchResult(entry: VerificationScheduleEntry, verific
 	};
 }
 
+function cancelledResult(entry: VerificationScheduleEntry, verificationPlanId: string): VerificationResult {
+	return { ...stoppedAfterFailedBatchResult(entry, verificationPlanId), reason: 'cancelled',
+		detail: 'Skipped because verification was cancelled.' };
+}
+
 function candidateResultKey(candidate: ChangeVerificationCandidate): string {
 	return candidate.intent
 		? `intent:${candidate.intent}`
@@ -143,6 +148,7 @@ async function runVerificationIntent(
 	testTargets: readonly string[] = [],
 	additionalDeclaredWritePaths: readonly string[] = [],
 	writeDriftTracking: 'individual' | 'batch' = 'individual',
+	signal?: AbortSignal,
 ): Promise<VerificationResult> {
 	const output = createBufferedOutput();
 	const runResult = await executeRunCommand(
@@ -157,6 +163,7 @@ async function runVerificationIntent(
 		output.reporter,
 		lang,
 		{
+			signal,
 			correlationId,
 			writeLatestReceipt: false,
 			writeLatestProfile: false,
@@ -204,11 +211,16 @@ async function runVerificationEntriesSequentially(
 	verificationPlanId: string,
 	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
+	signal?: AbortSignal,
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 
 	for (const entry of entries) {
-		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, correlationId, scheduledTestTargets.get(entry.intent) ?? []));
+		if (signal?.aborted) {
+			results.push(cancelledResult(entry, verificationPlanId));
+			continue;
+		}
+		results.push(await runVerificationIntent(entry.intent, lang, verificationPlanId, correlationId, scheduledTestTargets.get(entry.intent) ?? [], [], 'individual', signal));
 	}
 
 	return results;
@@ -222,11 +234,16 @@ async function runVerificationEntriesInParallelChunks(
 	verificationPlanId: string,
 	correlationId: string,
 	scheduledTestTargets: ReadonlyMap<string, readonly string[]>,
+	signal?: AbortSignal,
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 
 	for (let index = 0; index < entries.length; index += parallelism) {
 		const chunk = entries.slice(index, index + parallelism);
+		if (signal?.aborted) {
+			results.push(...entries.slice(index).map((entry) => cancelledResult(entry, verificationPlanId)));
+			break;
+		}
 		const batchTracker = startRunWriteBatchTracking(
 			projectRoot,
 			createCommandEnv(projectRoot, { policy: 'minimal', allowlist: [] }),
@@ -242,6 +259,7 @@ async function runVerificationEntriesInParallelChunks(
 					scheduledTestTargets.get(entry.intent) ?? [],
 					[],
 					'batch',
+					signal,
 				),
 			),
 		);
@@ -323,6 +341,7 @@ export async function runScheduledVerificationIntents(
 	parallelism: number,
 	reusableResults: ReadonlyMap<string, VerificationResult>,
 	reuseInputsUnchanged: () => boolean,
+	options: { readonly signal?: AbortSignal } = {},
 ): Promise<VerificationResult[]> {
 	const results: VerificationResult[] = [];
 	const contract = reusableResults.size > 0 ? readCommandContract(projectRoot) : null;
@@ -330,6 +349,10 @@ export async function runScheduledVerificationIntents(
 	for (let batchIndex = 0; batchIndex < report.schedule.batches.length; batchIndex += 1) {
 		const batch = report.schedule.batches[batchIndex] as VerificationScheduleBatch;
 		const entries = entriesForScheduleBatch(report.schedule.entries, batch);
+		if (options.signal?.aborted) {
+			results.push(...entries.map((entry) => cancelledResult(entry, verificationPlanId)));
+			continue;
+		}
 		if (entries.length === 0) {
 			continue;
 		}
@@ -357,10 +380,11 @@ export async function runScheduledVerificationIntents(
 							verificationPlanId,
 							correlationId,
 							scheduledTestTargets,
+							options.signal,
 						)
-					: await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets);
+					: await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets, options.signal);
 		} else {
-			batchResults = await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets);
+			batchResults = await runVerificationEntriesSequentially(runnableEntries, lang, verificationPlanId, correlationId, scheduledTestTargets, options.signal);
 		}
 		batchResults = [...reused, ...batchResults];
 
@@ -372,7 +396,7 @@ export async function runScheduledVerificationIntents(
 		const remainingEntries = report.schedule.batches
 			.slice(batchIndex + 1)
 			.flatMap((remainingBatch) => entriesForScheduleBatch(report.schedule.entries, remainingBatch));
-		results.push(...remainingEntries.map((entry) => stoppedAfterFailedBatchResult(entry, verificationPlanId)));
+		results.push(...remainingEntries.map((entry) => options.signal?.aborted ? cancelledResult(entry, verificationPlanId) : stoppedAfterFailedBatchResult(entry, verificationPlanId)));
 		break;
 	}
 

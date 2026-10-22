@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
+import { throwIfInterrupted, waitWithSignal } from '../../../core/cancellation.js';
 
 import { ACTIVE_RUN_LOCK_ID_ENV, acquireActiveRunLock, type ActiveRunLockConflict } from '../../../core/active-run-locks.js';
 import { createCommandEnv } from '../../../core/command-env.js';
@@ -41,6 +42,7 @@ import { writeLatestRunProfile } from './profile.js';
 import { assembleRunReceipt } from './receipt.js';
 
 export interface RunCommandOptions {
+	readonly signal?: AbortSignal;
 	readonly correlationId?: string;
 	readonly writeLatestReceipt?: boolean;
 	readonly writeLatestProfile?: boolean;
@@ -69,12 +71,6 @@ export interface RunCommandExecutionResult {
 }
 
 const ACTIVE_LOCK_WAIT_POLL_MS = 1_000;
-
-function delay(milliseconds: number): Promise<void> {
-	return new Promise((resolve) => {
-		setTimeout(resolve, milliseconds);
-	});
-}
 
 function getRunPlanDetail(plan: BlockedRunPlan, lang: CliLang, fallbackKey: MessageKey): string {
 	return plan.detail ?? t(lang, fallbackKey);
@@ -200,6 +196,7 @@ function renderActiveLockConflictMessage(intentName: string, conflicts: readonly
 }
 
 async function acquireActiveRunLockWithOptionalWait(input: {
+	readonly signal?: AbortSignal;
 	readonly enabled: boolean;
 	readonly waitTimeoutSeconds: number;
 	readonly projectRoot: string;
@@ -210,10 +207,11 @@ async function acquireActiveRunLockWithOptionalWait(input: {
 	readonly reporter: Reporter;
 	readonly lang: CliLang;
 }): Promise<ReturnType<typeof acquireActiveRunLock>> {
-	const startedAt = Date.now();
+	const startedAt = performance.now();
 	let reportedWait = false;
 
 	while (true) {
+		throwIfInterrupted(input.signal);
 		const result = acquireActiveRunLock(input.projectRoot, input.contract, input.intentName, { commandHash: input.commandHash });
 		if (result.ok || !input.enabled || result.conflicts.length === 0) {
 			return result;
@@ -229,11 +227,11 @@ async function acquireActiveRunLockWithOptionalWait(input: {
 			reportedWait = true;
 		}
 
-		if (Date.now() - startedAt >= input.waitTimeoutSeconds * 1000) {
+		if (performance.now() - startedAt >= input.waitTimeoutSeconds * 1000) {
 			return result;
 		}
 
-		await delay(Math.min(ACTIVE_LOCK_WAIT_POLL_MS, Math.max(1, input.waitTimeoutSeconds * 1000 - (Date.now() - startedAt))));
+		await waitWithSignal(Math.min(ACTIVE_LOCK_WAIT_POLL_MS, Math.max(1, input.waitTimeoutSeconds * 1000 - (performance.now() - startedAt))), input.signal);
 	}
 }
 
@@ -287,6 +285,22 @@ export async function executeRunCommand(
 	lang: CliLang = 'en',
 	options: RunCommandOptions = {},
 ): Promise<RunCommandExecutionResult> {
+	try {
+		throwIfInterrupted(options.signal);
+		return await executeRunCommandWithSignal(request, reporter, lang, options);
+	} catch (error) {
+		if (!(error instanceof Error) || !('code' in error) || error.code !== 'EINTERRUPTED') throw error;
+		reporter.stderr(error.message);
+		return { exitCode: 1, receipt: null };
+	}
+}
+
+async function executeRunCommandWithSignal(
+	request: RunCommandExecutionRequest,
+	reporter: Reporter,
+	lang: CliLang,
+	options: RunCommandOptions,
+): Promise<RunCommandExecutionResult> {
 	const executorStartedAtMs = performance.now();
 	const profiler = new RunProfiler();
 	const runContext = profiler.measure('root_detection', () =>
@@ -335,6 +349,7 @@ export async function executeRunCommand(
 
 	const activeRunLock = await profiler.measureAsync('active_lock_acquire', () =>
 		acquireActiveRunLockWithOptionalWait({
+			signal: options.signal,
 			enabled: request.wait,
 			waitTimeoutSeconds: request.waitTimeoutSeconds,
 			projectRoot,
@@ -365,6 +380,7 @@ export async function executeRunCommand(
 		if (isVerificationChildRun(options)) {
 			verificationResourceLease = await profiler.measureAsync('verification_resource_budget', () =>
 				acquireVerificationResourceLease(projectRoot, {
+					signal: options.signal,
 					capacities: resolveVerificationResourceCapacities({}),
 					weights: {
 						cpu: 1,
@@ -411,7 +427,7 @@ export async function executeRunCommand(
 			try {
 				if (plan.commandArgv) {
 					streamedOutput = streamChildOutput;
-					return runArgvCommandStreaming(
+					return await runArgvCommandStreaming(
 						plan.argvCommand,
 						plan.cwd,
 						env,
@@ -423,11 +439,12 @@ export async function executeRunCommand(
 						reporter,
 						streamChildOutput,
 						true,
+						{ signal: options.signal },
 					);
 				}
 
 				streamedOutput = streamChildOutput;
-				return runShellCommandStreaming(
+				return await runShellCommandStreaming(
 					plan.shellCommand,
 					plan.cwd,
 					env,
@@ -439,6 +456,7 @@ export async function executeRunCommand(
 					reporter,
 					streamChildOutput,
 					true,
+					{ signal: options.signal },
 				);
 			} finally {
 				stopRunProgress();

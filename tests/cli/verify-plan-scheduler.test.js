@@ -692,6 +692,7 @@ expected_seconds = 90
 		assert.equal(actualReport.execution_status, 'partial', JSON.stringify(actualReport.results));
 		assert.notEqual(actualReport.completion_verdict.status, 'verified');
 		assert.equal(actualReport.results.find((result) => result.intent === 'slow_profile_check').reason, 'deferred_by_profile');
+		assert.equal(actualReport.results.filter((result) => result.intent === 'slow_profile_check').length, 1);
 		assertMatchesSchema(path.join(projectRoot, 'schemas'), 'verify-report.schema.json', actualReport);
 	} finally {
 		removeTempProject(projectPath);

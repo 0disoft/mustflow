@@ -544,6 +544,7 @@ async function createVerifyOutput(
 	parallelismReport: VerificationParallelismReport | null = null,
 	profile: VerificationProfile = 'edit',
 	noReuse = false,
+	signal?: AbortSignal,
 ): Promise<VerificationOutput> {
 	const contract = readCommandContract(projectRoot);
 	const report = createChangeVerificationReport(input.classificationReport, contract, projectRoot, profile);
@@ -563,6 +564,7 @@ async function createVerifyOutput(
 	const results = await runScheduledVerificationIntents(
 		report, projectRoot, lang, verificationPlanId, input.correlationId, scheduledTestTargets, parallelism, reusableResults,
 		() => currentStateHash !== null && createVerificationCurrentStateHash(projectRoot, report, verificationPlanId, readCommandContract(projectRoot)) === currentStateHash,
+		{ signal },
 	);
 
 	results.push(...createSkippedResults(report.candidates, scheduledIntents, report.gaps));
@@ -757,7 +759,20 @@ function renderVerifyOutput(output: VerificationOutput, lang: CliLang): string {
 	return lines.join('\n');
 }
 
-export async function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runVerify(args: string[], reporter: Reporter, lang: CliLang = 'en', options: { readonly signal?: AbortSignal } = {}): Promise<number> {
+	const controller = new AbortController();
+	const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
+	const onSignal = (): void => controller.abort();
+	const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+	for (const name of signals) process.on(name, onSignal);
+	try {
+		return await runVerifyWithSignal(args, reporter, lang, signal);
+	} finally {
+		for (const name of signals) process.off(name, onSignal);
+	}
+}
+
+async function runVerifyWithSignal(args: string[], reporter: Reporter, lang: CliLang, signal: AbortSignal): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getVerifyHelp(lang));
 		return 0;
@@ -901,6 +916,7 @@ export async function runVerify(args: string[], reporter: Reporter, lang: CliLan
 		parallelismReport,
 		parsed.profile,
 		parsed.noReuse,
+		signal,
 	);
 
 	if (parsed.json) {

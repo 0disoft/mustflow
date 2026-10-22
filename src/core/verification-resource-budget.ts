@@ -541,12 +541,12 @@ function tryAcquireAll(
 
 function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {
 	if (signal?.aborted) {
-		return Promise.reject(new Error('verification_resource_budget_aborted'));
+		return Promise.reject(Object.assign(new Error('verification_resource_budget_aborted'), { code: 'EINTERRUPTED' }));
 	}
 	return new Promise((resolve, reject) => {
 		const onAbort = (): void => {
 			clearTimeout(timeout);
-			reject(new Error('verification_resource_budget_aborted'));
+			reject(Object.assign(new Error('verification_resource_budget_aborted'), { code: 'EINTERRUPTED' }));
 		};
 		const timeout = setTimeout(() => {
 			signal?.removeEventListener('abort', onAbort);
@@ -568,7 +568,7 @@ export async function acquireVerificationResourceLease(
 	input: AcquireVerificationResourceLeaseInput,
 ): Promise<VerificationResourceLease> {
 	if (input.signal?.aborted) {
-		throw new Error('verification_resource_budget_aborted');
+		throw Object.assign(new Error('verification_resource_budget_aborted'), { code: 'EINTERRUPTED' });
 	}
 	const runtime: VerificationResourceRuntime = {
 		now: Date.now,
@@ -589,13 +589,13 @@ export async function acquireVerificationResourceLease(
 
 	while (true) {
 		if (input.signal?.aborted) {
-			throw new Error('verification_resource_budget_aborted');
+			throw Object.assign(new Error('verification_resource_budget_aborted'), { code: 'EINTERRUPTED' });
 		}
 		const slots = tryAcquireAll(requests, leaseId, label, runtime);
 		if (slots) {
 			if (input.signal?.aborted) {
 				releaseSlots(slots);
-				throw new Error('verification_resource_budget_aborted');
+				throw Object.assign(new Error('verification_resource_budget_aborted'), { code: 'EINTERRUPTED' });
 			}
 			return {
 				leaseId,
