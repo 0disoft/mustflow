@@ -39,6 +39,7 @@ interface RiskAssessmentCandidate {
 }
 
 interface RiskAssessmentGap {
+	readonly deferred_intents?: readonly string[];
 	readonly reason: string;
 	readonly detail: string;
 }
@@ -150,7 +151,7 @@ function classifyReasonSignals(input: CreateVerificationRiskAssessmentInput): {
 		reasons.push(`declared ${risk.level} risk: ${risk.path}`);
 	}
 
-	if (input.gaps.length > 0) {
+	if (input.gaps.some((gap) => !gap.deferred_intents?.length)) {
 		level = maxLevel(level, 'high');
 		reasons.push('verification gaps exist');
 	}

@@ -404,8 +404,8 @@ export function createVerifyEvidenceModel(input: CreateVerifyEvidenceModelInput)
 		externalEvidenceRisks.length > 0;
 	const gaps = input.report.gaps.map((gap) => ({
 		reason: gap.reason,
-		intent: null,
-		status: 'missing',
+		intent: gap.deferred_intents?.length === 1 ? gap.deferred_intents[0] : null,
+		status: gap.deferred_intents?.length ? 'deferred' : 'missing',
 		detail: gap.detail,
 		files: [...gap.files],
 		surfaces: [...gap.surfaces],

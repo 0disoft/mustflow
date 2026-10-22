@@ -57,6 +57,7 @@ export type VerificationEligibilityState = 'eligible' | 'ineligible' | 'missing'
 export type VerificationSelectionState = 'selected' | 'not_selected' | 'not_applicable';
 
 export interface ChangeVerificationCandidate {
+	readonly deferred?: boolean;
 	readonly reason: VerificationReason;
 	readonly intent: string | null;
 	readonly status: VerificationRunnableStatus;
@@ -68,6 +69,7 @@ export interface ChangeVerificationCandidate {
 }
 
 export interface ChangeVerificationGap {
+	readonly deferred_intents?: readonly string[];
 	readonly reason: VerificationReason;
 	readonly files: readonly string[];
 	readonly surfaces: readonly string[];
@@ -585,19 +587,23 @@ export function createChangeVerificationReport(
 			? { ...plan, candidates: [...plan.candidates, ...additionalCandidates] }
 			: plan;
 	});
-	const selectedPlans = plansWithProjectTestSelection.map((plan) => ({
+	const declaredRisks = classificationReport.classifications.flatMap((classification) => classification.surface.riskLevel ? [{ path: classification.path, level: classification.surface.riskLevel }] : []);
+	const initialRisk = createVerificationRiskAssessment({
+		classificationSummary: classificationReport.summary, declaredRisks, requirements, candidates: [], gaps: [], commandContract,
+		selectedIntents: uniqueSorted(plansWithProjectTestSelection.flatMap((plan) => plan.candidates.filter((candidate) => candidate.status === 'runnable').map((candidate) => candidate.intent))),
+	});
+	const eligiblePlans = plansWithProjectTestSelection.map((plan) => ({
 		...plan,
-		selectedCandidates: applyVerificationProfile(
-			commandContract,
-			plan.requirement.reason,
-			uniqueVerificationCandidates([
+		eligibleCandidates: uniqueVerificationCandidates([
 				...selectVerificationCandidates(commandContract, projectRoot, plan.candidates),
 				...testSelectionPlan.selectedCandidates
 					.filter((candidate) => candidate.reason === plan.requirement.reason)
 					.map((candidate) => candidate.candidate),
 			]),
-			profile,
-		),
+	}));
+	const selectedPlans = eligiblePlans.map((plan) => ({
+		...plan,
+		selectedCandidates: applyVerificationProfile(commandContract, plan.requirement.reason, plan.eligibleCandidates, profile, ['high', 'critical'].includes(initialRisk.level)),
 	}));
 	const selectedCandidatePlans = selectedPlans.flatMap((plan) => plan.selectedCandidates);
 	const selectedCandidateKeys = new Set(
@@ -606,15 +612,31 @@ export function createChangeVerificationReport(
 		),
 	);
 	const schedule = createVerificationSchedule(projectRoot, commandContract, selectedCandidatePlans);
+	const scheduledIntents = new Set(schedule.entries.map((entry) => entry.intent));
+	const deferredByReason = new Map(selectedPlans.map((plan) => [plan.requirement.reason,
+		plan.eligibleCandidates.filter((candidate) => candidate.status === 'runnable' && !scheduledIntents.has(candidate.intent)).map((candidate) => candidate.intent),
+	]));
 	const candidates = plansWithProjectTestSelection.flatMap((plan) =>
-		plan.candidates.map((candidate) => toChangeVerificationCandidate(plan.requirement.reason, candidate, selectedCandidateKeys)),
+		plan.candidates.map((candidate) => {
+			const converted = toChangeVerificationCandidate(plan.requirement.reason, candidate, selectedCandidateKeys);
+			return deferredByReason.get(plan.requirement.reason)?.includes(candidate.intent)
+				? { ...converted, deferred: true, detail: `Deferred by ${profile} profile (${resolveVerificationProfile(profile).budgetSeconds}s declared-cost target); run --profile release to complete ${candidate.intent}.` }
+				: converted;
+		}),
 	);
 	const gaps = requirements
 		.map((requirement) => gapForRequirement(requirement, candidates))
 		.filter((gap): gap is ChangeVerificationGap => gap !== null);
+	for (const requirement of requirements) {
+		const deferred = deferredByReason.get(requirement.reason) ?? [];
+		if (deferred.length > 0) gaps.push({
+			reason: requirement.reason, files: requirement.files, surfaces: requirement.surfaces, deferred_intents: deferred,
+			detail: `Deferred by ${profile} profile: ${deferred.join(', ')}. Required verification remains; run --profile release.`,
+		});
+	}
 	const riskAssessment = createVerificationRiskAssessment({
 		classificationSummary: classificationReport.summary,
-		declaredRisks: classificationReport.classifications.flatMap((classification) => classification.surface.riskLevel ? [{ path: classification.path, level: classification.surface.riskLevel }] : []),
+		declaredRisks,
 		requirements,
 		candidates,
 		gaps,

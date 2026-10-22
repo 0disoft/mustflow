@@ -43,7 +43,7 @@ function toVerificationReceipt(receipt: RunReceipt | null): VerificationReceipt 
 	return receipt ? { ...receipt } : null;
 }
 
-function skippedResult(candidate: Pick<VerificationCandidate, 'intent' | 'reason' | 'detail'>): VerificationResult {
+function skippedResult(candidate: { readonly intent: string; readonly reason: string | null; readonly detail: string | null }): VerificationResult {
 	return {
 		intent: candidate.intent || null,
 		status: 'skipped',
@@ -89,6 +89,13 @@ export function createSkippedResults(
 	const activeGapReasons = new Set(gaps.map((gap) => gap.reason));
 
 	for (const candidate of candidates) {
+		if (candidate.deferred && candidate.intent && !scheduledIntents.has(candidate.intent)) {
+			if (!seen.has(candidate.intent)) {
+				seen.add(candidate.intent);
+				results.push(skippedResult({ intent: candidate.intent, reason: 'deferred_by_profile', detail: candidate.detail }));
+			}
+			continue;
+		}
 		if (candidate.status === 'runnable' || (candidate.intent && scheduledIntents.has(candidate.intent))) {
 			continue;
 		}

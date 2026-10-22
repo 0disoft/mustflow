@@ -8,9 +8,11 @@ import {
 	createTempProject,
 	initProjectInProcess as initProject,
 	removeTempProject,
+	projectRoot,
 	runCliInProcess as runCli,
 } from './helpers/cli-harness.js';
 import { createMinimalWorkflowProject } from './index-support.js';
+import { assertMatchesSchema } from '../helpers/json-schema.js';
 
 function createSchedulerProject() {
 	return createMinimalWorkflowProject('mustflow-verify-scheduler-');
@@ -679,8 +681,18 @@ expected_seconds = 90
 		assert.deepEqual(security.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
 		assert.equal(edit.verification_profile.budgetSeconds, 15);
 		const metadata = JSON.parse((await runCli(projectPath, ['verify', '--reason', 'package_metadata_change', '--profile', 'edit', '--plan-only', '--json'])).stdout);
-		assert.deepEqual(metadata.schedule.entries.map((entry) => entry.intent), ['fast_profile_check']);
+		assert.deepEqual(metadata.schedule.entries.map((entry) => entry.intent), ['fast_profile_check', 'slow_profile_check']);
 		assert.equal(release.verification_profile.budgetSeconds, null);
+		assert.deepEqual(edit.gaps[0].deferred_intents, ['slow_profile_check']);
+		assertMatchesSchema(path.join(projectRoot, 'schemas'), 'change-verification-report.schema.json', edit);
+		writeRunTrustManifestLock(projectPath);
+		const actual = await runCli(projectPath, ['verify', '--reason', 'profile_verify', '--profile', 'edit', '--json']);
+		const actualReport = JSON.parse(actual.stdout);
+		assert.equal(actual.status, 1, actual.stderr || actual.stdout);
+		assert.equal(actualReport.execution_status, 'partial', JSON.stringify(actualReport.results));
+		assert.notEqual(actualReport.completion_verdict.status, 'verified');
+		assert.equal(actualReport.results.find((result) => result.intent === 'slow_profile_check').reason, 'deferred_by_profile');
+		assertMatchesSchema(path.join(projectRoot, 'schemas'), 'verify-report.schema.json', actualReport);
 	} finally {
 		removeTempProject(projectPath);
 	}

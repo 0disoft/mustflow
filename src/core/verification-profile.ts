@@ -33,14 +33,19 @@ export function applyVerificationProfile(
 	reason: string,
 	candidates: readonly VerificationCandidate[],
 	profile: VerificationProfile,
+	forceFull = false,
 ): readonly VerificationCandidate[] {
 	const runnable = candidates.filter((candidate) => candidate.status === 'runnable' && candidate.intent.length > 0);
-	if (profile === 'release' || FULL_VERIFICATION_REASONS.has(reason) || runnable.length < 2) return candidates;
+	if (forceFull || profile === 'release' || FULL_VERIFICATION_REASONS.has(reason) || runnable.length < 2) return candidates;
+	if (runnable.some((candidate) => {
+		const intent = contract.intents[candidate.intent];
+		return isRecord(intent) && isRecord(intent.relations) && Array.isArray(intent.relations.requires_with) && intent.relations.requires_with.length > 0;
+	})) return candidates;
 
 	const budget = resolveVerificationProfile(profile).budgetSeconds as number;
 	const withinBudget = runnable.filter((candidate) => {
 		const cost = expectedSeconds(contract, candidate.intent);
-		return cost !== null && cost <= budget;
+		return cost === null || cost <= budget;
 	});
 	const chosen = withinBudget.length > 0
 		? withinBudget

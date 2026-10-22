@@ -292,6 +292,7 @@
         "selectionState"
       ],
       "properties": {
+        "deferred": { "type": "boolean" },
         "reason": {
           "type": "string"
         },
@@ -330,6 +331,7 @@
       "additionalProperties": false,
       "required": ["reason", "files", "surfaces", "detail"],
       "properties": {
+        "deferred_intents": { "$ref": "#/$defs/stringArray" },
         "reason": {
           "type": "string"
         },
