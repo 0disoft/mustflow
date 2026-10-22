@@ -215,12 +215,9 @@ function makeFinding(
 function readHostInstruction(projectRoot: string, relativePath: string): HostInstructionRead {
 	const fullPath = resolveProjectPath(projectRoot, relativePath);
 
-	if (!existsSync(fullPath)) {
-		return { status: 'absent', text: null };
-	}
-
 	try {
-		const stat = lstatSync(fullPath);
+		const stat = lstatSync(fullPath, { throwIfNoEntry: false });
+		if (!stat) return { status: 'absent', text: null };
 
 		if (stat.isSymbolicLink()) {
 			return {

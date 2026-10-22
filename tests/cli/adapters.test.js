@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { runAdapters } from '../../dist/cli/commands/adapters.js';
@@ -14,6 +14,28 @@ import {
 } from './helpers/cli-harness.js';
 
 const schemaRoot = path.join(projectRoot, 'schemas');
+
+test('dangling Cursor rule symlinks keep compatibility incomplete', async (t) => {
+	const projectPath = createAdaptersProject();
+	try {
+		const rules = path.join(projectPath, '.cursor', 'rules');
+		mkdirSync(rules, { recursive: true });
+		try {
+			symlinkSync(path.join(projectPath, 'missing.md'), path.join(rules, 'linked.mdc'), 'file');
+		} catch (error) {
+			if (error.code !== 'EPERM' && error.code !== 'EACCES') throw error;
+			t.skip('file symlink creation is unavailable');
+			return;
+		}
+		const result = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+		const report = JSON.parse(result.stdout);
+		assert.equal(result.status, 1);
+		assert.equal(report.compatibility_status, 'incomplete');
+		assert.equal(report.host_files.find((file) => file.path.endsWith('linked.mdc')).status, 'symlink_not_read');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
 
 for (const count of [99, 100, 101]) {
 	test(`Cursor rule scan reports completeness at ${count} files`, async () => {
