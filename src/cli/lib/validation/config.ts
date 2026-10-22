@@ -76,458 +76,528 @@ import {
 } from './primitives.js';
 import type { CheckIssue } from './types.js';
 
-export function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+function collectMapIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const map = validateTable(mustflowToml, 'map', issues);
+	if (!map) return issues;
+
+	validatePathField(map, 'output', '[map].output', issues);
+	validateAllowedStringField(map, 'mode', '[map].mode', ALLOWED_MAP_MODES, issues);
+	validateAllowedStringField(map, 'privacy', '[map].privacy', ALLOWED_MAP_PRIVACY_LEVELS, issues);
+	validateBooleanField(map, 'include_nested', '[map].include_nested', issues);
+	validatePathArrayField(map, 'anchor_files', '[map].anchor_files', issues);
+	return issues;
+}
+
+function collectContextIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const context = validateTable(mustflowToml, 'context', issues);
+	if (!context) return issues;
+
+	validateBooleanField(context, 'enabled', '[context].enabled', issues);
+	validatePathField(context, 'root', '[context].root', issues);
+	validatePathField(context, 'index', '[context].index', issues);
+	validatePathArrayField(context, 'default_files', '[context].default_files', issues);
+	validateAllowedStringField(context, 'read_policy', '[context].read_policy', ALLOWED_CONTEXT_READ_POLICIES, issues);
+	validateAllowedStringField(context, 'authority', '[context].authority', ALLOWED_CONTEXT_AUTHORITIES, issues);
+	validatePathArrayField(context, 'external_anchors', '[context].external_anchors', issues);
+	return issues;
+}
+
+function collectPromptCacheIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const promptCache = validateTable(mustflowToml, 'prompt_cache', issues);
+	if (!promptCache) return issues;
+
+	validateBooleanField(promptCache, 'enabled', '[prompt_cache].enabled', issues);
+	validateAllowedStringField(promptCache, 'strategy', '[prompt_cache].strategy', ALLOWED_PROMPT_CACHE_STRATEGIES, issues);
+	validateAllowedStringField(
+		promptCache,
+		'stable_prefix_policy',
+		'[prompt_cache].stable_prefix_policy',
+		ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES,
+		issues,
+	);
+	validateBooleanField(
+		promptCache,
+		'prefer_references_when_unchanged',
+		'[prompt_cache].prefer_references_when_unchanged',
+		issues,
+	);
+	validateBooleanField(
+		promptCache,
+		'exclude_volatile_state_from_prefix',
+		'[prompt_cache].exclude_volatile_state_from_prefix',
+		issues,
+	);
+	validateBooleanField(promptCache, 'include_content_hashes', '[prompt_cache].include_content_hashes', issues);
+	validatePositiveIntegerField(promptCache, 'max_stable_prefix_kb', '[prompt_cache].max_stable_prefix_kb', issues);
+	validatePositiveIntegerField(promptCache, 'max_task_context_kb', '[prompt_cache].max_task_context_kb', issues);
+	validatePositiveIntegerField(promptCache, 'max_volatile_suffix_kb', '[prompt_cache].max_volatile_suffix_kb', issues);
+
+	const layers = validateNestedTable(promptCache, 'layers', '[prompt_cache.layers]', issues);
+	if (layers) {
+		const stable = validateNestedTable(layers, 'stable', '[prompt_cache.layers.stable]', issues);
+		if (stable) {
+			validatePathArrayField(stable, 'read', '[prompt_cache.layers.stable].read', issues);
+			validatePositiveIntegerField(stable, 'target_kb', '[prompt_cache.layers.stable].target_kb', issues);
+		}
+
+		const task = validateNestedTable(layers, 'task', '[prompt_cache.layers.task]', issues);
+		if (task) {
+			validateAllowedStringField(
+				task,
+				'read_policy',
+				'[prompt_cache.layers.task].read_policy',
+				ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES,
+				issues,
+			);
+			validateStringArrayField(task, 'sources', '[prompt_cache.layers.task].sources', issues);
+		}
+
+		const volatile = validateNestedTable(layers, 'volatile', '[prompt_cache.layers.volatile]', issues);
+		if (volatile) {
+			validateStringArrayField(volatile, 'sources', '[prompt_cache.layers.volatile].sources', issues);
+			validateBooleanField(
+				volatile,
+				'never_place_before_stable_prefix',
+				'[prompt_cache.layers.volatile].never_place_before_stable_prefix',
+				issues,
+			);
+		}
+	}
+	return issues;
+}
+
+function collectWorkspaceIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const workspace = validateTable(mustflowToml, 'workspace', issues);
+	if (!workspace) return issues;
+
+	validateBooleanField(workspace, 'enabled', '[workspace].enabled', issues);
+	const roots = validateWorkspaceRoots(workspace, issues);
+	validateAllowedStringField(
+		workspace,
+		'authority_mode',
+		'[workspace].authority_mode',
+		new Set(WORKSPACE_COMMAND_AUTHORITY_MODES),
+		issues,
+	);
+	validatePositiveIntegerField(workspace, 'max_depth', '[workspace].max_depth', issues);
+	validatePositiveIntegerField(workspace, 'max_repositories', '[workspace].max_repositories', issues);
+	validateBooleanField(workspace, 'follow_symlinks', '[workspace].follow_symlinks', issues);
+	validateBooleanField(workspace, 'stop_at_repository_root', '[workspace].stop_at_repository_root', issues);
+
+	if (workspace.enabled === true && roots?.length === 0) {
+		issues.push({ message: '[workspace].enabled requires at least one [workspace].roots entry' });
+	}
+
+	try {
+		readWorkspaceCommandAuthorityConfig(mustflowToml);
+	} catch (error) {
+		issues.push({ message: error instanceof Error ? error.message : String(error) });
+	}
+	return issues;
+}
+
+function collectCapabilitiesIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const capabilities = validateTable(mustflowToml, 'capabilities', issues);
+	if (!capabilities) return issues;
+
+	for (const field of CAPABILITY_BOOLEAN_FIELDS) {
+		validateBooleanField(capabilities, field, `[capabilities].${field}`, issues);
+	}
+
+	for (const field of CAPABILITY_STATE_FIELDS) {
+		validateAllowedStringField(capabilities, field, `[capabilities].${field}`, ALLOWED_CAPABILITY_STATES, issues);
+	}
+
+	validateStringArrayField(capabilities, 'adapters', '[capabilities].adapters', issues);
+	return issues;
+}
+
+function collectAgentLoopIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const agentLoop = validateTable(mustflowToml, 'agent_loop', issues);
+	if (!agentLoop) return issues;
+
+	validateExactStringArrayField(agentLoop, 'phases', '[agent_loop].phases', REQUIRED_AGENT_LOOP_PHASES, issues);
+	return issues;
+}
+
+function collectHarnessIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const harness = validateTable(mustflowToml, 'harness', issues);
+	if (!harness) return issues;
+
+	validateAllowedStringField(harness, 'mode', '[harness].mode', ALLOWED_HARNESS_MODES, issues);
+	validateBooleanField(harness, 'fresh_context_preferred', '[harness].fresh_context_preferred', issues);
+	validateAllowedStringField(
+		harness,
+		'fresh_context_mode',
+		'[harness].fresh_context_mode',
+		ALLOWED_HARNESS_FRESH_CONTEXT_MODES,
+		issues,
+	);
+
+	const phases = validateNestedTable(harness, 'phases', '[harness.phases]', issues);
+	if (phases) {
+		validateStringArrayMembers(
+			phases,
+			'enabled',
+			'[harness.phases].enabled',
+			ALLOWED_HARNESS_PHASES,
+			'phase',
+			issues,
+		);
+	}
+	return issues;
+}
+
+function collectRefreshIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const refresh = validateTable(mustflowToml, 'refresh', issues);
+	if (!refresh) return issues;
+
+	validateBooleanField(refresh, 'enabled', '[refresh].enabled', issues);
+	validateAllowedStringField(refresh, 'mode', '[refresh].mode', ALLOWED_REFRESH_MODES, issues);
+	validateAllowedStringField(refresh, 'default_method', '[refresh].default_method', ALLOWED_REFRESH_METHODS, issues);
+	validateBooleanField(refresh, 'reread_when_hash_changed', '[refresh].reread_when_hash_changed', issues);
+	validateBooleanField(
+		refresh,
+		'reuse_cached_prefix_when_unchanged',
+		'[refresh].reuse_cached_prefix_when_unchanged',
+		issues,
+	);
+	validateStringArrayMembers(
+		refresh,
+		'required_at',
+		'[refresh].required_at',
+		ALLOWED_REFRESH_CHECKPOINTS,
+		'checkpoint',
+		issues,
+	);
+	validatePositiveIntegerField(refresh, 'turn_threshold', '[refresh].turn_threshold', issues);
+	validatePositiveIntegerField(refresh, 'tool_call_threshold', '[refresh].tool_call_threshold', issues);
+	validatePositiveIntegerField(refresh, 'output_bytes_threshold', '[refresh].output_bytes_threshold', issues);
+	validateAllowedStringField(refresh, 'state_store', '[refresh].state_store', ALLOWED_REFRESH_STATE_STORES, issues);
+
+	const levels = validateNestedTable(refresh, 'levels', '[refresh.levels]', issues);
+	if (levels) {
+		for (const [levelName, level] of Object.entries(levels)) {
+			if (!isRecord(level)) {
+				issues.push({ message: `[refresh.levels.${levelName}] must be a TOML table` });
+				continue;
+			}
+
+			validateAllowedStringField(
+				level,
+				'method',
+				`[refresh.levels.${levelName}].method`,
+				ALLOWED_REFRESH_METHODS,
+				issues,
+			);
+			validatePathArrayField(level, 'read', `[refresh.levels.${levelName}].read`, issues);
+		}
+	}
+	return issues;
+}
+
+function collectCompactionIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const compaction = validateTable(mustflowToml, 'compaction', issues);
+	if (!compaction) return issues;
+
+	validateBooleanField(compaction, 'enabled', '[compaction].enabled', issues);
+	validateAllowedStringField(compaction, 'strategy', '[compaction].strategy', ALLOWED_COMPACTION_STRATEGIES, issues);
+	validateAllowedStringField(compaction, 'state_store', '[compaction].state_store', ALLOWED_COMPACTION_STATE_STORES, issues);
+
+	const recent = validateNestedTable(compaction, 'recent', '[compaction.recent]', issues);
+	if (recent) {
+		validatePositiveIntegerField(recent, 'keep_turns', '[compaction.recent].keep_turns', issues);
+		validatePositiveIntegerField(recent, 'max_total_bytes', '[compaction.recent].max_total_bytes', issues);
+		validateBooleanField(recent, 'store_raw', '[compaction.recent].store_raw', issues);
+	}
+
+	const mid = validateNestedTable(compaction, 'mid', '[compaction.mid]', issues);
+	if (mid) {
+		validatePositiveIntegerField(mid, 'trigger_turns', '[compaction.mid].trigger_turns', issues);
+		validatePositiveIntegerField(mid, 'target_items', '[compaction.mid].target_items', issues);
+		validatePositiveIntegerField(
+			mid,
+			'target_max_words_per_item',
+			'[compaction.mid].target_max_words_per_item',
+			issues,
+		);
+		validateStringArrayMembers(
+			mid,
+			'include_categories',
+			'[compaction.mid].include_categories',
+			ALLOWED_COMPACTION_CATEGORIES,
+			'category',
+			issues,
+		);
+	}
+
+	const long = validateNestedTable(compaction, 'long', '[compaction.long]', issues);
+	if (long) {
+		validatePositiveIntegerField(long, 'promote_after_mid_items', '[compaction.long].promote_after_mid_items', issues);
+		validatePositiveIntegerField(long, 'target_items', '[compaction.long].target_items', issues);
+		validatePositiveIntegerField(long, 'max_items', '[compaction.long].max_items', issues);
+		validateAllowedStringField(long, 'on_limit', '[compaction.long].on_limit', ALLOWED_COMPACTION_LONG_LIMIT_ACTIONS, issues);
+	}
+
+	const rawRetention = validateNestedTable(compaction, 'raw_retention', '[compaction.raw_retention]', issues);
+	if (rawRetention) {
+		validatePositiveIntegerField(rawRetention, 'max_age_days', '[compaction.raw_retention].max_age_days', issues);
+		validatePositiveIntegerField(rawRetention, 'max_total_mb', '[compaction.raw_retention].max_total_mb', issues);
+		validateAllowedStringField(
+			rawRetention,
+			'on_limit',
+			'[compaction.raw_retention].on_limit',
+			ALLOWED_COMPACTION_RAW_LIMIT_ACTIONS,
+			issues,
+		);
+	}
+
+	const rules = validateNestedTable(compaction, 'rules', '[compaction.rules]', issues);
+	if (rules) {
+		validateBooleanField(rules, 'require_source_refs', '[compaction.rules].require_source_refs', issues);
+		validateBooleanField(rules, 'summaries_are_derived', '[compaction.rules].summaries_are_derived', issues);
+		validateBooleanField(
+			rules,
+			'current_files_override_summaries',
+			'[compaction.rules].current_files_override_summaries',
+			issues,
+		);
+		validateBooleanField(rules, 'never_store_secrets', '[compaction.rules].never_store_secrets', issues);
+		validateBooleanField(rules, 'scrub_absolute_user_paths', '[compaction.rules].scrub_absolute_user_paths', issues);
+		validateBooleanField(
+			rules,
+			'do_not_store_hidden_chain_of_thought',
+			'[compaction.rules].do_not_store_hidden_chain_of_thought',
+			issues,
+		);
+	}
+	return issues;
+}
+
+function collectVerificationIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const verification = validateTable(mustflowToml, 'verification', issues);
+	if (!verification) return issues;
+
+	validatePathField(verification, 'command_source', '[verification].command_source', issues);
+	validateBooleanField(verification, 'require_configured_intents', '[verification].require_configured_intents', issues);
+	validateBooleanField(verification, 'allow_inferred_commands', '[verification].allow_inferred_commands', issues);
+	validateBooleanField(verification, 'require_command_lifecycle', '[verification].require_command_lifecycle', issues);
+	validateBooleanField(verification, 'require_timeout_for_oneshot', '[verification].require_timeout_for_oneshot', issues);
+	return issues;
+}
+
+function collectTestingIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const testing = validateTable(mustflowToml, 'testing', issues);
+	if (!testing) return issues;
+
+	validateAllowedStringField(testing, 'policy', '[testing].policy', ALLOWED_TESTING_POLICIES, issues);
+	validateBooleanField(
+		testing,
+		'prefer_update_existing_tests',
+		'[testing].prefer_update_existing_tests',
+		issues,
+	);
+	validateBooleanField(
+		testing,
+		'require_existing_test_search',
+		'[testing].require_existing_test_search',
+		issues,
+	);
+	validateBooleanField(
+		testing,
+		'require_test_change_report',
+		'[testing].require_test_change_report',
+		issues,
+	);
+	validateBooleanField(testing, 'forbid_validation_weakening', '[testing].forbid_validation_weakening', issues);
+	validateStringArrayMembers(
+		testing,
+		'allow_test_deletion_when',
+		'[testing].allow_test_deletion_when',
+		ALLOWED_TEST_DELETION_REASONS,
+		'reason',
+		issues,
+	);
+	validateStringArrayMembers(
+		testing,
+		'forbid_test_deletion_when',
+		'[testing].forbid_test_deletion_when',
+		FORBIDDEN_TEST_DELETION_REASONS,
+		'reason',
+		issues,
+	);
+	validateAllowedStringField(testing, 'stale_test_action', '[testing].stale_test_action', ALLOWED_STALE_TEST_ACTIONS, issues);
+	return issues;
+}
+
+function collectHandoffIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const handoff = validateTable(mustflowToml, 'handoff', issues);
+	if (!handoff) return issues;
+
+	validateBooleanField(handoff, 'enabled', '[handoff].enabled', issues);
+	validateAllowedStringField(handoff, 'mode', '[handoff].mode', ALLOWED_HANDOFF_MODES, issues);
+	return issues;
+}
+
+function collectBudgetIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const budget = validateTable(mustflowToml, 'budget', issues);
+	if (!budget) return issues;
+
+	validateBooleanField(budget, 'enabled', '[budget].enabled', issues);
+	validatePositiveIntegerField(budget, 'max_iterations', '[budget].max_iterations', issues);
+	validatePositiveIntegerField(budget, 'max_wall_clock_minutes', '[budget].max_wall_clock_minutes', issues);
+	validatePositiveIntegerField(budget, 'max_command_runs', '[budget].max_command_runs', issues);
+	validatePositiveIntegerField(budget, 'max_total_output_mb', '[budget].max_total_output_mb', issues);
+	validatePositiveIntegerField(budget, 'max_failures_per_intent', '[budget].max_failures_per_intent', issues);
+	validateAllowedStringField(budget, 'on_limit', '[budget].on_limit', ALLOWED_BUDGET_LIMIT_ACTIONS, issues);
+	return issues;
+}
+
+function collectApprovalIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const approval = validateTable(mustflowToml, 'approval', issues);
+	if (!approval) return issues;
+
+	validateStringArrayMembers(
+		approval,
+		'required_for',
+		'[approval].required_for',
+		ALLOWED_APPROVAL_GATES,
+		'approval gate',
+		issues,
+	);
+	validateAllowedStringField(approval, 'on_required', '[approval].on_required', ALLOWED_APPROVAL_ACTIONS, issues);
+	return issues;
+}
+
+function collectIsolationIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const isolation = validateTable(mustflowToml, 'isolation', issues);
+	if (!isolation) return issues;
+
+	validateAllowedStringField(isolation, 'preferred', '[isolation].preferred', ALLOWED_ISOLATION_PREFERENCES, issues);
+	validateBooleanField(isolation, 'required_for_long_running', '[isolation].required_for_long_running', issues);
+	validateBooleanField(isolation, 'allow_dirty_main_worktree', '[isolation].allow_dirty_main_worktree', issues);
+	return issues;
+}
+
+function collectRetentionIssues(mustflowToml: TomlTable): CheckIssue[] {
+	const issues: CheckIssue[] = [];
+	const retention = validateTable(mustflowToml, 'retention', issues);
+	if (!retention) return issues;
+
+	validateBooleanField(retention, 'enabled', '[retention].enabled', issues);
+
+	const rawEvents = validateNestedTable(retention, 'raw_events', '[retention.raw_events]', issues);
+	if (rawEvents) {
+		validateAllowedStringField(rawEvents, 'store', '[retention.raw_events].store', ALLOWED_RETENTION_STORES, issues);
+		validatePositiveIntegerField(rawEvents, 'max_file_mb', '[retention.raw_events].max_file_mb', issues);
+		validatePositiveIntegerField(rawEvents, 'max_total_mb', '[retention.raw_events].max_total_mb', issues);
+		validatePositiveIntegerField(rawEvents, 'max_age_days', '[retention.raw_events].max_age_days', issues);
+		validateAllowedStringField(
+			rawEvents,
+			'on_limit',
+			'[retention.raw_events].on_limit',
+			ALLOWED_RETENTION_ON_LIMIT,
+			issues,
+		);
+	}
+
+	const runReceipts = validateNestedTable(retention, 'run_receipts', '[retention.run_receipts]', issues);
+	if (runReceipts) {
+		validateAllowedStringField(runReceipts, 'store', '[retention.run_receipts].store', ALLOWED_RETENTION_STORES, issues);
+		validatePositiveIntegerField(runReceipts, 'max_file_kb', '[retention.run_receipts].max_file_kb', issues);
+		validatePositiveIntegerField(runReceipts, 'max_items', '[retention.run_receipts].max_items', issues);
+		validatePositiveIntegerField(runReceipts, 'max_total_mb', '[retention.run_receipts].max_total_mb', issues);
+		validatePositiveIntegerField(
+			runReceipts,
+			'keep_stdout_tail_bytes',
+			'[retention.run_receipts].keep_stdout_tail_bytes',
+			issues,
+		);
+		validatePositiveIntegerField(
+			runReceipts,
+			'keep_stderr_tail_bytes',
+			'[retention.run_receipts].keep_stderr_tail_bytes',
+			issues,
+		);
+	}
+
+	const knowledge = validateNestedTable(retention, 'knowledge', '[retention.knowledge]', issues);
+	if (knowledge) {
+		validateBooleanField(knowledge, 'enabled', '[retention.knowledge].enabled', issues);
+		validateAllowedStringField(knowledge, 'store', '[retention.knowledge].store', ALLOWED_RETENTION_STORES, issues);
+		validatePositiveIntegerField(knowledge, 'max_file_kb', '[retention.knowledge].max_file_kb', issues);
+		validatePositiveIntegerField(knowledge, 'max_total_mb', '[retention.knowledge].max_total_mb', issues);
+		validateBooleanField(knowledge, 'require_source_refs', '[retention.knowledge].require_source_refs', issues);
+		validateBooleanField(knowledge, 'require_review_status', '[retention.knowledge].require_review_status', issues);
+	}
+
+	const context = validateNestedTable(retention, 'context', '[retention.context]', issues);
+	if (context) {
+		validatePositiveIntegerField(context, 'max_file_kb', '[retention.context].max_file_kb', issues);
+	}
+
+	const handoffs = validateNestedTable(retention, 'handoffs', '[retention.handoffs]', issues);
+	if (handoffs) {
+		validateAllowedStringField(handoffs, 'store', '[retention.handoffs].store', ALLOWED_RETENTION_STORES, issues);
+		validatePositiveIntegerField(handoffs, 'max_file_kb', '[retention.handoffs].max_file_kb', issues);
+		validatePositiveIntegerField(handoffs, 'max_total_mb', '[retention.handoffs].max_total_mb', issues);
+		validateBooleanField(handoffs, 'require_source_refs', '[retention.handoffs].require_source_refs', issues);
+	}
+
+	const repoMap = validateNestedTable(retention, 'repo_map', '[retention.repo_map]', issues);
+	if (repoMap) {
+		validatePositiveIntegerField(repoMap, 'max_file_kb', '[retention.repo_map].max_file_kb', issues);
+		validateBooleanField(repoMap, 'fail_if_larger', '[retention.repo_map].fail_if_larger', issues);
+	}
+	return issues;
+}
+
+export function collectMustflowConfigIssues(mustflowToml: TomlTable | undefined): readonly CheckIssue[] {
+	const issues: CheckIssue[] = [];
 	if (!mustflowToml) {
-		return;
+		return [];
 	}
 	try {
 		resolveWorkflowPolicy(mustflowToml);
 	} catch (error) {
 		issues.push({ message: error instanceof Error ? error.message : String(error) });
 	}
+	issues.push(...collectMapIssues(mustflowToml));
+	issues.push(...collectContextIssues(mustflowToml));
+	issues.push(...collectPromptCacheIssues(mustflowToml));
+	issues.push(...collectWorkspaceIssues(mustflowToml));
+	issues.push(...collectCapabilitiesIssues(mustflowToml));
+	issues.push(...collectAgentLoopIssues(mustflowToml));
+	issues.push(...collectHarnessIssues(mustflowToml));
+	issues.push(...collectRefreshIssues(mustflowToml));
+	issues.push(...collectCompactionIssues(mustflowToml));
+	issues.push(...collectVerificationIssues(mustflowToml));
+	issues.push(...collectTestingIssues(mustflowToml));
+	issues.push(...collectHandoffIssues(mustflowToml));
+	issues.push(...collectBudgetIssues(mustflowToml));
+	issues.push(...collectApprovalIssues(mustflowToml));
+	issues.push(...collectIsolationIssues(mustflowToml));
+	issues.push(...collectRetentionIssues(mustflowToml));
+	return issues;
+}
 
-	const map = validateTable(mustflowToml, 'map', issues);
-
-	if (map) {
-		validatePathField(map, 'output', '[map].output', issues);
-		validateAllowedStringField(map, 'mode', '[map].mode', ALLOWED_MAP_MODES, issues);
-		validateAllowedStringField(map, 'privacy', '[map].privacy', ALLOWED_MAP_PRIVACY_LEVELS, issues);
-		validateBooleanField(map, 'include_nested', '[map].include_nested', issues);
-		validatePathArrayField(map, 'anchor_files', '[map].anchor_files', issues);
-	}
-
-	const context = validateTable(mustflowToml, 'context', issues);
-
-	if (context) {
-		validateBooleanField(context, 'enabled', '[context].enabled', issues);
-		validatePathField(context, 'root', '[context].root', issues);
-		validatePathField(context, 'index', '[context].index', issues);
-		validatePathArrayField(context, 'default_files', '[context].default_files', issues);
-		validateAllowedStringField(context, 'read_policy', '[context].read_policy', ALLOWED_CONTEXT_READ_POLICIES, issues);
-		validateAllowedStringField(context, 'authority', '[context].authority', ALLOWED_CONTEXT_AUTHORITIES, issues);
-		validatePathArrayField(context, 'external_anchors', '[context].external_anchors', issues);
-	}
-
-	const promptCache = validateTable(mustflowToml, 'prompt_cache', issues);
-
-	if (promptCache) {
-		validateBooleanField(promptCache, 'enabled', '[prompt_cache].enabled', issues);
-		validateAllowedStringField(promptCache, 'strategy', '[prompt_cache].strategy', ALLOWED_PROMPT_CACHE_STRATEGIES, issues);
-		validateAllowedStringField(
-			promptCache,
-			'stable_prefix_policy',
-			'[prompt_cache].stable_prefix_policy',
-			ALLOWED_PROMPT_CACHE_STABLE_PREFIX_POLICIES,
-			issues,
-		);
-		validateBooleanField(
-			promptCache,
-			'prefer_references_when_unchanged',
-			'[prompt_cache].prefer_references_when_unchanged',
-			issues,
-		);
-		validateBooleanField(
-			promptCache,
-			'exclude_volatile_state_from_prefix',
-			'[prompt_cache].exclude_volatile_state_from_prefix',
-			issues,
-		);
-		validateBooleanField(promptCache, 'include_content_hashes', '[prompt_cache].include_content_hashes', issues);
-		validatePositiveIntegerField(promptCache, 'max_stable_prefix_kb', '[prompt_cache].max_stable_prefix_kb', issues);
-		validatePositiveIntegerField(promptCache, 'max_task_context_kb', '[prompt_cache].max_task_context_kb', issues);
-		validatePositiveIntegerField(promptCache, 'max_volatile_suffix_kb', '[prompt_cache].max_volatile_suffix_kb', issues);
-
-		const layers = validateNestedTable(promptCache, 'layers', '[prompt_cache.layers]', issues);
-		if (layers) {
-			const stable = validateNestedTable(layers, 'stable', '[prompt_cache.layers.stable]', issues);
-			if (stable) {
-				validatePathArrayField(stable, 'read', '[prompt_cache.layers.stable].read', issues);
-				validatePositiveIntegerField(stable, 'target_kb', '[prompt_cache.layers.stable].target_kb', issues);
-			}
-
-			const task = validateNestedTable(layers, 'task', '[prompt_cache.layers.task]', issues);
-			if (task) {
-				validateAllowedStringField(
-					task,
-					'read_policy',
-					'[prompt_cache.layers.task].read_policy',
-					ALLOWED_PROMPT_CACHE_TASK_READ_POLICIES,
-					issues,
-				);
-				validateStringArrayField(task, 'sources', '[prompt_cache.layers.task].sources', issues);
-			}
-
-			const volatile = validateNestedTable(layers, 'volatile', '[prompt_cache.layers.volatile]', issues);
-			if (volatile) {
-				validateStringArrayField(volatile, 'sources', '[prompt_cache.layers.volatile].sources', issues);
-				validateBooleanField(
-					volatile,
-					'never_place_before_stable_prefix',
-					'[prompt_cache.layers.volatile].never_place_before_stable_prefix',
-					issues,
-				);
-			}
-		}
-	}
-
-	const workspace = validateTable(mustflowToml, 'workspace', issues);
-
-	if (workspace) {
-		validateBooleanField(workspace, 'enabled', '[workspace].enabled', issues);
-		const roots = validateWorkspaceRoots(workspace, issues);
-		validateAllowedStringField(
-			workspace,
-			'authority_mode',
-			'[workspace].authority_mode',
-			new Set(WORKSPACE_COMMAND_AUTHORITY_MODES),
-			issues,
-		);
-		validatePositiveIntegerField(workspace, 'max_depth', '[workspace].max_depth', issues);
-		validatePositiveIntegerField(workspace, 'max_repositories', '[workspace].max_repositories', issues);
-		validateBooleanField(workspace, 'follow_symlinks', '[workspace].follow_symlinks', issues);
-		validateBooleanField(workspace, 'stop_at_repository_root', '[workspace].stop_at_repository_root', issues);
-
-		if (workspace.enabled === true && roots?.length === 0) {
-			issues.push({ message: '[workspace].enabled requires at least one [workspace].roots entry' });
-		}
-
-		try {
-			readWorkspaceCommandAuthorityConfig(mustflowToml);
-		} catch (error) {
-			issues.push({ message: error instanceof Error ? error.message : String(error) });
-		}
-	}
-
-	const capabilities = validateTable(mustflowToml, 'capabilities', issues);
-
-	if (capabilities) {
-		for (const field of CAPABILITY_BOOLEAN_FIELDS) {
-			validateBooleanField(capabilities, field, `[capabilities].${field}`, issues);
-		}
-
-		for (const field of CAPABILITY_STATE_FIELDS) {
-			validateAllowedStringField(capabilities, field, `[capabilities].${field}`, ALLOWED_CAPABILITY_STATES, issues);
-		}
-
-		validateStringArrayField(capabilities, 'adapters', '[capabilities].adapters', issues);
-	}
-
-	const agentLoop = validateTable(mustflowToml, 'agent_loop', issues);
-
-	if (agentLoop) {
-		validateExactStringArrayField(agentLoop, 'phases', '[agent_loop].phases', REQUIRED_AGENT_LOOP_PHASES, issues);
-	}
-
-	const harness = validateTable(mustflowToml, 'harness', issues);
-
-	if (harness) {
-		validateAllowedStringField(harness, 'mode', '[harness].mode', ALLOWED_HARNESS_MODES, issues);
-		validateBooleanField(harness, 'fresh_context_preferred', '[harness].fresh_context_preferred', issues);
-		validateAllowedStringField(
-			harness,
-			'fresh_context_mode',
-			'[harness].fresh_context_mode',
-			ALLOWED_HARNESS_FRESH_CONTEXT_MODES,
-			issues,
-		);
-
-		const phases = validateNestedTable(harness, 'phases', '[harness.phases]', issues);
-		if (phases) {
-			validateStringArrayMembers(
-				phases,
-				'enabled',
-				'[harness.phases].enabled',
-				ALLOWED_HARNESS_PHASES,
-				'phase',
-				issues,
-			);
-		}
-	}
-
-	const refresh = validateTable(mustflowToml, 'refresh', issues);
-
-	if (refresh) {
-		validateBooleanField(refresh, 'enabled', '[refresh].enabled', issues);
-		validateAllowedStringField(refresh, 'mode', '[refresh].mode', ALLOWED_REFRESH_MODES, issues);
-		validateAllowedStringField(refresh, 'default_method', '[refresh].default_method', ALLOWED_REFRESH_METHODS, issues);
-		validateBooleanField(refresh, 'reread_when_hash_changed', '[refresh].reread_when_hash_changed', issues);
-		validateBooleanField(
-			refresh,
-			'reuse_cached_prefix_when_unchanged',
-			'[refresh].reuse_cached_prefix_when_unchanged',
-			issues,
-		);
-		validateStringArrayMembers(
-			refresh,
-			'required_at',
-			'[refresh].required_at',
-			ALLOWED_REFRESH_CHECKPOINTS,
-			'checkpoint',
-			issues,
-		);
-		validatePositiveIntegerField(refresh, 'turn_threshold', '[refresh].turn_threshold', issues);
-		validatePositiveIntegerField(refresh, 'tool_call_threshold', '[refresh].tool_call_threshold', issues);
-		validatePositiveIntegerField(refresh, 'output_bytes_threshold', '[refresh].output_bytes_threshold', issues);
-		validateAllowedStringField(refresh, 'state_store', '[refresh].state_store', ALLOWED_REFRESH_STATE_STORES, issues);
-
-		const levels = validateNestedTable(refresh, 'levels', '[refresh.levels]', issues);
-		if (levels) {
-			for (const [levelName, level] of Object.entries(levels)) {
-				if (!isRecord(level)) {
-					issues.push({ message: `[refresh.levels.${levelName}] must be a TOML table` });
-					continue;
-				}
-
-				validateAllowedStringField(
-					level,
-					'method',
-					`[refresh.levels.${levelName}].method`,
-					ALLOWED_REFRESH_METHODS,
-					issues,
-				);
-				validatePathArrayField(level, 'read', `[refresh.levels.${levelName}].read`, issues);
-			}
-		}
-	}
-
-	const compaction = validateTable(mustflowToml, 'compaction', issues);
-
-	if (compaction) {
-		validateBooleanField(compaction, 'enabled', '[compaction].enabled', issues);
-		validateAllowedStringField(compaction, 'strategy', '[compaction].strategy', ALLOWED_COMPACTION_STRATEGIES, issues);
-		validateAllowedStringField(compaction, 'state_store', '[compaction].state_store', ALLOWED_COMPACTION_STATE_STORES, issues);
-
-		const recent = validateNestedTable(compaction, 'recent', '[compaction.recent]', issues);
-		if (recent) {
-			validatePositiveIntegerField(recent, 'keep_turns', '[compaction.recent].keep_turns', issues);
-			validatePositiveIntegerField(recent, 'max_total_bytes', '[compaction.recent].max_total_bytes', issues);
-			validateBooleanField(recent, 'store_raw', '[compaction.recent].store_raw', issues);
-		}
-
-		const mid = validateNestedTable(compaction, 'mid', '[compaction.mid]', issues);
-		if (mid) {
-			validatePositiveIntegerField(mid, 'trigger_turns', '[compaction.mid].trigger_turns', issues);
-			validatePositiveIntegerField(mid, 'target_items', '[compaction.mid].target_items', issues);
-			validatePositiveIntegerField(
-				mid,
-				'target_max_words_per_item',
-				'[compaction.mid].target_max_words_per_item',
-				issues,
-			);
-			validateStringArrayMembers(
-				mid,
-				'include_categories',
-				'[compaction.mid].include_categories',
-				ALLOWED_COMPACTION_CATEGORIES,
-				'category',
-				issues,
-			);
-		}
-
-		const long = validateNestedTable(compaction, 'long', '[compaction.long]', issues);
-		if (long) {
-			validatePositiveIntegerField(long, 'promote_after_mid_items', '[compaction.long].promote_after_mid_items', issues);
-			validatePositiveIntegerField(long, 'target_items', '[compaction.long].target_items', issues);
-			validatePositiveIntegerField(long, 'max_items', '[compaction.long].max_items', issues);
-			validateAllowedStringField(long, 'on_limit', '[compaction.long].on_limit', ALLOWED_COMPACTION_LONG_LIMIT_ACTIONS, issues);
-		}
-
-		const rawRetention = validateNestedTable(compaction, 'raw_retention', '[compaction.raw_retention]', issues);
-		if (rawRetention) {
-			validatePositiveIntegerField(rawRetention, 'max_age_days', '[compaction.raw_retention].max_age_days', issues);
-			validatePositiveIntegerField(rawRetention, 'max_total_mb', '[compaction.raw_retention].max_total_mb', issues);
-			validateAllowedStringField(
-				rawRetention,
-				'on_limit',
-				'[compaction.raw_retention].on_limit',
-				ALLOWED_COMPACTION_RAW_LIMIT_ACTIONS,
-				issues,
-			);
-		}
-
-		const rules = validateNestedTable(compaction, 'rules', '[compaction.rules]', issues);
-		if (rules) {
-			validateBooleanField(rules, 'require_source_refs', '[compaction.rules].require_source_refs', issues);
-			validateBooleanField(rules, 'summaries_are_derived', '[compaction.rules].summaries_are_derived', issues);
-			validateBooleanField(
-				rules,
-				'current_files_override_summaries',
-				'[compaction.rules].current_files_override_summaries',
-				issues,
-			);
-			validateBooleanField(rules, 'never_store_secrets', '[compaction.rules].never_store_secrets', issues);
-			validateBooleanField(rules, 'scrub_absolute_user_paths', '[compaction.rules].scrub_absolute_user_paths', issues);
-			validateBooleanField(
-				rules,
-				'do_not_store_hidden_chain_of_thought',
-				'[compaction.rules].do_not_store_hidden_chain_of_thought',
-				issues,
-			);
-		}
-	}
-
-	const verification = validateTable(mustflowToml, 'verification', issues);
-
-	if (verification) {
-		validatePathField(verification, 'command_source', '[verification].command_source', issues);
-		validateBooleanField(verification, 'require_configured_intents', '[verification].require_configured_intents', issues);
-		validateBooleanField(verification, 'allow_inferred_commands', '[verification].allow_inferred_commands', issues);
-		validateBooleanField(verification, 'require_command_lifecycle', '[verification].require_command_lifecycle', issues);
-		validateBooleanField(verification, 'require_timeout_for_oneshot', '[verification].require_timeout_for_oneshot', issues);
-	}
-
-	const testing = validateTable(mustflowToml, 'testing', issues);
-
-	if (testing) {
-		validateAllowedStringField(testing, 'policy', '[testing].policy', ALLOWED_TESTING_POLICIES, issues);
-		validateBooleanField(
-			testing,
-			'prefer_update_existing_tests',
-			'[testing].prefer_update_existing_tests',
-			issues,
-		);
-		validateBooleanField(
-			testing,
-			'require_existing_test_search',
-			'[testing].require_existing_test_search',
-			issues,
-		);
-		validateBooleanField(
-			testing,
-			'require_test_change_report',
-			'[testing].require_test_change_report',
-			issues,
-		);
-		validateBooleanField(testing, 'forbid_validation_weakening', '[testing].forbid_validation_weakening', issues);
-		validateStringArrayMembers(
-			testing,
-			'allow_test_deletion_when',
-			'[testing].allow_test_deletion_when',
-			ALLOWED_TEST_DELETION_REASONS,
-			'reason',
-			issues,
-		);
-		validateStringArrayMembers(
-			testing,
-			'forbid_test_deletion_when',
-			'[testing].forbid_test_deletion_when',
-			FORBIDDEN_TEST_DELETION_REASONS,
-			'reason',
-			issues,
-		);
-		validateAllowedStringField(testing, 'stale_test_action', '[testing].stale_test_action', ALLOWED_STALE_TEST_ACTIONS, issues);
-	}
-
-	const handoff = validateTable(mustflowToml, 'handoff', issues);
-
-	if (handoff) {
-		validateBooleanField(handoff, 'enabled', '[handoff].enabled', issues);
-		validateAllowedStringField(handoff, 'mode', '[handoff].mode', ALLOWED_HANDOFF_MODES, issues);
-	}
-
-	const budget = validateTable(mustflowToml, 'budget', issues);
-
-	if (budget) {
-		validateBooleanField(budget, 'enabled', '[budget].enabled', issues);
-		validatePositiveIntegerField(budget, 'max_iterations', '[budget].max_iterations', issues);
-		validatePositiveIntegerField(budget, 'max_wall_clock_minutes', '[budget].max_wall_clock_minutes', issues);
-		validatePositiveIntegerField(budget, 'max_command_runs', '[budget].max_command_runs', issues);
-		validatePositiveIntegerField(budget, 'max_total_output_mb', '[budget].max_total_output_mb', issues);
-		validatePositiveIntegerField(budget, 'max_failures_per_intent', '[budget].max_failures_per_intent', issues);
-		validateAllowedStringField(budget, 'on_limit', '[budget].on_limit', ALLOWED_BUDGET_LIMIT_ACTIONS, issues);
-	}
-
-	const approval = validateTable(mustflowToml, 'approval', issues);
-
-	if (approval) {
-		validateStringArrayMembers(
-			approval,
-			'required_for',
-			'[approval].required_for',
-			ALLOWED_APPROVAL_GATES,
-			'approval gate',
-			issues,
-		);
-		validateAllowedStringField(approval, 'on_required', '[approval].on_required', ALLOWED_APPROVAL_ACTIONS, issues);
-	}
-
-	const isolation = validateTable(mustflowToml, 'isolation', issues);
-
-	if (isolation) {
-		validateAllowedStringField(isolation, 'preferred', '[isolation].preferred', ALLOWED_ISOLATION_PREFERENCES, issues);
-		validateBooleanField(isolation, 'required_for_long_running', '[isolation].required_for_long_running', issues);
-		validateBooleanField(isolation, 'allow_dirty_main_worktree', '[isolation].allow_dirty_main_worktree', issues);
-	}
-
-	const retention = validateTable(mustflowToml, 'retention', issues);
-
-	if (retention) {
-		validateBooleanField(retention, 'enabled', '[retention].enabled', issues);
-
-		const rawEvents = validateNestedTable(retention, 'raw_events', '[retention.raw_events]', issues);
-		if (rawEvents) {
-			validateAllowedStringField(rawEvents, 'store', '[retention.raw_events].store', ALLOWED_RETENTION_STORES, issues);
-			validatePositiveIntegerField(rawEvents, 'max_file_mb', '[retention.raw_events].max_file_mb', issues);
-			validatePositiveIntegerField(rawEvents, 'max_total_mb', '[retention.raw_events].max_total_mb', issues);
-			validatePositiveIntegerField(rawEvents, 'max_age_days', '[retention.raw_events].max_age_days', issues);
-			validateAllowedStringField(
-				rawEvents,
-				'on_limit',
-				'[retention.raw_events].on_limit',
-				ALLOWED_RETENTION_ON_LIMIT,
-				issues,
-			);
-		}
-
-		const runReceipts = validateNestedTable(retention, 'run_receipts', '[retention.run_receipts]', issues);
-		if (runReceipts) {
-			validateAllowedStringField(runReceipts, 'store', '[retention.run_receipts].store', ALLOWED_RETENTION_STORES, issues);
-			validatePositiveIntegerField(runReceipts, 'max_file_kb', '[retention.run_receipts].max_file_kb', issues);
-			validatePositiveIntegerField(runReceipts, 'max_items', '[retention.run_receipts].max_items', issues);
-			validatePositiveIntegerField(runReceipts, 'max_total_mb', '[retention.run_receipts].max_total_mb', issues);
-			validatePositiveIntegerField(
-				runReceipts,
-				'keep_stdout_tail_bytes',
-				'[retention.run_receipts].keep_stdout_tail_bytes',
-				issues,
-			);
-			validatePositiveIntegerField(
-				runReceipts,
-				'keep_stderr_tail_bytes',
-				'[retention.run_receipts].keep_stderr_tail_bytes',
-				issues,
-			);
-		}
-
-		const knowledge = validateNestedTable(retention, 'knowledge', '[retention.knowledge]', issues);
-		if (knowledge) {
-			validateBooleanField(knowledge, 'enabled', '[retention.knowledge].enabled', issues);
-			validateAllowedStringField(knowledge, 'store', '[retention.knowledge].store', ALLOWED_RETENTION_STORES, issues);
-			validatePositiveIntegerField(knowledge, 'max_file_kb', '[retention.knowledge].max_file_kb', issues);
-			validatePositiveIntegerField(knowledge, 'max_total_mb', '[retention.knowledge].max_total_mb', issues);
-			validateBooleanField(knowledge, 'require_source_refs', '[retention.knowledge].require_source_refs', issues);
-			validateBooleanField(knowledge, 'require_review_status', '[retention.knowledge].require_review_status', issues);
-		}
-
-		const context = validateNestedTable(retention, 'context', '[retention.context]', issues);
-		if (context) {
-			validatePositiveIntegerField(context, 'max_file_kb', '[retention.context].max_file_kb', issues);
-		}
-
-		const handoffs = validateNestedTable(retention, 'handoffs', '[retention.handoffs]', issues);
-		if (handoffs) {
-			validateAllowedStringField(handoffs, 'store', '[retention.handoffs].store', ALLOWED_RETENTION_STORES, issues);
-			validatePositiveIntegerField(handoffs, 'max_file_kb', '[retention.handoffs].max_file_kb', issues);
-			validatePositiveIntegerField(handoffs, 'max_total_mb', '[retention.handoffs].max_total_mb', issues);
-			validateBooleanField(handoffs, 'require_source_refs', '[retention.handoffs].require_source_refs', issues);
-		}
-
-		const repoMap = validateNestedTable(retention, 'repo_map', '[retention.repo_map]', issues);
-		if (repoMap) {
-			validatePositiveIntegerField(repoMap, 'max_file_kb', '[retention.repo_map].max_file_kb', issues);
-			validateBooleanField(repoMap, 'fail_if_larger', '[retention.repo_map].fail_if_larger', issues);
-		}
-	}
+export function validateMustflowConfig(mustflowToml: TomlTable | undefined, issues: CheckIssue[]): void {
+	issues.push(...collectMustflowConfigIssues(mustflowToml));
 }
 
 function validatePreferencesStringFields(

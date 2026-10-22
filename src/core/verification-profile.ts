@@ -36,11 +36,11 @@ export function applyVerificationProfile(
 	forceFull = false,
 ): readonly VerificationCandidate[] {
 	const runnable = candidates.filter((candidate) => candidate.status === 'runnable' && candidate.intent.length > 0);
-	if (forceFull || profile === 'release' || FULL_VERIFICATION_REASONS.has(reason) || runnable.length < 2) return candidates;
+	if (forceFull || profile === 'release' || FULL_VERIFICATION_REASONS.has(reason) || runnable.length < 2) return [...candidates];
 	if (runnable.some((candidate) => {
 		const intent = contract.intents[candidate.intent];
 		return isRecord(intent) && isRecord(intent.relations) && Array.isArray(intent.relations.requires_with) && intent.relations.requires_with.length > 0;
-	})) return candidates;
+	})) return [...candidates];
 
 	const budget = resolveVerificationProfile(profile).budgetSeconds as number;
 	const withinBudget = runnable.filter((candidate) => {
@@ -55,7 +55,7 @@ export function applyVerificationProfile(
 			.sort((left, right) => left.cost - right.cost || left.candidate.intent.localeCompare(right.candidate.intent))
 			.slice(0, 1)
 			.map((entry) => entry.candidate);
-	if (chosen.length === 0) return candidates;
+	if (chosen.length === 0) return [...candidates];
 
 	const selected = new Set(chosen.map((candidate) => candidate.intent));
 	return candidates.filter((candidate) => candidate.status !== 'runnable' || selected.has(candidate.intent));

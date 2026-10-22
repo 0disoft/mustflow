@@ -438,7 +438,12 @@ function selectVerificationCandidates(
 			continue;
 		}
 
-		costComparableGroups.set(signature, [...(costComparableGroups.get(signature) ?? []), candidate]);
+		const group = costComparableGroups.get(signature);
+		if (group) {
+			group.push(candidate);
+		} else {
+			costComparableGroups.set(signature, [candidate]);
+		}
 	}
 
 	for (const group of costComparableGroups.values()) {

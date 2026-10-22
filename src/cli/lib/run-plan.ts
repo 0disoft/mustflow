@@ -670,7 +670,7 @@ function createSuggestedIntentSnippet(
 }
 
 export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Record<string, unknown> {
-	return {
+	return structuredClone({
 		schema_version: '1',
 		command: 'run',
 		preview: true,
@@ -712,7 +712,7 @@ export function createRunPreview(plan: RunPlan, previewMode: RunPreviewMode): Re
 		preconditions: plan.preconditions,
 		active_lock_conflicts: plan.activeLockConflicts,
 		stale_active_locks: plan.staleActiveLocks,
-	};
+	});
 }
 
 export function renderRunPreviewText(plan: RunPlan, previewMode: RunPreviewMode, lang: CliLang = 'en'): string {
