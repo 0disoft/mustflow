@@ -6,6 +6,16 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.141.3 - 2026-10-23
+
+- Revalidate declared inputs and environment dependencies before reusing verification results, and preserve evidence gaps when checks are deferred.
+- Propagate cancellation through execution and dependency reads, enforce timer limits, and clean up partially acquired resources.
+- Serialize concurrent state updates and isolate script-pack execution guards.
+- Report incomplete adapter scans, degraded searches, and dependency failure causes.
+- Reduce repeated dashboard reads, share concurrent refreshes, and perform Git status queries asynchronously.
+- Speed up anchor indexing and command conflict queries while preserving sorting, duplicate handling, and conflict details.
+- Bound external skill downloads, reuse directory metadata, and reject oversized imports before installation.
+
 ## 2.141.2 - 2026-10-21
 
 - Preserve backup generations and recover partial initialization or template updates without overwriting concurrent edits.
