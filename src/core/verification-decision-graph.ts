@@ -321,9 +321,10 @@ function addNode(nodes: Map<string, VerificationDecisionGraphNode>, node: Verifi
 	}
 }
 
-function addEdge(edges: VerificationDecisionGraphEdge[], edge: VerificationDecisionGraphEdge): void {
-	if (!edges.some((item) => item.from === edge.from && item.to === edge.to && item.kind === edge.kind)) {
-		edges.push(edge);
+function addEdge(edges: Map<string, VerificationDecisionGraphEdge>, edge: VerificationDecisionGraphEdge): void {
+	const key = JSON.stringify([edge.from, edge.to, edge.kind]);
+	if (!edges.has(key)) {
+		edges.set(key, edge);
 	}
 }
 
@@ -351,8 +352,8 @@ export function createVerificationDecisionGraph(
 	schedule: VerificationSchedule,
 ): VerificationDecisionGraph {
 	const nodes = new Map<string, VerificationDecisionGraphNode>();
-	const edges: VerificationDecisionGraphEdge[] = [];
-	const candidateNodeByReasonAndIntent = new Map<string, string[]>();
+	const edges = new Map<string, VerificationDecisionGraphEdge>();
+	const candidateNodesByIntent = new Map<string, string[]>();
 
 	for (const requirement of requirements) {
 		const reasonNodeId = `classification_reason:${stableIdPart(requirement.reason)}`;
@@ -397,9 +398,10 @@ export function createVerificationDecisionGraph(
 		const eligibilityNodeId = `eligibility:${stableIdPart(candidate.reason)}:${intentPart}:${index + 1}`;
 		const status = candidateDecisionStatus(commandContract, candidate);
 		const command = readCommandMetadata(commandContract, candidate.intent);
-		const key = `${candidate.reason}\0${candidate.intent ?? ''}`;
-
-		candidateNodeByReasonAndIntent.set(key, [...(candidateNodeByReasonAndIntent.get(key) ?? []), candidateNodeId]);
+		const intent = candidate.intent ?? '';
+		const candidateNodeIds = candidateNodesByIntent.get(intent) ?? [];
+		candidateNodeIds.push(candidateNodeId);
+		candidateNodesByIntent.set(intent, candidateNodeIds);
 		addNode(nodes, {
 			id: candidateNodeId,
 			kind: 'command_candidate',
@@ -453,14 +455,8 @@ export function createVerificationDecisionGraph(
 				},
 			});
 
-			for (const [key, candidateNodeIds] of candidateNodeByReasonAndIntent.entries()) {
-				if (!key.endsWith(`\0${entry.intent}`)) {
-					continue;
-				}
-
-				for (const candidateNodeId of candidateNodeIds) {
-					addEdge(edges, { from: candidateNodeId, to: effectNodeId, kind: 'has_effect' });
-				}
+			for (const candidateNodeId of candidateNodesByIntent.get(entry.intent) ?? []) {
+				addEdge(edges, { from: candidateNodeId, to: effectNodeId, kind: 'has_effect' });
 			}
 		}
 	}
@@ -485,7 +481,7 @@ export function createVerificationDecisionGraph(
 	}
 
 	const sortedNodes = [...nodes.values()].sort((left, right) => left.id.localeCompare(right.id));
-	const sortedEdges = [...edges].sort(
+	const sortedEdges = [...edges.values()].sort(
 		(left, right) => left.from.localeCompare(right.from) || left.to.localeCompare(right.to) || left.kind.localeCompare(right.kind),
 	);
 

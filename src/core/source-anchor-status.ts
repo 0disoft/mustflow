@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { createUniqueSymbolCandidateLookup } from './source-anchor-candidates.js';
 
 import {
 	listSourceAnchorFiles,
@@ -291,18 +292,6 @@ function staleAnchorSignals(previous: SourceAnchorSnapshot, replacement: SourceA
 	};
 }
 
-function findUniqueSymbolCandidate(
-	previous: SourceAnchorSnapshot,
-	currentRecords: readonly SourceAnchorSnapshot[],
-): SourceAnchorSnapshot | null {
-	if (previous.fingerprint.symbol.kind === 'unknown' || previous.fingerprint.symbol.name === null) {
-		return null;
-	}
-
-	const matches = currentRecords.filter((record) => sameSymbolTarget(record.fingerprint.symbol, previous.fingerprint.symbol));
-	return matches.length === 1 ? matches[0] ?? null : null;
-}
-
 /**
  * mf:anchor core.source-anchor-status.index-records
  * purpose: Build source anchor index records with fingerprints and navigation-only status metadata.
@@ -356,6 +345,7 @@ export function collectSourceAnchorIndexRecords(
 
 	const previousById = new Map(previousSnapshots.map((snapshot) => [snapshot.id, snapshot]));
 	const currentById = new Set(currentRecords.map((record) => record.id));
+	const findUniqueSymbolCandidate = createUniqueSymbolCandidateLookup(currentRecords);
 	const records: SourceAnchorIndexRecord[] = currentRecords.map((record) => ({
 		...record,
 		...compareSourceAnchorStatus(record, previousById.get(record.id) ?? null),
@@ -366,7 +356,7 @@ export function collectSourceAnchorIndexRecords(
 			continue;
 		}
 
-		const replacement = findUniqueSymbolCandidate(previous, currentRecords);
+		const replacement = findUniqueSymbolCandidate(previous);
 		const status: SourceAnchorStatus = replacement ? (hasHighRisk(previous.risk) ? 'review' : 'moved') : 'stale';
 
 		records.push({
