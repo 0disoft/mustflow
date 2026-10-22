@@ -1,4 +1,5 @@
 import { createRequire, syncBuiltinESMExports } from 'node:module';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import type * as ChildProcess from 'node:child_process';
 import type * as Fs from 'node:fs';
 import type * as WorkerThreads from 'node:worker_threads';
@@ -32,6 +33,7 @@ export interface ScriptPackGuardDenial {
 
 interface GuardContext {
 	readonly denials: ScriptPackGuardDenial[];
+	active: boolean;
 }
 
 const MAX_RECORDED_DENIALS = 20;
@@ -167,7 +169,9 @@ const FS_WRITE_OPEN_FLAG_BITS =
 	fs.constants.O_CREAT |
 	fs.constants.O_TRUNC |
 	fs.constants.O_APPEND;
-let activeGuardContext: GuardContext | null = null;
+const guardContexts = new AsyncLocalStorage<GuardContext>();
+let activeGuardCount = 0;
+let restoreSharedGuards: (() => void) | null = null;
 
 export class ScriptPackExecutionDeniedError extends Error {
 	readonly command: string;
@@ -230,10 +234,11 @@ function createGuardDenial(command: string, args: readonly string[], reason: str
 }
 
 function recordGuardDenial(denial: ScriptPackGuardDenial): void {
-	if (!activeGuardContext || activeGuardContext.denials.length >= MAX_RECORDED_DENIALS) {
+	const context = guardContexts.getStore();
+	if (!context?.active || context.denials.length >= MAX_RECORDED_DENIALS) {
 		return;
 	}
-	activeGuardContext.denials.push(denial);
+	context.denials.push(denial);
 }
 
 function createDeniedError(command: string, args: readonly string[], reason: string): ScriptPackExecutionDeniedError {
@@ -243,12 +248,14 @@ function createDeniedError(command: string, args: readonly string[], reason: str
 }
 
 export function getCurrentScriptPackGuardDenials(): readonly ScriptPackGuardDenial[] {
-	return activeGuardContext?.denials.map((denial) => ({
+	const context = guardContexts.getStore();
+	if (!context?.active) return [];
+	return context.denials.map((denial) => ({
 		surface: denial.surface,
 		reason: denial.reason,
 		command: denial.command,
 		args: [...denial.args],
-	})) ?? [];
+	}));
 }
 
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
@@ -585,7 +592,7 @@ function patchProcessStateGuards(): readonly GuardPatch[] {
 	return patches;
 }
 
-export async function withScriptPackChildProcessGuard<T>(callback: () => Promise<T>): Promise<T> {
+function installScriptPackGuards(): () => void {
 	const original: GuardedChildProcessFunctions = {
 		exec: childProcess.exec,
 		execFile: childProcess.execFile,
@@ -602,20 +609,31 @@ export async function withScriptPackChildProcessGuard<T>(callback: () => Promise
 		...patchBunGuards(),
 		...patchProcessStateGuards(),
 	];
-	const parentGuardContext = activeGuardContext;
-	const guardContext: GuardContext = { denials: [] };
-
 	Object.assign(childProcess, guarded);
 	syncBuiltinESMExports();
-	activeGuardContext = guardContext;
-	try {
-		return await callback();
-	} finally {
-		activeGuardContext = parentGuardContext;
-		for (const patch of [...patches].reverse()) {
-			patch.restore();
+	return () => {
+		try {
+			for (const patch of [...patches].reverse()) patch.restore();
+		} finally {
+			Object.assign(childProcess, original);
+			syncBuiltinESMExports();
 		}
-		Object.assign(childProcess, original);
-		syncBuiltinESMExports();
+	};
+}
+
+export async function withScriptPackChildProcessGuard<T>(callback: () => Promise<T>): Promise<T> {
+	if (activeGuardCount === 0) restoreSharedGuards = installScriptPackGuards();
+	activeGuardCount += 1;
+	const context: GuardContext = { denials: [], active: true };
+	try {
+		return await guardContexts.run(context, callback);
+	} finally {
+		context.active = false;
+		activeGuardCount -= 1;
+		if (activeGuardCount === 0) {
+			const restore = restoreSharedGuards;
+			restoreSharedGuards = null;
+			restore?.();
+		}
 	}
 }

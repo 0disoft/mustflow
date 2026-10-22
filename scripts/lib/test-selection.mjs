@@ -220,6 +220,8 @@ export function createTestSelection(allCliTests, options = {}) {
 	]);
 
 	const relatedRules = [
+		{ match: /^src\/cli\/lib\/script-pack-execution-guard\.ts$/u,
+			tests: ['script-pack-execution-guard-contracts.test.js'] },
 		{ match: /^src\/cli\/commands\/run\/(?:lifecycle|execution|executor)\.ts$/u,
 			tests: ['run-lifecycle.test.js', 'run-cancellation.test.js'] },
 		{ match: /^(?:src\/cli\/lib\/(?:validation\/config|run-plan)|src\/core\/(?:change-verification|verification-profile))\.ts$/u,

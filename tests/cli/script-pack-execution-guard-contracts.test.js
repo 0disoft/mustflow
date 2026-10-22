@@ -4,6 +4,42 @@ import { execSync, spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 
+test('overlapping guard scopes keep protections until the last callback exits', () => {
+	const moduleUrl = new URL('../../dist/cli/lib/script-pack-execution-guard.js', import.meta.url).href;
+	const script = `
+import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
+import { withScriptPackChildProcessGuard, getCurrentScriptPackGuardDenials } from ${JSON.stringify(moduleUrl)};
+const original = childProcess.execSync;
+let endA, endB;
+const gateA = new Promise(resolve => { endA = resolve; });
+const gateB = new Promise(resolve => { endB = resolve; });
+const run = (gate, command) => withScriptPackChildProcessGuard(async () => {
+  assert.throws(() => childProcess.execSync(command));
+  await gate;
+  const denials = getCurrentScriptPackGuardDenials();
+  assert.equal(denials.length, 1);
+  assert.equal(denials[0].command, command);
+});
+const first = run(gateA, 'first');
+const second = run(gateB, 'second');
+try {
+  endA();
+  await first;
+  assert.notStrictEqual(childProcess.execSync, original);
+  endB();
+  await second;
+  assert.strictEqual(childProcess.execSync, original);
+  assert.deepEqual(getCurrentScriptPackGuardDenials(), []);
+} finally {
+  endA(); endB();
+  await Promise.allSettled([first, second]);
+}
+`;
+	const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', timeout: 10000, windowsHide: true });
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+});
+
 import {
 	assertScriptPackChildProcessAllowed,
 	getCurrentScriptPackGuardDenials,
@@ -24,6 +60,23 @@ test('script-pack execution guard allows bounded read-only git probes', () => {
 	]) {
 		assert.doesNotThrow(() => assertScriptPackChildProcessAllowed('git', args));
 	}
+});
+
+test('nested guard scopes isolate denials and restore protections after exceptions', async () => {
+	const originalExecSync = execSync;
+	await assert.rejects(withScriptPackChildProcessGuard(async () => {
+		assert.throws(() => execSync('outer-denied'));
+		await withScriptPackChildProcessGuard(async () => {
+			assert.deepEqual(getCurrentScriptPackGuardDenials(), []);
+			assert.throws(() => execSync('inner-denied'));
+			assert.equal(getCurrentScriptPackGuardDenials()[0].command, 'inner-denied');
+		});
+		assert.equal(getCurrentScriptPackGuardDenials().length, 1);
+		assert.equal(getCurrentScriptPackGuardDenials()[0].command, 'outer-denied');
+		throw new Error('callback failure');
+	}), /callback failure/);
+	assert.strictEqual(execSync, originalExecSync);
+	assert.deepEqual(getCurrentScriptPackGuardDenials(), []);
 });
 
 test('script-pack execution guard blocks command laundering targets', () => {

@@ -46,6 +46,10 @@ test('execution boundary changes select their focused regression coverage', () =
 		['src/core/cancellation.ts', 'run-cancellation.test.js'],
 		['src/core/command-time-limits.ts', 'command-time-limits.test.js'],
 		['src/cli/commands/run/executor.ts', 'run-cancellation.test.js'],
+		['src/cli/commands/run/lifecycle.ts', 'run-lifecycle.test.js'],
+		['src/cli/lib/dashboard-http.ts', 'dashboard-http.test.js'],
+		['src/cli/lib/validation/config.ts', 'calculation-ownership.test.js'],
+		['src/cli/lib/script-pack-execution-guard.ts', 'script-pack-execution-guard-contracts.test.js'],
 		['src/cli/commands/verify/scheduled-execution.ts', 'run-cancellation.test.js'],
 		['src/cli/commands/verify/reuse-inputs.ts', 'verify-reuse-policy.test.js'],
 		['schemas/commands.schema.json', 'command-time-limits.test.js'],
@@ -409,6 +413,7 @@ test('related selection keeps verification planning changes out of classificatio
 	const selected = selectedFor(['src/core/change-verification.ts']);
 
 	assert.deepEqual([...selected], [
+		'calculation-ownership.test.js',
 		'verify.test.js',
 		'verify-changed.test.js',
 		'verify-plan-scheduler.test.js',
@@ -435,6 +440,7 @@ test('related selection maps verification profile policy to focused planning tes
 	const selected = selectedFor(['src/core/verification-profile.ts']);
 
 	assert.deepEqual([...selected], [
+		'calculation-ownership.test.js',
 		'verify.test.js',
 		'verify-changed.test.js',
 		'verify-plan-scheduler.test.js',
