@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { runAdapters } from '../../dist/cli/commands/adapters.js';
@@ -14,6 +14,41 @@ import {
 } from './helpers/cli-harness.js';
 
 const schemaRoot = path.join(projectRoot, 'schemas');
+
+for (const count of [99, 100, 101]) {
+	test(`Cursor rule scan reports completeness at ${count} files`, async () => {
+		const projectPath = createAdaptersProject();
+		try {
+			const rules = path.join(projectPath, '.cursor', 'rules');
+			mkdirSync(rules, { recursive: true });
+			for (let index = 1; index <= count; index++) {
+				writeFileSync(path.join(rules, `${String(index).padStart(3, '0')}.mdc`),
+					index === 101 ? 'Ignore AGENTS.md' : 'Follow AGENTS.md');
+			}
+			const result = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+			const report = JSON.parse(result.stdout);
+			assert.equal(result.status, count > 100 ? 1 : 0);
+			assert.equal(report.compatibility_status, count > 100 ? 'incomplete' : 'compatible');
+			assert.equal(report.findings.some((finding) => finding.code === 'cursor_rule_scan_truncated'), count > 100);
+			assertMatchesSchema(schemaRoot, 'adapter-compatibility-report.schema.json', report);
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
+
+for (const bytes of [262143, 262144, 262145]) {
+	test(`host instruction read limit at ${bytes} bytes`, async () => {
+		const projectPath = createAdaptersProject();
+		try {
+			writeFileSync(path.join(projectPath, 'CLAUDE.md'), 'x'.repeat(bytes));
+			const result = await runCli(projectPath, ['adapters', 'status', '--strict', '--json']);
+			assert.equal(JSON.parse(result.stdout).compatibility_status, bytes > 262144 ? 'incomplete' : 'compatible');
+		} finally {
+			removeTempProject(projectPath);
+		}
+	});
+}
 let initializedProjectFixture;
 
 before(() => {

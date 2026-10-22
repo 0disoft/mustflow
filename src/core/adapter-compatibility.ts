@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, lstatSync, openSync, readFileSync, readSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const ADAPTER_SCHEMA_VERSION = '1';
@@ -264,7 +264,34 @@ function readHostInstruction(projectRoot: string, relativePath: string): HostIns
 			};
 		}
 
-		return { status: 'present', text: readFileSync(fullPath, 'utf8') };
+		const fd = openSync(fullPath, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+		try {
+			const opened = fstatSync(fd);
+			if (!opened.isFile() || opened.dev !== stat.dev || opened.ino !== stat.ino) {
+				throw new Error('host_instruction_changed');
+			}
+			const buffer = Buffer.alloc(MAX_HOST_INSTRUCTION_BYTES + 1);
+			let bytes = 0;
+			while (bytes < buffer.length) {
+				const count = readSync(fd, buffer, bytes, buffer.length - bytes, null);
+				if (count === 0) break;
+				bytes += count;
+			}
+			if (bytes > MAX_HOST_INSTRUCTION_BYTES || fstatSync(fd).size > MAX_HOST_INSTRUCTION_BYTES) {
+				return { status: 'too_large_not_read', text: null, finding: makeFinding(
+					'warning', 'host_instruction_too_large_not_read', relativePath,
+					'Host instruction exceeded the read limit while being read.', false,
+				) };
+			}
+			const current = lstatSync(fullPath);
+			if (current.isSymbolicLink() || current.dev !== opened.dev || current.ino !== opened.ino ||
+				current.size !== opened.size || current.mtimeMs !== opened.mtimeMs) {
+				throw new Error('host_instruction_changed');
+			}
+			return { status: 'present', text: buffer.subarray(0, bytes).toString('utf8') };
+		} finally {
+			closeSync(fd);
+		}
 	} catch {
 		return {
 			status: 'unreadable',
@@ -280,27 +307,27 @@ function readHostInstruction(projectRoot: string, relativePath: string): HostIns
 	}
 }
 
-function collectCursorRuleDefinitions(projectRoot: string): readonly HostInstructionDefinition[] {
+function collectCursorRuleDefinitions(projectRoot: string): { definitions: readonly HostInstructionDefinition[]; truncated: boolean } {
 	const cursorRulesPath = resolveProjectPath(projectRoot, '.cursor/rules');
 
 	if (!existsSync(cursorRulesPath)) {
-		return [];
+		return { definitions: [], truncated: false };
 	}
 
 	try {
 		const stat = lstatSync(cursorRulesPath);
 
 		if (!stat.isDirectory() || stat.isSymbolicLink()) {
-			return [{ host: 'cursor', path: '.cursor/rules/' }];
+			return { definitions: [{ host: 'cursor', path: '.cursor/rules/' }], truncated: false };
 		}
 
-		return readdirSync(cursorRulesPath, { withFileTypes: true })
-			.filter((entry) => entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.mdc')))
+		const definitions = readdirSync(cursorRulesPath, { withFileTypes: true })
+			.filter((entry) => (entry.isFile() || entry.isSymbolicLink()) && (entry.name.endsWith('.md') || entry.name.endsWith('.mdc')))
 			.map((entry) => ({ host: 'cursor' as const, path: `.cursor/rules/${entry.name}` }))
-			.sort((left, right) => left.path.localeCompare(right.path))
-			.slice(0, MAX_CURSOR_RULE_FILES);
+			.sort((left, right) => left.path.localeCompare(right.path));
+		return { definitions: definitions.slice(0, MAX_CURSOR_RULE_FILES), truncated: definitions.length > MAX_CURSOR_RULE_FILES };
 	} catch {
-		return [{ host: 'cursor', path: '.cursor/rules/' }];
+		return { definitions: [{ host: 'cursor', path: '.cursor/rules/' }], truncated: false };
 	}
 }
 
@@ -359,7 +386,8 @@ function buildAdapterSurfaces(projectRoot: string): readonly AdapterSurface[] {
 }
 
 export function inspectAdapterCompatibility(projectRoot: string): AdapterCompatibilityReport {
-	const hostDefinitions = [...HOST_INSTRUCTION_FILES, ...collectCursorRuleDefinitions(projectRoot)];
+	const cursorRules = collectCursorRuleDefinitions(projectRoot);
+	const hostDefinitions = [...HOST_INSTRUCTION_FILES, ...cursorRules.definitions];
 	const hostFiles: AdapterHostFile[] = [];
 	const findings: AdapterFinding[] = [
 		makeFinding(
@@ -385,6 +413,10 @@ export function inspectAdapterCompatibility(projectRoot: string): AdapterCompati
 		),
 	];
 
+	if (cursorRules.truncated) {
+		findings.push(makeFinding('warning', 'cursor_rule_scan_truncated', '.cursor/rules/',
+			`Only the first ${MAX_CURSOR_RULE_FILES} Cursor rules were inspected; compatibility is incomplete.`, false));
+	}
 	for (const definition of hostDefinitions) {
 		const read = readHostInstruction(projectRoot, definition.path);
 		hostFiles.push(makeHostFile(definition, read.status));
@@ -406,7 +438,7 @@ export function inspectAdapterCompatibility(projectRoot: string): AdapterCompati
 		command: 'adapters_status',
 		ok: true,
 		compatibility_status: requiredChanges.length > 0 ? 'conflicts'
-			: !fileExists(projectRoot, 'AGENTS.md') || hostFiles.some((file) => file.status !== 'present' && file.status !== 'absent') ? 'incomplete'
+			: cursorRules.truncated || !fileExists(projectRoot, 'AGENTS.md') || hostFiles.some((file) => file.status !== 'present' && file.status !== 'absent') ? 'incomplete'
 			: 'compatible',
 		mustflow_root: projectRoot,
 		agents_file: {
