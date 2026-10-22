@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { MAX_COMMAND_TIMEOUT_SECONDS, MAX_COMMAND_KILL_AFTER_SECONDS } from './command-time-limits.js';
 
 import {
 	COMMAND_LIFECYCLES,
@@ -152,6 +153,11 @@ function validatePositiveIntegerField(
 ): void {
 	if (hasOwn(table, key) && !isPositiveInteger(table[key])) {
 		issues.push(commandContractIssue(`${label} must be a positive integer`));
+	}
+	const maximum = key === 'kill_after_seconds' ? MAX_COMMAND_KILL_AFTER_SECONDS
+		: key === 'timeout_seconds' || key === 'default_timeout_seconds' ? MAX_COMMAND_TIMEOUT_SECONDS : null;
+	if (maximum !== null && isPositiveInteger(table[key]) && Number(table[key]) > maximum) {
+		issues.push(commandContractIssue(`${label} must be at most ${maximum} seconds to avoid timer overflow`));
 	}
 }
 

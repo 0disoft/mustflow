@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { interruptionError } from '../../../core/cancellation.js';
+import { commandTimersAreSafe, TERMINATION_CONFIRMATION_FALLBACK_MS } from '../../../core/command-time-limits.js';
 
 import { BoundedOutputBuffer, type BoundedOutputSnapshot } from '../../../core/bounded-output.js';
 import {
@@ -21,7 +22,6 @@ import {
 } from './output.js';
 import { createWindowsCommandScriptSpawn } from './windows-command-script.js';
 
-const TERMINATION_CONFIRMATION_FALLBACK_MS = 1000;
 const TERMINATION_CONFIRMATION_POLL_MS = 25;
 
 export interface CommandExecutionOptions {
@@ -103,6 +103,11 @@ function runSpawnedCommandStreaming(
 ): Promise<CommandResult> {
 	if (options.signal?.aborted) {
 		return Promise.resolve({ status: null, signal: null, error: interruptionError(),
+			stdout: createEmptyOutputSnapshot(stdoutTailBytes), stderr: createEmptyOutputSnapshot(stderrTailBytes), termination: null });
+	}
+	if (!commandTimersAreSafe(timeoutSeconds, killAfterSeconds)) {
+		return Promise.resolve({ status: null, signal: null,
+			error: Object.assign(new Error('Command timeout or kill delay exceeds safe timer bounds'), { code: 'EINVAL' }),
 			stdout: createEmptyOutputSnapshot(stdoutTailBytes), stderr: createEmptyOutputSnapshot(stderrTailBytes), termination: null });
 	}
 	if (command.executable.trim().length === 0) {
