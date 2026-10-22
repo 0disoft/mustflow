@@ -1,6 +1,7 @@
 import { getLocalIndexDatabasePath } from './database-path.js';
 import { queryRows, splitIndexedList, toSearchString } from './database-read.js';
 import { withLocalIndexDatabase } from './read-session.js';
+import { commandLockConflictQuery } from './command-effect-queries.js';
 import type { SqlJsDatabase, SqlValue } from './sql.js';
 import type {
 	LocalCommandEffectGraph,
@@ -90,29 +91,15 @@ ORDER BY intent, lock
 			sources: splitIndexedList(row.sources),
 			concurrencies: splitIndexedList(row.concurrencies),
 			effectCount: typeof row.effect_count === 'number' && Number.isFinite(row.effect_count) ? row.effect_count : 0,
-			});
+		});
 
 		for (const row of queryRows(
 			database,
-			`
-SELECT
-  left_intent,
-  right_intent,
-  lock,
-  left_paths,
-  right_paths,
-  left_modes,
-  right_modes,
-  left_concurrencies,
-  right_concurrencies
-FROM command_lock_conflicts
-WHERE left_intent IN (${placeholders}) OR right_intent IN (${placeholders})
-ORDER BY lock, left_intent, right_intent
-`,
-			[...chunk, ...chunk],
+			commandLockConflictQuery(placeholders),
+			[...chunk, ...chunk, ...chunk],
 		)) {
 			for (const intent of [toSearchString(row.left_intent), toSearchString(row.right_intent)]) {
-			if (targets.has(intent)) conflictsByIntent.get(intent)!.push(mapCommandLockConflict(row, intent));
+				if (targets.has(intent)) conflictsByIntent.get(intent)!.push(mapCommandLockConflict(row, intent));
 			}
 		}
 	}

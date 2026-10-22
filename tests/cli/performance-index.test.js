@@ -3,8 +3,33 @@ import { test } from 'node:test';
 import { loadSqlJs } from '../../dist/cli/lib/local-index/sql.js';
 import { createSchema } from '../../dist/cli/lib/local-index/schema.js';
 import { queryLocalCommandEffectGraphs } from '../../dist/cli/lib/local-index/effect-graph-read-model.js';
+import { commandLockConflictQuery } from '../../dist/cli/lib/local-index/command-effect-queries.js';
+import { queryRows, splitIndexedList } from '../../dist/cli/lib/local-index/database-read.js';
 import { withLocalIndexDatabase, withLocalIndexReadSession } from '../../dist/cli/lib/local-index/read-session.js';
 import { createLocalIndexDirect, createMinimalWorkflowProject, removeTempProject } from './index-support.js';
+
+test('preaggregated conflicts match the view for mixed reads, writes, duplicates and null paths', async () => {
+	const SQL = await loadSqlJs();
+	const database = new SQL.Database();
+	try {
+		createSchema(database, { backend: 'table_scan', fts5Available: false });
+		const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		for (const [index, intent] of names.entries()) {
+			for (const lock of ['shared', 'second']) {
+				for (const ordinal of [0, 1, 2, 2]) {
+					database.run('INSERT INTO command_effects VALUES (?, ?, ?, ?, ?, ?, ?)', [intent, 'effects', index < 6 && index % 3 === 0 && ordinal === 0 ? 'write' : 'read', index < 6 && index % 3 === 1 && ordinal === 1 ? 'delete_recreate' : 'replace', ordinal === 0 ? null : `${intent},${ordinal}.txt`, lock, index < 6 && index % 3 === 2 && ordinal === 2 ? 'exclusive' : 'shared']);
+				}
+			}
+		}
+		const normalize = (rows) => rows.map((row) => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, ['lock', 'left_intent', 'right_intent'].includes(key) ? value : splitIndexedList(value)])));
+		for (const targets of [['a'], ['b', 'c'], names, ['missing']]) {
+			const placeholders = targets.map(() => '?').join(',');
+			const expected = queryRows(database, `SELECT * FROM command_lock_conflicts WHERE left_intent IN (${placeholders}) OR right_intent IN (${placeholders}) ORDER BY lock, left_intent, right_intent`, [...targets, ...targets]);
+			const actual = queryRows(database, commandLockConflictQuery(placeholders), [...targets, ...targets, ...targets]);
+			assert.deepEqual(normalize(actual), normalize(expected));
+		}
+	} finally { database.close(); }
+});
 
 test('command effects batch across 200 intents without duplicate or reversed conflicts', async () => {
 	const SQL = await loadSqlJs();
