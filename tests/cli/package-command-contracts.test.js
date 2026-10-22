@@ -165,8 +165,8 @@ test('source repository keeps full tests for release and cross-cutting verificat
 	assert.doesNotMatch(fullTestIntent, /"behavior_change"/u);
 });
 
-test('source repository verification plan prefers cached related tests for ordinary code changes', () => {
-	const result = spawnSync(process.execPath, [cliPath, 'verify', '--reason', 'code_change', '--plan-only', '--json'], {
+test('source repository release profile prefers cached related tests for ordinary code changes', () => {
+	const result = spawnSync(process.execPath, [cliPath, 'verify', '--reason', 'code_change', '--profile', 'release', '--plan-only', '--json'], {
 		cwd: projectRoot,
 		encoding: 'utf8',
 	});
@@ -179,12 +179,29 @@ test('source repository verification plan prefers cached related tests for ordin
 	assert.equal(related?.selectionState, 'not_selected');
 	assert.deepEqual(
 		report.schedule.entries.map((entry) => entry.intent),
-		['test_related_cached'],
+		['lint', 'quality_gaming_check', 'test_related_cached'],
 	);
-	assert.equal(report.verification_profile.profile, 'edit');
-	assert.equal(report.verification_profile.budgetSeconds, 15);
+	assert.equal(report.verification_profile.profile, 'release');
+	assert.equal(report.verification_profile.budgetSeconds, null);
 	assert.equal(report.candidates.some((candidate) => candidate.intent === 'build'), false);
 	assert.equal(report.candidates.some((candidate) => candidate.intent === 'test'), false);
+});
+
+test('source repository edit profile retains deferred related tests as a verification gap', () => {
+	const result = spawnSync(process.execPath, [cliPath, 'verify', '--reason', 'code_change', '--plan-only', '--json'], {
+		cwd: projectRoot,
+		encoding: 'utf8',
+	});
+	assert.equal(result.status, 0, result.stderr || result.stdout);
+	const report = JSON.parse(result.stdout);
+	const cached = report.candidates.find((candidate) => candidate.intent === 'test_related_cached');
+
+	assert.equal(cached?.selectionState, 'not_selected');
+	assert.equal(cached?.deferred, true);
+	assert.equal(report.schedule.entries.some((entry) => entry.intent === 'test_related_cached'), false);
+	assert.ok(report.gaps.some((gap) => gap.deferred_intents?.includes('test_related_cached')));
+	assert.equal(report.verification_profile.profile, 'edit');
+	assert.equal(report.verification_profile.budgetSeconds, 15);
 });
 
 test('source repository declares bounded prompt-cache audit checks', () => {
