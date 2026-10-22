@@ -220,6 +220,8 @@ export function createTestSelection(allCliTests, options = {}) {
 	]);
 
 	const relatedRules = [
+		{ match: /^src\/cli\/commands\/run\/(?:lifecycle|execution|executor)\.ts$/u,
+			tests: ['run-lifecycle.test.js', 'run-cancellation.test.js'] },
 		{ match: /^(?:src\/cli\/lib\/(?:validation\/config|run-plan)|src\/core\/(?:change-verification|verification-profile))\.ts$/u,
 			tests: ['calculation-ownership.test.js'] },
 		{ match: /^src\/core\/(?:verification-resource-budget|process-start-token-cache)\.ts$/u,

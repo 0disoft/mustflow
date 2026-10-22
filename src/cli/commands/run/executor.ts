@@ -22,6 +22,8 @@ import {
 } from './output.js';
 import { createWindowsCommandScriptSpawn } from './windows-command-script.js';
 
+import { commandLifecycleOutcome, createCommandLifecycleState, transitionCommandLifecycle, type CommandLifecycleEvent } from './lifecycle.js';
+
 const TERMINATION_CONFIRMATION_POLL_MS = 25;
 
 export interface CommandExecutionOptions {
@@ -124,21 +126,20 @@ function runSpawnedCommandStreaming(
 	return new Promise((resolve) => {
 		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
 		const stderr = new BoundedOutputBuffer(stderrTailBytes);
-		let settled = false;
-		let timedOut = false;
-		let childError: Error | undefined;
-		let childPid: number | undefined;
+		let state = createCommandLifecycleState();
+		const updateState = (event: CommandLifecycleEvent): boolean => {
+			const next = transitionCommandLifecycle(state, event);
+			if (next === state) return false;
+			state = next;
+			return true;
+		};
 		let stdoutBytes = 0;
 		let stderrBytes = 0;
 		let timeout: NodeJS.Timeout | undefined;
 		let forceKillTimeout: NodeJS.Timeout | undefined;
 		let terminationFallbackTimeout: NodeJS.Timeout | undefined;
 		let terminationPollTimeout: NodeJS.Timeout | undefined;
-		let terminationStarted = false;
 		let outputLimitMarkerWritten = false;
-		let childClosed = false;
-		let childCloseStatus: number | null = null;
-		let childCloseSignal: string | null = null;
 		let supervisor: ProcessSupervisor | null = null;
 
 		const spawnCommand = normalizeSpawnedCommandInput(command);
@@ -151,7 +152,7 @@ function runSpawnedCommandStreaming(
 			windowsVerbatimArguments: spawnCommand.windowsVerbatimArguments,
 			detached: process.platform !== 'win32',
 		});
-		childPid = child.pid;
+		const childPid = child.pid;
 
 		const parentSignalHandlers = new Map<NodeJS.Signals, () => void>();
 		const clearParentSignalHandlers = (): void => {
@@ -162,11 +163,7 @@ function runSpawnedCommandStreaming(
 		};
 
 		const finish = (status: number | null, signal: string | null): void => {
-			if (settled) {
-				return;
-			}
-
-			settled = true;
+			if (!updateState({ type: 'settle' })) return;
 
 			if (timeout) {
 				clearTimeout(timeout);
@@ -185,9 +182,7 @@ function runSpawnedCommandStreaming(
 			const supervisorSnapshot = supervisor?.snapshot() ?? null;
 			const termination = supervisorSnapshot === null ? null : (({ pid: _pid, ...receipt }) => receipt)(supervisorSnapshot);
 			resolve({
-				status: timedOut ? null : status,
-				signal: timedOut ? null : signal,
-				error: timedOut ? Object.assign(new Error('Command timed out'), { code: 'ETIMEDOUT' }) : childError,
+				...commandLifecycleOutcome(state, status, signal),
 				stdout: stdout.toSnapshot(),
 				stderr: stderr.toSnapshot(),
 				pid: childPid,
@@ -196,22 +191,18 @@ function runSpawnedCommandStreaming(
 		};
 
 		const pollForTermination = (): void => {
-			if (settled || !supervisor) {
+			if (state.settled || !supervisor) {
 				return;
 			}
-			if (supervisor.refreshProcessTreeState() === 'gone' && childClosed) {
-				finish(childCloseStatus, childCloseSignal);
+			if (supervisor.refreshProcessTreeState() === 'gone' && state.childClosed) {
+				finish(state.closeStatus, state.closeSignal);
 				return;
 			}
 			terminationPollTimeout = setTimeout(pollForTermination, TERMINATION_CONFIRMATION_POLL_MS);
 		};
 
 		const beginTermination = (reason: ProcessTerminationReason): void => {
-			if (terminationStarted) {
-				return;
-			}
-
-			terminationStarted = true;
+			if (!updateState({ type: 'begin_termination' })) return;
 			child.stdout?.destroy();
 			child.stderr?.destroy();
 			if (childPid) {
@@ -227,17 +218,13 @@ function runSpawnedCommandStreaming(
 			terminationFallbackTimeout = setTimeout(() => {
 				supervisor?.refreshProcessTreeState();
 				child.unref();
-				finish(childCloseStatus, childCloseSignal);
+				finish(state.closeStatus, state.closeSignal);
 			}, forceAfterMs + TERMINATION_CONFIRMATION_FALLBACK_MS);
 			pollForTermination();
 		};
 
 		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
-			if (settled || childError) {
-				return;
-			}
-
-			childError = createOutputLimitError(stream, maxOutputBytes);
+			if (!updateState({ type: 'output_limit', error: createOutputLimitError(stream, maxOutputBytes) })) return;
 			if (timeout) {
 				clearTimeout(timeout);
 				timeout = undefined;
@@ -246,8 +233,7 @@ function runSpawnedCommandStreaming(
 		};
 
 		const onAbort = (): void => {
-			if (settled || terminationStarted) return;
-			childError = interruptionError();
+			if (!updateState({ type: 'abort', error: interruptionError() })) return;
 			beginTermination('parent_signal');
 		};
 		options.signal?.addEventListener('abort', onAbort, { once: true });
@@ -297,13 +283,11 @@ function runSpawnedCommandStreaming(
 			handleOutputChunk('stderr', stderr, chunk);
 		});
 		child.once('error', (error) => {
-			childError = error;
+			updateState({ type: 'child_error', error });
 		});
 		child.once('close', (status, signal) => {
-			childClosed = true;
-			childCloseStatus = status;
-			childCloseSignal = signal;
-			if (!terminationStarted) {
+			updateState({ type: 'child_close', status, signal });
+			if (!state.terminationStarted) {
 				finish(status, signal);
 				return;
 			}
@@ -315,7 +299,7 @@ function runSpawnedCommandStreaming(
 
 		for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
 			const handler = (): void => {
-				childError ??= Object.assign(new Error(`Command interrupted by parent ${signal}`), { code: 'EINTERRUPTED' });
+				updateState({ type: 'parent_signal', error: Object.assign(new Error(`Command interrupted by parent ${signal}`), { code: 'EINTERRUPTED' }) });
 				beginTermination('parent_signal');
 			};
 			parentSignalHandlers.set(signal, handler);
@@ -323,11 +307,7 @@ function runSpawnedCommandStreaming(
 		}
 
 		timeout = setTimeout(() => {
-			if (settled || childError) {
-				return;
-			}
-
-			timedOut = true;
+			if (!updateState({ type: 'timeout' })) return;
 			beginTermination('timeout');
 		}, timeoutSeconds * 1000);
 	});

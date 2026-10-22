@@ -39,6 +39,7 @@ import {
 import { getRunStatus, runArgvCommandStreaming, runShellCommandStreaming } from './executor.js';
 import { emitOutput, isOutputLimitExceededError } from './output.js';
 import { writeLatestRunProfile } from './profile.js';
+import { shouldReleaseRunResources } from './lifecycle.js';
 import { assembleRunReceipt } from './receipt.js';
 
 export interface RunCommandOptions {
@@ -373,8 +374,7 @@ async function executeRunCommandWithSignal(
 		return { exitCode: 1, receipt: null };
 	}
 
-	let releaseActiveRunLock = true;
-	let releaseVerificationResourceLease = true;
+	let releaseResources = true;
 	let verificationResourceLease: VerificationResourceLease | null = null;
 	try {
 		if (isVerificationChildRun(options)) {
@@ -475,8 +475,7 @@ async function executeRunCommandWithSignal(
 		if (result.termination) {
 			termination = result.termination;
 			killMethod = termination.method;
-			releaseActiveRunLock = termination.confirmed;
-			releaseVerificationResourceLease = termination.confirmed;
+			releaseResources = shouldReleaseRunResources(termination);
 		}
 
 		const receipt = profiler.measure('receipt_create', () =>
@@ -547,10 +546,8 @@ async function executeRunCommandWithSignal(
 
 		return { exitCode: commandExitCode, receipt };
 	} finally {
-		if (releaseVerificationResourceLease) {
+		if (releaseResources) {
 			verificationResourceLease?.release();
-		}
-		if (releaseActiveRunLock) {
 			activeRunLock.handle.release();
 		}
 	}
