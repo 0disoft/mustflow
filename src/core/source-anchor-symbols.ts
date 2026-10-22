@@ -193,7 +193,10 @@ export function unknownSourceAnchorSymbol(): SourceAnchorSymbol {
 }
 
 export function extractSourceAnchorSymbol(content: string, anchorLineStart: number): SourceAnchorSymbol {
-	const lines = content.split(/\r?\n/u);
+	return extractSourceAnchorSymbolFromLines(content.split(/\r?\n/u), anchorLineStart);
+}
+
+export function extractSourceAnchorSymbolFromLines(lines: readonly string[], anchorLineStart: number): SourceAnchorSymbol {
 	const scanStart = Math.max(0, anchorLineStart);
 	const scanEnd = Math.min(lines.length, scanStart + 24);
 

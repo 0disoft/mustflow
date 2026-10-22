@@ -12,7 +12,7 @@ import {
 	type SourceAnchorSummary,
 } from './source-anchors.js';
 import {
-	extractSourceAnchorSymbol,
+	extractSourceAnchorSymbolFromLines,
 	type SourceAnchorSymbol,
 	type SourceAnchorSymbolKind,
 } from './source-anchor-symbols.js';
@@ -81,8 +81,7 @@ function hashStringList(values: readonly string[]): string | null {
 	return values.length > 0 ? sha256(values.join('\n')) : null;
 }
 
-function contextForAnchor(content: string, lineStart: number): string {
-	const lines = content.split(/\r?\n/u);
+function contextForAnchor(lines: readonly string[], lineStart: number): string {
 	const anchorIndex = Math.max(0, lineStart - 1);
 	const from = Math.max(0, anchorIndex - 3);
 	const to = Math.min(lines.length, anchorIndex + 4);
@@ -91,7 +90,7 @@ function contextForAnchor(content: string, lineStart: number): string {
 }
 
 function createFingerprint(
-	content: string,
+	lines: readonly string[],
 	anchor: {
 		readonly rawText: string;
 		readonly lineStart: number;
@@ -111,11 +110,11 @@ function createFingerprint(
 	return {
 		anchorMetadataHash: sha256(JSON.stringify(metadata)),
 		anchorTextHash: sha256(anchor.rawText),
-		contextHash: sha256(contextForAnchor(content, anchor.lineStart)),
+		contextHash: sha256(contextForAnchor(lines, anchor.lineStart)),
 		searchTermsHash: hashStringList(search),
 		invariantHash: invariant ? sha256(invariant) : null,
 		riskHash: sha256(risk.join('\n')),
-		symbol: extractSourceAnchorSymbol(content, anchor.lineStart),
+		symbol: extractSourceAnchorSymbolFromLines(lines, anchor.lineStart),
 	};
 }
 
@@ -320,6 +319,7 @@ export function collectSourceAnchorIndexRecords(
 			continue;
 		}
 
+		const lines = content.split(/\r?\n/u);
 		for (const anchor of parseSourceAnchorsInContent(relativePath, content)) {
 			if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {
 				continue;
@@ -338,7 +338,7 @@ export function collectSourceAnchorIndexRecords(
 				risk,
 				navigationOnly: true,
 				canInstructAgent: false,
-				fingerprint: createFingerprint(content, anchor, search, risk),
+				fingerprint: createFingerprint(lines, anchor, search, risk),
 			});
 		}
 	}

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { createSourceAnchorTargetLookup } from './source-anchor-targets.js';
 
 import {
 	type ScriptCheckArtifact,
@@ -1192,48 +1193,9 @@ function sourceAnchorEndLine(lineStart: number, rawText: string): number {
 	return lineStart + rawText.split(/\r\n|\r|\n/u).length - 1;
 }
 
-function canBridgeAnchorToSymbol(lines: readonly string[], anchorEndLine: number, symbolStartLine: number): boolean {
-	if (symbolStartLine <= anchorEndLine) {
-		return false;
-	}
-
-	for (let lineNumber = anchorEndLine + 1; lineNumber < symbolStartLine; lineNumber += 1) {
-		const trimmed = (lines[lineNumber - 1] ?? '').trim();
-		if (
-			trimmed.length === 0 ||
-			trimmed.startsWith('//') ||
-			trimmed.startsWith('#') ||
-			trimmed.startsWith('*') ||
-			trimmed.startsWith('@')
-		) {
-			continue;
-		}
-		return false;
-	}
-
-	return true;
-}
-
-function findAnchorTargetSymbol(
-	relativePath: string,
-	lines: readonly string[],
-	anchorEndLine: number,
-	symbols: readonly CodeOutlineSymbol[],
-): CodeOutlineSymbol | null {
-	const followingSymbols = symbols
-		.filter((symbol) => symbol.path === relativePath && symbol.start_line > anchorEndLine)
-		.sort((left, right) => left.start_line - right.start_line);
-	const target = followingSymbols[0] ?? null;
-
-	if (!target || !canBridgeAnchorToSymbol(lines, anchorEndLine, target.start_line)) {
-		return null;
-	}
-
-	return target;
-}
-
 function extractAnchors(relativePath: string, lines: readonly string[], text: string, symbols: readonly CodeOutlineSymbol[]): readonly CodeOutlineAnchor[] {
 	const anchors: CodeOutlineAnchor[] = [];
+	let findTarget: ((anchorEndLine: number) => CodeOutlineSymbol | null) | undefined;
 
 	for (const anchor of parseSourceAnchorsInContent(relativePath, text)) {
 		if (!anchor.idValid || sourceAnchorTextContainsSecretLike(anchor.rawText)) {
@@ -1241,7 +1203,8 @@ function extractAnchors(relativePath: string, lines: readonly string[], text: st
 		}
 
 		const lineEnd = sourceAnchorEndLine(anchor.lineStart, anchor.rawText);
-		const target = findAnchorTargetSymbol(relativePath, lines, lineEnd, symbols);
+		findTarget ??= createSourceAnchorTargetLookup(relativePath, lines, symbols);
+		const target = findTarget(lineEnd);
 		anchors.push({
 			id: anchor.rawId,
 			path: relativePath,

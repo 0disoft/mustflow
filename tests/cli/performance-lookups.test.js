@@ -2,10 +2,49 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createUniqueSymbolCandidateLookup } from '../../dist/core/source-anchor-candidates.js';
 import { createVerificationDecisionGraph } from '../../dist/core/verification-decision-graph.js';
+import { createSourceAnchorTargetLookup } from '../../dist/core/source-anchor-targets.js';
+import { extractSourceAnchorSymbol, extractSourceAnchorSymbolFromLines } from '../../dist/core/source-anchor-symbols.js';
 
 function snapshot(id, signatureHash, bodyHash, name = 'target', kind = 'function') {
 	return { id, fingerprint: { symbol: { kind, name, signatureHash, bodyHash } } };
 }
+
+test('indexed target lookup preserves nearest symbol, stable ties and bridge rejection', () => {
+	const lines = Object.freeze(Array.from({ length: 40 }, (_, index) => ['', '// comment', '# comment', '* comment', '@decorator', 'statement();'][index % 6]));
+	const symbols = Object.freeze([
+		{ id: 'other', path: 'other.ts', start_line: 2 },
+		{ id: 'last', path: 'file.ts', start_line: 39 },
+		{ id: 'tie-first', path: 'file.ts', start_line: 14 },
+		{ id: 'tie-second', path: 'file.ts', start_line: 14 },
+		{ id: 'first', path: 'file.ts', start_line: 3 },
+	]);
+	const find = createSourceAnchorTargetLookup('file.ts', lines, symbols);
+	for (let end = 0; end <= lines.length; end += 1) {
+		const target = symbols.filter((symbol) => symbol.path === 'file.ts' && symbol.start_line > end).sort((a, b) => a.start_line - b.start_line)[0];
+		const blocked = target && lines.slice(end, target.start_line - 1).some((line) => {
+			const text = line.trim();
+			return text && !['//', '#', '*', '@'].some((prefix) => text.startsWith(prefix));
+		});
+		assert.equal(find(end), target && !blocked ? target : null);
+	}
+	assert.equal(find(13).id, 'tie-first');
+	assert.equal(find(40), null);
+});
+
+test('pre-split source symbols retain hashes and line boundaries across line endings', () => {
+	for (const newline of ['\n', '\r\n']) {
+		for (const text of [
+			['// anchor', 'export function target() {', '  return "}";', '}'].join(newline),
+			['# anchor', 'def target():', '  return 1', '', 'next_statement()'].join(newline),
+			['// anchor', '', '// no recognized symbol'].join(newline),
+		]) {
+			const lines = Object.freeze(text.split(/\r?\n/u));
+			for (let start = 0; start <= lines.length; start += 1) {
+				assert.deepEqual(extractSourceAnchorSymbolFromLines(lines, start), extractSourceAnchorSymbol(text, start));
+			}
+		}
+	}
+});
 
 test('indexed symbol lookup preserves missing-hash wildcards and ambiguous matches', () => {
 	const hashes = [null, '', 'one', 'two'];
