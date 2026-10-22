@@ -1,4 +1,4 @@
-import { request } from 'node:https';
+import { readRegistryMetadata } from './lib/registry-metadata.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -73,57 +73,8 @@ const registryUrl = normalizeRegistryBaseUrl(process.env.MUSTFLOW_NPM_REGISTRY_U
 const packagePath = encodeRegistryPackagePath(packageJson.name);
 const metadataUrl = new URL(packagePath, registryUrl);
 
-function readRegistryMetadata() {
-	return new Promise((resolve, reject) => {
-		const registryRequest = request(
-			metadataUrl,
-			{
-				headers: {
-					accept: 'application/vnd.npm.install-v1+json, application/json',
-					connection: 'close',
-				},
-			},
-			(response) => {
-				let body = '';
-				response.setEncoding('utf8');
-				response.on('data', (chunk) => {
-					body += chunk;
-				});
-				response.on('end', () => {
-					if (response.statusCode === 404) {
-						resolve({ exists: false, versions: {} });
-						return;
-					}
-
-					if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
-						reject(new Error(`npm registry returned HTTP ${response.statusCode ?? 'unknown'} for ${metadataUrl.href}`));
-						return;
-					}
-
-					try {
-						const metadata = JSON.parse(body);
-						const versions =
-							metadata && typeof metadata === 'object' && metadata.versions && typeof metadata.versions === 'object'
-								? metadata.versions
-								: {};
-						resolve({ exists: true, versions });
-					} catch (error) {
-						reject(error);
-					}
-				});
-			},
-		);
-
-		registryRequest.on('error', reject);
-		registryRequest.setTimeout(30_000, () => {
-			registryRequest.destroy(new Error(`npm registry request timed out for ${metadataUrl.href}`));
-		});
-		registryRequest.end();
-	});
-}
-
 async function main() {
-	const { exists, versions } = await readRegistryMetadata();
+	const { exists, versions } = await readRegistryMetadata(metadataUrl);
 	const published = exists && Object.prototype.hasOwnProperty.call(versions, packageJson.version);
 	const label = `${packageJson.name}@${packageJson.version}`;
 
