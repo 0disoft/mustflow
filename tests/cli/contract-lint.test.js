@@ -65,9 +65,11 @@ function cleanCoverageCommands(options = {}) {
 		'copy_change',
 		'docs_change',
 		'i18n_change',
+		'migration_change',
 		'mustflow_config_change',
 		'mustflow_docs_change',
 		'public_api_change',
+		'security_change',
 		'test_change',
 		'unknown_change',
 	];
