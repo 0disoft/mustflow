@@ -62,6 +62,7 @@ import {
 	getLocalIndexDatabasePath,
 	readLatestLocalVerificationReadModelQueries,
 	readLocalCommandEffectGraphs,
+	withLocalIndexReadSession,
 	type LocalCommandEffectGraph,
 	type LocalVerificationReadModelQueries,
 } from '../lib/local-index.js';
@@ -76,6 +77,7 @@ import {
 import { resolveMustflowRoot } from '../lib/project-root.js';
 import type { Reporter } from '../lib/reporter.js';
 import { detectVersionSources } from '../../core/version-sources.js';
+import { withActiveRunLockInspectionSnapshot } from '../../core/active-run-locks.js';
 import { planUpdate, summarizePlan } from './update.js';
 
 interface DashboardOptions {
@@ -790,6 +792,11 @@ function renderRunHistoryResponse(projectRoot: string): DashboardStatusSnapshot[
 }
 
 async function renderStatusResponse(projectRoot: string): Promise<DashboardStatusSnapshot> {
+	return withActiveRunLockInspectionSnapshot(() =>
+		withLocalIndexReadSession(projectRoot, () => renderStatusSnapshot(projectRoot)));
+}
+
+async function renderStatusSnapshot(projectRoot: string): Promise<DashboardStatusSnapshot> {
 	const context = getAgentContext(projectRoot);
 	const manifest = readDashboardStatusBlock(
 		projectRoot,

@@ -38,6 +38,27 @@ function recordPath(projectPath, runId) {
 	return path.join(projectPath, '.mustflow', 'state', 'locks', 'active', `${hash}.json`);
 }
 
+test('reporting lock snapshots never bypass live lock acquisition', async () => {
+	const root = createTempProject('mustflow-report-lock-snapshot-');
+	const { acquireActiveRunLock, inspectActiveRunLocks, withActiveRunLockInspectionSnapshot } = await importActiveRunLocks();
+	const contract = createWriteContract();
+	let handle;
+	try {
+		withActiveRunLockInspectionSnapshot(() => {
+			assert.equal(inspectActiveRunLocks(root, contract, 'writer').conflicts.length, 0);
+			const acquired = acquireActiveRunLock(root, contract, 'writer');
+			assert.equal(acquired.ok, true);
+			handle = acquired.handle;
+			assert.equal(inspectActiveRunLocks(root, contract, 'writer').conflicts.length, 0);
+			assert.equal(acquireActiveRunLock(root, contract, 'writer').ok, false);
+		});
+		assert.equal(inspectActiveRunLocks(root, contract, 'writer').conflicts.length, 1);
+	} finally {
+		handle?.release();
+		removeTempProject(root);
+	}
+});
+
 test('active run locks recover stale mutexes before acquiring a write lock', async () => {
 	const projectPath = createTempProject('mustflow-active-lock-');
 	const { acquireActiveRunLock } = await importActiveRunLocks();

@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
 	existsSync,
 	mkdirSync,
@@ -764,6 +765,18 @@ export function withRunStateUpdateMutex<T>(projectRoot: string, callback: () => 
 	}
 }
 
+interface ActiveLockInspectionSnapshot {
+	readonly records: readonly ActiveRunLockRecord[];
+	readonly staleRecords: readonly ActiveRunLockStaleRecord[];
+}
+
+const inspectionSnapshots = new AsyncLocalStorage<Map<string, ActiveLockInspectionSnapshot>>();
+
+// Only reporting opts into this scope. Lock acquisition always reads live records under its mutex.
+export function withActiveRunLockInspectionSnapshot<T>(read: () => T): T {
+	return inspectionSnapshots.run(new Map(), read);
+}
+
 export function inspectActiveRunLocks(
 	projectRoot: string,
 	contract: CommandContract,
@@ -777,10 +790,18 @@ export function inspectActiveRunLocks(
 	const staleRecords: ActiveRunLockStaleRecord[] = [];
 
 	for (const scopeRoot of roots) {
-		const records = rootRecords(scopeRoot);
-		const rootStaleRecords = records
-			.map(staleRecordFor)
-			.filter((record): record is ActiveRunLockStaleRecord => record !== null);
+		const snapshots = inspectionSnapshots.getStore();
+		let snapshot = snapshots?.get(scopeRoot.root);
+		if (!snapshot) {
+			const records = rootRecords(scopeRoot);
+			snapshot = {
+				records,
+				staleRecords: records.map(staleRecordFor).filter((record): record is ActiveRunLockStaleRecord => record !== null),
+			};
+			snapshots?.set(scopeRoot.root, snapshot);
+		}
+		const records = snapshot.records;
+		const rootStaleRecords = snapshot.staleRecords;
 		const staleRecordIds = new Set(rootStaleRecords.map((stale) => stale.runId));
 		const liveRecords = records.filter((record) => !staleRecordIds.has(record.run_id));
 		conflicts.push(...findConflicts(intentName, effectsForScope(effects, scopeRoot.scope), liveRecords));

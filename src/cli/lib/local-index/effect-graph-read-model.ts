@@ -1,13 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-
 import { getLocalIndexDatabasePath } from './database-path.js';
 import { queryRows, splitIndexedList, toSearchString } from './database-read.js';
-import { getStalePaths } from './freshness.js';
-import { loadSqlJs, type SqlJsDatabase, type SqlValue } from './sql.js';
+import { withLocalIndexDatabase } from './read-session.js';
+import type { SqlJsDatabase, SqlValue } from './sql.js';
 import type {
 	LocalCommandEffectGraph,
 	LocalCommandEffectGraphStatus,
 	LocalCommandLockConflict,
+	LocalCommandWriteLock,
 } from './types.js';
 
 function createCommandEffectGraphStatus(
@@ -54,32 +53,48 @@ function mapCommandLockConflict(row: Record<string, SqlValue>, intent: string): 
  * invariant: Indexed command-effect rows explain current commands.toml only when the index is fresh and never grant command authority.
  * risk: cache, config
  */
-function queryLocalCommandEffectGraph(
+export function queryLocalCommandEffectGraphs(
 	databasePath: string,
 	database: SqlJsDatabase,
-	intent: string,
-): LocalCommandEffectGraph {
-	const writeLocks = queryRows(
-		database,
-		`
-SELECT lock, paths, modes, sources, concurrencies, effect_count
+	intents: readonly string[],
+): ReadonlyMap<string, LocalCommandEffectGraph> {
+	const names = [...new Set(intents)];
+	const graphs = new Map<string, LocalCommandEffectGraph>();
+	const locksByIntent = new Map<string, LocalCommandWriteLock[]>();
+	const conflictsByIntent = new Map<string, LocalCommandLockConflict[]>();
+	for (const intent of names) {
+		const writeLocks: LocalCommandWriteLock[] = [];
+		const lockConflicts: LocalCommandLockConflict[] = [];
+		locksByIntent.set(intent, writeLocks);
+		conflictsByIntent.set(intent, lockConflicts);
+		graphs.set(intent, { ...createCommandEffectGraphStatus(databasePath, 'fresh'), writeLocks, lockConflicts });
+	}
+	const chunkSize = 200;
+	for (let start = 0; start < names.length; start += chunkSize) {
+		const chunk = names.slice(start, start + chunkSize);
+		const targets = new Set(chunk);
+		const placeholders = chunk.map(() => '?').join(', ');
+		for (const row of queryRows(
+			database,
+			`
+SELECT intent, lock, paths, modes, sources, concurrencies, effect_count
 FROM command_write_locks
-WHERE intent = ?
-ORDER BY lock
+WHERE intent IN (${placeholders})
+ORDER BY intent, lock
 `,
-		[intent],
-	).map((row) => ({
-		lock: toSearchString(row.lock),
-		paths: splitIndexedList(row.paths),
-		modes: splitIndexedList(row.modes),
-		sources: splitIndexedList(row.sources),
-		concurrencies: splitIndexedList(row.concurrencies),
-		effectCount: typeof row.effect_count === 'number' && Number.isFinite(row.effect_count) ? row.effect_count : 0,
-	}));
+			chunk,
+		)) locksByIntent.get(toSearchString(row.intent))!.push({
+			lock: toSearchString(row.lock),
+			paths: splitIndexedList(row.paths),
+			modes: splitIndexedList(row.modes),
+			sources: splitIndexedList(row.sources),
+			concurrencies: splitIndexedList(row.concurrencies),
+			effectCount: typeof row.effect_count === 'number' && Number.isFinite(row.effect_count) ? row.effect_count : 0,
+			});
 
-	const lockConflicts = queryRows(
-		database,
-		`
+		for (const row of queryRows(
+			database,
+			`
 SELECT
   left_intent,
   right_intent,
@@ -91,25 +106,17 @@ SELECT
   left_concurrencies,
   right_concurrencies
 FROM command_lock_conflicts
-WHERE left_intent = ? OR right_intent = ?
+WHERE left_intent IN (${placeholders}) OR right_intent IN (${placeholders})
 ORDER BY lock, left_intent, right_intent
 `,
-		[intent, intent],
-	).map((row) => mapCommandLockConflict(row, intent));
-
-	return {
-		source: 'local_index',
-		authority: 'explanation_only',
-		commandAuthority: '.mustflow/config/commands.toml',
-		grantsCommandAuthority: false,
-		status: 'fresh',
-		databasePath,
-		indexFresh: true,
-		stalePaths: [],
-		writeLocks,
-		lockConflicts,
-		refreshHint: null,
-	};
+			[...chunk, ...chunk],
+		)) {
+			for (const intent of [toSearchString(row.left_intent), toSearchString(row.right_intent)]) {
+			if (targets.has(intent)) conflictsByIntent.get(intent)!.push(mapCommandLockConflict(row, intent));
+			}
+		}
+	}
+	return graphs;
 }
 
 export async function readLocalCommandEffectGraph(projectRoot: string, intent: string): Promise<LocalCommandEffectGraph> {
@@ -121,29 +128,20 @@ export async function readLocalCommandEffectGraphs(
 	projectRoot: string,
 	intents: readonly string[],
 ): Promise<ReadonlyMap<string, LocalCommandEffectGraph>> {
-	const databasePath = getLocalIndexDatabasePath(projectRoot);
 	const intentNames = [...new Set(intents)];
-	const statusMap = (status: LocalCommandEffectGraphStatus, stalePaths: readonly string[] = []) =>
-		new Map(intentNames.map((intent) => [intent, createCommandEffectGraphStatus(databasePath, status, stalePaths)] as const));
-
-	if (!existsSync(databasePath)) {
-		return statusMap('missing');
-	}
-
-	const SQL = await loadSqlJs();
-	const database = new SQL.Database(readFileSync(databasePath));
-
-	try {
-		const stalePaths = getStalePaths(projectRoot, database);
-
+	if (intentNames.length === 0) return new Map();
+	return withLocalIndexDatabase(projectRoot, ({ databasePath, database, stalePaths, freshnessFailed }) => {
+		const statusMap = (status: LocalCommandEffectGraphStatus, stalePaths: readonly string[] = []) =>
+			new Map(intentNames.map((intent) => [intent, createCommandEffectGraphStatus(databasePath, status, stalePaths)] as const));
+		if (!database) return statusMap('missing');
+		if (freshnessFailed) return statusMap('unreadable');
 		if (stalePaths.length > 0) {
 			return statusMap('stale', stalePaths);
 		}
-
-		return new Map(intentNames.map((intent) => [intent, queryLocalCommandEffectGraph(databasePath, database, intent)] as const));
-	} catch {
-		return statusMap('unreadable');
-	} finally {
-		database.close();
-	}
+		try {
+			return queryLocalCommandEffectGraphs(databasePath, database, intentNames);
+		} catch {
+			return statusMap('unreadable');
+		}
+	});
 }

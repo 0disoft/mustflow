@@ -39,6 +39,7 @@ import {
 	type LocalSearchCapabilities,
 } from './database-read.js';
 import { getStalePaths, readStoredSchemaVersion } from './freshness.js';
+import { withLocalIndexDatabase } from './read-session.js';
 import { createSourceAnchorRiskSignals, populateDatabase } from './populate.js';
 import { createSchema } from './schema.js';
 import { loadSqlJs, type SqlJsDatabase, type SqlJsStatic } from './sql.js';
@@ -100,6 +101,7 @@ export type {
 	SearchBackendKind,
 } from './types.js';
 export { readLocalCommandEffectGraph, readLocalCommandEffectGraphs } from './effect-graph-read-model.js';
+export { withLocalIndexReadSession } from './read-session.js';
 export { getLocalIndexDatabasePath } from './database-path.js';
 export { readLocalPathSurface, readLocalPathSurfaces } from './path-surface-read-model.js';
 export { searchLocalIndex } from './search-read-model.js';
@@ -887,43 +889,34 @@ export async function readLocalVerificationReadModelQueriesForPlan(
 	projectRoot: string,
 	planId: string | null,
 ): Promise<LocalVerificationReadModelQueries> {
-	const databasePath = getLocalIndexDatabasePath(projectRoot);
+	return withLocalIndexDatabase(projectRoot, ({ databasePath, database, stalePaths, freshnessFailed }) => {
+		if (!database) return createVerificationReadModelQueryStatus(databasePath, 'missing', planId);
+		if (freshnessFailed) return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
+		try {
+			const requiredTables = [
+				'acceptance_criteria',
+				'criterion_coverage',
+				'verification_evidence_summaries',
+				'verification_plans',
+				'verification_risk_signals',
+				'command_receipt_summaries',
+				'verification_failure_fingerprints',
+				'validation_ratchet_signals',
+			];
 
-	if (!existsSync(databasePath)) {
-		return createVerificationReadModelQueryStatus(databasePath, 'missing', planId);
-	}
+			if (requiredTables.some((tableName) => !hasTable(database, tableName))) {
+				return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
+			}
 
-	const SQL = await loadSqlJs();
-	const database = new SQL.Database(readFileSync(databasePath));
+			if (stalePaths.length > 0) {
+				return createVerificationReadModelQueryStatus(databasePath, 'stale', planId, stalePaths);
+			}
 
-	try {
-		const requiredTables = [
-			'acceptance_criteria',
-			'criterion_coverage',
-			'verification_evidence_summaries',
-			'verification_plans',
-			'verification_risk_signals',
-			'command_receipt_summaries',
-			'verification_failure_fingerprints',
-			'validation_ratchet_signals',
-		];
-
-		if (requiredTables.some((tableName) => !hasTable(database, tableName))) {
+			return queryLocalVerificationReadModel(databasePath, database, planId);
+		} catch {
 			return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
 		}
-
-		const stalePaths = getStalePaths(projectRoot, database);
-
-		if (stalePaths.length > 0) {
-			return createVerificationReadModelQueryStatus(databasePath, 'stale', planId, stalePaths);
-		}
-
-		return queryLocalVerificationReadModel(databasePath, database, planId);
-	} catch {
-		return createVerificationReadModelQueryStatus(databasePath, 'unreadable', planId);
-	} finally {
-		database.close();
-	}
+	});
 }
 
 export async function readLatestLocalVerificationReadModelQueries(
