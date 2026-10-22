@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { availableParallelism, tmpdir, totalmem, userInfo } from 'node:os';
 import path from 'node:path';
+import { ProcessStartTokenCache } from './process-start-token-cache.js';
 
 import {
 	processStartTokensProveMismatch,
@@ -28,7 +29,6 @@ const MEMORY_BYTES_PER_SLOT = 2 * 1024 * 1024 * 1024;
 const MAX_HOST_DISK_SLOTS = 4;
 const DEFAULT_HOST_RESOURCE_SLOTS = 8;
 const DEFAULT_REPOSITORY_RESOURCE_SLOTS = 8;
-const PROCESS_START_TOKEN_CACHE_MS = 1_000;
 const RESOURCE_NAMES = ['cpu', 'memory', 'disk'] as const;
 const SCOPES = ['host', 'repository'] as const;
 
@@ -309,27 +309,14 @@ function sameSlotOwner(left: VerificationResourceSlotOwner, right: VerificationR
 		left.started_at === right.started_at;
 }
 
-const processStartTokenCache = new Map<number, { readonly readAt: number; readonly token: string | null }>();
-
-function readCachedProcessStartToken(pid: number, expectedToken: string): string | null {
-	const cached = processStartTokenCache.get(pid);
-	// A PID can be reused while its previous token is still cached. Only a fresh
-	// read may prove that a live slot belongs to a different process.
-	if (cached && Date.now() - cached.readAt >= 0 && Date.now() - cached.readAt <= PROCESS_START_TOKEN_CACHE_MS &&
-		!processStartTokensProveMismatch(expectedToken, cached.token)) {
-		return cached.token;
-	}
-	const token = readProcessStartToken(pid);
-	processStartTokenCache.set(pid, { readAt: Date.now(), token });
-	return token;
-}
+const processStartTokenCache = new ProcessStartTokenCache(readProcessStartToken);
 
 function slotOwnerIsStale(owner: VerificationResourceSlotOwner): boolean {
 	if (!isProcessLive(owner.pid)) {
 		return true;
 	}
 
-	return processStartTokensProveMismatch(owner.process_start_token, readCachedProcessStartToken(owner.pid, owner.process_start_token));
+	return processStartTokensProveMismatch(owner.process_start_token, processStartTokenCache.readForOwner(owner.pid, owner.process_start_token));
 }
 
 function beginSlotRecovery(slotPath: string): (() => void) | null {
