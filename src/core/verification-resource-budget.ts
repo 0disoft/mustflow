@@ -60,6 +60,15 @@ export interface AcquireVerificationResourceLeaseInput {
 	readonly registryRoot?: string;
 	readonly pollMs?: number;
 	readonly signal?: AbortSignal;
+	readonly runtime?: Partial<VerificationResourceRuntime>;
+}
+
+export interface VerificationResourceRuntime {
+	readonly now: () => number;
+	readonly uuid: () => string;
+	readonly random: () => number;
+	readonly sleep: (milliseconds: number, signal?: AbortSignal) => Promise<void>;
+	readonly writeOwner: (file: string, content: string) => void;
 }
 
 export interface VerificationResourceLease {
@@ -208,6 +217,7 @@ export function resolveVerificationResourceCapacities(
 	const repositoryMax = positiveInteger(input.repositoryMax ?? DEFAULT_REPOSITORY_RESOURCE_SLOTS, 'repository.max');
 	const hostCpu = Math.min(hostMax, positiveInteger(input.cpuAvailable ?? readAvailableCpu(), 'host.cpu'));
 	const totalMemoryBytes = input.totalMemoryBytes ?? readTotalMemoryBytes();
+	positiveInteger(totalMemoryBytes, 'host.total_memory_bytes');
 	const hostMemory = Math.max(
 		1,
 		Math.min(hostCpu, Math.floor(Math.max(MEMORY_BYTES_PER_SLOT, totalMemoryBytes) / MEMORY_BYTES_PER_SLOT)),
@@ -301,9 +311,12 @@ function sameSlotOwner(left: VerificationResourceSlotOwner, right: VerificationR
 
 const processStartTokenCache = new Map<number, { readonly readAt: number; readonly token: string | null }>();
 
-function readCachedProcessStartToken(pid: number): string | null {
+function readCachedProcessStartToken(pid: number, expectedToken: string): string | null {
 	const cached = processStartTokenCache.get(pid);
-	if (cached && Date.now() - cached.readAt <= PROCESS_START_TOKEN_CACHE_MS) {
+	// A PID can be reused while its previous token is still cached. Only a fresh
+	// read may prove that a live slot belongs to a different process.
+	if (cached && Date.now() - cached.readAt >= 0 && Date.now() - cached.readAt <= PROCESS_START_TOKEN_CACHE_MS &&
+		!processStartTokensProveMismatch(expectedToken, cached.token)) {
 		return cached.token;
 	}
 	const token = readProcessStartToken(pid);
@@ -316,7 +329,7 @@ function slotOwnerIsStale(owner: VerificationResourceSlotOwner): boolean {
 		return true;
 	}
 
-	return processStartTokensProveMismatch(owner.process_start_token, readCachedProcessStartToken(owner.pid));
+	return processStartTokensProveMismatch(owner.process_start_token, readCachedProcessStartToken(owner.pid, owner.process_start_token));
 }
 
 function beginSlotRecovery(slotPath: string): (() => void) | null {
@@ -381,19 +394,19 @@ function recoverStaleSlot(slotPath: string): boolean {
 	}
 }
 
-function createSlotOwner(leaseId: string, label: string | null): VerificationResourceSlotOwner {
+function createSlotOwner(leaseId: string, label: string | null, runtime: VerificationResourceRuntime): VerificationResourceSlotOwner {
 	return {
 		schema_version: RESOURCE_BUDGET_SCHEMA_VERSION,
 		lease_id: leaseId,
-		owner_token: randomUUID(),
+		owner_token: runtime.uuid(),
 		pid: process.pid,
 		process_start_token: readCurrentProcessStartToken(),
-		started_at: new Date().toISOString(),
+		started_at: new Date(runtime.now()).toISOString(),
 		label,
 	};
 }
 
-function tryAcquireSlot(slotPath: string, owner: VerificationResourceSlotOwner): AcquiredSlot | null {
+function tryAcquireSlot(slotPath: string, owner: VerificationResourceSlotOwner, runtime: VerificationResourceRuntime): AcquiredSlot | null {
 	try {
 		mkdirSync(slotPath);
 	} catch (error) {
@@ -414,10 +427,9 @@ function tryAcquireSlot(slotPath: string, owner: VerificationResourceSlotOwner):
 	}
 
 	try {
-		writeFileSync(
+		runtime.writeOwner(
 			path.join(slotPath, RESOURCE_BUDGET_OWNER_FILE),
 			`${JSON.stringify(owner, null, 2)}\n`,
-			{ encoding: 'utf8', flag: 'wx', mode: 0o600 },
 		);
 		return { path: slotPath, owner };
 	} catch (error) {
@@ -477,17 +489,23 @@ function tryAcquireRequest(
 	request: ResourceRequest & { readonly root: string },
 	leaseId: string,
 	label: string | null,
+	runtime: VerificationResourceRuntime,
 ): AcquiredSlot[] | null {
 	const resourceRoot = path.join(request.root, request.resource);
 	ensureDirectory(resourceRoot);
 	const acquired: AcquiredSlot[] = [];
 
-	for (let slotIndex = 0; slotIndex < request.capacity && acquired.length < request.weight; slotIndex += 1) {
-		const owner = createSlotOwner(leaseId, label);
-		const slot = tryAcquireSlot(path.join(resourceRoot, `slot-${String(slotIndex + 1).padStart(4, '0')}`), owner);
-		if (slot) {
-			acquired.push(slot);
+	try {
+		for (let slotIndex = 0; slotIndex < request.capacity && acquired.length < request.weight; slotIndex += 1) {
+			const owner = createSlotOwner(leaseId, label, runtime);
+			const slot = tryAcquireSlot(path.join(resourceRoot, `slot-${String(slotIndex + 1).padStart(4, '0')}`), owner, runtime);
+			if (slot) {
+				acquired.push(slot);
+			}
 		}
+	} catch (error) {
+		releaseSlots(acquired);
+		throw error;
 	}
 
 	if (acquired.length === request.weight) {
@@ -502,15 +520,21 @@ function tryAcquireAll(
 	requests: readonly (ResourceRequest & { readonly root: string })[],
 	leaseId: string,
 	label: string | null,
+	runtime: VerificationResourceRuntime,
 ): AcquiredSlot[] | null {
 	const acquired: AcquiredSlot[] = [];
-	for (const request of requests) {
-		const requestSlots = tryAcquireRequest(request, leaseId, label);
-		if (!requestSlots) {
-			releaseSlots(acquired);
-			return null;
+	try {
+		for (const request of requests) {
+			const requestSlots = tryAcquireRequest(request, leaseId, label, runtime);
+			if (!requestSlots) {
+				releaseSlots(acquired);
+				return null;
+			}
+			acquired.push(...requestSlots);
 		}
-		acquired.push(...requestSlots);
+	} catch (error) {
+		releaseSlots(acquired);
+		throw error;
 	}
 	return acquired;
 }
@@ -543,11 +567,22 @@ export async function acquireVerificationResourceLease(
 	projectRoot: string,
 	input: AcquireVerificationResourceLeaseInput,
 ): Promise<VerificationResourceLease> {
+	if (input.signal?.aborted) {
+		throw new Error('verification_resource_budget_aborted');
+	}
+	const runtime: VerificationResourceRuntime = {
+		now: Date.now,
+		uuid: randomUUID,
+		random: Math.random,
+		sleep: delay,
+		writeOwner: (file, content) => writeFileSync(file, content, { encoding: 'utf8', flag: 'wx', mode: 0o600 }),
+		...input.runtime,
+	};
 	const repositoryId = createVerificationRepositoryId(projectRoot);
 	const registryRoot = path.resolve(input.registryRoot ?? getVerificationResourceBudgetRoot());
 	ensureDirectory(registryRoot);
 	const requests = buildRequests(registryRoot, repositoryId, input.capacities, input.weights);
-	const leaseId = randomUUID();
+	const leaseId = runtime.uuid();
 	const label = input.label?.trim() || null;
 	const pollMs = positiveInteger(input.pollMs ?? DEFAULT_POLL_MS, 'poll_ms');
 	let released = false;
@@ -556,8 +591,12 @@ export async function acquireVerificationResourceLease(
 		if (input.signal?.aborted) {
 			throw new Error('verification_resource_budget_aborted');
 		}
-		const slots = tryAcquireAll(requests, leaseId, label);
+		const slots = tryAcquireAll(requests, leaseId, label, runtime);
 		if (slots) {
+			if (input.signal?.aborted) {
+				releaseSlots(slots);
+				throw new Error('verification_resource_budget_aborted');
+			}
 			return {
 				leaseId,
 				repositoryId,
@@ -572,8 +611,8 @@ export async function acquireVerificationResourceLease(
 				},
 			};
 		}
-		const jitter = Math.floor(Math.random() * Math.max(1, pollMs));
-		await delay(pollMs + jitter, input.signal);
+		const jitter = Math.floor(runtime.random() * Math.max(1, pollMs));
+		await runtime.sleep(pollMs + jitter, input.signal);
 	}
 }
 

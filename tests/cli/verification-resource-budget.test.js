@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -29,6 +29,66 @@ function capacities(cpu = 1, memory = cpu, disk = cpu) {
 function sleep(milliseconds) {
 	return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
+
+for (const failAt of [2, 3]) {
+	test(`acquisition error at owner write ${failAt} releases partial requests and preserves the error`, async () => {
+		const projectPath = createTempDirectory('mustflow-budget-project-');
+		const registryRoot = createTempDirectory('mustflow-budget-registry-');
+		const { acquireVerificationResourceLease } = await importResourceBudget();
+		const failure = Object.assign(new Error('injected write failure'), { code: 'ENOSPC' });
+		let writes = 0;
+		try {
+			await assert.rejects(acquireVerificationResourceLease(projectPath, {
+				capacities: capacities(2), weights: { cpu: 2, memory: 1, disk: 0 }, registryRoot,
+				runtime: { writeOwner(file, content) {
+					if (++writes === failAt) throw failure;
+					writeFileSync(file, content, { flag: 'wx' });
+				} },
+			}), (error) => error === failure);
+			assert.deepEqual(readdirSync(path.join(registryRoot, 'host', 'cpu')), []);
+			const lease = await acquireVerificationResourceLease(projectPath, {
+				capacities: capacities(2), weights: { cpu: 2, memory: 1, disk: 0 }, registryRoot,
+				signal: AbortSignal.timeout(2000),
+			});
+			lease.release();
+		} finally {
+			removeTempDirectory(projectPath);
+			removeTempDirectory(registryRoot);
+		}
+	});
+}
+
+test('abort during acquisition rolls back every claimed slot', async () => {
+	const projectPath = createTempDirectory('mustflow-budget-project-');
+	const registryRoot = createTempDirectory('mustflow-budget-registry-');
+	const { acquireVerificationResourceLease } = await importResourceBudget();
+	const controller = new AbortController();
+	try {
+		await assert.rejects(acquireVerificationResourceLease(projectPath, {
+			capacities: capacities(), weights: { cpu: 1, memory: 0, disk: 0 }, registryRoot,
+			signal: controller.signal,
+			runtime: { writeOwner(file, content) {
+				writeFileSync(file, content, { flag: 'wx' });
+				controller.abort();
+			} },
+		}), /verification_resource_budget_aborted/);
+		assert.deepEqual(readdirSync(path.join(registryRoot, 'host', 'cpu')), []);
+	} finally {
+		removeTempDirectory(projectPath);
+		removeTempDirectory(registryRoot);
+	}
+});
+
+test('memory slot boundaries reject invalid capacity inputs', async () => {
+	const { resolveVerificationResourceCapacities } = await importResourceBudget();
+	const boundary = 4 * 1024 ** 3;
+	for (const [bytes, slots] of [[boundary - 1, 1], [boundary, 2], [boundary + 1, 2]]) {
+		assert.equal(resolveVerificationResourceCapacities({ cpuAvailable: 8, totalMemoryBytes: bytes }).host.memory, slots);
+	}
+	for (const bytes of [NaN, Infinity, -1, 0, 0.5]) {
+		assert.throws(() => resolveVerificationResourceCapacities({ totalMemoryBytes: bytes }), /host.total_memory_bytes/);
+	}
+});
 
 async function assertStillPending(promise) {
 	const state = await Promise.race([
