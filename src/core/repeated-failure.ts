@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
 
 export interface VerificationFailureFingerprint {
 	readonly schema_version: '1';
@@ -208,6 +209,14 @@ export function updateRepeatedFailureState(input: {
 		return null;
 	}
 
+	return withRunStateUpdateMutex(input.projectRoot, RUN_STATE_MUTEX_SCOPES.repeatedFailures,
+		() => updateRepeatedFailureStateLocked(input, failureFingerprint));
+}
+
+function updateRepeatedFailureStateLocked(
+	input: Parameters<typeof updateRepeatedFailureState>[0],
+	failureFingerprint: VerificationFailureFingerprint,
+): RepeatedFailureSummary {
 	const state = readRepeatedFailureState(input.projectRoot);
 	const observedAt = (input.observedAt ?? new Date()).toISOString();
 	const existing = state.fingerprints.find((entry) => entry.fingerprint === failureFingerprint.fingerprint);

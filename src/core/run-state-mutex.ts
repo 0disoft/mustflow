@@ -31,6 +31,9 @@ export const RUN_STATE_MUTEX_SCOPES = {
 	profiles: 'run-profiles',
 	performanceHistory: 'run-performance-history',
 	compaction: 'run-state-compaction',
+	docReview: 'doc-review',
+	dashboardPreferences: 'dashboard-preferences',
+	repeatedFailures: 'repeated-failures',
 } as const;
 
 export type RunStateMutexScope = (typeof RUN_STATE_MUTEX_SCOPES)[keyof typeof RUN_STATE_MUTEX_SCOPES];

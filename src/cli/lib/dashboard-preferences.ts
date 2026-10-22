@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from '../../core/run-state-mutex.js';
 
 import { isRecord, type TomlTable } from './command-contract.js';
 import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './filesystem.js';
@@ -513,6 +514,14 @@ export function applyDashboardPreferenceUpdates(
 }
 
 export function updateDashboardPreferences(
+	projectRoot: string,
+	updates: readonly DashboardPreferenceUpdate[],
+): DashboardPreferencesSnapshot {
+	return withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.dashboardPreferences,
+		() => updateDashboardPreferencesLocked(projectRoot, updates));
+}
+
+function updateDashboardPreferencesLocked(
 	projectRoot: string,
 	updates: readonly DashboardPreferenceUpdate[],
 ): DashboardPreferencesSnapshot {

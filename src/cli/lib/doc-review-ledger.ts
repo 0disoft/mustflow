@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { triageDocReview, type DocReviewTriage } from '../../core/doc-review-triage.js';
+import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from '../../core/run-state-mutex.js';
 import {
 	ensureInside,
 	ensureInsideWithoutSymlinks,
@@ -259,6 +260,11 @@ export function listDocReviewEntries(
 }
 
 export function addDocReviewEntry(projectRoot: string, input: AddDocReviewEntryInput): DocReviewEntry {
+	return withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.docReview,
+		() => addDocReviewEntryLocked(projectRoot, input));
+}
+
+function addDocReviewEntryLocked(projectRoot: string, input: AddDocReviewEntryInput): DocReviewEntry {
 	const ledger = readLedgerFile(projectRoot);
 	const reviewPath = normalizePath(projectRoot, input.path);
 	const timestamp = nowIso(input.now);
@@ -287,6 +293,11 @@ export function addDocReviewEntry(projectRoot: string, input: AddDocReviewEntryI
 }
 
 export function commentDocReviewEntry(projectRoot: string, input: CommentDocReviewEntryInput): DocReviewEntry {
+	return withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.docReview,
+		() => commentDocReviewEntryLocked(projectRoot, input));
+}
+
+function commentDocReviewEntryLocked(projectRoot: string, input: CommentDocReviewEntryInput): DocReviewEntry {
 	const ledger = readLedgerFile(projectRoot);
 	const reviewPath = normalizePath(projectRoot, input.path);
 	const existing = ledger.documents.find((entry) => entry.path === reviewPath);
@@ -314,6 +325,11 @@ export function commentDocReviewEntry(projectRoot: string, input: CommentDocRevi
 }
 
 export function markDocReviewEntry(projectRoot: string, input: ReviewDocInput): DocReviewEntry {
+	return withRunStateUpdateMutex(projectRoot, RUN_STATE_MUTEX_SCOPES.docReview,
+		() => markDocReviewEntryLocked(projectRoot, input));
+}
+
+function markDocReviewEntryLocked(projectRoot: string, input: ReviewDocInput): DocReviewEntry {
 	const ledger = readLedgerFile(projectRoot);
 	const reviewPath = normalizePath(projectRoot, input.path);
 	const existing = ledger.documents.find((entry) => entry.path === reviewPath);
