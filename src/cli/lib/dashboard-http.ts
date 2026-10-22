@@ -23,14 +23,17 @@ export interface DashboardHttpContext {
 }
 
 function sendJson(response: ServerResponse, statusCode: number, value: unknown): void {
+	if (response.destroyed || response.writableEnded) return;
+	const body = JSON.stringify(value);
 	response.writeHead(statusCode, {
 		'cache-control': 'no-store',
 		'content-type': 'application/json; charset=utf-8',
 	});
-	response.end(JSON.stringify(value));
+	response.end(body);
 }
 
 function sendText(response: ServerResponse, statusCode: number, value: string): void {
+	if (response.destroyed || response.writableEnded) return;
 	response.writeHead(statusCode, {
 		'cache-control': 'no-store',
 		'content-type': 'text/plain; charset=utf-8',
@@ -145,8 +148,10 @@ const PROTECTED_PATHS = new Set(['/api/status', '/api/preferences', '/api/open-m
 
 async function routeDashboardRequest(request: IncomingMessage, response: ServerResponse, url: URL, context: DashboardHttpContext): Promise<void> {
 	if (request.method === 'GET' && url.pathname === '/') {
+		const html = await context.renderHome();
+		if (response.destroyed || response.writableEnded) return;
 		response.writeHead(200, { 'cache-control': 'no-store', 'content-type': 'text/html; charset=utf-8' });
-		response.end(await context.renderHome());
+		response.end(html);
 		return;
 	}
 	if (request.method === 'GET' && url.pathname === '/favicon.ico') {
@@ -177,11 +182,16 @@ async function routeDashboardRequest(request: IncomingMessage, response: ServerR
 
 export function createDashboardRequestHandler(context: DashboardHttpContext): (request: IncomingMessage, response: ServerResponse) => Promise<void> {
 	return async (request, response) => {
-		const url = new URL(request.url ?? '/', 'http://localhost');
 		try {
+			const url = new URL(request.url ?? '/', 'http://localhost');
 			await routeDashboardRequest(request, response, url, context);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
+			if (response.destroyed || response.writableEnded) return;
+			if (response.headersSent) {
+				response.destroy();
+				return;
+			}
 			if (isDashboardBadRequestError(error, message)) {
 				sendBadRequest(response);
 				return;

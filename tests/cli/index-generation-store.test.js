@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
@@ -42,6 +44,43 @@ function generationFiles(projectPath) {
 	const directory = path.join(projectPath, '.mustflow', 'cache', 'local-index', 'generations');
 	return readdirSync(directory).filter((name) => name.endsWith('.sqlite')).sort();
 }
+
+test('releases the builder lease when staging initialization fails', async () => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-staging-failure-');
+	const storePath = path.join(projectPath, '.mustflow/cache/local-index');
+	const stagingPath = path.join(storePath, 'staging');
+	try {
+		mkdirSync(storePath, { recursive: true });
+		writeFileSync(stagingPath, 'blocks staging directory');
+		await assert.rejects(createLocalIndexDirect(projectPath));
+		assert.equal(existsSync(path.join(storePath, 'builder.lease')), false);
+		fs.rmSync(stagingPath);
+		assert.equal((await createLocalIndexDirect(projectPath)).wrote_files, true);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('releases the builder lease even when staging cleanup fails', async (t) => {
+	const projectPath = createMinimalWorkflowProject('mustflow-index-cleanup-failure-');
+	const stagingPath = path.join(projectPath, '.mustflow/cache/local-index/staging');
+	const originalRm = fs.rmSync;
+	const mocked = t.mock.method(fs, 'rmSync', (target, options) => {
+		if (path.dirname(String(target)) === stagingPath && String(target).endsWith('.sqlite')) {
+			throw Object.assign(new Error('staging file busy'), { code: 'EBUSY' });
+		}
+		return originalRm(target, options);
+	});
+	syncBuiltinESMExports();
+	try {
+		await assert.rejects(createLocalIndexDirect(projectPath), /staging file busy/u);
+		assert.equal(existsSync(path.join(projectPath, '.mustflow/cache/local-index/builder.lease')), false);
+	} finally {
+		mocked.mock.restore();
+		syncBuiltinESMExports();
+		removeTempProject(projectPath);
+	}
+});
 
 test('publishes an immutable content-addressed local-index generation', async () => {
 	const projectPath = createMinimalWorkflowProject('mustflow-index-generation-');

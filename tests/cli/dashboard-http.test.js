@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { ServerResponse } from 'node:http';
 import { Readable } from 'node:stream';
 import { test } from 'node:test';
 import { createDashboardRequestHandler } from '../../dist/cli/lib/dashboard-http.js';
@@ -71,4 +72,44 @@ test('preference calculation preserves first-error and duplicate-update ordering
 	assert.equal(applyDashboardPreferenceUpdates(content, updates), '[git]\nauto_commit = false\n');
 	assert.throws(() => applyDashboardPreferenceUpdates(content, [{ id: 'unknown', value: 1 }, { id: 'git.auto_push', value: true }]), { message: 'Unknown dashboard preference: unknown' });
 	assert.throws(() => applyDashboardPreferenceUpdates(content, [{ id: 'git.auto_push', value: true }, { id: 'unknown', value: 1 }]), { message: 'git.auto_push is locked in the dashboard.' });
+});
+
+test('home rendering errors finish a real HTTP response with 500', async () => {
+	const input = { method: 'GET', url: '/' };
+	const response = new ServerResponse(input);
+	const { context, calls } = fixture({ renderHome: async () => { throw new Error('render failed'); } });
+	try {
+		await createDashboardRequestHandler(context)(input, response);
+		assert.equal(response.statusCode, 500);
+		assert.equal(response.writableEnded, true);
+		assert.deepEqual(calls, [['error', 'render failed']]);
+	} finally {
+		response.destroy();
+	}
+});
+
+test('errors after response headers close the response instead of writing headers twice', async () => {
+	const input = { method: 'GET', url: '/' };
+	const response = new ServerResponse(input);
+	const { context } = fixture({ renderHome: async () => {
+		response.writeHead(200);
+		throw new Error('partial response failed');
+	} });
+	try {
+		await createDashboardRequestHandler(context)(input, response);
+		assert.equal(response.destroyed, true);
+	} finally {
+		response.destroy();
+	}
+});
+
+test('home rendering does not write to a disconnected response', async () => {
+	const input = { method: 'GET', url: '/' };
+	const response = new ServerResponse(input);
+	const { context } = fixture({ renderHome: async () => {
+		response.destroy();
+		return '<html></html>';
+	} });
+	await createDashboardRequestHandler(context)(input, response);
+	assert.equal(response.headersSent, false);
 });

@@ -159,10 +159,11 @@ export async function createLocalIndex(
 
 	const requestKey = createRequestKey(options);
 	const lease = await acquireLocalIndexBuildLease(projectRoot, requestKey);
-	const pointerExistedBeforeBuild = existsSync(getLocalIndexPointerPath(projectRoot));
-	const stagingPath = createStagingDatabasePath(projectRoot);
+	let stagingPath: string | undefined;
 
 	try {
+		const pointerExistedBeforeBuild = existsSync(getLocalIndexPointerPath(projectRoot));
+		stagingPath = createStagingDatabasePath(projectRoot);
 		seedStagingDatabase(projectRoot, stagingPath);
 		const effectiveOptions = lease.waitedForEquivalentBuild
 			? { ...options, incremental: true }
@@ -178,7 +179,10 @@ export async function createLocalIndex(
 
 		return normalizeResult(projectRoot, options, result, shouldPublish);
 	} finally {
-		rmSync(stagingPath, { force: true });
-		lease.release();
+		try {
+			if (stagingPath) rmSync(stagingPath, { force: true });
+		} finally {
+			lease.release();
+		}
 	}
 }
