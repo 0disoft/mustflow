@@ -243,6 +243,62 @@ test('retention removes ordinary old runs while leaving linked run entries and t
 	}
 });
 
+test('retention measures payload sizes only in directories that survive the item limit', async (t) => {
+	const projectPath = createTempProject('mustflow-retention-size-budget-');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	const runsPath = path.join(projectPath, '.mustflow/state/runs');
+	const originalLstatSync = fs.lstatSync;
+	let payloadFileStats = 0;
+	try {
+		for (let index = 0; index < 12; index++) {
+			const name = `run-${String(index).padStart(3, '0')}`;
+			const directory = path.join(runsPath, name);
+			mkdirSync(path.join(directory, 'payload'), { recursive: true });
+			writeFileSync(path.join(directory, 'receipt.json'), JSON.stringify({ command: 'run', intent: name,
+				receipt_path: `.mustflow/state/runs/${name}/receipt.json` }));
+			for (let file = 0; file < 20; file++) writeFileSync(path.join(directory, 'payload', `artifact-${file}.txt`), 'x');
+		}
+		fs.lstatSync = (file, ...args) => {
+			if (typeof file === 'string' && path.basename(file).startsWith('artifact-')) payloadFileStats++;
+			return originalLstatSync(file, ...args);
+		};
+		syncBuiltinESMExports();
+		assert.equal(updateRunReceiptState(projectPath, { ...retentionPolicy(), maxItems: 2 }), true);
+		t.diagnostic(JSON.stringify({ runDirectories: 12, keptDirectories: 2, payloadFilesPerDirectory: 20, payloadFileStats }));
+		assert.deepEqual(readdirSync(runsPath).filter(name => name.startsWith('run-')).sort(), ['run-010', 'run-011']);
+		const index = JSON.parse(readFileSync(path.join(runsPath, 'latest.index.json'), 'utf8'));
+		assert.equal(index.entries.length, 2);
+		assert.equal(index.latest_by_intent['run-011'], '.mustflow/state/runs/run-011/receipt.json');
+		assert.equal(payloadFileStats, 40);
+	} finally {
+		fs.lstatSync = originalLstatSync;
+		syncBuiltinESMExports();
+		removeTempProject(projectPath);
+	}
+});
+
+test('retention applies the byte limit after item selection and keeps the newest run', async () => {
+	const projectPath = createTempProject('mustflow-retention-combined-limits-');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	const runsPath = path.join(projectPath, '.mustflow/state/runs');
+	try {
+		for (const name of ['run-000', 'run-001', 'run-002']) {
+			const directory = path.join(runsPath, name);
+			mkdirSync(directory, { recursive: true });
+			writeFileSync(path.join(directory, 'payload.bin'), Buffer.alloc(600 * 1024));
+			writeFileSync(path.join(directory, 'receipt.json'), JSON.stringify({ command: 'run', intent: name,
+				receipt_path: `.mustflow/state/runs/${name}/receipt.json` }));
+		}
+		assert.equal(updateRunReceiptState(projectPath, { ...retentionPolicy(), maxItems: 2, maxTotalMb: 1 }), true);
+		assert.deepEqual(readdirSync(runsPath).filter(name => name.startsWith('run-')), ['run-002']);
+		const index = JSON.parse(readFileSync(path.join(runsPath, 'latest.index.json'), 'utf8'));
+		assert.equal(index.entries.length, 1);
+		assert.equal(index.entries[0].intent, 'run-002');
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('retention can initialize an index when the runs directory does not exist', async () => {
 	const projectPath = createTempProject('mustflow-retention-empty-');
 	const { updateRunReceiptState } = await importCore('run-receipt-state');

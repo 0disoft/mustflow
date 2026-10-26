@@ -29,7 +29,6 @@ interface RetainedRunStateDirectory {
 	readonly name: string;
 	readonly kind: RunStateDirectoryKind;
 	readonly sortKey: string;
-	readonly sizeBytes: number;
 }
 
 export interface RunReceiptIndexEntry {
@@ -158,7 +157,6 @@ function readRunStateDirectories(projectRoot: string): RetainedRunStateDirectory
 				name,
 				kind,
 				sortKey: getStateRunSortKey(name),
-				sizeBytes: fileSizeBytes(absolutePath),
 			} satisfies RetainedRunStateDirectory;
 		})
 		.filter((entry): entry is RetainedRunStateDirectory => Boolean(entry))
@@ -196,19 +194,22 @@ function applyRunReceiptRetention(projectRoot: string, policy: RunReceiptRetenti
 	const directories = readRunStateDirectories(projectRoot);
 	const maxItems = Math.max(MIN_RETAINED_RUN_DIRS, policy.maxItems);
 	const maxTotalBytes = Math.max(1, policy.maxTotalMb) * 1024 * 1024;
-	const kept = new Set(directories.slice(0, maxItems).map((directory) => directory.name));
+	// Directories beyond the item limit will be removed regardless of their size.
+	const candidates = directories.slice(0, maxItems).map((directory) => ({
+		...directory,
+		sizeBytes: fileSizeBytes(directory.absolutePath),
+	}));
+	const kept = new Set(candidates.map((directory) => directory.name));
 
-	let totalBytes = directories
-		.filter((directory) => kept.has(directory.name))
-		.reduce((total, directory) => total + directory.sizeBytes, 0);
+	let totalBytes = candidates.reduce((total, directory) => total + directory.sizeBytes, 0);
 
 	for (const directory of directories.slice(maxItems)) {
 		removeRunStateDirectory(projectRoot, directory);
 	}
 
-	for (const directory of [...directories].reverse()) {
-		if (kept.size <= MIN_RETAINED_RUN_DIRS || !kept.has(directory.name) || totalBytes <= maxTotalBytes) {
-			continue;
+	for (const directory of [...candidates].reverse()) {
+		if (kept.size <= MIN_RETAINED_RUN_DIRS || totalBytes <= maxTotalBytes) {
+			break;
 		}
 
 		removeRunStateDirectory(projectRoot, directory);
@@ -216,7 +217,7 @@ function applyRunReceiptRetention(projectRoot: string, policy: RunReceiptRetenti
 		totalBytes -= directory.sizeBytes;
 	}
 
-	return directories.filter((directory) => kept.has(directory.name));
+	return candidates.filter((directory) => kept.has(directory.name));
 }
 
 function readJsonObject(projectRoot: string, filePath: string): Record<string, unknown> | null {
