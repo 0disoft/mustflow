@@ -432,7 +432,29 @@ function stripJsonComments(text: string): string {
 		index += 1;
 	}
 
-	return result.replace(/,\s*([}\]])/gu, '$1');
+	return stripJsonTrailingCommas(result);
+}
+
+function stripJsonTrailingCommas(text: string): string {
+	let result = '';
+	let inString = false;
+	let escaped = false;
+	for (let index = 0; index < text.length; index++) {
+		const current = text[index] ?? '';
+		if (inString) {
+			if (escaped) escaped = false;
+			else if (current === '\\') escaped = true;
+			else if (current === '"') inString = false;
+		} else if (current === '"') {
+			inString = true;
+		} else if (current === ',') {
+			let next = index + 1;
+			while (next < text.length && /\s/u.test(text[next] ?? '')) next++;
+			if (text[next] === '}' || text[next] === ']') continue;
+		}
+		result += current;
+	}
+	return result;
 }
 
 function parseJsonLike(text: string, format: ConfigChainFormat): JsonParseResult {

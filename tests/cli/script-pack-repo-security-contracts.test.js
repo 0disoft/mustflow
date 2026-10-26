@@ -43,6 +43,46 @@ import {
 	writeFileSync,
 } from './helpers/text-budget-contracts.js';
 
+test('config-chain preserves comma and closing delimiters inside JSON and JSONC strings', async (t) => {
+	const { inspectConfigChain } = await import('../../dist/core/config-chain.js');
+	const projectPath = createTempProject();
+	const includes = ['src/{alpha,}', 'src/[alpha,]', 'src/{alpha,   }', 'src/[alpha,  ]',
+		'quote"before,}after', 'backslash\\before,]after', '한글😀,}', '/* literal comment */,]'];
+	const baseName = 'base,}.json';
+	const base = { compilerOptions: { strict: true } };
+	try {
+		writeFileSync(path.join(projectPath, baseName), JSON.stringify(base));
+		let changedValues = 0;
+		let unresolvedInheritance = 0;
+		for (const name of ['package.json', 'tsconfig.json']) {
+			const target = path.join(projectPath, name);
+			const config = { extends: `./${baseName}`, include: includes, exclude: ['out/,]'] };
+			const text = name === 'package.json' ? JSON.stringify(config)
+				: ['// fixture comment with ,}', '{', `"extends":${JSON.stringify(config.extends)},`,
+					`"include":[${includes.map(value => JSON.stringify(value)).join(',')}, /* trailing comment */ ],`,
+					'"exclude":["out/,]",],', '}'].join('\n');
+			writeFileSync(target, text);
+			const report = inspectConfigChain(projectPath, { paths: [target] });
+			const entry = report.configs.find(config => config.path === name);
+			assert.equal(entry.parseable, true);
+			for (let index = 0; index < includes.length; index++) {
+				if (entry.include[index] !== includes[index]) changedValues++;
+			}
+			assert.deepEqual(entry.exclude, config.exclude);
+			const edge = report.edges.find(edge => edge.from_path === name && edge.kind === 'extends');
+			if (!edge?.resolved || edge.specifier !== `./${baseName}`) unresolvedInheritance++;
+			writeFileSync(target, '{"include":["unterminated' + '\\"'.repeat(4096));
+			const malformed = inspectConfigChain(projectPath, { paths: [target] });
+			assert.equal(malformed.configs.find(config => config.path === name).parseable, false);
+		}
+		t.diagnostic(JSON.stringify({ stringValues: includes.length * 2, changedValues, unresolvedInheritance }));
+		assert.equal(changedValues, 0);
+		assert.equal(unresolvedInheritance, 0);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('config-chain inspects package and tsconfig inheritance without executing dynamic config', () => {
 	const projectPath = createTempProject();
 
