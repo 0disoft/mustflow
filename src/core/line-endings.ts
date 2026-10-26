@@ -70,10 +70,10 @@ function gitList(projectRoot: string, args: readonly string[]): readonly string[
 		return null;
 	}
 
+	// NUL-delimited names are literal; trimming can redirect normalization to a different file.
 	return result.stdout
 		.toString('utf8')
 		.split('\0')
-		.map((entry) => entry.trim())
 		.filter((entry) => entry.length > 0)
 		.sort((left, right) => left.localeCompare(right));
 }

@@ -104,6 +104,35 @@ test('line-endings normalize previews then applies LF normalization', () => {
 	}
 });
 
+test('line-endings preserves tracked filenames and never normalizes an untracked whitespace alias', (t) => {
+	const projectPath = createTempProject();
+	try {
+		initProject(projectPath);
+		writeFileSync(path.join(projectPath, '.gitattributes'), '* text=auto eol=lf\n');
+		const trackedPath = path.join(projectPath, ' tracked.txt');
+		const untrackedPath = path.join(projectPath, 'tracked.txt');
+		const original = 'preserve\r\nthese bytes\r\n';
+		writeFileSync(trackedPath, original);
+		runGit(projectPath, ['add', '--', '.gitattributes', ' tracked.txt']);
+		writeFileSync(untrackedPath, original);
+		const check = runCli(projectPath, ['line-endings', 'check', '--all', '--json']);
+		const checked = JSON.parse(check.stdout);
+		const apply = runCli(projectPath, ['line-endings', 'normalize', '--all', '--apply', '--json']);
+		const output = JSON.parse(apply.stdout);
+		const tracked = readFileSync(trackedPath, 'utf8');
+		const untracked = readFileSync(untrackedPath, 'utf8');
+		t.diagnostic(JSON.stringify({ changedFiles: output.changed_files,
+			trackedNormalized: tracked === 'preserve\nthese bytes\n', untrackedPreserved: untracked === original }));
+		assert.equal(untracked, original, 'tracked-only normalization must not change an untracked alias');
+		assert.equal(tracked, 'preserve\nthese bytes\n');
+		assert.equal(check.status, 1, check.stderr || check.stdout);
+		assert.deepEqual(checked.non_compliant_files.map(file => file.path), [' tracked.txt']);
+		assert.equal(apply.status, 0, apply.stderr || apply.stdout);
+		assert.deepEqual(output.changed_files, [' tracked.txt']);
+		assert.deepEqual(output.issues, []);
+	} finally { removeTempProject(projectPath); }
+});
+
 test('line-endings normalize refuses apply without LF policy', () => {
 	const projectPath = createTempProject();
 
