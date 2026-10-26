@@ -63,6 +63,7 @@ test('execution boundary changes select their focused regression coverage', () =
 		['src/cli/lib/script-pack-execution-guard.ts', 'script-pack-execution-guard-contracts.test.js'],
 		['src/cli/commands/verify/scheduled-execution.ts', 'run-cancellation.test.js'],
 		['src/cli/commands/verify/reuse-inputs.ts', 'verify-reuse-policy.test.js'],
+		['src/cli/commands/verify/reuse-results.ts', 'verify-reuse-policy.test.js'],
 		['schemas/commands.schema.json', 'command-time-limits.test.js'],
 	]) {
 		assert.ok(selectedFor([file]).has(expected), `${file}: ${expected}`);

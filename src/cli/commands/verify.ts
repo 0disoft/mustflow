@@ -1,12 +1,11 @@
-import type { VerificationReceipt, VerificationResult, VerificationResultStatus, VerificationSummary } from './verify/result-types.js';
+import type { VerificationResult, VerificationResultStatus, VerificationSummary } from './verify/result-types.js';
 import { summarizeResults, objectField, createFailureFingerprintForVerify, riskCodesForFailureFingerprint } from './verify/result-analysis.js';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { ClassifyOutput } from './classify.js';
 import { createChangeVerificationReport, type ChangeVerificationReport } from '../../core/change-verification.js';
 import { createCorrelationId } from '../../core/correlation-id.js';
-import { readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
+import { writeJsonFileInsideWithoutSymlinks } from '../../core/safe-filesystem.js';
 import { type CompletionVerdict } from '../../core/completion-verdict.js';
 import { createExternalEvidenceRisks, type ExternalEvidenceCheck } from '../../core/external-evidence.js';
 import { createFailureReplayCapsule, type FailureReplayCapsule } from '../../core/failure-replay-capsule.js';
@@ -36,6 +35,7 @@ import type { Reporter } from '../lib/reporter.js';
 import { createSkippedResults, testTargetsByScheduledIntent, runScheduledVerificationIntents } from './verify/scheduled-execution.js';
 import { createCompletionVerdictForResults } from './verify/completion-evidence.js';
 import { createVerificationCurrentStateHash } from './verify/reuse-inputs.js';
+import { readReusableVerificationResults, readVerifyStateText } from './verify/reuse-results.js';
 
 
 export { planErrorMessageKey, readInputFromClassificationReport } from './verify/input.js';
@@ -44,30 +44,6 @@ const VERIFY_SCHEMA_VERSION = '1';
 
 function hashTextSha256(content: string): string {
 	return `sha256:${createHash('sha256').update(content).digest('hex')}`;
-}
-
-function readReusableVerificationResults(projectRoot: string, verificationPlanId: string, currentStateHash: string | null): ReadonlyMap<string, VerificationResult> {
-	const reusable = new Map<string, VerificationResult>();
-	if (!currentStateHash) return reusable;
-	try {
-		const latest = JSON.parse(readFileSync(resolveLatestVerifyRunReceiptPath(projectRoot), 'utf8')) as Record<string, unknown>;
-		if (latest.verification_plan_id !== verificationPlanId || typeof latest.manifest_path !== 'string') return reusable;
-		const manifest = JSON.parse(readFileSync(path.join(projectRoot, latest.manifest_path), 'utf8')) as { receipts?: Array<Record<string, unknown>> };
-		for (const entry of manifest.receipts ?? []) {
-			if (typeof entry.intent !== 'string' || typeof entry.receipt_path !== 'string' || entry.status !== 'passed') continue;
-			const receiptContent = readFileSync(path.join(projectRoot, entry.receipt_path), 'utf8');
-			if (hashTextSha256(receiptContent) !== entry.receipt_sha256) continue;
-			const receipt = JSON.parse(receiptContent) as VerificationReceipt;
-			if (receipt.schema_version !== '1' || receipt.command !== 'run' || receipt.status !== 'passed' || receipt.intent !== entry.intent) continue;
-			if (receipt.current_state_hash !== currentStateHash || receipt.verification_plan_id !== verificationPlanId) continue;
-			const drift = objectField(receipt.write_drift);
-			if (drift?.has_undeclared_changes === true) continue;
-			reusable.set(entry.intent, { intent: entry.intent, status: 'passed', skipped: false, reason: 'reused_input_hash', detail: null, exit_code: 0, verification_plan_id: verificationPlanId, receipt_path: null, receipt_sha256: null, receipt });
-		}
-	} catch {
-		return reusable;
-	}
-	return reusable;
 }
 
 type VerificationStatus = 'passed' | 'partial' | 'failed' | 'blocked';
@@ -289,7 +265,7 @@ function readVerificationFailureFingerprint(value: unknown): VerificationFailure
 function readPreviousVerifyLatestSummary(projectRoot: string): PreviousVerifyLatestSummary | null {
 	try {
 		const parsed = JSON.parse(
-			readUtf8FileInsideWithoutSymlinks(projectRoot, resolveLatestVerifyRunReceiptPath(projectRoot)),
+			readVerifyStateText(projectRoot, path.relative(projectRoot, resolveLatestVerifyRunReceiptPath(projectRoot))),
 		) as Record<
 			string,
 			unknown

@@ -242,7 +242,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/cli\/commands\/run\/(?:execution|executor)\.ts$/u,
 			tests: ['run-cancellation.test.js', 'command-time-limits.test.js'] },
 		{ match: /^src\/cli\/commands\/verify(?:\.ts|\/scheduled-execution\.ts)$/u, tests: ['run-cancellation.test.js'] },
-		{ match: /^src\/cli\/commands\/verify\/reuse-inputs\.ts$/u, tests: ['verify-reuse-policy.test.js'] },
+		{ match: /^src\/cli\/commands\/verify\/reuse-(?:inputs|results)\.ts$/u, tests: ['verify-reuse-policy.test.js'] },
 		{ match: /^(?:src\/core\/command-contract-validation\.ts|schemas\/commands\.schema\.json)$/u,
 			tests: ['command-time-limits.test.js', 'verify-reuse-policy.test.js'] },
 		{ match: /^src\/core\/adapter-compatibility\.ts$/u, tests: ['adapters.test.js'] },

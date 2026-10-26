@@ -384,7 +384,7 @@ reuse = { inputs = ["README.md"], run_environment_independent = true }
 	}
 });
 
-for (const corruption of ['checksum', 'status', 'intent']) {
+for (const corruption of ['checksum', 'status', 'intent', 'receipt_escape', 'manifest_escape']) {
 	test(`reruns verification for inconsistent cached receipt ${corruption}`, async () => {
 		const projectPath = createTempProject();
 		try {
@@ -426,7 +426,18 @@ reuse = { inputs = ["README.md"], run_environment_independent = true }
 				const manifestPath = path.join(projectPath, previous.manifest_path);
 				const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 				manifest.receipts[0].receipt_sha256 = `sha256:${createHash('sha256').update(content).digest('hex')}`;
+				if (corruption === 'receipt_escape') {
+					writeFileSync(path.join(projectPath, 'untrusted-receipt.json'), content);
+					manifest.receipts[0].receipt_path = '.mustflow/state/runs/../../../untrusted-receipt.json';
+				}
 				writeFileSync(manifestPath, JSON.stringify(manifest));
+				if (corruption === 'manifest_escape') {
+					writeFileSync(path.join(projectPath, 'untrusted-manifest.json'), JSON.stringify(manifest));
+					const latestPath = path.join(projectPath, '.mustflow/state/runs/latest.json');
+					const latest = JSON.parse(readFileSync(latestPath, 'utf8'));
+					latest.manifest_path = '.mustflow/state/runs/../../../untrusted-manifest.json';
+					writeFileSync(latestPath, JSON.stringify(latest));
+				}
 			}
 			const result = await runCli(projectPath, args);
 			assert.equal(result.status, 0, result.stderr || result.stdout);
