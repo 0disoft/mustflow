@@ -157,7 +157,8 @@ function signatureForPath(fullPath: string, stat: BigIntStats, context: Snapshot
 	}
 
 	const type = stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
-	return `${type}:${stat.size}:${stat.mtimeNs}`;
+	// Same-size rewrites may preserve mtime; ctime still records the metadata change.
+	return `${type}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
 }
 
 function signatureForGitStatusPath(
@@ -176,7 +177,7 @@ function signatureForGitStatusPath(
 	}
 
 	if (stat.size > BigInt(MAX_HASH_BYTES)) {
-		return `git:${status}:file:${stat.size}:${stat.mtimeNs}:unhashed`;
+		return `git:${status}:file:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}:unhashed`;
 	}
 
 	return `git:${status}:file:${stat.size}:${hashFile(fullPath, relativePath, stat, context)}`;

@@ -161,3 +161,49 @@ test('repository snapshot propagates rename-source inspection failures', async (
 		removeTempProject(projectPath);
 	}
 });
+
+test('metadata-only write drift detects equal-size rewrites with restored modification time', async (t) => {
+	const { captureRepositorySnapshot } = await importRepositorySnapshot();
+	const { finishRunWriteTracking } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-write-drift.js')).href
+	);
+	for (const source of ['git_status', 'recursive_snapshot']) {
+		await t.test(source, () => {
+			const projectPath = source === 'git_status' ? createRepository() : createTempProject('mustflow-metadata-drift-');
+			const originalOptIn = process.env.MUSTFLOW_WRITE_DRIFT_SNAPSHOT;
+			try {
+				process.env.MUSTFLOW_WRITE_DRIFT_SNAPSHOT = '1';
+				const targetPath = path.join(projectPath, 'tracked.txt');
+				writeFileSync(targetPath, Buffer.alloc(source === 'git_status' ? 5 * 1024 * 1024 + 1 : 32, 0x61));
+				const fixedTime = new Date('2020-01-01T00:00:00Z');
+				fs.utimesSync(targetPath, fixedTime, fixedTime);
+				const originalStat = fs.statSync(targetPath, { bigint: true });
+				const before = captureRepositorySnapshot(projectPath, { env: process.env });
+				assert.equal(before.source, source);
+				assert.equal(before.metrics.hashed_file_count, 0);
+				const unchanged = captureRepositorySnapshot(projectPath, { env: process.env, previous: before });
+				assert.deepEqual([...unchanged.entries], [...before.entries]);
+				assert.equal(unchanged.metrics.hashed_file_count, 0);
+				const descriptor = fs.openSync(targetPath, 'r+');
+				try { fs.writeSync(descriptor, Buffer.from('b'), 0, 1, 0); }
+				finally { fs.closeSync(descriptor); }
+				fs.utimesSync(targetPath, fixedTime, fixedTime);
+				const rewrittenStat = fs.statSync(targetPath, { bigint: true });
+				assert.equal(rewrittenStat.size, originalStat.size);
+				assert.equal(rewrittenStat.mtimeNs, originalStat.mtimeNs);
+				assert.notEqual(rewrittenStat.ctimeNs, originalStat.ctimeNs);
+				const receipt = finishRunWriteTracking({ projectRoot: projectPath, env: process.env, declaredPaths: [], before });
+				t.diagnostic(JSON.stringify({ source, observedCount: receipt.observed_count,
+					hasUndeclaredChanges: receipt.has_undeclared_changes }));
+				assert.equal(receipt.status, 'checked');
+				assert.equal(receipt.coverage_complete, true);
+				assert.deepEqual(receipt.undeclared_paths, ['tracked.txt']);
+				assert.equal(receipt.has_undeclared_changes, true);
+			} finally {
+				if (originalOptIn === undefined) delete process.env.MUSTFLOW_WRITE_DRIFT_SNAPSHOT;
+				else process.env.MUSTFLOW_WRITE_DRIFT_SNAPSHOT = originalOptIn;
+				removeTempProject(projectPath);
+			}
+		});
+	}
+});
