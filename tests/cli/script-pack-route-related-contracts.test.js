@@ -317,6 +317,56 @@ test('code-route-outline handles long malformed NestJS handler candidates withou
 	}
 });
 
+test('related-files bounds line counting for import-heavy source files', async (t) => {
+	const { inspectRelatedFiles } = await import('../../dist/core/related-files.js');
+	const projectPath = createTempProject();
+	const statement = "import './dep.ts';\n";
+	const content = statement.repeat(2_000);
+	const originalCharCodeAt = String.prototype.charCodeAt;
+	try {
+		const target = path.join(projectPath, 'many.ts');
+		writeFileSync(target, content);
+		writeFileSync(path.join(projectPath, 'dep.ts'), 'export {};\n');
+		let characterReads = 0;
+		String.prototype.charCodeAt = function (...args) {
+			if (String(this).startsWith(statement)) characterReads++;
+			return originalCharCodeAt.apply(this, args);
+		};
+		const report = inspectRelatedFiles(projectPath, { paths: [target], maxCandidates: 2_001 });
+		const imports = report.candidates.filter(candidate => candidate.relationship === 'import');
+		t.diagnostic(JSON.stringify({ imports: imports.length, fileCharacters: content.length, characterReads }));
+		assert.equal(report.status, 'passed');
+		assert.equal(imports.length, 2_000);
+		assert.deepEqual(imports.map(candidate => candidate.line), Array.from({ length: 2_000 }, (_, index) => index + 1));
+		assert.ok(characterReads <= content.length, `Line counting revisited characters: ${characterReads}`);
+	} finally {
+		String.prototype.charCodeAt = originalCharCodeAt;
+		removeTempProject(projectPath);
+	}
+});
+
+test('related-files preserves mixed import locations and resets cursors for each file', async () => {
+	const { inspectRelatedFiles } = await import('../../dist/core/related-files.js');
+	const projectPath = createTempProject();
+	try {
+		const sources = [
+			'// 한글 😀', "const dep = require('./dep.ts');", "export { dep } from './dep.ts';",
+			"import { dep as value } from './dep.ts';", "const lazy = import('./dep.ts');",
+			"import './dep.ts'; const second = require('./dep.ts');",
+		];
+		writeFileSync(path.join(projectPath, 'dep.ts'), 'export const dep = 1;\n');
+		for (const [name, newline] of [['lf.ts', '\n'], ['crlf.ts', '\r\n']]) {
+			writeFileSync(path.join(projectPath, name), sources.join(newline));
+		}
+		const report = inspectRelatedFiles(projectPath, { paths: [path.join(projectPath, 'dep.ts')] });
+		assert.equal(report.status, 'passed');
+		for (const name of ['lf.ts', 'crlf.ts']) {
+			const importers = report.candidates.filter(candidate => candidate.relationship === 'importer' && candidate.path === name);
+			assert.deepEqual(importers.map(candidate => candidate.line), [2, 3, 4, 5, 6]);
+		}
+	} finally { removeTempProject(projectPath); }
+});
+
 test('related-files maps imports, importers, siblings, and parent config without deciding verification scope', () => {
 	const projectPath = createTempProject();
 

@@ -300,18 +300,6 @@ function collectCandidateFiles(
 	return { sourceFiles: source.files, relatedFiles: related.files };
 }
 
-function lineNumberAtIndex(text: string, index: number): number {
-	let line = 1;
-	let offset = 0;
-	while (offset < index) {
-		if (text.charCodeAt(offset) === 10) {
-			line += 1;
-		}
-		offset += 1;
-	}
-	return line;
-}
-
 function extractImportSpecifiers(text: string): readonly ImportSpecifierMatch[] {
 	const results: ImportSpecifierMatch[] = [];
 	const patterns = [
@@ -354,11 +342,20 @@ function readImportsForFile(
 	}
 
 	const text = buffer.toString('utf8');
-	return extractImportSpecifiers(text).map((entry) => ({
-		specifier: entry.specifier,
-		line: lineNumberAtIndex(text, entry.index),
-		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
-	}));
+	// Matches are sorted by source offset, so line counting only needs to move forward.
+	let line = 1;
+	let offset = 0;
+	return extractImportSpecifiers(text).map((entry) => {
+		while (offset < entry.index) {
+			if (text.charCodeAt(offset) === 10) line += 1;
+			offset += 1;
+		}
+		return {
+			specifier: entry.specifier,
+			line,
+			resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
+		};
+	});
 }
 
 function candidateKey(candidate: RelatedFileCandidate): string {
