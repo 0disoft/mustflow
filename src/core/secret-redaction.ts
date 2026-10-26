@@ -14,12 +14,14 @@ interface SecretRedactionRule {
 }
 
 const SECRET_VALUE_PATTERN = '[A-Za-z0-9_./+=:-]{8,}';
+// Underscore prefixes cover environment keys without retrying across word boundaries.
+const SECRET_KEY_PATTERN = '(?:[A-Za-z0-9_]*_)?(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)';
 
 const SECRET_REDACTION_RULES: readonly SecretRedactionRule[] = [
 	{
 		kind: 'secret_key_value',
 		pattern: new RegExp(
-			`\\b((?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key)\\b\\s*[:=]\\s*["']?)(${SECRET_VALUE_PATTERN})`,
+			`\\b(${SECRET_KEY_PATTERN}\\b["']?\\s*[:=]\\s*["']?)(${SECRET_VALUE_PATTERN})`,
 			'giu',
 		),
 		replace: (_match, prefix) => `${prefix}${REDACTED_SECRET_MARKER}`,
