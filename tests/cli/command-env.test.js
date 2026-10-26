@@ -1,10 +1,50 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import { mkdirSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import path from 'node:path';
 import { test } from 'node:test';
 import { createCommandEnv } from '../../dist/core/command-env.js';
 import { createTempProject, removeTempProject } from './helpers/cli-harness.js';
+
+test('PATH filtering bounds filesystem probes by unique paths and refreshes them for each environment', (t) => {
+	const root = createTempProject('mustflow-env-path-probes-');
+	const originalExists = fs.existsSync;
+	const originalRealpath = fs.realpathSync.native;
+	try {
+		const localBin = path.join(root, 'node_modules', '.bin');
+		const safePaths = Array.from({ length: 64 }, (_, index) => path.join(root, `tools-${index}`));
+		for (const directory of [localBin, ...safePaths]) mkdirSync(directory, { recursive: true });
+		const entries = [...safePaths, localBin, ...safePaths, 'node_modules/.bin'];
+		const source = Object.freeze({ PATH: entries.join(path.delimiter) });
+		const expected = [...safePaths, ...safePaths].join(path.delimiter);
+		const resolution = { policy: 'inherit', allowlist: [] };
+		const samples = [];
+		for (let attempt = 0; attempt < 2; attempt += 1) {
+			let existsCalls = 0;
+			let realpathCalls = 0;
+			fs.existsSync = (...args) => { existsCalls += 1; return originalExists(...args); };
+			fs.realpathSync.native = (...args) => { realpathCalls += 1; return originalRealpath(...args); };
+			syncBuiltinESMExports();
+			assert.equal(createCommandEnv(root, resolution, source).PATH, expected);
+			samples.push({ existsCalls, realpathCalls });
+		}
+		t.diagnostic(JSON.stringify({ pathEntries: entries.length, samples }));
+		// A relative entry may also be resolved against the process cwd on a non-match.
+		const maximumUniquePaths = safePaths.length + 2;
+		for (const sample of samples) {
+			assert.ok(sample.existsCalls <= maximumUniquePaths, `redundant existence probes: ${sample.existsCalls}`);
+			assert.ok(sample.realpathCalls <= maximumUniquePaths, `redundant realpath probes: ${sample.realpathCalls}`);
+			assert.ok(sample.realpathCalls >= safePaths.length + 1, 'a later environment must refresh filesystem state');
+		}
+	} finally {
+		fs.existsSync = originalExists;
+		fs.realpathSync.native = originalRealpath;
+		syncBuiltinESMExports();
+		removeTempProject(root);
+	}
+});
 
 test('Windows child environment cannot retain a local bin through a second PATH casing', {
 	skip: process.platform !== 'win32',

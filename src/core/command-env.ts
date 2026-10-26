@@ -70,11 +70,16 @@ function pathEntryCandidates(entry: string, projectRoot: string): string[] {
 	return [path.resolve(projectRoot, entry), path.resolve(entry)];
 }
 
-function sameResolvedPath(left: string, right: string, projectRoot: string): boolean {
-	const resolvedRight = normalizePathForComparison(right);
+function sameResolvedPath(
+	left: string,
+	right: string,
+	projectRoot: string,
+	normalizePath: (value: string) => string,
+): boolean {
+	const resolvedRight = normalizePath(right);
 
 	return pathEntryCandidates(left, projectRoot).some((candidate) =>
-		pathsEqual(normalizePathForComparison(candidate), resolvedRight),
+		pathsEqual(normalizePath(candidate), resolvedRight),
 	);
 }
 
@@ -172,13 +177,22 @@ function removeProjectLocalBinFromPath(env: NodeJS.ProcessEnv, projectRoot: stri
 		: [getPathEnvKey(env)];
 	const output = { ...env };
 	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
+	// Reuse probes only within this environment; later commands must observe filesystem changes.
+	const normalizedPaths = new Map<string, string>();
+	const normalizeOnce = (value: string): string => {
+		const cached = normalizedPaths.get(value);
+		if (cached !== undefined) return cached;
+		const normalized = normalizePathForComparison(value);
+		normalizedPaths.set(value, normalized);
+		return normalized;
+	};
 
 	for (const pathKey of pathKeys) {
 		const currentPath = env[pathKey];
 		if (!currentPath) continue;
 		output[pathKey] = currentPath
 			.split(path.delimiter)
-			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath, projectRoot))
+			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath, projectRoot, normalizeOnce))
 			.join(path.delimiter);
 	}
 	return output;
