@@ -33,14 +33,13 @@ export function decodeUtf8Tail(buffer: Buffer, maxTailBytes: number): { readonly
 
 export class BoundedOutputBuffer {
 	readonly #maxTailBytes: number;
-	#chunks: Buffer[] = [];
-	#headIndex = 0;
-	#headOffset = 0;
+	#buffer = Buffer.alloc(0);
+	#writeOffset = 0;
 	#tailBytes = 0;
 	#bytes = 0;
 
 	constructor(maxTailBytes: number) {
-		this.#maxTailBytes = Math.max(0, maxTailBytes);
+		this.#maxTailBytes = Math.max(0, Math.trunc(maxTailBytes));
 	}
 
 	append(chunk: string | Buffer): void {
@@ -52,35 +51,20 @@ export class BoundedOutputBuffer {
 			return;
 		}
 
-		this.#chunks.push(buffer);
-		this.#tailBytes += buffer.byteLength;
-
-		while (this.#tailBytes > this.#maxTailBytes && this.#headIndex < this.#chunks.length) {
-			const first = this.#chunks[this.#headIndex];
-			const overflow = this.#tailBytes - this.#maxTailBytes;
-
-			if (!first) {
-				break;
-			}
-
-			const firstAvailableBytes = first.byteLength - this.#headOffset;
-
-			if (firstAvailableBytes <= overflow) {
-				this.#headIndex += 1;
-				this.#headOffset = 0;
-				this.#tailBytes -= firstAvailableBytes;
-				continue;
-			}
-
-			this.#headOffset += overflow;
-			this.#tailBytes -= overflow;
-		}
-
-		this.#compactRetainedChunks();
+		const start = Math.max(0, buffer.byteLength - this.#maxTailBytes);
+		const length = buffer.byteLength - start;
+		this.#ensureCapacity(Math.min(this.#maxTailBytes, this.#tailBytes + length));
+		const firstLength = Math.min(length, this.#buffer.byteLength - this.#writeOffset);
+		buffer.copy(this.#buffer, this.#writeOffset, start, start + firstLength);
+		buffer.copy(this.#buffer, 0, start + firstLength);
+		this.#writeOffset = (this.#writeOffset + length) % this.#buffer.byteLength;
+		this.#tailBytes = Math.min(this.#buffer.byteLength, this.#tailBytes + length);
 	}
 
 	toSnapshot(): BoundedOutputSnapshot {
-		const tail = decodeUtf8Tail(Buffer.concat(this.#retainedChunks(), this.#tailBytes), this.#maxTailBytes);
+		const bytes = Buffer.allocUnsafeSlow(this.#tailBytes);
+		this.#copyTail(bytes);
+		const tail = decodeUtf8Tail(bytes, this.#maxTailBytes);
 
 		return {
 			bytes: this.#bytes,
@@ -88,29 +72,20 @@ export class BoundedOutputBuffer {
 		};
 	}
 
-	#retainedChunks(): Buffer[] {
-		if (this.#tailBytes === 0 || this.#headIndex >= this.#chunks.length) {
-			return [];
-		}
-
-		const chunks = this.#chunks.slice(this.#headIndex);
-		if (this.#headOffset > 0 && chunks[0]) {
-			chunks[0] = chunks[0].subarray(this.#headOffset);
-		}
-
-		return chunks;
+	#copyTail(target: Buffer): void {
+		if (this.#tailBytes === 0) return;
+		const start = (this.#writeOffset - this.#tailBytes + this.#buffer.byteLength) % this.#buffer.byteLength;
+		const firstLength = Math.min(this.#tailBytes, this.#buffer.byteLength - start);
+		this.#buffer.copy(target, 0, start, start + firstLength);
+		this.#buffer.copy(target, firstLength, 0, this.#tailBytes - firstLength);
 	}
 
-	#compactRetainedChunks(): void {
-		if (this.#headIndex === 0) {
-			return;
-		}
-
-		if (this.#headIndex < 64 && this.#headIndex * 2 < this.#chunks.length) {
-			return;
-		}
-
-		this.#chunks = this.#chunks.slice(this.#headIndex);
-		this.#headIndex = 0;
+	#ensureCapacity(requiredBytes: number): void {
+		if (requiredBytes <= this.#buffer.byteLength) return;
+		const capacity = Math.min(this.#maxTailBytes, Math.max(requiredBytes, this.#buffer.byteLength * 2));
+		const next = Buffer.allocUnsafeSlow(capacity);
+		this.#copyTail(next);
+		this.#buffer = next;
+		this.#writeOffset = this.#tailBytes;
 	}
 }

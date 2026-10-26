@@ -229,6 +229,7 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/(?:verification-resource-budget|process-start-token-cache)\.ts$/u,
 			tests: ['verification-resource-budget.test.js', 'process-start-token-cache.test.js'] },
 		{ match: /^src\/core\/cancellation\.ts$/u, tests: ['run-cancellation.test.js'] },
+		{ match: /^src\/core\/bounded-output\.ts$/u, tests: ['bounded-output.test.js', ...runTests] },
 		{ match: /^src\/cli\/lib\/external-skill-(?:import|downloads)\.ts$/u, tests: ['performance-downloads.test.js', 'skill-import.test.js', 'dependency-read.test.js'] },
 		{ match: /^src\/cli\/(?:commands\/dashboard|lib\/(?:dashboard-snapshot-cache|git-changes|agent-context))\.ts$/u, tests: ['performance-dashboard.test.js'] },
 		{ match: /^src\/cli\/lib\/local-index\/(?:command-effect-queries|effect-graph-read-model|read-session|index)\.ts$/u, tests: ['performance-index.test.js', 'index-workflow.test.js', 'index-verification-evidence.test.js', 'explain-command.test.js', ...dashboardTests] },
