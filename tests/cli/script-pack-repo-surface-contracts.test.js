@@ -321,6 +321,34 @@ test('deploy-surface detects package scripts and deploy config files', () => {
 	}
 });
 
+test('merge-conflict-scan preserves Git filenames when discovering changed files', (t) => {
+	const projectPath = createTempProject();
+	try {
+		initProject(projectPath);
+		runGit(projectPath, ['init', '--quiet']);
+		runGit(projectPath, ['config', 'core.quotePath', 'true']);
+		const tracked = ['한글.ts', ' staged.ts'];
+		const untracked = ['새파일.ts', ' untracked.ts'];
+		if (process.platform !== 'win32') untracked.push('line\nbreak.ts', 'tab\tname.ts', 'quote"name.ts');
+		for (const file of tracked) writeFileSync(path.join(projectPath, file), 'export {};\n');
+		commitGitBaseline(projectPath);
+		const expected = [...tracked, ...untracked].sort((left, right) => left.localeCompare(right));
+		for (const file of expected) {
+			writeFileSync(path.join(projectPath, file), '<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> branch\n');
+		}
+		runGit(projectPath, ['add', '--', tracked[1]]);
+		const { result, report } = runRepoMergeConflictScanJson(projectPath, []);
+		t.diagnostic(JSON.stringify({ expectedFiles: expected.length, checkedFiles: report.summary.files_checked,
+			markers: report.summary.markers_found, status: report.status }));
+		assert.equal(report.policy.input_mode, 'git_changed_files');
+		assert.deepEqual(report.files.map(file => file.path), expected);
+		assert.equal(report.summary.markers_found, expected.length * 3);
+		assert.equal(report.status, 'failed');
+		assert.equal(result.status, 1, result.stderr || result.stdout);
+		assert.deepEqual(report.issues, []);
+	} finally { removeTempProject(projectPath); }
+});
+
 test('merge-conflict-scan reports conflict markers without leaking file content', () => {
 	const projectPath = createTempProject();
 

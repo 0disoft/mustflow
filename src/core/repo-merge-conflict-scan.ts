@@ -149,8 +149,7 @@ function parseGitPaths(stdout: string): readonly string[] {
 	const paths: string[] = [];
 	const seen = new Set<string>();
 
-	for (const line of stdout.split(/\r?\n/u)) {
-		const relativePath = normalizeRelativePath(line.trim());
+	for (const relativePath of stdout.split('\0')) {
 		if (!relativePath || relativePath === '.' || seen.has(relativePath)) {
 			continue;
 		}
@@ -170,8 +169,8 @@ function collectGitChangedFiles(root: string, issues: string[], findings: MergeC
 		return [];
 	}
 
-	const tracked = runGit(root, ['diff', '--name-only', '--diff-filter=ACMRTUXB', 'HEAD', '--']);
-	const untracked = runGit(root, ['ls-files', '--others', '--exclude-standard', '--']);
+	const tracked = runGit(root, ['diff', '--name-only', '-z', '--diff-filter=ACMRTUXB', 'HEAD', '--']);
+	const untracked = runGit(root, ['ls-files', '-z', '--others', '--exclude-standard', '--']);
 	const paths = new Set<string>();
 
 	if (tracked.ok) {
