@@ -1,6 +1,6 @@
 import { normalizeCommandEffects } from './command-effects.js';
 import type { CommandContract } from './config-loading.js';
-import { parsePathScope, pathScopeContainsPath } from './path-scope.js';
+import { parsePathScope, PathScopeParseError } from './path-scope.js';
 import {
 	captureRepositorySnapshot,
 	normalizeRepositoryRelativePath,
@@ -82,8 +82,42 @@ function listObservedChangedPaths(
 	return changed.sort((left, right) => left.localeCompare(right));
 }
 
-function declaredPathCoversObservedPath(declaredPath: string, observedPath: string): boolean {
-	return pathScopeContainsPath(parsePathScope(declaredPath), observedPath);
+interface DeclaredPathNode {
+	readonly children: Map<string, DeclaredPathNode>;
+	literal: boolean;
+	subtree: boolean;
+}
+
+function createDeclaredPathMatcher(declaredPaths: readonly string[]): (observedPath: string) => boolean {
+	const root: DeclaredPathNode = { children: new Map(), literal: false, subtree: false };
+	for (const declaredPath of declaredPaths) {
+		const scope = parsePathScope(declaredPath);
+		let node = root;
+		for (const segment of repositoryPathKey(scope.root).split('/')) {
+			let child = node.children.get(segment);
+			if (!child) {
+				child = { children: new Map(), literal: false, subtree: false };
+				node.children.set(segment, child);
+			}
+			node = child;
+		}
+		if (scope.kind === 'subtree') node.subtree = true;
+		else node.literal = true;
+	}
+
+	return (observedPath) => {
+		if (declaredPaths.length === 0) return false;
+		const candidate = parsePathScope(observedPath);
+		if (candidate.kind !== 'literal') throw new PathScopeParseError('path_scope_unsupported_pattern', observedPath);
+		let node = root;
+		for (const segment of repositoryPathKey(candidate.root).split('/')) {
+			const child = node.children.get(segment);
+			if (!child) return false;
+			node = child;
+			if (node.subtree) return true;
+		}
+		return node.literal;
+	};
 }
 
 function truncatePaths(paths: readonly string[]): { readonly paths: readonly string[]; readonly truncated: boolean } {
@@ -96,10 +130,6 @@ function truncatePaths(paths: readonly string[]): { readonly paths: readonly str
 
 function uniqueSortedPaths(paths: Iterable<string>): string[] {
 	return [...new Set([...paths].map(normalizeRepositoryRelativePath))].sort((left, right) => left.localeCompare(right));
-}
-
-function pathsCoverObservedPath(declaredPaths: readonly string[], observedPath: string): boolean {
-	return declaredPaths.some((declaredPath) => declaredPathCoversObservedPath(declaredPath, observedPath));
 }
 
 export function createUnavailableRunWriteDriftReceipt(
@@ -186,15 +216,17 @@ export function finishRunWriteBatchTracking(
 	const declaredObservedByIntent = new Map<string, string[]>();
 	const undeclaredByIntent = new Map<string, string[]>();
 	const ambiguousByIntent = new Map<string, string[]>();
+	const declaredMatchers = new Map<RunWriteBatchIntent, (observedPath: string) => boolean>();
 
 	for (const intent of intents) {
+		if (observedPaths.length > 0) declaredMatchers.set(intent, createDeclaredPathMatcher(intent.declaredPaths));
 		declaredObservedByIntent.set(intent.intentName, []);
 		undeclaredByIntent.set(intent.intentName, []);
 		ambiguousByIntent.set(intent.intentName, []);
 	}
 
 	for (const observedPath of observedPaths) {
-		const declaredOwners = intents.filter((intent) => pathsCoverObservedPath(intent.declaredPaths, observedPath));
+		const declaredOwners = intents.filter((intent) => declaredMatchers.get(intent)?.(observedPath));
 
 		if (declaredOwners.length === 1) {
 			declaredObservedByIntent.get(declaredOwners[0]?.intentName ?? '')?.push(observedPath);
@@ -277,12 +309,12 @@ export function finishRunWriteTracking(tracker: RunWriteTracker): RunWriteDriftR
 	}
 
 	const observedPaths = listObservedChangedPaths(tracker.before.entries, after.entries);
-	const declaredObservedPaths = observedPaths.filter((observedPath) =>
-		tracker.declaredPaths.some((declaredPath) => declaredPathCoversObservedPath(declaredPath, observedPath)),
-	);
-	const undeclaredPaths = observedPaths.filter((observedPath) =>
-		!tracker.declaredPaths.some((declaredPath) => declaredPathCoversObservedPath(declaredPath, observedPath)),
-	);
+	const matchesDeclaredPath = observedPaths.length > 0 ? createDeclaredPathMatcher(tracker.declaredPaths) : () => false;
+	const declaredObservedPaths: string[] = [];
+	const undeclaredPaths: string[] = [];
+	for (const observedPath of observedPaths) {
+		(matchesDeclaredPath(observedPath) ? declaredObservedPaths : undeclaredPaths).push(observedPath);
+	}
 	const observed = truncatePaths(observedPaths);
 	const declaredObserved = truncatePaths(declaredObservedPaths);
 	const undeclared = truncatePaths(undeclaredPaths);

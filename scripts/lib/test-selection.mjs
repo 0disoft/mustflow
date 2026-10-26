@@ -236,6 +236,8 @@ export function createTestSelection(allCliTests, options = {}) {
 			tests: ['run-receipt-redaction.test.js', ...runTests] },
 		{ match: /^src\/core\/run-receipt-state\.ts$/u,
 			tests: ['run-state-publication.test.js', ...runTests] },
+		{ match: /^src\/core\/run-write-drift\.ts$/u,
+			tests: ['run-write-drift.test.js', ...runTests, 'verify-plan-scheduler.test.js'] },
 		{ match: /^src\/core\/command-env\.ts$/u,
 			tests: ['command-env.test.js', ...runTests] },
 		{ match: /^src\/cli\/commands\/run\/process-tree\.ts$/u,
