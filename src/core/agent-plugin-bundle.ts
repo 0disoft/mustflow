@@ -1,6 +1,8 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { ensureInsideWithoutSymlinks } from './safe-filesystem.js';
+
 interface BundleSkill {
 	readonly name: string;
 	readonly source: string;
@@ -247,6 +249,7 @@ export function buildAgentPluginBundle(projectRoot: string, bundlePath: string):
 
 	const skillSources = declaration.skills.map((skill) => ({ skill, directory: validateSkill(projectRoot, skill) }));
 	const version = readPackageVersion(projectRoot, declaration);
+	ensureInsideWithoutSymlinks(projectRoot, outputDirectory, { allowMissingDescendant: true });
 	rmSync(outputDirectory, { recursive: true, force: true });
 	mkdirSync(path.join(outputDirectory, 'skills'), { recursive: true });
 	for (const { skill, directory } of skillSources) {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
@@ -7,6 +7,40 @@ import { assertMatchesSchema } from '../helpers/json-schema.js';
 import { createTempProject, projectRoot, removeTempProject, runCli } from './helpers/cli-harness.js';
 import { schemaRoot } from './helpers/schema-contracts.js';
 import { buildAgentPluginBundle } from '../../dist/core/agent-plugin-bundle.js';
+
+for (const linkedPath of ['dist', 'dist/agent-plugins', 'dist/agent-plugins/nested', 'dist/agent-plugins/nested/example-review']) {
+	test(`plugin build rejects a linked output component: ${linkedPath}`, (t) => {
+		const fixture = createTempProject('mustflow-plugin-linked-');
+		const outside = createTempProject('mustflow-plugin-outside-');
+		const link = path.join(fixture, linkedPath);
+		try {
+			const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'plugin-bundles/mustflow-review.bundle.json'), 'utf8'));
+			bundle.skills = bundle.skills.slice(0, 1);
+			bundle.output_directory = 'dist/agent-plugins/nested/example-review';
+			const skill = bundle.skills[0];
+			cpSync(path.dirname(path.join(projectRoot, skill.source)), path.dirname(path.join(fixture, skill.source)), { recursive: true });
+			writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+			writeFileSync(path.join(fixture, 'package.json'), '{"version":"1.2.3"}');
+			const outsideOutput = path.join(outside, path.relative(link, path.join(fixture, bundle.output_directory)));
+			mkdirSync(outsideOutput, { recursive: true });
+			const sentinel = path.join(outsideOutput, 'keep.txt');
+			writeFileSync(sentinel, 'external data must survive');
+			mkdirSync(path.dirname(link), { recursive: true });
+			symlinkSync(outside, link, process.platform === 'win32' ? 'junction' : 'dir');
+			let failure;
+			try { buildAgentPluginBundle(fixture, 'bundle.json'); } catch (error) { failure = error; }
+			const preserved = existsSync(sentinel) && readFileSync(sentinel, 'utf8') === 'external data must survive';
+			t.diagnostic(JSON.stringify({ linkedPath, rejected: !!failure, externalFilePreserved: preserved }));
+			assert.equal(preserved, true, 'build must preserve files outside the project');
+			assert.match(failure?.message ?? '', /Path must not contain symlinks/u);
+			assert.equal(existsSync(path.join(outsideOutput, 'plugin.json')), false);
+		} finally {
+			if (lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
+			removeTempProject(fixture);
+			removeTempProject(outside);
+		}
+	});
+}
 
 test('real bundled skills export portable string metadata without changing canonical files', () => {
 	const fixture = createTempProject('mustflow-portable-real-');
