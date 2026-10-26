@@ -221,7 +221,7 @@ function isLikelyTextFile(relativePath: string): boolean {
 	].includes(extension);
 }
 
-function listFilesUnder(root: string, relativePath: string, findings: MergeConflictScanFinding[], issues: string[]): readonly string[] {
+function* listFilesUnder(root: string, relativePath: string, findings: MergeConflictScanFinding[], issues: string[]): Generator<string> {
 	const absolutePath = path.join(root, ...relativePath.split('/'));
 	let entries: Dirent<string>[];
 
@@ -232,25 +232,22 @@ function listFilesUnder(root: string, relativePath: string, findings: MergeConfl
 		const message = error instanceof Error ? error.message : String(error);
 		issues.push(`${relativePath}: ${message}`);
 		findings.push(makeFinding('merge_conflict_scan_unreadable_path', 'high', relativePath, message, null, null));
-		return [];
+		return;
 	}
 
-	const files: string[] = [];
 	for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
 		const child = normalizeRelativePath(relativePath === '.' ? entry.name : `${relativePath}/${entry.name}`);
 		if (entry.isDirectory()) {
 			if (!shouldSkipDirectory(child)) {
-				files.push(...listFilesUnder(root, child, findings, issues));
+				yield* listFilesUnder(root, child, findings, issues);
 			}
 			continue;
 		}
 
 		if (entry.isFile() && isLikelyTextFile(child)) {
-			files.push(child);
+			yield child;
 		}
 	}
-
-	return files;
 }
 
 function resolveInputFiles(

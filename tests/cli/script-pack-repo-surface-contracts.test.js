@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import {
 	assert,
 	commitGitBaseline,
@@ -317,6 +319,44 @@ test('deploy-surface detects package scripts and deploy config files', () => {
 		assert.ok(report.required_verification.some((entry) => entry.includes('Cloudflare')));
 		assert.ok(report.required_verification.some((entry) => entry.includes('release_npm_published_verify')));
 	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('merge-conflict-scan stops descending once max_files is exceeded', async (t) => {
+	const { checkRepoMergeConflictScan } = await import('../../dist/core/repo-merge-conflict-scan.js');
+	const projectPath = createTempProject();
+	const sourcePath = path.join(projectPath, 'src');
+	const originalReadDir = fs.readdirSync;
+	try {
+		for (let directory = 0; directory < 8; directory++) {
+			const child = path.join(sourcePath, String(directory));
+			mkdirSync(child, { recursive: true });
+			for (let file = 0; file < 4; file++) writeFileSync(path.join(child, `${file}.ts`), 'export {};\n');
+		}
+		let visitedDirectories = 0;
+		fs.readdirSync = (directory, ...args) => {
+			if (typeof directory === 'string' && (directory === sourcePath || directory.startsWith(sourcePath + path.sep))) {
+				visitedDirectories++;
+			}
+			return originalReadDir(directory, ...args);
+		};
+		syncBuiltinESMExports();
+		const report = checkRepoMergeConflictScan(projectPath, { paths: ['src'], maxFiles: 2 });
+		t.diagnostic(JSON.stringify({ availableFiles: 32, maxFiles: 2,
+			visitedDirectories, checkedFiles: report.summary.files_checked }));
+		assert.deepEqual(report.files.map(file => file.path), ['src/0/0.ts', 'src/0/1.ts']);
+		assert.equal(report.status, 'failed');
+		assert.equal(report.findings.filter(finding => finding.code === 'merge_conflict_scan_max_files_exceeded').length, 1);
+		assert.ok(visitedDirectories <= 2, `traversed ${visitedDirectories} directories despite max_files=2`);
+		const complete = checkRepoMergeConflictScan(projectPath, { paths: ['src'], maxFiles: 32 });
+		assert.equal(complete.summary.files_checked, 32);
+		assert.equal(complete.files.at(-1).path, 'src/7/3.ts');
+		assert.equal(complete.status, 'passed');
+		assert.deepEqual(complete.issues, []);
+	} finally {
+		fs.readdirSync = originalReadDir;
+		syncBuiltinESMExports();
 		removeTempProject(projectPath);
 	}
 });
