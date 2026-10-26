@@ -238,6 +238,8 @@ export function createTestSelection(allCliTests, options = {}) {
 			tests: ['run-state-publication.test.js', ...runTests] },
 		{ match: /^src\/core\/command-env\.ts$/u,
 			tests: ['command-env.test.js', ...runTests] },
+		{ match: /^src\/cli\/commands\/run\/process-tree\.ts$/u,
+			tests: ['process-tree.test.js', 'process-supervisor.test.js', 'run-cancellation.test.js', ...runTests] },
 		{ match: /^src\/cli\/lib\/external-skill-(?:import|downloads)\.ts$/u, tests: ['performance-downloads.test.js', 'skill-import.test.js', 'dependency-read.test.js'] },
 		{ match: /^src\/cli\/(?:commands\/dashboard|lib\/(?:dashboard-snapshot-cache|git-changes|agent-context))\.ts$/u, tests: ['performance-dashboard.test.js'] },
 		{ match: /^src\/cli\/lib\/local-index\/(?:command-effect-queries|effect-graph-read-model|read-session|index)\.ts$/u, tests: ['performance-index.test.js', 'index-workflow.test.js', 'index-verification-evidence.test.js', 'explain-command.test.js', ...dashboardTests] },

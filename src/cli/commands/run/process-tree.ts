@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { TERMINATION_CONFIRMATION_FALLBACK_MS } from '../../../core/command-time-limits.js';
 
 import type { ProcessSupervisorBackend, ProcessTreeInspection } from '../../../core/process-supervisor.js';
 import type { RunTerminationReceipt } from '../../../core/run-receipt.js';
@@ -47,9 +48,11 @@ function signalProcessTreeNonBlocking(pid: number | undefined, signal: NodeJS.Si
 		const killer = spawn('taskkill', windowsTaskkillArgs(pid, signal), {
 			stdio: 'ignore',
 			windowsHide: true,
-			detached: true,
+			timeout: TERMINATION_CONFIRMATION_FALLBACK_MS,
+			killSignal: 'SIGKILL',
 		});
-		killer.unref();
+		// Keep the bounded helper tracked; failures leave cleanup unconfirmed in the supervisor.
+		killer.once('error', () => {});
 
 		if (signal === 'SIGKILL') {
 			try {
@@ -117,8 +120,8 @@ export function createProcessTreeBackend(): ProcessSupervisorBackend {
 		method: getKillMethod(),
 		gracefulSignal: 'SIGTERM',
 		forcedSignal: 'SIGKILL',
-		requestGracefulTermination: (pid) => terminateProcessTree(pid),
-		requestForceTermination: (pid) => forceTerminateProcessTree(pid),
+		requestGracefulTermination: (pid) => terminateProcessTreeNonBlocking(pid),
+		requestForceTermination: (pid) => forceTerminateProcessTreeNonBlocking(pid),
 		inspectProcessTree,
 	};
 }
