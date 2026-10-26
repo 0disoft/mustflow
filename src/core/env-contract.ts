@@ -306,16 +306,25 @@ function collectFilesFromDirectory(
 	}
 }
 
-function lineNumberAtIndex(text: string, index: number): number {
+type LineNumberLookup = (index: number) => number;
+
+function createLineNumberLookup(text: string): LineNumberLookup {
 	let line = 1;
 	let offset = 0;
-	while (offset < index) {
-		if (text.charCodeAt(offset) === 10) {
-			line += 1;
+	return (index) => {
+		// Each detector visits increasing offsets; a later detector can start earlier.
+		if (index < offset) {
+			line = 1;
+			offset = 0;
 		}
-		offset += 1;
-	}
-	return line;
+		while (offset < index) {
+			if (text.charCodeAt(offset) === 10) {
+				line += 1;
+			}
+			offset += 1;
+		}
+		return line;
+	};
 }
 
 function addReference(
@@ -345,23 +354,24 @@ function collectRegexReferences(
 	seen: Set<string>,
 	pattern: RegExp,
 	kind: EnvContractReferenceKind,
+	lineAt: LineNumberLookup,
 ): void {
 	for (const match of text.matchAll(pattern)) {
 		const key = match.groups?.key;
 		if (key) {
-			addReference(references, seen, key, candidate, lineNumberAtIndex(text, match.index ?? 0), kind);
+			addReference(references, seen, key, candidate, lineAt(match.index ?? 0), kind);
 		}
 	}
 }
 
-function collectDestructuredProcessEnv(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>): void {
+function collectDestructuredProcessEnv(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>, lineAt: LineNumberLookup): void {
 	const pattern = /\{(?<body>[^}]+)\}\s*=\s*process\.env\b/gu;
 	for (const match of text.matchAll(pattern)) {
 		const body = match.groups?.body ?? '';
 		for (const entry of body.split(',')) {
 			const key = new RegExp(`^\\s*(?<key>${ENV_KEY_PATTERN})(?:\\s*:|\\s*$)`, 'u').exec(entry)?.groups?.key;
 			if (key) {
-				addReference(references, seen, key, candidate, lineNumberAtIndex(text, match.index ?? 0), 'process_env_destructure');
+				addReference(references, seen, key, candidate, lineAt(match.index ?? 0), 'process_env_destructure');
 			}
 		}
 	}
@@ -377,9 +387,9 @@ function collectEnvExampleReferences(text: string, candidate: EnvFileCandidate, 
 	}
 }
 
-function collectCiReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>): void {
-	collectRegexReferences(text, candidate, references, seen, /\$\{\{\s*secrets\.(?<key>[A-Z][A-Z0-9_]+)\s*\}\}/gu, 'ci_secret');
-	collectRegexReferences(text, candidate, references, seen, /\$\{\{\s*vars\.(?<key>[A-Z][A-Z0-9_]+)\s*\}\}/gu, 'ci_var');
+function collectCiReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>, lineAt: LineNumberLookup): void {
+	collectRegexReferences(text, candidate, references, seen, /\$\{\{\s*secrets\.(?<key>[A-Z][A-Z0-9_]+)\s*\}\}/gu, 'ci_secret', lineAt);
+	collectRegexReferences(text, candidate, references, seen, /\$\{\{\s*vars\.(?<key>[A-Z][A-Z0-9_]+)\s*\}\}/gu, 'ci_var', lineAt);
 	const lines = text.split(/\r?\n/u);
 	for (const [index, line] of lines.entries()) {
 		const match = /^\s{2,}(?<key>[A-Z][A-Z0-9_]{2,})\s*:/u.exec(line);
@@ -389,18 +399,18 @@ function collectCiReferences(text: string, candidate: EnvFileCandidate, referenc
 	}
 }
 
-function collectDocumentedReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>): void {
+function collectDocumentedReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>, lineAt: LineNumberLookup): void {
 	const pattern = /`(?<key>[A-Z][A-Z0-9_]{2,})`|\b(?<bare>[A-Z][A-Z0-9_]{3,})\b/gu;
 	for (const match of text.matchAll(pattern)) {
 		const key = match.groups?.key ?? match.groups?.bare;
 		if (key && key.includes('_')) {
-			addReference(references, seen, key, candidate, lineNumberAtIndex(text, match.index ?? 0), 'documented');
+			addReference(references, seen, key, candidate, lineAt(match.index ?? 0), 'documented');
 		}
 	}
 }
 
-function collectCodeReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>): void {
-	collectRegexReferences(text, candidate, references, seen, /\bprocess\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'process_env_dot');
+function collectCodeReferences(text: string, candidate: EnvFileCandidate, references: EnvContractReference[], seen: Set<string>, lineAt: LineNumberLookup): void {
+	collectRegexReferences(text, candidate, references, seen, /\bprocess\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'process_env_dot', lineAt);
 	collectRegexReferences(
 		text,
 		candidate,
@@ -408,24 +418,26 @@ function collectCodeReferences(text: string, candidate: EnvFileCandidate, refere
 		seen,
 		/\bprocess\.env\s*\[\s*['"](?<key>[A-Za-z_][A-Za-z0-9_]*)['"]\s*\]/gu,
 		'process_env_bracket',
+		lineAt,
 	);
-	collectRegexReferences(text, candidate, references, seen, /\bBun\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'bun_env_dot');
-	collectRegexReferences(text, candidate, references, seen, /\bimport\.meta\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'import_meta_env');
-	collectDestructuredProcessEnv(text, candidate, references, seen);
+	collectRegexReferences(text, candidate, references, seen, /\bBun\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'bun_env_dot', lineAt);
+	collectRegexReferences(text, candidate, references, seen, /\bimport\.meta\.env\.(?<key>[A-Za-z_][A-Za-z0-9_]*)\b/gu, 'import_meta_env', lineAt);
+	collectDestructuredProcessEnv(text, candidate, references, seen, lineAt);
 }
 
 function collectReferencesForFile(text: string, candidate: EnvFileCandidate): readonly EnvContractReference[] {
 	const references: EnvContractReference[] = [];
 	const seen = new Set<string>();
+	const lineAt = createLineNumberLookup(text);
 	if (candidate.surface === 'example') {
 		collectEnvExampleReferences(text, candidate, references, seen);
 	} else if (candidate.surface === 'ci') {
-		collectCiReferences(text, candidate, references, seen);
-		collectCodeReferences(text, candidate, references, seen);
+		collectCiReferences(text, candidate, references, seen, lineAt);
+		collectCodeReferences(text, candidate, references, seen, lineAt);
 	} else if (candidate.surface === 'docs') {
-		collectDocumentedReferences(text, candidate, references, seen);
+		collectDocumentedReferences(text, candidate, references, seen, lineAt);
 	} else {
-		collectCodeReferences(text, candidate, references, seen);
+		collectCodeReferences(text, candidate, references, seen, lineAt);
 	}
 	return references;
 }

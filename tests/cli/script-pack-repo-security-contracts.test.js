@@ -137,6 +137,63 @@ test('config-chain inspects package and tsconfig inheritance without executing d
 	}
 });
 
+for (const [extension, statement, kind] of [
+	['ts', 'process.env.APP_MODE;\n', 'process_env_dot'],
+	['md', '`APP_MODE`\n', 'documented'],
+	['yml', 'value: ${{ secrets.APP_MODE }}\n', 'ci_secret'],
+]) {
+	test(`env-contract bounds line counting for repeated ${kind} references`, async (t) => {
+		const { inspectEnvContract } = await import('../../dist/core/env-contract.js');
+		const projectPath = createTempProject();
+		const content = statement.repeat(2_000);
+		const target = path.join(projectPath, `many.${extension}`);
+		const originalCharCodeAt = String.prototype.charCodeAt;
+		try {
+			writeFileSync(target, content);
+			let characterReads = 0;
+			String.prototype.charCodeAt = function (...args) {
+				if (String(this).startsWith(statement)) characterReads++;
+				return originalCharCodeAt.apply(this, args);
+			};
+			const report = inspectEnvContract(projectPath, { paths: [target] });
+			const sources = report.keys.find(entry => entry.key === 'APP_MODE')?.sources.filter(source => source.kind === kind);
+			t.diagnostic(JSON.stringify({ kind, references: sources?.length, fileCharacters: content.length, characterReads }));
+			assert.equal(sources?.length, 2_000);
+			assert.deepEqual(sources.map(source => source.line), Array.from({ length: 2_000 }, (_, index) => index + 1));
+			assert.ok(characterReads <= content.length, `Line counting revisited characters: ${characterReads}`);
+		} finally {
+			String.prototype.charCodeAt = originalCharCodeAt;
+			removeTempProject(projectPath);
+		}
+	});
+}
+
+test('env-contract preserves locations when detectors rewind or reuse destructuring offsets', async () => {
+	const { inspectEnvContract } = await import('../../dist/core/env-contract.js');
+	const projectPath = createTempProject();
+	const target = path.join(projectPath, 'mixed.ts');
+	try {
+		for (const newline of ['\n', '\r\n']) {
+			writeFileSync(target, ['// 한글 😀', 'Bun.env.APP_MODE;', "process.env['APP_MODE'];",
+				'process.env.APP_MODE;', 'import.meta.env.APP_MODE;',
+				'const { APP_MODE, OTHER_MODE: alias } = process.env;',
+				'const { APP_MODE: duplicate } = process.env;'].join(newline));
+			const report = inspectEnvContract(projectPath, { paths: [target] });
+			const sources = report.keys.find(entry => entry.key === 'APP_MODE').sources;
+			for (const [kind, lines] of [['bun_env_dot', [2]], ['process_env_bracket', [3]],
+				['process_env_dot', [4]], ['import_meta_env', [5]], ['process_env_destructure', [6, 7]]]) {
+				assert.deepEqual(sources.filter(source => source.kind === kind).map(source => source.line), lines);
+			}
+			assert.equal(report.keys.find(entry => entry.key === 'OTHER_MODE').sources[0].line, 6);
+			const capped = inspectEnvContract(projectPath, { paths: [target], maxKeys: 1 });
+			assert.equal(capped.keys.length, 1);
+			assert.equal(capped.truncated, true);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('env-contract scans code, docs, CI, and env examples without reading secret env values', () => {
 	const projectPath = createTempProject();
 
