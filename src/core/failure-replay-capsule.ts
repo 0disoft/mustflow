@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { closeSync, existsSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import type { ChangeVerificationReport } from './change-verification.js';
 import type { VerificationFailureFingerprint } from './repeated-failure.js';
+
+const FINGERPRINT_CHUNK_BYTES = 64 * 1024;
 
 export interface FailureReplayFileFingerprint {
 	readonly path: string;
@@ -195,6 +197,27 @@ function createFailedResult(result: FailureReplayResultInput): FailureReplayResu
 	};
 }
 
+function hashFileContents(filePath: string): { sha256: string; bytes: number } {
+	const descriptor = openSync(filePath, 'r');
+	try {
+		const size = fstatSync(descriptor).size;
+		const hash = createHash('sha256');
+		const buffer = Buffer.allocUnsafe(FINGERPRINT_CHUNK_BYTES);
+		let bytes = 0;
+		// Match whole-file reads: cap ordinary files at their opened size; size-zero files read until EOF.
+		while (size === 0 || bytes < size) {
+			const length = size === 0 ? buffer.length : Math.min(buffer.length, size - bytes);
+			const count = readSync(descriptor, buffer, 0, length, null);
+			if (count === 0) break;
+			hash.update(buffer.subarray(0, count));
+			bytes += count;
+		}
+		return { sha256: `sha256:${hash.digest('hex')}`, bytes };
+	} finally {
+		closeSync(descriptor);
+	}
+}
+
 function fileFingerprint(projectRoot: string, relativePath: string): FailureReplayFileFingerprint {
 	const normalized = relativePath.split(path.sep).join('/');
 	const absolute = path.resolve(projectRoot, ...normalized.split('/'));
@@ -229,12 +252,10 @@ function fileFingerprint(projectRoot: string, relativePath: string): FailureRepl
 			};
 		}
 
-		const content = readFileSync(absolute);
 		return {
 			path: normalized,
 			status: 'present',
-			sha256: sha256(content),
-			bytes: content.byteLength,
+			...hashFileContents(absolute),
 		};
 	} catch {
 		return {

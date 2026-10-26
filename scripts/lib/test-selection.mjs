@@ -448,6 +448,8 @@ export function createTestSelection(allCliTests, options = {}) {
 		{ match: /^src\/core\/command-cwd\.ts$/u, tests: runTests },
 		{ match: /^src\/core\/command-contract-validation\.ts$/u, tests: commandContractTests },
 		{ match: /^src\/core\/repeated-failure\.ts$/u, tests: ['verify-completion-verdict-repeated-failure-contracts.test.js'] },
+		{ match: /^src\/core\/failure-replay-capsule\.ts$/u,
+			tests: ['failure-replay-capsule.test.js', 'verify-completion-verdict-repeated-failure-contracts.test.js'] },
 		{ match: /^src\/core\/(?:repeated-failure|run-state-mutex)\.ts$/u, tests: ['run-state-mutex.test.js', 'state-mutation-concurrency.test.js'] },
 		{ match: /^src\/core\/validation-ratchet\.ts$/u, tests: ['verify-completion-verdict-ratchet-contracts.test.js'] },
 		{ match: /^src\/core\/verification-plan\.ts$/u, tests: verificationPlanningTests },

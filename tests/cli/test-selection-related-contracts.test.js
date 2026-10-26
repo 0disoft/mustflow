@@ -60,6 +60,7 @@ test('execution boundary changes select their focused regression coverage', () =
 		['src/core/run-receipt.ts', 'run-receipt-redaction.test.js'],
 		['src/core/run-receipt-state.ts', 'run-state-publication.test.js'],
 		['src/core/run-state-mutex.ts', 'run-state-mutex.test.js'],
+		['src/core/failure-replay-capsule.ts', 'failure-replay-capsule.test.js'],
 		['src/core/command-env.ts', 'command-env.test.js'],
 		['src/cli/commands/run/process-tree.ts', 'process-tree.test.js'],
 		['src/core/secret-redaction.ts', 'run-receipt-redaction.test.js'],
