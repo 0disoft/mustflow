@@ -14,6 +14,8 @@ import {
 	readProcessStartToken,
 } from './process-identity.js';
 import {
+	ensureDirectoryInsideWithoutSymlinks,
+	ensureInsideWithoutSymlinks,
 	readUtf8FileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
 } from './safe-filesystem.js';
@@ -279,22 +281,25 @@ function acquireRunStateMutex(
 		startedAt: ownerRecord.started_at,
 		ownerToken: ownerRecord.owner_token,
 	};
-	mkdirSync(root, { recursive: true });
+	ensureDirectoryInsideWithoutSymlinks(projectRoot, root);
 	const startedAt = Date.now();
 	const waitMs = options.waitMs ?? RUN_STATE_MUTEX_WAIT_MS;
 
 	while (true) {
+		ensureInsideWithoutSymlinks(projectRoot, mutex, { allowMissingLeaf: true });
 		try {
 			mkdirSync(mutex);
 			try {
-				writeJsonFileInsideWithoutSymlinks(root, ownerPath, ownerRecord);
+				writeJsonFileInsideWithoutSymlinks(projectRoot, ownerPath, ownerRecord);
 			} catch (error) {
+				ensureInsideWithoutSymlinks(projectRoot, mutex, { allowMissingLeaf: true });
 				rmSync(mutex, { recursive: true, force: true });
 				throw error;
 			}
 
 			return () => {
 				try {
+					ensureInsideWithoutSymlinks(projectRoot, mutex, { allowMissingLeaf: true });
 					if (sameMutexOwner(expectedOwner, readMutexOwner(ownerPath))) {
 						rmSync(mutex, { recursive: true, force: true });
 					}

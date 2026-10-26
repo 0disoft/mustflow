@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
@@ -15,6 +15,47 @@ async function importActiveRunLocks() {
 	return import(pathToFileURL(path.join(projectRoot, 'dist', 'core', 'active-run-locks.js')).href);
 }
 
+test('run state mutex rejects linked ancestors and scopes before touching external state', async (t) => {
+	const { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } = await importRunStateMutex();
+	const scope = RUN_STATE_MUTEX_SCOPES.receipts;
+	const segments = ['.mustflow', 'state', 'mutexes', scope];
+	for (let linkedDepth = 1; linkedDepth <= segments.length; linkedDepth += 1) {
+		await t.test(segments.slice(0, linkedDepth).join('/'), () => {
+			const projectPath = createTempProject('mustflow-mutex-linked-project-');
+			const outsidePath = createTempProject('mustflow-mutex-linked-outside-');
+			try {
+				const linkPath = path.join(projectPath, ...segments.slice(0, linkedDepth));
+				const outsideMutex = path.join(outsidePath, ...segments.slice(linkedDepth));
+				mkdirSync(path.dirname(linkPath), { recursive: true });
+				mkdirSync(outsideMutex, { recursive: true });
+				const ownerPath = path.join(outsideMutex, 'owner.json');
+				const owner = JSON.stringify({ lock_id: 'outside-lock', owner_token: 'outside-token',
+					pid: 2_147_483_647, process_start_token: 'outside-process', started_at: '2000-01-01T00:00:00.000Z' });
+				writeFileSync(ownerPath, owner);
+				const markerPath = path.join(outsideMutex, 'preserve.txt');
+				writeFileSync(markerPath, 'external data');
+				symlinkSync(outsidePath, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
+				let invoked = false;
+				let failure;
+				try {
+					withRunStateUpdateMutex(projectPath, scope, () => { invoked = true; }, { waitMs: 0 });
+				} catch (error) {
+					failure = error;
+				}
+				t.diagnostic(JSON.stringify({ linkedDepth, callbackInvoked: invoked, externalMarkerExists: existsSync(markerPath) }));
+				assert.equal(existsSync(markerPath), true, 'stale mutex recovery must preserve external data');
+				assert.equal(readFileSync(markerPath, 'utf8'), 'external data');
+				assert.equal(readFileSync(ownerPath, 'utf8'), owner);
+				assert.equal(invoked, false);
+				assert.match(failure?.message ?? '', /must not contain symlinks/u);
+			} finally {
+				removeTempProject(projectPath);
+				removeTempProject(outsidePath);
+			}
+		});
+	}
+});
+
 function createWriteContract() {
 	return {
 		defaults: {},
@@ -26,6 +67,34 @@ function createWriteContract() {
 		},
 	};
 }
+
+test('run state mutex release preserves external state after an ancestor is replaced', async () => {
+	const { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } = await importRunStateMutex();
+	const projectPath = createTempProject('mustflow-mutex-replaced-project-');
+	const outsidePath = createTempProject('mustflow-mutex-replaced-outside-');
+	const scope = RUN_STATE_MUTEX_SCOPES.receipts;
+	try {
+		const outsideMutex = path.join(outsidePath, 'mutexes', scope);
+		mkdirSync(outsideMutex, { recursive: true });
+		const markerPath = path.join(outsideMutex, 'preserve.txt');
+		writeFileSync(markerPath, 'external data');
+		let owner;
+		const result = withRunStateUpdateMutex(projectPath, scope, () => {
+			owner = readFileSync(path.join(mutexPath(projectPath, scope), 'owner.json'), 'utf8');
+			writeFileSync(path.join(outsideMutex, 'owner.json'), owner);
+			const statePath = path.join(projectPath, '.mustflow', 'state');
+			renameSync(statePath, path.join(projectPath, '.mustflow', 'saved-state'));
+			symlinkSync(outsidePath, statePath, process.platform === 'win32' ? 'junction' : 'dir');
+			return 'completed';
+		});
+		assert.equal(result, 'completed');
+		assert.equal(readFileSync(markerPath, 'utf8'), 'external data');
+		assert.equal(readFileSync(path.join(outsideMutex, 'owner.json'), 'utf8'), owner);
+	} finally {
+		removeTempProject(projectPath);
+		removeTempProject(outsidePath);
+	}
+});
 
 const sleepBuffer = new Int32Array(new SharedArrayBuffer(4));
 
