@@ -239,14 +239,16 @@ export function readFileInsideWithoutSymlinks(
 			throw new Error(`Path must not contain symlinks: ${childPath}`);
 		}
 
-		const stats = fstatSync(fileDescriptor);
+		const stats = fstatSync(fileDescriptor, { bigint: true });
 		if (!stats.isFile()) {
 			throw new Error(`Path must be a regular file: ${childPath}`);
 		}
 		if (options.maxBytes !== undefined && stats.size > options.maxBytes) {
 			throw new Error(`File exceeds maximum size ${options.maxBytes} bytes: ${childPath}`);
 		}
-		const identity = JSON.stringify([absoluteChildPath, stats.dev, stats.ino, stats.size, stats.mtimeMs, stats.ctimeMs]);
+		// Preserve exact file IDs and nanosecond timestamps when identifying cached bytes.
+		const identity = JSON.stringify([absoluteChildPath,
+			...[stats.dev, stats.ino, stats.size, stats.mtimeNs, stats.ctimeNs].map(String)]);
 		return reuseFileRead(identity, () => options.maxBytes === undefined
 			? readFileSync(fileDescriptor)
 			: readBoundedFileDescriptor(fileDescriptor, childPath, options.maxBytes));

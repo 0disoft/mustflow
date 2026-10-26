@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { mkdirSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import path from 'node:path';
 import { test } from 'node:test';
 import { fileReadCacheStats, reuseFileRead, withFileReadCache } from '../../dist/core/file-read-cache.js';
@@ -43,6 +45,54 @@ test('cached safe reads still reject tighter budgets, deletions and nonfiles, an
 		});
 	} finally { removeTempProject(root); }
 });
+
+for (const changedField of ['ino', 'mtimeNs', 'ctimeNs']) {
+	test(`safe read cache distinguishes exact ${changedField} changes hidden by numeric rounding`, (t) => {
+		const root = createTempProject();
+		const target = path.join(root, 'input.txt');
+		const originals = { openSync: fs.openSync, closeSync: fs.closeSync, fstatSync: fs.fstatSync };
+		const descriptors = new Set();
+		const before = { dev: 1n, ino: 9_007_199_254_740_992n, size: 4n,
+			mtimeNs: 1_790_000_000_000_000_000n, ctimeNs: 1_790_000_000_000_000_000n };
+		const after = { ...before, [changedField]: before[changedField] + (changedField === 'ino' ? 1n : 100n) };
+		let changed = false;
+		const numeric = value => ({ dev: Number(value.dev), ino: Number(value.ino), size: Number(value.size),
+			mtimeMs: Number(value.mtimeNs) / 1e6, ctimeMs: Number(value.ctimeNs) / 1e6 });
+		assert.deepEqual(numeric(before), numeric(after), 'fixture must collide only after numeric rounding');
+		try {
+			writeFileSync(target, 'old!');
+			fs.openSync = (file, ...args) => {
+				const fd = originals.openSync(file, ...args);
+				if (file === target) descriptors.add(fd);
+				return fd;
+			};
+			fs.closeSync = fd => { descriptors.delete(fd); return originals.closeSync(fd); };
+			fs.fstatSync = (fd, options) => {
+				const stats = originals.fstatSync(fd, options);
+				if (!descriptors.has(fd)) return stats;
+				const exact = changed ? after : before;
+				return Object.assign(stats, options?.bigint ? exact : numeric(exact));
+			};
+			syncBuiltinESMExports();
+			withFileReadCache(() => {
+				assert.equal(readFileInsideWithoutSymlinks(root, target).toString(), 'old!');
+				writeFileSync(target, 'new!');
+				changed = true;
+				const updated = readFileInsideWithoutSymlinks(root, target).toString();
+				const repeated = readFileInsideWithoutSymlinks(root, target).toString();
+				t.diagnostic(JSON.stringify({ changedField, staleRead: updated !== 'new!', ...fileReadCacheStats() }));
+				assert.equal(updated, 'new!');
+				assert.equal(repeated, 'new!');
+				assert.equal(fileReadCacheStats().misses, 2);
+				assert.equal(fileReadCacheStats().hits, 1);
+			});
+		} finally {
+			Object.assign(fs, originals);
+			syncBuiltinESMExports();
+			removeTempProject(root);
+		}
+	});
+}
 
 test('inspection cache bounds stored bytes and isolates concurrent async checks', async () => {
 	await Promise.all(['one', 'two'].map(value => withFileReadCache(async () => {
