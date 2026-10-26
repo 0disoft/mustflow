@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
 import type { RunReceipt } from './run-receipt.js';
@@ -8,7 +8,10 @@ import {
 	RUN_STATE_MUTEX_SCOPES,
 	withRunStateUpdateMutex,
 } from './run-state-mutex.js';
-import { ensureInside, ensureInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import {
+	ensureInside, ensureInsideWithoutSymlinks,
+	readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks,
+} from './safe-filesystem.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
 const RUN_RECEIPT_DIR = path.join('.mustflow', 'state', 'runs');
@@ -16,6 +19,7 @@ const RUN_RECEIPT_DIR_POSIX = '.mustflow/state/runs';
 const LATEST_RUN_RECEIPT_INDEX = 'latest.index.json';
 const STATE_DIR_PREFIXES = ['run-', 'verify-'] as const;
 const MIN_RETAINED_RUN_DIRS = 1;
+const RUN_STATE_JSON_MAX_BYTES = 4 * 1024 * 1024;
 
 type RunStateDirectoryKind = (typeof STATE_DIR_PREFIXES)[number];
 
@@ -215,9 +219,11 @@ function applyRunReceiptRetention(projectRoot: string, policy: RunReceiptRetenti
 	return directories.filter((directory) => kept.has(directory.name));
 }
 
-function readJsonObject(filePath: string): Record<string, unknown> | null {
+function readJsonObject(projectRoot: string, filePath: string): Record<string, unknown> | null {
 	try {
-		const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
+		const parsed = JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, filePath, {
+			maxBytes: RUN_STATE_JSON_MAX_BYTES,
+		}));
 		return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
 	} catch {
 		return null;
@@ -254,8 +260,8 @@ function resolveReceiptPathInsideRunsDir(runsDir: string, receiptPath: string): 
 	return receiptAbsolutePath;
 }
 
-function createRunEntry(directory: RetainedRunStateDirectory): RunReceiptIndexEntry | null {
-	const receipt = readJsonObject(path.join(directory.absolutePath, 'receipt.json')) as RunReceipt | null;
+function createRunEntry(projectRoot: string, directory: RetainedRunStateDirectory): RunReceiptIndexEntry | null {
+	const receipt = readJsonObject(projectRoot, path.join(directory.absolutePath, 'receipt.json')) as RunReceipt | null;
 
 	if (!receipt || receipt.command !== 'run' || typeof receipt.receipt_path !== 'string') {
 		return null;
@@ -275,6 +281,7 @@ function createRunEntry(directory: RetainedRunStateDirectory): RunReceiptIndexEn
 }
 
 function readVerifyIntentEntry(
+	projectRoot: string,
 	directory: RetainedRunStateDirectory,
 	manifest: VerifyManifest,
 	manifestPath: string,
@@ -290,7 +297,7 @@ function readVerifyIntentEntry(
 	if (!receiptAbsolutePath) {
 		return null;
 	}
-	const receipt = readJsonObject(receiptAbsolutePath);
+	const receipt = readJsonObject(projectRoot, receiptAbsolutePath);
 
 	return {
 		command: 'verify',
@@ -309,9 +316,9 @@ function readVerifyIntentEntry(
 	};
 }
 
-function createVerifyEntries(directory: RetainedRunStateDirectory): RunReceiptIndexEntry[] {
+function createVerifyEntries(projectRoot: string, directory: RetainedRunStateDirectory): RunReceiptIndexEntry[] {
 	const manifestPath = toPosixPath(path.join(directory.relativePath, 'manifest.json'));
-	const manifest = readJsonObject(path.join(directory.absolutePath, 'manifest.json')) as VerifyManifest | null;
+	const manifest = readJsonObject(projectRoot, path.join(directory.absolutePath, 'manifest.json')) as VerifyManifest | null;
 
 	if (!manifest || manifest.command !== 'verify') {
 		return [];
@@ -332,7 +339,7 @@ function createVerifyEntries(directory: RetainedRunStateDirectory): RunReceiptIn
 		? manifest.receipts
 				.map((receipt) =>
 					receipt && typeof receipt === 'object'
-						? readVerifyIntentEntry(directory, manifest, manifestPath, receipt as VerifyManifestReceipt)
+						? readVerifyIntentEntry(projectRoot, directory, manifest, manifestPath, receipt as VerifyManifestReceipt)
 						: null,
 				)
 				.filter((entry): entry is RunReceiptIndexEntry => Boolean(entry))
@@ -341,14 +348,14 @@ function createVerifyEntries(directory: RetainedRunStateDirectory): RunReceiptIn
 	return [summaryEntry, ...receiptEntries];
 }
 
-function createIndexEntries(directories: readonly RetainedRunStateDirectory[]): RunReceiptIndexEntry[] {
+function createIndexEntries(projectRoot: string, directories: readonly RetainedRunStateDirectory[]): RunReceiptIndexEntry[] {
 	return directories.flatMap((directory) => {
 		if (directory.kind === 'run-') {
-			const entry = createRunEntry(directory);
+			const entry = createRunEntry(projectRoot, directory);
 			return entry ? [entry] : [];
 		}
 
-		return createVerifyEntries(directory);
+		return createVerifyEntries(projectRoot, directory);
 	});
 }
 
@@ -386,7 +393,7 @@ export interface RunReceiptStateUpdateOptions {
 
 function compactRunReceiptState(projectRoot: string, policy: RunReceiptRetentionPolicy): void {
 	const retainedDirectories = applyRunReceiptRetention(projectRoot, policy);
-	const entries = createIndexEntries(retainedDirectories);
+	const entries = createIndexEntries(projectRoot, retainedDirectories);
 	const lookups = latestLookupEntries(entries);
 	const index: RunReceiptIndex = {
 		schema_version: RUN_RECEIPT_SCHEMA_VERSION,

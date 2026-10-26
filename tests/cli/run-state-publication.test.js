@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
 	existsSync,
 	mkdirSync,
@@ -8,6 +9,7 @@ import {
 	writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
+import { syncBuiltinESMExports } from 'node:module';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 
@@ -79,6 +81,112 @@ function retentionPolicy() {
 		stderrTailBytes: 64 * 1_024,
 	};
 }
+
+function measureFileReadBytes(targetPath, callback) {
+	const originals = Object.fromEntries(['openSync', 'closeSync', 'readSync', 'readFileSync'].map((name) => [name, fs[name]]));
+	const descriptors = new Set();
+	let bytes = 0;
+	const isTarget = (value) => typeof value === 'string' && path.resolve(value) === targetPath;
+	try {
+		fs.openSync = (file, ...args) => {
+			const fd = originals.openSync(file, ...args);
+			if (isTarget(file)) descriptors.add(fd);
+			return fd;
+		};
+		fs.closeSync = (fd) => { descriptors.delete(fd); return originals.closeSync(fd); };
+		fs.readSync = (fd, ...args) => {
+			const count = originals.readSync(fd, ...args);
+			if (descriptors.has(fd)) bytes += count;
+			return count;
+		};
+		fs.readFileSync = (file, ...args) => {
+			const value = originals.readFileSync(file, ...args);
+			if (isTarget(file) || descriptors.has(file)) bytes += Buffer.byteLength(value);
+			return value;
+		};
+		syncBuiltinESMExports();
+		callback();
+	} finally {
+		Object.assign(fs, originals);
+		syncBuiltinESMExports();
+	}
+	return bytes;
+}
+
+function writeSizedJson(target, value, size) {
+	const prefix = JSON.stringify({ ...value, padding: '' }).slice(0, -2);
+	writeFileSync(target, prefix + 'x'.repeat(size - Buffer.byteLength(prefix) - 2) + '"}');
+}
+
+test('receipt index rejects oversized JSON before reading its contents even when retention must keep it', async (t) => {
+	const projectPath = createTempProject('mustflow-index-bounded-read-');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	const relative = '.mustflow/state/runs/run-large/receipt.json';
+	const target = path.join(projectPath, relative);
+	try {
+		mkdirSync(path.dirname(target), { recursive: true });
+		writeSizedJson(target, { command: 'run', intent: 'large', receipt_path: relative }, 8 * 1024 * 1024);
+		const readBytes = measureFileReadBytes(target, () => {
+			assert.equal(updateRunReceiptState(projectPath, { ...retentionPolicy(), maxItems: 1, maxTotalMb: 1 }), true);
+		});
+		t.diagnostic(JSON.stringify({ oversizedReceiptBytes: 8 * 1024 * 1024, contentBytesRead: readBytes }));
+		assert.equal(readBytes, 0);
+		assert.equal(existsSync(target), true);
+		const index = JSON.parse(readFileSync(path.join(projectPath, '.mustflow/state/runs/latest.index.json'), 'utf8'));
+		assert.deepEqual(index.entries, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('receipt index accepts JSON at four MiB and rejects one extra byte for run and verify records', async () => {
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	for (const command of ['run', 'verify']) {
+		for (const extra of [0, 1]) {
+			const projectPath = createTempProject('mustflow-index-json-limit-');
+			try {
+				const relative = `.mustflow/state/runs/${command}-boundary/${command === 'run' ? 'receipt' : 'manifest'}.json`;
+				const target = path.join(projectPath, relative);
+				mkdirSync(path.dirname(target), { recursive: true });
+				writeSizedJson(target, { command, intent: 'boundary', receipt_path: relative }, 4 * 1024 * 1024 + extra);
+				assert.equal(updateRunReceiptState(projectPath, retentionPolicy()), true);
+				const index = JSON.parse(readFileSync(path.join(projectPath, '.mustflow/state/runs/latest.index.json'), 'utf8'));
+				assert.equal(index.entries.length, extra === 0 ? 1 : 0, `${command}: extra=${extra}`);
+			} finally {
+				removeTempProject(projectPath);
+			}
+		}
+	}
+});
+
+test('receipt index bounds verify receipt reads while preserving manifest entries and readable metadata', async () => {
+	const projectPath = createTempProject('mustflow-index-verify-receipt-');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	const relative = '.mustflow/state/runs/verify-bounded/check/receipt.json';
+	const target = path.join(projectPath, relative);
+	const runsPath = path.join(projectPath, '.mustflow/state/runs');
+	try {
+		mkdirSync(path.dirname(target), { recursive: true });
+		writeFileSync(path.join(runsPath, 'verify-bounded/manifest.json'), JSON.stringify({
+			command: 'verify', status: 'passed', receipts: [{ intent: 'check', status: 'passed', receipt_path: relative }],
+		}));
+		for (const oversized of [false, true]) {
+			writeSizedJson(target, { cwd: 'fixture-source', started_at: '2026-01-01T00:00:00Z' },
+				oversized ? 4 * 1024 * 1024 + 1 : 1024);
+			const bytesRead = measureFileReadBytes(target, () => {
+				assert.equal(updateRunReceiptState(projectPath, retentionPolicy()), true);
+			});
+			const index = JSON.parse(readFileSync(path.join(runsPath, 'latest.index.json'), 'utf8'));
+			assert.equal(index.entries.length, 2);
+			const entry = index.entries.find((entry) => entry.intent === 'check');
+			assert.equal(entry.cwd, oversized ? null : 'fixture-source');
+			assert.equal(entry.receipt_path, relative);
+			assert.equal(bytesRead, oversized ? 0 : 1024);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
 
 test('retention rejects a linked runs root before deleting external run directories', async (t) => {
 	const sandbox = createTempProject('mustflow-retention-containment-');
