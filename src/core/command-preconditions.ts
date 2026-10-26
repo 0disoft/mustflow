@@ -173,7 +173,10 @@ function globToRegExp(pattern: string): RegExp {
 function shouldSkipDirectory(relativePath: string): boolean {
 	const normalized = normalizeRelativePath(relativePath);
 
-	return IGNORED_WALK_DIRECTORIES.has(normalized) || normalized.startsWith('.mustflow/state/') || normalized.startsWith('.mustflow/cache/');
+	return IGNORED_WALK_DIRECTORIES.has(normalized)
+		|| IGNORED_WALK_DIRECTORIES.has(path.posix.basename(normalized))
+		|| normalized.startsWith('.mustflow/state/')
+		|| normalized.startsWith('.mustflow/cache/');
 }
 
 function listProjectFiles(projectRoot: string): readonly string[] {
