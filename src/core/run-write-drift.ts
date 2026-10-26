@@ -132,6 +132,18 @@ function uniqueSortedPaths(paths: Iterable<string>): string[] {
 	return [...new Set([...paths].map(normalizeRepositoryRelativePath))].sort((left, right) => left.localeCompare(right));
 }
 
+function indexObservedWitnesses(intents: readonly RunWriteBatchIntent[]): Map<string, RunWriteBatchIntent[]> {
+	const index = new Map<string, RunWriteBatchIntent[]>();
+	for (const intent of intents) {
+		for (const key of new Set(intent.observedPaths.map(repositoryPathKey))) {
+			const witnesses = index.get(key);
+			if (witnesses) witnesses.push(intent);
+			else index.set(key, [intent]);
+		}
+	}
+	return index;
+}
+
 export function createUnavailableRunWriteDriftReceipt(
 	declaredPaths: readonly string[],
 	reason: string | null,
@@ -217,6 +229,7 @@ export function finishRunWriteBatchTracking(
 	const undeclaredByIntent = new Map<string, string[]>();
 	const ambiguousByIntent = new Map<string, string[]>();
 	const declaredMatchers = new Map<RunWriteBatchIntent, (observedPath: string) => boolean>();
+	let observedWitnessIndex: Map<string, RunWriteBatchIntent[]> | undefined;
 
 	for (const intent of intents) {
 		if (observedPaths.length > 0) declaredMatchers.set(intent, createDeclaredPathMatcher(intent.declaredPaths));
@@ -240,9 +253,8 @@ export function finishRunWriteBatchTracking(
 			continue;
 		}
 
-		const observedWitnesses = intents.filter((intent) =>
-			intent.observedPaths.some((intentObservedPath) => repositoryPathKey(intentObservedPath) === repositoryPathKey(observedPath)),
-		);
+		observedWitnessIndex ??= indexObservedWitnesses(intents);
+		const observedWitnesses = observedWitnessIndex.get(repositoryPathKey(observedPath)) ?? [];
 
 		if (observedWitnesses.length === 1) {
 			undeclaredByIntent.get(observedWitnesses[0]?.intentName ?? '')?.push(observedPath);
