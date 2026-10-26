@@ -287,18 +287,6 @@ function collectFilesFromDirectory(
 	}
 }
 
-function lineNumberAtIndex(text: string, index: number): number {
-	let line = 1;
-	let offset = 0;
-	while (offset < index) {
-		if (text.charCodeAt(offset) === 10) {
-			line += 1;
-		}
-		offset += 1;
-	}
-	return line;
-}
-
 function looksLikePlaceholder(value: string): boolean {
 	const normalized = value.trim().replace(/^['"`]|['"`]$/gu, '').toLowerCase();
 	if (normalized.length === 0) {
@@ -372,8 +360,17 @@ function scanPattern(
 	pattern: RegExp,
 	create: (match: RegExpMatchArray, line: number) => SecretRiskFinding | null,
 ): void {
+	// matchAll yields increasing offsets; count each prefix character only once per pattern.
+	let line = 1;
+	let offset = 0;
 	for (const match of text.matchAll(pattern)) {
-		const line = lineNumberAtIndex(text, match.index ?? 0);
+		const index = match.index ?? 0;
+		while (offset < index) {
+			if (text.charCodeAt(offset) === 10) {
+				line += 1;
+			}
+			offset += 1;
+		}
 		const finding = create(match, line);
 		if (finding) {
 			addBoundedFinding(findings, issues, policy, finding);

@@ -259,6 +259,62 @@ test('secret-risk-scan reports plausible secrets without printing secret values'
 	}
 });
 
+test('secret-risk-scan counts lines with a forward cursor for repeated findings', async (t) => {
+	const { inspectSecretRiskScan } = await import('../../dist/core/secret-risk-scan.js');
+	const projectPath = createTempProject();
+	const marker = '-----BEGIN PRIVATE KEY-----\n';
+	const content = marker.repeat(2_000);
+	const originalCharCodeAt = String.prototype.charCodeAt;
+	try {
+		writeFileSync(path.join(projectPath, 'many.ts'), content);
+		let characterReads = 0;
+		String.prototype.charCodeAt = function (...args) {
+			if (String(this).startsWith(marker)) characterReads++;
+			return originalCharCodeAt.apply(this, args);
+		};
+		const report = inspectSecretRiskScan(projectPath, { paths: [path.join(projectPath, 'many.ts')], maxFindings: 2_001 });
+		const findings = report.findings.filter(finding => finding.detector === 'private_key_block');
+		t.diagnostic(JSON.stringify({ findings: findings.length, fileCharacters: content.length, characterReads }));
+		assert.equal(findings.length, 2_000);
+		assert.deepEqual(findings.map(finding => finding.line), Array.from({ length: 2_000 }, (_, index) => index + 1));
+		assert.ok(characterReads <= content.length, `Line counting revisited characters: ${characterReads}`);
+	} finally {
+		String.prototype.charCodeAt = originalCharCodeAt;
+		removeTempProject(projectPath);
+	}
+});
+
+test('secret-risk-scan resets line cursors per detector and preserves LF and CRLF locations', async () => {
+	const { inspectSecretRiskScan } = await import('../../dist/core/secret-risk-scan.js');
+	const projectPath = createTempProject();
+	try {
+		for (const newline of ['\n', '\r\n']) {
+			writeFileSync(path.join(projectPath, 'mixed.ts'), [
+				'// 가짜 토큰 위치 확인 😀',
+				'// ghp_FAKEabcdefghijklmnopqrstuvwxyz1234567890',
+				'-----BEGIN PRIVATE KEY-----',
+				'// Bearer ghp_FAKEabcdefghijklmnopqrstuvwxyz1234567890',
+				'export const APP_API_KEY = "ghp_FAKEabcdefghijklmnopqrstuvwxyz1234567890";',
+				'-----BEGIN PRIVATE KEY-----',
+			].join(newline));
+			const report = inspectSecretRiskScan(projectPath, { paths: [path.join(projectPath, 'mixed.ts')] });
+			for (const [detector, lines] of [
+				['private_key_block', [3, 6]], ['bearer_token', [4]],
+				['provider_token', [2, 4, 5]], ['generic_assignment', [5]],
+			]) {
+				assert.deepEqual(report.findings.filter(finding => finding.detector === detector).map(finding => finding.line), lines);
+			}
+			const capped = inspectSecretRiskScan(projectPath, { paths: [path.join(projectPath, 'mixed.ts')], maxFindings: 1 });
+			assert.equal(capped.truncated, true);
+			assert.equal(capped.findings.length, 2);
+			assert.equal(capped.findings[0].line, 3);
+			assert.equal(capped.findings[1].code, 'secret_risk_max_findings_exceeded');
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('security-pattern-scan indexes lines once for repeated findings', async (t) => {
 	const { inspectSecurityPatternScan } = await import('../../dist/core/security-pattern-scan.js');
 	const projectPath = createTempProject();
