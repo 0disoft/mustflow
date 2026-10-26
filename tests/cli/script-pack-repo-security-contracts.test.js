@@ -259,6 +259,64 @@ test('secret-risk-scan reports plausible secrets without printing secret values'
 	}
 });
 
+test('security-pattern-scan indexes lines once for repeated findings', async (t) => {
+	const { inspectSecurityPatternScan } = await import('../../dist/core/security-pattern-scan.js');
+	const projectPath = createTempProject();
+	const content = 'eval(input);\n'.repeat(2_000);
+	const originalSplit = String.prototype.split;
+	const originalCharCodeAt = String.prototype.charCodeAt;
+	try {
+		const target = path.join(projectPath, 'many.ts');
+		writeFileSync(target, content);
+		let lineSplits = 0;
+		let prefixCharacterReads = 0;
+		String.prototype.split = function (separator, ...args) {
+			if (String(this) === content && separator instanceof RegExp && separator.source === '\\r\\n|\\n|\\r') lineSplits++;
+			return originalSplit.call(this, separator, ...args);
+		};
+		String.prototype.charCodeAt = function (...args) {
+			if (String(this).startsWith('eval(input);')) prefixCharacterReads++;
+			return originalCharCodeAt.apply(this, args);
+		};
+		const report = inspectSecurityPatternScan(projectPath, { paths: [target], maxFindings: 2_001 });
+		const findings = report.findings.filter(finding => finding.detector === 'eval_execution');
+		t.diagnostic(JSON.stringify({ findings: findings.length, lineSplits, prefixCharacterReads }));
+		assert.equal(report.summary.file_count, 1);
+		assert.equal(findings.length, 2_000);
+		assert.deepEqual(findings.map(finding => finding.line), Array.from({ length: 2_000 }, (_, index) => index + 1));
+		assert.equal(report.truncated, false);
+		assert.equal(lineSplits, 1);
+		assert.ok(prefixCharacterReads <= content.length, `repeated prefix scanning: ${prefixCharacterReads}`);
+	} finally {
+		String.prototype.split = originalSplit;
+		String.prototype.charCodeAt = originalCharCodeAt;
+		removeTempProject(projectPath);
+	}
+});
+
+test('security-pattern-scan preserves line predicates across newline formats', async () => {
+	const { inspectSecurityPatternScan } = await import('../../dist/core/security-pattern-scan.js');
+	const projectPath = createTempProject();
+	try {
+		const target = path.join(projectPath, 'lines.ts');
+		let expected;
+		for (const newline of ['\n', '\r\n', '\r']) {
+			writeFileSync(target, ['// 한글 😀', 'eval(input); eval(other);',
+				'res.cookie("session", id, { httpOnly: true });', 'res.cookie("session", id);',
+				'', 'eval(input);', ''].join(newline));
+			const report = inspectSecurityPatternScan(projectPath, { paths: [target] });
+			assert.deepEqual(report.findings.filter(finding => finding.detector === 'eval_execution').map(finding => finding.line), [2, 2, 6]);
+			assert.deepEqual(report.findings.filter(finding => finding.detector === 'insecure_cookie_options').map(finding => finding.line), [4]);
+			const metadata = report.findings.map(({ code, line, fingerprint }) => ({ code, line, fingerprint }));
+			expected ??= metadata;
+			assert.deepEqual(metadata, expected);
+			const capped = inspectSecurityPatternScan(projectPath, { paths: [target], maxFindings: 1 });
+			assert.equal(capped.truncated, true);
+			assert.equal(capped.findings.filter(finding => finding.code !== 'security_pattern_max_findings_exceeded').length, 1);
+		}
+	} finally { removeTempProject(projectPath); }
+});
+
 test('security-pattern-scan reports security review leads without printing matched source lines', () => {
 	const projectPath = createTempProject();
 	const sensitiveMarker = 'SECRET_VALUE_SHOULD_NOT_APPEAR';

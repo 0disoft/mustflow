@@ -345,16 +345,15 @@ function collectFilesFromDirectory(
 	}
 }
 
-function lineNumberAtIndex(text: string, index: number): number {
-	let line = 1;
-	let offset = 0;
-	while (offset < index) {
-		if (text.charCodeAt(offset) === 10) {
-			line += 1;
-		}
-		offset += 1;
+function lineNumberAtIndex(lineStarts: readonly number[], index: number): number {
+	let low = 0;
+	let high = lineStarts.length;
+	while (low < high) {
+		const middle = Math.floor((low + high) / 2);
+		if ((lineStarts[middle] ?? Infinity) <= index) low = middle + 1;
+		else high = middle;
 	}
-	return line;
+	return low;
 }
 
 function addBoundedFinding(
@@ -583,14 +582,23 @@ function scanCandidate(
 		return;
 	}
 
+	let lines: string[] | undefined;
+	const lineStarts = [0];
+
 	for (const rule of RULES) {
 		if (!rule.appliesTo(candidate, text)) {
 			continue;
 		}
 
 		for (const match of text.matchAll(rule.pattern)) {
-			const line = lineNumberAtIndex(text, match.index ?? 0);
-			const matchedLine = text.split(/\r\n|\n|\r/u)[line - 1] ?? '';
+			if (!lines) {
+				lines = text.split(/\r\n|\n|\r/u);
+				for (const newline of text.matchAll(/\r\n|\n|\r/gu)) {
+					lineStarts.push(newline.index + newline[0].length);
+				}
+			}
+			const line = lineNumberAtIndex(lineStarts, match.index ?? 0);
+			const matchedLine = lines[line - 1] ?? '';
 			if (rule.linePredicate && !rule.linePredicate(matchedLine, text)) {
 				continue;
 			}
