@@ -80,6 +80,44 @@ test('shared redaction preserves ordinary keys and keeps masked JSON valid', () 
 	});
 });
 
+test('shared redaction removes complete quoted secrets from every receipt field', (t) => {
+	const values = ['FAKEprefix!remaining-sensitive', '가짜 비밀번호!', 'x!',
+		'FAKE_escaped_"quote"_remaining', 'FAKE_backslash_\\remaining', 'FAKE_line\nremaining'];
+	let exposedFields = 0;
+	for (const secret of values) {
+		const input = JSON.stringify({ password: secret, filename: 'ordinary.txt' });
+		const receipt = receiptFor(['tool', input], { stdout: input, stderr: input, error: input });
+		const shellReceipt = receiptFor(undefined, { mode: 'shell', cmd: input });
+		for (const output of [receipt.argv[1], receipt.stdout.tail, receipt.stderr.tail, receipt.error, shellReceipt.cmd]) {
+			const parsed = JSON.parse(output);
+			if (parsed.password !== REDACTED_SECRET_MARKER) exposedFields++;
+			assert.equal(parsed.filename, 'ordinary.txt');
+		}
+	}
+	t.diagnostic(JSON.stringify({ quotedValues: values.length, receiptFields: 5, exposedFields }));
+	assert.equal(exposedFields, 0);
+});
+
+test('shared redaction handles escaped single quotes and preserves empty or already masked values', () => {
+	for (const value of ['FAKEprefix!remaining', '가짜 비밀번호!', 'x!', "FAKE_escaped_\\'quote_remaining"]) {
+		const input = `DATABASE_PASSWORD='${value}' next=ordinary`;
+		assert.equal(textContainsSecretLike(input), true);
+		assert.deepEqual(redactSecretLikeText(input), {
+			text: `DATABASE_PASSWORD='${REDACTED_SECRET_MARKER}' next=ordinary`,
+			redacted: true, redactionCount: 1, redactionKinds: ['secret_key_value'],
+		});
+	}
+	for (const value of ['', REDACTED_SECRET_MARKER]) {
+		for (const quote of ['"', "'"]) {
+			const input = `password=${quote}${value}${quote}`;
+			assert.equal(textContainsSecretLike(input), false);
+			assert.deepEqual(redactSecretLikeText(input), {
+				text: input, redacted: false, redactionCount: 0, redactionKinds: [],
+			});
+		}
+	}
+});
+
 test('receipt credential options preserve flag spelling and report the redacted argument index', () => {
 	for (const flag of ['--api_key', '--API-KEY', '--apiToken', '--access-token', '--auth_token',
 		'--secret', '--password', '--passwd', '--private-key', '--token']) {
