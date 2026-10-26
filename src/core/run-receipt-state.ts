@@ -8,7 +8,7 @@ import {
 	RUN_STATE_MUTEX_SCOPES,
 	withRunStateUpdateMutex,
 } from './run-state-mutex.js';
-import { ensureInside, writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import { ensureInside, ensureInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
 const RUN_RECEIPT_DIR = path.join('.mustflow', 'state', 'runs');
@@ -128,6 +128,7 @@ function fileSizeBytes(filePath: string): number {
 
 function readRunStateDirectories(projectRoot: string): RetainedRunStateDirectory[] {
 	const receiptDir = stateRunsDir(projectRoot);
+	ensureInsideWithoutSymlinks(projectRoot, receiptDir, { allowMissingDescendant: true });
 
 	if (!existsSync(receiptDir)) {
 		return [];
@@ -183,6 +184,7 @@ function removeRunStateDirectory(projectRoot: string, directory: RetainedRunStat
 		throw new Error(`Refusing to remove non-directory run receipt path: ${directory.relativePath}`);
 	}
 
+	ensureInsideWithoutSymlinks(projectRoot, directory.absolutePath);
 	rmSync(directory.absolutePath, { recursive: true, force: true });
 }
 

@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {
 	existsSync,
+	mkdirSync,
 	readdirSync,
 	readFileSync,
+	symlinkSync,
+	writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -76,6 +79,73 @@ function retentionPolicy() {
 		stderrTailBytes: 64 * 1_024,
 	};
 }
+
+test('retention rejects a linked runs root before deleting external run directories', async (t) => {
+	const sandbox = createTempProject('mustflow-retention-containment-');
+	const projectPath = path.join(sandbox, 'repo');
+	const externalPath = path.join(sandbox, 'external');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	try {
+		mkdirSync(path.join(projectPath, '.mustflow', 'state'), { recursive: true });
+		const names = ['run-20260101', 'run-20260102', 'run-20260103'];
+		for (const name of names) {
+			mkdirSync(path.join(externalPath, name), { recursive: true });
+			writeFileSync(path.join(externalPath, name, 'sentinel.txt'), 'external fixture data');
+		}
+		symlinkSync(externalPath, path.join(projectPath, '.mustflow', 'state', 'runs'), 'junction');
+		let failure;
+		try {
+			updateRunReceiptState(projectPath, { ...retentionPolicy(), maxItems: 1 });
+		} catch (error) {
+			failure = error;
+		}
+		const remaining = readdirSync(externalPath).sort();
+		t.diagnostic(JSON.stringify({ externalDirectoriesBefore: names.length,
+			externalDirectoriesAfter: remaining.length, deleted: names.length - remaining.length }));
+		assert.deepEqual(remaining, names);
+		for (const name of names) {
+			assert.equal(readFileSync(path.join(externalPath, name, 'sentinel.txt'), 'utf8'), 'external fixture data');
+		}
+		assert.match(failure?.message ?? '', /must not contain symlinks/u);
+	} finally {
+		removeTempProject(sandbox);
+	}
+});
+
+test('retention removes ordinary old runs while leaving linked run entries and their targets intact', async () => {
+	const sandbox = createTempProject('mustflow-retention-entries-');
+	const projectPath = path.join(sandbox, 'repo');
+	const externalPath = path.join(sandbox, 'external');
+	const runsPath = path.join(projectPath, '.mustflow', 'state', 'runs');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	try {
+		mkdirSync(externalPath, { recursive: true });
+		writeFileSync(path.join(externalPath, 'sentinel.txt'), 'external fixture data');
+		for (const name of ['run-20260101', 'run-20260102']) {
+			mkdirSync(path.join(runsPath, name), { recursive: true });
+		}
+		symlinkSync(externalPath, path.join(runsPath, 'run-linked'), 'junction');
+		assert.equal(updateRunReceiptState(projectPath, { ...retentionPolicy(), maxItems: 1 }), true);
+		assert.equal(existsSync(path.join(runsPath, 'run-20260101')), false);
+		assert.equal(existsSync(path.join(runsPath, 'run-20260102')), true);
+		assert.equal(existsSync(path.join(runsPath, 'run-linked')), true);
+		assert.equal(readFileSync(path.join(externalPath, 'sentinel.txt'), 'utf8'), 'external fixture data');
+	} finally {
+		removeTempProject(sandbox);
+	}
+});
+
+test('retention can initialize an index when the runs directory does not exist', async () => {
+	const projectPath = createTempProject('mustflow-retention-empty-');
+	const { updateRunReceiptState } = await importCore('run-receipt-state');
+	try {
+		assert.equal(updateRunReceiptState(projectPath, retentionPolicy()), true);
+		const index = JSON.parse(readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.index.json'), 'utf8'));
+		assert.deepEqual(index.entries, []);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
 
 test('run receipt publication preserves immutable records and prevents latest regression', async () => {
 	const projectPath = createTempProject('mustflow-run-publication-');

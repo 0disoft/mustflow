@@ -234,6 +234,8 @@ export function createTestSelection(allCliTests, options = {}) {
 			tests: ['command-preconditions.test.js', 'explain-command.test.js', 'verify-plan-scheduler.test.js'] },
 		{ match: /^src\/core\/(?:run-receipt|secret-redaction)\.ts$/u,
 			tests: ['run-receipt-redaction.test.js', ...runTests] },
+		{ match: /^src\/core\/run-receipt-state\.ts$/u,
+			tests: ['run-state-publication.test.js', ...runTests] },
 		{ match: /^src\/cli\/lib\/external-skill-(?:import|downloads)\.ts$/u, tests: ['performance-downloads.test.js', 'skill-import.test.js', 'dependency-read.test.js'] },
 		{ match: /^src\/cli\/(?:commands\/dashboard|lib\/(?:dashboard-snapshot-cache|git-changes|agent-context))\.ts$/u, tests: ['performance-dashboard.test.js'] },
 		{ match: /^src\/cli\/lib\/local-index\/(?:command-effect-queries|effect-graph-read-model|read-session|index)\.ts$/u, tests: ['performance-index.test.js', 'index-workflow.test.js', 'index-verification-evidence.test.js', 'explain-command.test.js', ...dashboardTests] },
