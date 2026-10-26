@@ -8,6 +8,7 @@ import {
 } from './run-state-mutex.js';
 import {
 	readUtf8FileInsideWithoutSymlinks,
+	writeFileInsideWithoutSymlinks,
 	writeJsonFileInsideWithoutSymlinks,
 } from './safe-filesystem.js';
 
@@ -170,18 +171,23 @@ export function writeImmutableRunReceipt(
 	receipt: RunReceipt,
 ): void {
 	const serialized = `${JSON.stringify(receipt, null, 2)}\n`;
-	if (existsSync(receiptPath)) {
-		const existing = readUtf8FileInsideWithoutSymlinks(projectRoot, receiptPath, {
-			maxBytes: RUN_RECEIPT_MAX_BYTES,
-		});
-		if (existing === serialized) {
+	if (!existsSync(receiptPath)) {
+		try {
+			writeFileInsideWithoutSymlinks(projectRoot, receiptPath, serialized, { exclusive: true });
 			return;
+		} catch (error) {
+			if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'EEXIST') {
+				throw error;
+			}
+			// Another writer published after the existence check; compare its completed record.
 		}
-
+	}
+	const existing = readUtf8FileInsideWithoutSymlinks(projectRoot, receiptPath, {
+		maxBytes: RUN_RECEIPT_MAX_BYTES,
+	});
+	if (existing !== serialized) {
 		throw new Error(`run_receipt_immutable_conflict:${receipt.receipt_path}`);
 	}
-
-	writeJsonFileInsideWithoutSymlinks(projectRoot, receiptPath, receipt);
 }
 
 export function publishLatestRunReceipt(

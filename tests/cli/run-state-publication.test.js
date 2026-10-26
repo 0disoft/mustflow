@@ -255,6 +255,69 @@ test('retention can initialize an index when the runs directory does not exist',
 	}
 });
 
+for (const identical of [false, true]) {
+	test(`immutable receipt atomic publication preserves a concurrent ${identical ? 'identical' : 'conflicting'} winner`, async (t) => {
+		const projectPath = createTempProject('mustflow-immutable-race-');
+		const { createRunReceipt } = await importCore('run-receipt');
+		const { writeImmutableRunReceipt } = await importCore('run-receipt-publication');
+		const receipt = createReceipt(createRunReceipt, projectPath, { id: 'race', finishedAt: '2026-01-01T00:00:00Z' });
+		const target = path.join(projectPath, receipt.receipt_path);
+		const winner = `${JSON.stringify(identical ? receipt : { ...receipt, correlation_id: 'concurrent-winner' }, null, 2)}\n`;
+		const originals = { renameSync: fs.renameSync, linkSync: fs.linkSync };
+		let injected = false;
+		let failure;
+		try {
+			mkdirSync(path.dirname(target), { recursive: true });
+			for (const name of Object.keys(originals)) {
+				fs[name] = (source, destination, ...args) => {
+					if (!injected && path.resolve(destination) === target) {
+						injected = true;
+						writeFileSync(target, winner);
+					}
+					return originals[name](source, destination, ...args);
+				};
+			}
+			syncBuiltinESMExports();
+			try { writeImmutableRunReceipt(projectPath, target, receipt); } catch (error) { failure = error; }
+			const preserved = readFileSync(target, 'utf8') === winner;
+			t.diagnostic(JSON.stringify({ identical, injected, preserved, conflict: !!failure }));
+			assert.equal(injected, true);
+			assert.equal(preserved, true);
+			if (identical) assert.equal(failure, undefined);
+			else assert.match(failure?.message ?? '', /run_receipt_immutable_conflict/u);
+			assert.deepEqual(readdirSync(path.dirname(target)), ['receipt.json']);
+		} finally {
+			Object.assign(fs, originals);
+			syncBuiltinESMExports();
+			removeTempProject(projectPath);
+		}
+	});
+}
+
+test('immutable receipt publication propagates link errors and cleans its unpublished temporary file', async () => {
+	const projectPath = createTempProject('mustflow-immutable-link-error-');
+	const { createRunReceipt } = await importCore('run-receipt');
+	const { writeImmutableRunReceipt } = await importCore('run-receipt-publication');
+	const receipt = createReceipt(createRunReceipt, projectPath, { id: 'link-error', finishedAt: '2026-01-01T00:00:00Z' });
+	const target = path.join(projectPath, receipt.receipt_path);
+	const originalLinkSync = fs.linkSync;
+	const failure = Object.assign(new Error('fixture publication failure'), { code: 'ENOTSUP' });
+	try {
+		fs.linkSync = (source, destination, ...args) => {
+			if (path.resolve(destination) === target) throw failure;
+			return originalLinkSync(source, destination, ...args);
+		};
+		syncBuiltinESMExports();
+		assert.throws(() => writeImmutableRunReceipt(projectPath, target, receipt), error => error === failure);
+		assert.equal(existsSync(target), false);
+		assert.deepEqual(readdirSync(path.dirname(target)), []);
+	} finally {
+		fs.linkSync = originalLinkSync;
+		syncBuiltinESMExports();
+		removeTempProject(projectPath);
+	}
+});
+
 test('run receipt publication preserves immutable records and prevents latest regression', async () => {
 	const projectPath = createTempProject('mustflow-run-publication-');
 	const { createRunReceipt, writeRunReceipt } = await importCore('run-receipt');

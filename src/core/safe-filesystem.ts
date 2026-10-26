@@ -2,6 +2,7 @@ import {
 	closeSync,
 	constants,
 	fstatSync,
+	linkSync,
 	lstatSync,
 	mkdirSync,
 	openSync,
@@ -28,6 +29,10 @@ interface NoSymlinkPathOptions {
 
 interface SafeReadOptions {
 	readonly maxBytes?: number;
+}
+
+interface SafeWriteOptions {
+	readonly exclusive?: boolean;
 }
 
 function isMissingPathError(error: unknown): boolean {
@@ -262,6 +267,7 @@ export function writeFileInsideWithoutSymlinks(
 	parentPath: string,
 	childPath: string,
 	content: string | Buffer | Uint8Array,
+	options: SafeWriteOptions = {},
 ): void {
 	const absoluteChildPath = path.resolve(childPath);
 	const directoryPath = path.dirname(absoluteChildPath);
@@ -280,7 +286,13 @@ export function writeFileInsideWithoutSymlinks(
 		closeSync(fileDescriptor);
 		fileDescriptor = null;
 		ensureFileTargetInsideWithoutSymlinks(parentPath, absoluteChildPath, { allowMissingLeaf: true });
-		renameWithWindowsRetry(temporaryPath, absoluteChildPath);
+		if (options.exclusive) {
+			// Linking the completed file publishes it atomically and fails if the target exists.
+			linkSync(temporaryPath, absoluteChildPath);
+			unlinkSync(temporaryPath);
+		} else {
+			renameWithWindowsRetry(temporaryPath, absoluteChildPath);
+		}
 	} catch (error) {
 		if (fileDescriptor !== null) {
 			try {
