@@ -1,7 +1,7 @@
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { ensureInsideWithoutSymlinks } from './safe-filesystem.js';
+import { ensureInsideWithoutSymlinks, readUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 
 interface BundleSkill {
 	readonly name: string;
@@ -170,7 +170,7 @@ function validateSkill(projectRoot: string, skill: BundleSkill): string {
 	if (path.basename(path.dirname(sourcePath)) !== skill.name) {
 		throw new Error(`agent_plugin_skill_directory_mismatch:${skill.name}`);
 	}
-	const skillText = readFileSync(sourcePath, 'utf8');
+	const skillText = readUtf8FileInsideWithoutSymlinks(projectRoot, sourcePath);
 	if (!new RegExp(`^name:\\s*${skill.name}\\s*$`, 'mu').test(skillText)) {
 		throw new Error(`agent_plugin_skill_frontmatter_mismatch:${skill.name}`);
 	}

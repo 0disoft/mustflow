@@ -42,6 +42,44 @@ for (const linkedPath of ['dist', 'dist/agent-plugins', 'dist/agent-plugins/nest
 	});
 }
 
+for (const depth of [1, 2, 3]) {
+	test(`plugin build rejects linked source directories at depth ${depth}`, (t) => {
+		const fixture = createTempProject('mustflow-plugin-source-');
+		const outside = createTempProject('mustflow-plugin-external-source-');
+		let link;
+		let exportedDirectory;
+		try {
+			const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'plugin-bundles/mustflow-review.bundle.json'), 'utf8'));
+			bundle.skills = bundle.skills.slice(0, 1);
+			const skill = bundle.skills[0];
+			const linkedPath = path.dirname(skill.source).split(/[\\/]/u).slice(0, depth).join('/');
+			link = path.join(fixture, linkedPath);
+			const outsideSource = path.join(outside, path.relative(link, path.join(fixture, skill.source)));
+			const original = `---\nname: ${skill.name}\ndescription: External fixture.\nrevision: 1\n---\n# External source\n`;
+			mkdirSync(path.dirname(outsideSource), { recursive: true });
+			writeFileSync(outsideSource, original);
+			mkdirSync(path.dirname(link), { recursive: true });
+			symlinkSync(outside, link, process.platform === 'win32' ? 'junction' : 'dir');
+			writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+			writeFileSync(path.join(fixture, 'package.json'), '{"version":"1.2.3"}');
+			const output = path.join(fixture, bundle.output_directory);
+			exportedDirectory = path.join(output, 'skills', skill.name);
+			let failure;
+			try { buildAgentPluginBundle(fixture, 'bundle.json'); } catch (error) { failure = error; }
+			const externalSourceChanged = readFileSync(outsideSource, 'utf8') !== original;
+			t.diagnostic(JSON.stringify({ linkedPath, rejected: !!failure, externalSourceChanged }));
+			assert.equal(externalSourceChanged, false, 'plugin export must not overwrite external skill sources');
+			assert.match(failure?.message ?? '', /Path must not contain symlinks/u);
+			assert.equal(existsSync(output), false, 'reject linked sources before creating build output');
+		} finally {
+			if (exportedDirectory && lstatSync(exportedDirectory, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(exportedDirectory);
+			if (link && lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
+			removeTempProject(fixture);
+			removeTempProject(outside);
+		}
+	});
+}
+
 test('real bundled skills export portable string metadata without changing canonical files', () => {
 	const fixture = createTempProject('mustflow-portable-real-');
 	try {
