@@ -166,22 +166,22 @@ function pickEnv(source: NodeJS.ProcessEnv, names: readonly string[]): NodeJS.Pr
 }
 
 function removeProjectLocalBinFromPath(env: NodeJS.ProcessEnv, projectRoot: string): NodeJS.ProcessEnv {
-	const pathKey = getPathEnvKey(env);
-	const currentPath = env[pathKey];
-
-	if (!currentPath) {
-		return { ...env };
-	}
-
+	// Windows child processes may select a different casing than the first object key.
+	const pathKeys = process.platform === 'win32'
+		? Object.keys(env).filter((key) => key.toLowerCase() === 'path')
+		: [getPathEnvKey(env)];
+	const output = { ...env };
 	const localBinPath = path.join(projectRoot, 'node_modules', '.bin');
 
-	return {
-		...env,
-		[pathKey]: currentPath
+	for (const pathKey of pathKeys) {
+		const currentPath = env[pathKey];
+		if (!currentPath) continue;
+		output[pathKey] = currentPath
 			.split(path.delimiter)
 			.filter((entry) => entry.length > 0 && !sameResolvedPath(entry, localBinPath, projectRoot))
-			.join(path.delimiter),
-	};
+			.join(path.delimiter);
+	}
+	return output;
 }
 
 export function resolveCommandEnv(contract: CommandContract, intent: TomlTable | undefined): CommandEnvResolution {
