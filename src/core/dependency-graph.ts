@@ -285,18 +285,6 @@ function collectCandidateFiles(
 	return candidates.slice(0, policy.max_files);
 }
 
-function lineNumberAtIndex(text: string, index: number): number {
-	let line = 1;
-	let offset = 0;
-	while (offset < index) {
-		if (text.charCodeAt(offset) === 10) {
-			line += 1;
-		}
-		offset += 1;
-	}
-	return line;
-}
-
 function extractImportSpecifiers(text: string): readonly ImportSpecifierMatch[] {
 	const results: ImportSpecifierMatch[] = [];
 	const patterns = [
@@ -352,12 +340,23 @@ function readImportsForFile(
 	}
 
 	const text = buffer.toString('utf8');
-	return extractImportSpecifiers(text).map((entry) => ({
-		specifier: entry.specifier,
-		line: lineNumberAtIndex(text, entry.index),
-		kind: entry.kind,
-		resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
-	}));
+	// Import matches are sorted by source offset, so line counting never needs to rewind.
+	let line = 1;
+	let offset = 0;
+	return extractImportSpecifiers(text).map((entry) => {
+		while (offset < entry.index) {
+			if (text.charCodeAt(offset) === 10) {
+				line += 1;
+			}
+			offset += 1;
+		}
+		return {
+			specifier: entry.specifier,
+			line,
+			kind: entry.kind,
+			resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
+		};
+	});
 }
 
 function edgeKey(edge: DependencyGraphEdge): string {

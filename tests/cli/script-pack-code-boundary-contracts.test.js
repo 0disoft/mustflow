@@ -188,6 +188,55 @@ test('dependency-graph keeps incoming neighbors within max-depth and retains inc
 	}
 });
 
+test('dependency-graph counts import lines without rescanning earlier prefixes', async (t) => {
+	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
+	const projectPath = createTempProject();
+	const statement = "import './dep.ts';\n";
+	const content = statement.repeat(2_000);
+	const originalCharCodeAt = String.prototype.charCodeAt;
+	try {
+		writeFileSync(path.join(projectPath, 'many.ts'), content);
+		writeFileSync(path.join(projectPath, 'dep.ts'), 'export {};\n');
+		let characterReads = 0;
+		String.prototype.charCodeAt = function (...args) {
+			if (String(this).startsWith(statement)) characterReads++;
+			return originalCharCodeAt.apply(this, args);
+		};
+		const report = inspectDependencyGraph(projectPath, { paths: [projectPath], maxEdges: 2_001 });
+		t.diagnostic(JSON.stringify({ edges: report.edges.length, fileCharacters: content.length, characterReads }));
+		assert.equal(report.status, 'passed');
+		assert.equal(report.edges.length, 2_000);
+		assert.deepEqual(report.edges.map(edge => edge.line), Array.from({ length: 2_000 }, (_, index) => index + 1));
+		assert.ok(characterReads <= content.length, `Line counting revisited characters: ${characterReads}`);
+	} finally {
+		String.prototype.charCodeAt = originalCharCodeAt;
+		removeTempProject(projectPath);
+	}
+});
+
+test('dependency-graph preserves mixed import kinds and locations across newline formats', async () => {
+	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
+	const projectPath = createTempProject();
+	try {
+		writeFileSync(path.join(projectPath, 'dep.ts'), 'export const dep = 1;\n');
+		for (const newline of ['\n', '\r\n']) {
+			writeFileSync(path.join(projectPath, 'mixed.ts'), [
+				'// 한글 😀', "const dep = require('./dep.ts');", "export { dep } from './dep.ts';",
+				"import { dep as value } from './dep.ts';", "const lazy = import('./dep.ts');",
+				"import './dep.ts'; const second = require('./dep.ts');",
+			].join(newline));
+			const report = inspectDependencyGraph(projectPath, { paths: [projectPath] });
+			assert.equal(report.status, 'passed');
+			assert.equal(report.edges.length, 6);
+			for (const [kind, lines] of [
+				['require', [2, 6]], ['static_export', [3]], ['static_import', [4, 6]], ['dynamic_import', [5]],
+			]) assert.deepEqual(report.edges.filter(edge => edge.kind === kind).map(edge => edge.line), lines);
+		}
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph skips repeated cycle searches for a long acyclic chain', async (t) => {
 	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
 	const projectPath = createTempProject();
