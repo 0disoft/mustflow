@@ -3756,6 +3756,8 @@ test('redacts secret-like command and output values in JSON run receipts', () =>
 	const githubPatToken = 'github_pat_1234567890abcdefghij';
 	const bearerToken = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature';
 	const argvToken = 'password=supersecretvalue';
+	const splitPassword = 'FAKE_split_password_for_receipt_test';
+	const inlineApiKey = '가짜키!';
 
 	try {
 		initProject(projectPath);
@@ -3767,7 +3769,7 @@ status = "configured"
 lifecycle = "oneshot"
 run_policy = "agent_allowed"
 description = "Print secret-like values for receipt redaction."
-argv = ['${process.execPath}', '-e', 'console.log("token ${stdoutToken} ${githubPatToken}"); console.error("api_key=${stderrToken} ${bearerToken}")', '${argvToken}']
+argv = ['${process.execPath}', '-e', 'console.log("token ${stdoutToken} ${githubPatToken}"); console.error("api_key=${stderrToken} ${bearerToken}")', '${argvToken}', '--password', '${splitPassword}', '--api-key=${inlineApiKey}']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -3784,6 +3786,12 @@ destructive = false
 		const serializedPerformanceHistory = `${readFileSync(runPerformanceSamplesPath(projectPath), 'utf8')}\n${readFileSync(runPerformanceSummaryPath(projectPath), 'utf8')}`;
 
 		assert.equal(result.status, 0, result.stderr || result.stdout);
+		for (const text of [serialized, serializedPerformanceHistory,
+			readFileSync(path.join(projectPath, receipt.receipt_path), 'utf8'),
+			readFileSync(path.join(projectPath, '.mustflow', 'state', 'runs', 'latest.json'), 'utf8')]) {
+			assert.ok(!text.includes(splitPassword));
+			assert.ok(!text.includes(inlineApiKey));
+		}
 		assert.doesNotMatch(serialized, new RegExp(stdoutToken));
 		assert.doesNotMatch(serialized, new RegExp(stderrToken));
 		assert.doesNotMatch(serialized, new RegExp(githubPatToken));

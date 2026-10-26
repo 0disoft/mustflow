@@ -57,6 +57,8 @@ test('execution boundary changes select their focused regression coverage', () =
 		['src/core/cancellation.ts', 'run-cancellation.test.js'],
 		['src/core/bounded-output.ts', 'bounded-output.test.js'],
 		['src/core/command-preconditions.ts', 'command-preconditions.test.js'],
+		['src/core/run-receipt.ts', 'run-receipt-redaction.test.js'],
+		['src/core/secret-redaction.ts', 'run-receipt-redaction.test.js'],
 		['src/core/command-time-limits.ts', 'command-time-limits.test.js'],
 		['src/cli/commands/run/executor.ts', 'run-cancellation.test.js'],
 		['src/cli/commands/run/lifecycle.ts', 'run-lifecycle.test.js'],

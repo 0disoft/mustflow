@@ -12,7 +12,7 @@ import {
 } from './run-receipt-publication.js';
 import { updateRunReceiptState } from './run-receipt-state.js';
 import type { RunWriteDriftReceipt } from './run-write-drift.js';
-import { redactSecretLikeText } from './secret-redaction.js';
+import { REDACTED_SECRET_MARKER, redactSecretLikeText } from './secret-redaction.js';
 
 const RUN_RECEIPT_SCHEMA_VERSION = '1';
 const RUN_RECEIPT_DIR = path.join('.mustflow', 'state', 'runs');
@@ -216,6 +216,27 @@ function redactReceiptString(value: string, field: string, state: RedactionState
 	const redaction = redactSecretLikeText(value);
 	recordRedaction(state, field, redaction);
 	return redaction.text;
+}
+
+const SECRET_ARGUMENT_OPTION = /^(--(?:api[_-]?key|api[_-]?token|access[_-]?token|auth[_-]?token|secret|password|passwd|private[_-]?key|token))(?:(=)[\s\S]*)?$/iu;
+
+function redactReceiptArgv(argv: readonly string[], state: RedactionState): string[] {
+	let secretValueExpected = false;
+	return argv.map((value, index) => {
+		const option = index === 0 ? null : SECRET_ARGUMENT_OPTION.exec(value);
+		if (secretValueExpected || option?.[2] !== undefined) {
+			const prefix = secretValueExpected ? '' : `${option?.[1]}=`;
+			// A value that is itself a credential flag also makes its following value sensitive.
+			secretValueExpected = option !== null && option[2] === undefined;
+			recordRedaction(state, `argv.${index}`, {
+				redacted: true, redactionCount: 1, redactionKinds: ['secret_key_value'],
+			});
+			return `${prefix}${REDACTED_SECRET_MARKER}`;
+		}
+		// Credential flags identify values regardless of their length or character set.
+		secretValueExpected = option !== null;
+		return redactReceiptString(value, `argv.${index}`, state);
+	});
 }
 
 function summarizeOutput(
@@ -467,7 +488,7 @@ export function createRunReceipt(input: CreateRunReceiptInput): RunReceipt {
 	const stdoutTailBytes = input.stdoutTailBytes ?? DEFAULT_RUN_RECEIPT_TAIL_BYTES;
 	const stderrTailBytes = input.stderrTailBytes ?? DEFAULT_RUN_RECEIPT_TAIL_BYTES;
 	const redactionState: RedactionState = { fields: new Set(), kinds: new Set(), count: 0 };
-	const argv = input.argv?.map((value, index) => redactReceiptString(value, `argv.${index}`, redactionState));
+	const argv = input.argv ? redactReceiptArgv(input.argv, redactionState) : undefined;
 	const cmd = input.cmd ? redactReceiptString(input.cmd, 'cmd', redactionState) : undefined;
 	const error = input.error ? redactReceiptString(input.error, 'error', redactionState) : null;
 	const stdout = summarizeOutput(input.stdout, input.maxOutputBytes, stdoutTailBytes, 'stdout', redactionState);
