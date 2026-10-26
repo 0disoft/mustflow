@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
 import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
@@ -56,6 +59,46 @@ test('reporting lock snapshots never bypass live lock acquisition', async () => 
 	} finally {
 		handle?.release();
 		removeTempProject(root);
+	}
+});
+
+test('active lock inspection reuses verified self identity without caching other PIDs', async (t) => {
+	if (!['win32', 'linux', 'darwin'].includes(process.platform)) return t.skip('no process identity probe on this platform');
+	const projectPath = createTempProject('mustflow-self-identity-');
+	const { acquireActiveRunLock, inspectActiveRunLocks } = await importActiveRunLocks();
+	const { readProcessStartToken } = await importProcessIdentity();
+	const acquired = acquireActiveRunLock(projectPath, createWriteContract(), 'writer');
+	const originalSpawn = childProcess.spawnSync;
+	const originalRead = fs.readFileSync;
+	try {
+		assert.equal(acquired.ok, true);
+		assert.equal(acquired.handle.record.process_start_token.startsWith('unverified:'), false);
+		for (let index = 1; index < 8; index++) {
+			const record = { ...acquired.handle.record, run_id: `same-owner-${index}` };
+			writeFileSync(recordPath(projectPath, record.run_id), JSON.stringify(record));
+		}
+		let probes = 0;
+		childProcess.spawnSync = (...args) => { probes++; return originalSpawn(...args); };
+		fs.readFileSync = (file, ...args) => {
+			if (typeof file === 'string' && /^\/proc\/\d+\/stat$/u.test(file)) probes++;
+			return originalRead(file, ...args);
+		};
+		syncBuiltinESMExports();
+		const inspection = inspectActiveRunLocks(projectPath, createWriteContract(), 'writer');
+		const selfProbes = probes;
+		assert.equal(inspection.conflicts.length, 8);
+		assert.deepEqual(inspection.staleRecords, []);
+		readProcessStartToken(process.ppid);
+		readProcessStartToken(process.ppid);
+		t.diagnostic(JSON.stringify({ lockRecords: 8, selfProbes, otherPidProbes: probes - selfProbes }));
+		assert.equal(probes - selfProbes, 2, 'other PIDs must still be queried afresh');
+		assert.equal(selfProbes, 0, 'self-owned locks must reuse the verified identity');
+	} finally {
+		childProcess.spawnSync = originalSpawn;
+		fs.readFileSync = originalRead;
+		syncBuiltinESMExports();
+		if (acquired.ok) acquired.handle.release();
+		removeTempProject(projectPath);
 	}
 });
 

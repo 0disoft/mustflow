@@ -54,6 +54,12 @@ export function readProcessStartToken(pid: number): string | null {
 		return null;
 	}
 
+	// This process cannot reuse its own PID while alive. Failed observations remain retryable.
+	if (pid === process.pid && currentProcessStartToken !== undefined &&
+		!currentProcessStartToken.startsWith(UNVERIFIED_PROCESS_START_TOKEN_PREFIX)) {
+		return currentProcessStartToken;
+	}
+
 	if (process.platform === 'linux') {
 		return readLinuxProcessStartToken(pid);
 	}
