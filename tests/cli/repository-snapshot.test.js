@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, writeFileSync } from 'node:fs';
+import fs from 'node:fs';
+import { appendFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
@@ -75,6 +77,87 @@ test('repository snapshot reuses unchanged hashes from the previous snapshot', a
 		assert.equal(third.metrics.reused_file_hash_count, 1);
 		assert.notEqual(third.entries.get('tracked.txt'), second.entries.get('tracked.txt'));
 	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
+test('write drift never reports complete coverage when a changed file cannot be read', async (t) => {
+	const { captureRepositorySnapshot } = await importRepositorySnapshot();
+	const { finishRunWriteTracking } = await import(
+		pathToFileURL(path.join(projectRoot, 'dist', 'core', 'run-write-drift.js')).href
+	);
+	for (const code of ['EACCES', 'EPERM', 'EIO']) {
+		await t.test(code, () => {
+			const projectPath = createRepository();
+			const targetPath = path.join(projectPath, 'tracked.txt');
+			const originalRead = fs.readFileSync;
+			try {
+				writeFileSync(targetPath, 'before command\n');
+				fs.readFileSync = (file, ...args) => {
+					if (file === targetPath) throw Object.assign(new Error('injected file read failure'), { code });
+					return originalRead(file, ...args);
+				};
+				syncBuiltinESMExports();
+				const before = captureRepositorySnapshot(projectPath, { env: process.env });
+				writeFileSync(targetPath, 'after command\n');
+				const receipt = finishRunWriteTracking({ projectRoot: projectPath, env: process.env,
+					declaredPaths: [], before });
+				t.diagnostic(JSON.stringify({ code, snapshotStatus: before.status, coverageComplete: receipt.coverage_complete,
+					observedCount: receipt.observed_count, reason: receipt.reason }));
+				assert.equal(before.status, 'partial');
+				assert.equal(before.reason, 'snapshot_path_unreadable');
+				assert.equal(before.source, 'git_status');
+				assert.equal(before.metrics.inspected_path_count, 1);
+				assert.match(before.entries.get('tracked.txt'), /:unreadable$/u);
+				assert.equal(receipt.status, 'partial');
+				assert.equal(receipt.coverage_complete, false);
+				assert.equal(receipt.reason, 'snapshot_path_unreadable');
+			} finally {
+				fs.readFileSync = originalRead;
+				syncBuiltinESMExports();
+				removeTempProject(projectPath);
+			}
+		});
+	}
+});
+
+test('repository snapshot still treats a deleted tracked file as inspected missing state', async () => {
+	const projectPath = createRepository();
+	const { captureRepositorySnapshot } = await importRepositorySnapshot();
+	try {
+		unlinkSync(path.join(projectPath, 'tracked.txt'));
+		const snapshot = captureRepositorySnapshot(projectPath, { env: process.env });
+		assert.equal(snapshot.status, 'checked');
+		assert.equal(snapshot.reason, null);
+		assert.match(snapshot.entries.get('tracked.txt'), /:missing$/u);
+	} finally { removeTempProject(projectPath); }
+});
+
+test('repository snapshot propagates rename-source inspection failures', async () => {
+	const projectPath = createRepository();
+	const { captureRepositorySnapshot } = await importRepositorySnapshot();
+	const originalStat = fs.lstatSync;
+	try {
+		runGit(projectPath, ['mv', 'tracked.txt', 'renamed.txt']);
+		const inspected = captureRepositorySnapshot(projectPath, { env: process.env });
+		assert.equal(inspected.status, 'checked');
+		assert.match(inspected.entries.get('tracked.txt'), /:missing$/u);
+		assert.equal(inspected.metrics.inspected_path_count, 2);
+		fs.lstatSync = (file, ...args) => {
+			if (file === path.join(projectPath, 'tracked.txt')) {
+				throw Object.assign(new Error('injected rename-source inspection failure'), { code: 'EACCES' });
+			}
+			return originalStat(file, ...args);
+		};
+		syncBuiltinESMExports();
+		const failed = captureRepositorySnapshot(projectPath, { env: process.env });
+		assert.equal(failed.status, 'partial');
+		assert.equal(failed.reason, 'snapshot_path_unreadable');
+		assert.match(failed.entries.get('renamed.txt'), /:file:/u);
+		assert.match(failed.entries.get('tracked.txt'), /:unreadable$/u);
+	} finally {
+		fs.lstatSync = originalStat;
+		syncBuiltinESMExports();
 		removeTempProject(projectPath);
 	}
 });

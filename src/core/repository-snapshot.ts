@@ -14,6 +14,7 @@ const EXCLUDED_DIRECTORY_NAMES = new Set(['.git', 'node_modules']);
 const EXCLUDED_RELATIVE_DIRECTORY_PATHS = new Set(['.mustflow/state/perf', '.mustflow/state/runs']);
 
 type RepositoryFileSignature = string;
+type GitStatusPathFailure = 'snapshot_file_limit_exceeded' | 'snapshot_path_unreadable';
 export type RepositorySnapshotEnvironment = NodeJS.ProcessEnv;
 export type RepositorySnapshotStatus = 'checked' | 'partial' | 'unavailable';
 export type RepositorySnapshotSource = 'git_status' | 'recursive_snapshot' | 'unavailable';
@@ -166,8 +167,6 @@ function signatureForGitStatusPath(
 	stat: BigIntStats,
 	context: SnapshotCaptureContext,
 ): RepositoryFileSignature {
-	context.metrics.inspectedPathCount += 1;
-
 	if (stat.isSymbolicLink()) {
 		return `git:${status}:symlink:${readlinkSync(fullPath)}`;
 	}
@@ -224,20 +223,24 @@ function addGitStatusPath(
 	status: string,
 	entries: Map<string, RepositoryFileSignature>,
 	context: SnapshotCaptureContext,
-): boolean {
+): GitStatusPathFailure | null {
 	if (entries.size >= MAX_SNAPSHOT_FILES) {
-		return false;
+		return 'snapshot_file_limit_exceeded';
 	}
 
 	const fullPath = path.join(projectRoot, ...relativePath.split('/'));
+	context.metrics.inspectedPathCount += 1;
 	try {
 		const stat = lstatSync(fullPath, { bigint: true });
 		entries.set(relativePath, signatureForGitStatusPath(fullPath, relativePath, status, stat, context));
-	} catch {
-		context.metrics.inspectedPathCount += 1;
+	} catch (error) {
+		if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) {
+			entries.set(relativePath, `git:${status}:unreadable`);
+			return 'snapshot_path_unreadable';
+		}
 		entries.set(relativePath, `git:${status}:missing`);
 	}
-	return true;
+	return null;
 }
 
 function captureGitStatusSnapshot(
@@ -304,11 +307,12 @@ function captureGitStatusSnapshot(
 			continue;
 		}
 
-		if (!addGitStatusPath(projectRoot, filePath, status, entries, context)) {
+		const pathFailure = addGitStatusPath(projectRoot, filePath, status, entries, context);
+		if (pathFailure) {
 			return {
 				status: 'partial',
 				entries,
-				reason: 'snapshot_file_limit_exceeded',
+				reason: pathFailure,
 				source: 'git_status',
 			};
 		}
@@ -317,11 +321,12 @@ function captureGitStatusSnapshot(
 			const rawSourcePath = parts[index + 1] ?? '';
 			if (status.includes('R') && rawSourcePath.length > 0) {
 				const sourcePath = normalizeRepositoryRelativePath(rawSourcePath);
-				if (!addGitStatusPath(projectRoot, sourcePath, status, entries, context)) {
+				const sourceFailure = addGitStatusPath(projectRoot, sourcePath, status, entries, context);
+				if (sourceFailure) {
 					return {
 						status: 'partial',
 						entries,
-						reason: 'snapshot_file_limit_exceeded',
+						reason: sourceFailure,
 						source: 'git_status',
 					};
 				}

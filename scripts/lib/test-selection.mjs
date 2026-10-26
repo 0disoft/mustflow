@@ -238,6 +238,8 @@ export function createTestSelection(allCliTests, options = {}) {
 			tests: ['run-state-publication.test.js', ...runTests] },
 		{ match: /^src\/core\/run-write-drift\.ts$/u,
 			tests: ['run-write-drift.test.js', ...runTests, 'verify-plan-scheduler.test.js'] },
+		{ match: /^src\/core\/repository-snapshot\.ts$/u,
+			tests: ['repository-snapshot.test.js', 'run-write-drift.test.js', ...runTests] },
 		{ match: /^src\/core\/command-env\.ts$/u,
 			tests: ['command-env.test.js', ...runTests] },
 		{ match: /^src\/cli\/commands\/run\/process-tree\.ts$/u,
