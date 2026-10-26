@@ -188,6 +188,58 @@ test('dependency-graph keeps incoming neighbors within max-depth and retains inc
 	}
 });
 
+test('dependency-graph skips repeated cycle searches for a long acyclic chain', async (t) => {
+	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
+	const projectPath = createTempProject();
+	const originalIndexOf = Array.prototype.indexOf;
+	try {
+		for (let index = 0; index < 300; index++) {
+			writeFileSync(path.join(projectPath, `chain-${index}.ts`), index < 299
+				? `import './chain-${index + 1}.ts';\n` : 'export {};\n');
+		}
+		let searches = 0;
+		let pathElementsSearched = 0;
+		Array.prototype.indexOf = function (value, ...args) {
+			if (typeof value === 'string' && value.startsWith('chain-') && value.endsWith('.ts')) {
+				searches++;
+				pathElementsSearched += this.length;
+			}
+			return originalIndexOf.call(this, value, ...args);
+		};
+		const report = inspectDependencyGraph(projectPath, { paths: [projectPath] });
+		t.diagnostic(JSON.stringify({ nodes: report.nodes.length, edges: report.edges.length, searches, pathElementsSearched }));
+		assert.equal(report.nodes.length, 300);
+		assert.equal(report.edges.length, 299);
+		assert.equal(report.status, 'passed');
+		assert.deepEqual(report.cycles, []);
+		assert.equal(searches, 0);
+	} finally {
+		Array.prototype.indexOf = originalIndexOf;
+		removeTempProject(projectPath);
+	}
+});
+
+test('dependency-graph preserves cycle paths with parallel edges, self imports and disconnected components', async () => {
+	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
+	const projectPath = createTempProject();
+	try {
+		for (const [name, source] of Object.entries({
+			a: "import './b.ts';\nrequire('./b.ts');\n", b: "import './a.ts';\n",
+			c: "import './c.ts';\n", d: "import './e.ts';\n",
+			e: "import './f.ts';\n", f: "import './d.ts';\n",
+			g: "import './a.ts';\n", h: "import './i.ts';\n", i: 'export {};\n',
+		})) writeFileSync(path.join(projectPath, `${name}.ts`), source);
+		const report = inspectDependencyGraph(projectPath, { paths: [projectPath] });
+		assert.equal(report.status, 'passed');
+		assert.equal(report.edges.length, 9);
+		assert.deepEqual(report.cycles, [
+			['a.ts', 'b.ts', 'a.ts'], ['c.ts', 'c.ts'], ['f.ts', 'd.ts', 'e.ts', 'f.ts'],
+		]);
+	} finally {
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph reports import cycles as hints without failing the helper', () => {
 	const projectPath = createTempProject();
 

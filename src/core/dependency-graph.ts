@@ -530,6 +530,22 @@ function buildIncludedGraph(
 	};
 }
 
+function isAcyclic(adjacency: ReadonlyMap<string, readonly string[]>): boolean {
+	const incoming = new Map<string, number>([...adjacency.keys()].map((node) => [node, 0]));
+	for (const targets of adjacency.values()) {
+		for (const target of targets) incoming.set(target, (incoming.get(target) ?? 0) + 1);
+	}
+	const queue = [...incoming].filter(([, count]) => count === 0).map(([node]) => node);
+	for (let head = 0; head < queue.length; head += 1) {
+		for (const target of adjacency.get(queue[head]!) ?? []) {
+			const remaining = (incoming.get(target) ?? 0) - 1;
+			incoming.set(target, remaining);
+			if (remaining === 0) queue.push(target);
+		}
+	}
+	return queue.length === incoming.size;
+}
+
 function findCycles(edges: readonly DependencyGraphEdge[]): readonly (readonly string[])[] {
 	const adjacency = new Map<string, string[]>();
 	for (const edge of edges) {
@@ -537,6 +553,9 @@ function findCycles(edges: readonly DependencyGraphEdge[]): readonly (readonly s
 		targets.push(edge.target_path);
 		adjacency.set(edge.source_path, targets);
 	}
+	// Most dependency graphs are DAGs. Avoid all per-root path searches for them,
+	// retaining the existing cycle enumeration and ordering when cycles are present.
+	if (isAcyclic(adjacency)) return [];
 	for (const targets of adjacency.values()) {
 		targets.sort((left, right) => left.localeCompare(right));
 	}
