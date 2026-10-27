@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import {
 	appendIntent,
 	assert,
@@ -32,6 +34,97 @@ import {
 	writeFileSync,
 	writeRunTrustManifestLock,
 } from './helpers/verify-completion-verdict-contracts.js';
+
+function failureStateInput(projectRoot) {
+	return {
+		projectRoot,
+		status: 'failed',
+		failureFingerprint: createVerificationFailureFingerprint({
+			verificationPlanId: 'read-boundary-probe', failedIntents: ['probe'],
+			exitCodeClasses: ['failure'], timeoutFlags: [false], errorKinds: ['exit_code'],
+			riskCodes: [], affectedSurfaces: [], commandFingerprints: [],
+		}),
+	};
+}
+
+function trackStateReads(statePath) {
+	const identity = fs.statSync(statePath, { bigint: true });
+	const originalReadFile = fs.readFileSync;
+	const originalRead = fs.readSync;
+	let bytes = 0;
+	function isStateFile(target) {
+		if (target === statePath) return true;
+		if (typeof target !== 'number') return false;
+		const stats = fs.fstatSync(target, { bigint: true });
+		return stats.dev === identity.dev && stats.ino === identity.ino;
+	}
+	fs.readFileSync = (target, ...args) => {
+		const isState = isStateFile(target);
+		const value = originalReadFile(target, ...args);
+		if (isState) bytes += Buffer.byteLength(value);
+		return value;
+	};
+	fs.readSync = (target, ...args) => {
+		const count = originalRead(target, ...args);
+		if (isStateFile(target)) bytes += count;
+		return count;
+	};
+	syncBuiltinESMExports();
+	return {
+		bytes: () => bytes,
+		restore() {
+			fs.readFileSync = originalReadFile;
+			fs.readSync = originalRead;
+			syncBuiltinESMExports();
+		},
+	};
+}
+
+test('repeated failure state rejects a linked file before reading its external contents', (t) => {
+	const root = createTempProject();
+	const outside = createTempProject();
+	const statePath = path.join(root, ...REPEATED_FAILURE_STATE_PATH.split('/'));
+	const outsidePath = path.join(outside, 'external-state.json');
+	let reads;
+	try {
+		mkdirSync(path.dirname(statePath), { recursive: true });
+		writeFileSync(outsidePath, '{"schema_version":"1","fingerprints":[]}\n');
+		try {
+			fs.symlinkSync(outsidePath, statePath, 'file');
+		} catch (error) {
+			if (error.code === 'EPERM' || error.code === 'EACCES') return t.skip('file symlink creation unavailable');
+			throw error;
+		}
+		reads = trackStateReads(statePath);
+		assert.throws(() => updateRepeatedFailureState(failureStateInput(root)), /symlinks/u);
+		t.diagnostic(JSON.stringify({ externalBytesRead: reads.bytes() }));
+		assert.equal(reads.bytes(), 0);
+		reads.restore();
+		assert.equal(readFileSync(outsidePath, 'utf8'), '{"schema_version":"1","fingerprints":[]}\n');
+	} finally {
+		reads?.restore();
+		removeTempProject(root);
+		removeTempProject(outside);
+	}
+});
+
+test('repeated failure state rejects oversized input before reading its contents', (t) => {
+	const root = createTempProject();
+	const statePath = path.join(root, ...REPEATED_FAILURE_STATE_PATH.split('/'));
+	let reads;
+	try {
+		mkdirSync(path.dirname(statePath), { recursive: true });
+		writeFileSync(statePath, ' '.repeat(4 * 1024 * 1024 + 1));
+		reads = trackStateReads(statePath);
+		const summary = updateRepeatedFailureState(failureStateInput(root));
+		t.diagnostic(JSON.stringify({ stateBytesRead: reads.bytes(), seenCount: summary.seen_count }));
+		assert.equal(reads.bytes(), 0);
+		assert.equal(summary.seen_count, 1);
+	} finally {
+		reads?.restore();
+		removeTempProject(root);
+	}
+});
 
 test('flags repeated unresolved verification failures for the same plan', async () => {
 	const projectPath = createTempProject();

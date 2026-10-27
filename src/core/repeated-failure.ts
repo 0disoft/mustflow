@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-import { writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
+import { readUtf8FileInsideWithoutSymlinks, writeJsonFileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } from './run-state-mutex.js';
 
 export interface VerificationFailureFingerprint {
@@ -77,6 +77,7 @@ export interface RepeatedFailureRiskInput {
 
 export const REPEATED_FAILURE_STATE_PATH = '.mustflow/state/repeated-failures.json';
 export const REPEATED_FAILURE_STATE_LIMIT = 50;
+const REPEATED_FAILURE_STATE_MAX_BYTES = 4 * 1024 * 1024;
 
 const UNRESOLVED_VERIFY_STATUSES = new Set(['failed', 'blocked', 'partial']);
 
@@ -137,7 +138,9 @@ function readRepeatedFailureState(projectRoot: string): RepeatedFailureState {
 	}
 
 	try {
-		const parsed = JSON.parse(readFileSync(statePath, 'utf8')) as Record<string, unknown>;
+		const parsed = JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, statePath, {
+			maxBytes: REPEATED_FAILURE_STATE_MAX_BYTES,
+		})) as Record<string, unknown>;
 		const fingerprints = Array.isArray(parsed.fingerprints)
 			? parsed.fingerprints.filter(isRepeatedFailureSummary)
 			: [];
