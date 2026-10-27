@@ -249,6 +249,10 @@ export function buildAgentPluginBundle(projectRoot: string, bundlePath: string):
 
 	const skillSources = declaration.skills.map((skill) => ({ skill, directory: validateSkill(projectRoot, skill) }));
 	const version = readPackageVersion(projectRoot, declaration);
+	const servers = Object.fromEntries(declaration.mcp_servers.map((server) => [
+		server.name,
+		readMcpServer(projectRoot, server.name, server.source),
+	]));
 	ensureInsideWithoutSymlinks(projectRoot, outputDirectory, { allowMissingDescendant: true });
 	rmSync(outputDirectory, { recursive: true, force: true });
 	mkdirSync(path.join(outputDirectory, 'skills'), { recursive: true });
@@ -270,10 +274,6 @@ export function buildAgentPluginBundle(projectRoot: string, bundlePath: string):
 	writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
 	if (declaration.mcp_servers.length > 0) {
-		const servers = Object.fromEntries(declaration.mcp_servers.map((server) => [
-			server.name,
-			readMcpServer(projectRoot, server.name, server.source),
-		]));
 		writeFileSync(path.join(outputDirectory, 'mcp.json'), `${JSON.stringify({ mcpServers: servers }, null, 2)}\n`);
 	}
 	validateGeneratedOutput(outputDirectory, declaration.skills.map((skill) => skill.name), declaration.mcp_servers.length > 0);

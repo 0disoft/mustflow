@@ -80,6 +80,50 @@ for (const depth of [1, 2, 3]) {
 	});
 }
 
+test('plugin build validates all MCP inputs before replacing existing output', (t) => {
+	const fixture = createTempProject('mustflow-plugin-mcp-preflight-');
+	try {
+		const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'plugin-bundles/mustflow-review.bundle.json'), 'utf8'));
+		bundle.skills = bundle.skills.slice(0, 1);
+		const skill = bundle.skills[0];
+		cpSync(path.dirname(path.join(projectRoot, skill.source)), path.dirname(path.join(fixture, skill.source)), { recursive: true });
+		mkdirSync(path.join(fixture, 'plugin-bundles/mcp'), { recursive: true });
+		writeFileSync(path.join(fixture, 'package.json'), '{"version":"1.2.3"}');
+		const server = { command: 'node', args: ['server.js'] };
+		writeFileSync(path.join(fixture, 'plugin-bundles/mcp/valid.json'), JSON.stringify(server));
+		writeFileSync(path.join(fixture, 'plugin-bundles/mcp/broken.json'), '{ invalid JSON');
+		const valid = { name: 'valid', source: 'plugin-bundles/mcp/valid.json' };
+		const originalName = bundle.plugin.name;
+		const output = path.join(fixture, bundle.output_directory);
+		let damagedBuilds = 0;
+		const cases = [
+			[{ ...valid, name: 'invalid/name' }, /agent_plugin_mcp_name_invalid/u],
+			[{ name: 'outside', source: '../outside.json' }, /agent_plugin_mcp_source_invalid/u],
+			[{ name: 'missing', source: 'plugin-bundles/mcp/missing.json' }, /agent_plugin_mcp_source_invalid/u],
+			[{ name: 'broken', source: 'plugin-bundles/mcp/broken.json' }, SyntaxError],
+		];
+		for (const [invalid, expectedError] of cases) {
+			bundle.plugin.name = originalName;
+			bundle.mcp_servers = [valid];
+			writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+			assert.equal(buildAgentPluginBundle(fixture, 'bundle.json').ok, true);
+			const snapshots = ['plugin.json', 'mcp.json', `skills/${skill.name}/SKILL.md`]
+				.map(name => [path.join(output, name), readFileSync(path.join(output, name))]);
+			bundle.plugin.name = 'replacement-plugin';
+			bundle.mcp_servers = [valid, invalid];
+			writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+			assert.throws(() => buildAgentPluginBundle(fixture, 'bundle.json'), expectedError);
+			if (snapshots.some(([file, bytes]) => !existsSync(file) || !readFileSync(file).equals(bytes))) damagedBuilds++;
+		}
+		t.diagnostic(JSON.stringify({ rejectedInputs: cases.length, damagedBuilds }));
+		assert.equal(damagedBuilds, 0, 'invalid MCP inputs must preserve the last successful build byte-for-byte');
+		bundle.mcp_servers = [{ ...valid, name: 'replacement' }];
+		writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+		assert.equal(buildAgentPluginBundle(fixture, 'bundle.json').ok, true);
+		assert.deepEqual(JSON.parse(readFileSync(path.join(output, 'mcp.json'), 'utf8')), { mcpServers: { replacement: server } });
+	} finally { removeTempProject(fixture); }
+});
+
 test('real bundled skills export portable string metadata without changing canonical files', () => {
 	const fixture = createTempProject('mustflow-portable-real-');
 	try {
