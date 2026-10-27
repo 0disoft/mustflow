@@ -668,7 +668,7 @@ function acquireMutex(lockRoot: string, options: { readonly waitMs?: number } = 
 							continue;
 						}
 					} catch {
-						continue;
+						// Failed metadata inspection must not restart polling after the wait budget expires.
 					}
 				}
 

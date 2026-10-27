@@ -147,6 +147,65 @@ test('active run locks do not delete a mutex while another recovery owns it', as
 	}
 });
 
+test('active run locks honor expired wait budgets when orphan metadata is unreadable', async (t) => {
+	const { acquireActiveRunLock } = await importActiveRunLocks();
+	for (const code of ['EACCES', 'EIO', 'ENOENT']) {
+		await t.test(code, (t) => {
+			const root = createTempProject('mustflow-active-lock-stat-failure-');
+			const mutex = path.join(root, '.mustflow', 'state', 'locks', 'mutex');
+			const originalMkdir = fs.mkdirSync;
+			const originalStat = fs.statSync;
+			const now = Date.now();
+			let elapsed = 0;
+			let attempts = 0;
+			let metadataFailures = 0;
+			let waits = 0;
+			let failure;
+			try {
+				mkdirSync(mutex, { recursive: true });
+				t.mock.method(Date, 'now', () => now + elapsed);
+				t.mock.method(Atomics, 'wait', () => {
+					waits++;
+					elapsed += 1001;
+					return 'timed-out';
+				});
+				fs.mkdirSync = (target, ...args) => {
+					if (target === mutex && ++attempts > 3) {
+						throw new Error('test_guard:active_mutex_retried_after_deadline');
+					}
+					return originalMkdir(target, ...args);
+				};
+				fs.statSync = (target, ...args) => {
+					if (target === mutex) {
+						metadataFailures++;
+						throw Object.assign(new Error('injected metadata failure'), { code });
+					}
+					return originalStat(target, ...args);
+				};
+				syncBuiltinESMExports();
+				try {
+					acquireActiveRunLock(root, createWriteContract(), 'writer');
+				} catch (error) {
+					failure = error;
+				}
+				t.diagnostic(JSON.stringify({ code, elapsed, attempts, metadataFailures, waits }));
+				assert.equal(failure?.message, 'active_run_lock_mutex_busy');
+				assert.equal(attempts, 2);
+				assert.equal(metadataFailures, 1);
+				assert.equal(waits, 1);
+				assert.equal(existsSync(mutex), true);
+				assert.equal(existsSync(path.join(mutex, 'owner.json')), false);
+			} finally {
+				fs.mkdirSync = originalMkdir;
+				fs.statSync = originalStat;
+				syncBuiltinESMExports();
+				t.mock.restoreAll();
+				removeTempProject(root);
+			}
+		});
+	}
+});
+
 test('run state mutex never steals from a live owner based on age alone', async () => {
 	const projectPath = createTempProject('mustflow-live-old-mutex-');
 	const { acquireActiveRunLock } = await importActiveRunLocks();
