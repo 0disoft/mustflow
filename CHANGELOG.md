@@ -6,6 +6,15 @@ This file applies to the mustflow repository itself. It is not installed into us
 
 ## Unreleased
 
+## 2.141.4 - 2026-10-27
+
+- Bound retained command output, receipt reads, replay fingerprints, and repeated-failure state reads.
+- Redact complete credential values before retaining output tails, including quoted keys and command-line options.
+- Reject linked plugin sources, output paths, mutex paths, and receipt roots before reading or mutating state.
+- Preserve concurrent receipt writers, enforce lock deadlines after metadata failures, and detect metadata-only input rewrites.
+- Reduce repeated directory scans, line counting, cycle searches, and drift attribution work while preserving literal Git paths.
+- Refresh compatible CLI and documentation dependencies, the Bun toolchain, native crash parser dependencies, and Clarissimi automation.
+
 ## 2.141.3 - 2026-10-23
 
 - Revalidate declared inputs and environment dependencies before reusing verification results, and preserve evidence gaps when checks are deferred.
