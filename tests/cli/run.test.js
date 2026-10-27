@@ -4283,7 +4283,7 @@ run_policy = "agent_allowed"
 description = "Print selected environment variables."
 env_policy = "allowlist"
 env_allowlist = ["MUSTFLOW_TEST_ALLOWED_ENV"]
-argv = ['${process.execPath}', '-e', 'console.log(JSON.stringify({ allowed: process.env.MUSTFLOW_TEST_ALLOWED_ENV || "missing", secret: process.env.MUSTFLOW_TEST_SECRET_ENV || "missing" }))']
+argv = ['${process.execPath}', '-e', 'console.log(JSON.stringify({ allowed: process.env.MUSTFLOW_TEST_ALLOWED_ENV || "missing", omitted: process.env.MUSTFLOW_TEST_SECRET_ENV || "missing" }))']
 cwd = "."
 timeout_seconds = 10
 stdin = "closed"
@@ -4303,7 +4303,8 @@ destructive = false
 		assert.equal(result.status, 0, result.stderr || result.stdout);
 		assert.equal(receipt.env_policy, 'allowlist');
 		assert.deepEqual(receipt.env_allowlist, ['MUSTFLOW_TEST_ALLOWED_ENV']);
-		assert.deepEqual(output, { allowed: 'visible-env-value', secret: 'missing' });
+		// Avoid a credential-shaped output key so redaction cannot hide a leaked value.
+		assert.deepEqual(output, { allowed: 'visible-env-value', omitted: 'missing' });
 	} finally {
 		removeTempProject(projectPath);
 	}
