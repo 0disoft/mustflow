@@ -343,7 +343,7 @@ function acquireRunStateMutex(
 							continue;
 						}
 					} catch {
-						continue;
+						// Missing or unreadable metadata must not restart polling after the wait budget expires.
 					}
 				}
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import fs, { existsSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
@@ -105,6 +106,57 @@ function sleep(milliseconds) {
 function mutexPath(projectPath, scope) {
 	return path.join(projectPath, '.mustflow', 'state', 'mutexes', scope);
 }
+
+test('run state mutex honors an expired wait budget when orphan metadata cannot be inspected', async (t) => {
+	const { RUN_STATE_MUTEX_SCOPES, withRunStateUpdateMutex } = await importRunStateMutex();
+	for (const code of ['EACCES', 'EIO', 'ENOENT']) {
+		await t.test(code, () => {
+			const projectPath = createTempProject('mustflow-mutex-stat-failure-');
+			const scope = RUN_STATE_MUTEX_SCOPES.receipts;
+			const directory = mutexPath(projectPath, scope);
+			const originalMkdir = fs.mkdirSync;
+			const originalStat = fs.statSync;
+			let attempts = 0;
+			let metadataFailures = 0;
+			let invoked = false;
+			let failure;
+			try {
+				mkdirSync(directory, { recursive: true });
+				fs.mkdirSync = (target, ...args) => {
+					if (target === directory && ++attempts > 3) {
+						throw new Error('test_guard:mutex_retried_after_deadline');
+					}
+					return originalMkdir(target, ...args);
+				};
+				fs.statSync = (target, ...args) => {
+					if (target === directory) {
+						metadataFailures++;
+						throw Object.assign(new Error('injected metadata failure'), { code });
+					}
+					return originalStat(target, ...args);
+				};
+				syncBuiltinESMExports();
+				try {
+					withRunStateUpdateMutex(projectPath, scope, () => { invoked = true; }, { waitMs: 0 });
+				} catch (error) {
+					failure = error;
+				}
+				t.diagnostic(JSON.stringify({ code, attempts, metadataFailures, callbackInvoked: invoked }));
+				assert.equal(failure?.message, `run_state_mutex_busy:${scope}`);
+				assert.equal(attempts, 1);
+				assert.equal(metadataFailures, 1);
+				assert.equal(invoked, false);
+				assert.equal(existsSync(directory), true);
+				assert.equal(existsSync(path.join(directory, 'owner.json')), false);
+			} finally {
+				fs.mkdirSync = originalMkdir;
+				fs.statSync = originalStat;
+				syncBuiltinESMExports();
+				removeTempProject(projectPath);
+			}
+		});
+	}
+});
 
 function waitForPath(filePath, timeoutMs = 5_000) {
 	const startedAt = Date.now();
