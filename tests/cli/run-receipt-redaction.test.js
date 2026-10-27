@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createRunReceipt } from '../../dist/core/run-receipt.js';
+import { BoundedOutputBuffer } from '../../dist/core/bounded-output.js';
 import { REDACTED_SECRET_MARKER, redactSecretLikeText, textContainsSecretLike } from '../../dist/core/secret-redaction.js';
 
 function receiptFor(argv, overrides = {}) {
@@ -147,6 +148,40 @@ test('shared redaction handles escaped single quotes and preserves empty or alre
 			});
 		}
 	}
+});
+
+test('receipt output does not expose credentials whose keys are lost at the tail boundary', (t) => {
+	const input = 'password=FAKE_prefix_FAKELEAK\nsafe\n';
+	const tailBytes = Buffer.byteLength('FAKELEAK\nsafe\n');
+	const buffer = new BoundedOutputBuffer(tailBytes);
+	buffer.append(input.slice(0, 15));
+	buffer.append(input.slice(15));
+	const noNewline = new BoundedOutputBuffer(tailBytes);
+	noNewline.append('password=FAKE_prefix_FAKELEAK');
+	let exposedFields = 0;
+	for (const output of [input, Buffer.from(input), buffer.toSnapshot(), noNewline.toSnapshot()]) {
+		const receipt = receiptFor(['tool'], {
+			stdout: output, stderr: output, stdoutTailBytes: tailBytes, stderrTailBytes: tailBytes,
+		});
+		for (const field of [receipt.stdout, receipt.stderr]) {
+			if (field.tail.includes('FAKELEAK')) exposedFields++;
+			assert.equal(field.truncated, true);
+			assert.ok(Buffer.byteLength(field.tail) <= tailBytes);
+			assert.equal(field.bytes, typeof output === 'object' && 'bytes' in output ? output.bytes : Buffer.byteLength(output));
+		}
+	}
+	t.diagnostic(JSON.stringify({ inputForms: 4, streams: 2, exposedFields }));
+	assert.equal(exposedFields, 0);
+});
+
+test('receipt output preserves complete lines after discarding a contextless snapshot prefix', () => {
+	const output = { bytes: 100, tail: 'FAKELEAK\nsafe\npassword=FAKE_second_value\n' };
+	const receipt = receiptFor(['tool'], { stdout: output });
+	assert.equal(receipt.stdout.tail, `safe\npassword=${REDACTED_SECRET_MARKER}\n`);
+	assert.equal(receipt.stdout.bytes, 100);
+	assert.equal(receipt.stdout.truncated, true);
+	assert.equal(receipt.stdout.redacted, true);
+	assert.equal(receipt.stdout.redaction_count, 1);
 });
 
 test('receipt credential options preserve flag spelling and report the redacted argument index', () => {

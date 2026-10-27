@@ -3218,7 +3218,7 @@ test('keeps receipt output tails on UTF-8 character boundaries', async () => {
 	}
 });
 
-test('streams non-JSON child output before command completion and stores only a bounded receipt tail', async () => {
+test('streams non-JSON child output before completion and omits a contextless receipt tail', async () => {
 	const projectPath = createTempProject();
 
 	try {
@@ -3273,7 +3273,7 @@ writes = []
 		assert.equal(receipt.status, 'passed');
 		assert.equal(receipt.stdout.bytes, 9);
 		assert.equal(receipt.stdout.truncated, true);
-		assert.equal(receipt.stdout.tail, 'late');
+		assert.equal(receipt.stdout.tail, '', 'a truncated snapshot has no complete line to redact safely');
 	} finally {
 		removeTempProject(projectPath);
 	}
@@ -3527,7 +3527,7 @@ destructive = false
 		assert.equal(result.status, 0);
 		assert.equal(receipt.stdout.bytes, 16);
 		assert.equal(receipt.stdout.truncated, true);
-		assert.equal(receipt.stdout.tail, 'efghijklmnop');
+		assert.equal(receipt.stdout.tail, '', 'a truncated snapshot has no complete line to redact safely');
 	} finally {
 		removeTempProject(projectPath);
 	}

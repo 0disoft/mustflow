@@ -149,18 +149,20 @@ Machine-readable output uses these fields:
 
 Output summary objects use these fields:
 
+Available output is redacted before the final tail byte limit is applied. When a streaming snapshot has already lost its prefix, its first line is omitted because a credential key may have been discarded while part of its value remains. A truncated snapshot with no newline therefore has an empty tail. Redaction metadata describes replacements before the final tail limit; byte counts still describe the original output.
+
 - `stdout.bytes` (`number`): Total standard output bytes.
 - `stdout.truncated` (`boolean`): Whether output was trimmed to the retention limit.
 - `stdout.tail` (`string`): Tail of standard output.
-- `stdout.redacted` (`boolean`): Whether secret-like text was replaced in the retained tail.
-- `stdout.redaction_count` (`number`): Count of replacements in the retained tail.
-- `stdout.redaction_kinds` (`string[]`): Redaction rule kinds that matched the retained tail.
+- `stdout.redacted` (`boolean`): Whether secret-like text was replaced in the processed output.
+- `stdout.redaction_count` (`number`): Count of replacements in the processed output.
+- `stdout.redaction_kinds` (`string[]`): Redaction rule kinds that matched the processed output.
 - `stderr.bytes` (`number`): Total standard error bytes.
 - `stderr.truncated` (`boolean`): Whether output was trimmed to the retention limit.
 - `stderr.tail` (`string`): Tail of standard error.
-- `stderr.redacted` (`boolean`): Whether secret-like text was replaced in the retained tail.
-- `stderr.redaction_count` (`number`): Count of replacements in the retained tail.
-- `stderr.redaction_kinds` (`string[]`): Redaction rule kinds that matched the retained tail.
+- `stderr.redacted` (`boolean`): Whether secret-like text was replaced in the processed output.
+- `stderr.redaction_count` (`number`): Count of replacements in the processed output.
+- `stderr.redaction_kinds` (`string[]`): Redaction rule kinds that matched the processed output.
 
 Write drift objects use these fields:
 

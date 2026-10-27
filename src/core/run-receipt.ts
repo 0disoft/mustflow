@@ -263,14 +263,20 @@ function summarizeOutput(
 		typeof output === 'object' && 'tail' in output && 'bytes' in output
 			? output.bytes
 			: Buffer.byteLength(text, 'utf8');
-	const tail = truncateTextByBytes(text, tailLimit);
-	const redaction = redactSecretLikeText(tail.text);
+	const sourceTruncated = bytes > Buffer.byteLength(text, 'utf8');
+	// A bounded snapshot can start inside a secret whose identifying key is already gone.
+	// Only subsequent lines have their full context available for redaction.
+	const firstNewline = sourceTruncated ? text.indexOf('\n') : -1;
+	const contextualText = sourceTruncated ? (firstNewline < 0 ? '' : text.slice(firstNewline + 1)) : text;
+	const redaction = redactSecretLikeText(contextualText);
+	// Mask while keys are still present, then enforce the persisted byte budget.
+	const tail = truncateTextByBytes(redaction.text, tailLimit);
 	recordRedaction(state, `${field}.tail`, redaction);
 
 	return {
 		bytes,
-		truncated: tail.truncated || bytes > Buffer.byteLength(tail.text, 'utf8'),
-		tail: redaction.text,
+		truncated: sourceTruncated || bytes > tailLimit || tail.truncated,
+		tail: tail.text,
 		redacted: redaction.redacted,
 		redaction_count: redaction.redactionCount,
 		redaction_kinds: redaction.redactionKinds,
