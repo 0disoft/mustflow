@@ -80,6 +80,43 @@ for (const depth of [1, 2, 3]) {
 	});
 }
 
+for (const linkedPath of ['plugin-bundles', 'plugin-bundles/mcp', 'plugin-bundles/mcp/linked']) {
+	test(`plugin build rejects linked MCP source parents: ${linkedPath}`, (t) => {
+		const fixture = createTempProject('mustflow-plugin-mcp-linked-');
+		const outside = createTempProject('mustflow-plugin-mcp-outside-');
+		const link = path.join(fixture, linkedPath);
+		try {
+			const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'plugin-bundles/mustflow-review.bundle.json'), 'utf8'));
+			bundle.skills = bundle.skills.slice(0, 1);
+			const skill = bundle.skills[0];
+			cpSync(path.dirname(path.join(projectRoot, skill.source)), path.dirname(path.join(fixture, skill.source)), { recursive: true });
+			const source = 'plugin-bundles/mcp/linked/server.json';
+			bundle.mcp_servers = [{ name: 'linked', source }];
+			const outsideSource = path.join(outside, path.relative(link, path.join(fixture, source)));
+			const payload = { command: 'node', env: { TEST_ONLY_TOKEN: 'FAKE_MCP_FIXTURE_TOKEN' } };
+			mkdirSync(path.dirname(outsideSource), { recursive: true });
+			writeFileSync(outsideSource, JSON.stringify(payload));
+			mkdirSync(path.dirname(link), { recursive: true });
+			symlinkSync(outside, link, process.platform === 'win32' ? 'junction' : 'dir');
+			writeFileSync(path.join(fixture, 'bundle.json'), JSON.stringify(bundle));
+			writeFileSync(path.join(fixture, 'package.json'), '{"version":"1.2.3"}');
+			let failure;
+			try { buildAgentPluginBundle(fixture, 'bundle.json'); } catch (error) { failure = error; }
+			const output = path.join(fixture, bundle.output_directory);
+			const mcpPath = path.join(output, 'mcp.json');
+			const externalPayloadPackaged = existsSync(mcpPath) && readFileSync(mcpPath, 'utf8').includes(payload.env.TEST_ONLY_TOKEN);
+			t.diagnostic(JSON.stringify({ linkedPath, rejected: !!failure, externalPayloadPackaged }));
+			assert.equal(externalPayloadPackaged, false, 'external JSON must not be copied into distributable MCP configuration');
+			assert.match(failure?.message ?? '', /Path must not contain symlinks/u);
+			assert.equal(existsSync(output), false, 'reject linked MCP sources before writing output');
+		} finally {
+			if (lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
+			removeTempProject(fixture);
+			removeTempProject(outside);
+		}
+	});
+}
+
 test('plugin build validates all MCP inputs before replacing existing output', (t) => {
 	const fixture = createTempProject('mustflow-plugin-mcp-preflight-');
 	try {

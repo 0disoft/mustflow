@@ -200,7 +200,7 @@ function readMcpServer(projectRoot: string, name: string, source: string): unkno
 	if (lstatSync(sourcePath).isSymbolicLink()) {
 		throw new Error(`agent_plugin_mcp_symlink_rejected:${source}`);
 	}
-	return JSON.parse(readFileSync(sourcePath, 'utf8')) as unknown;
+	return JSON.parse(readUtf8FileInsideWithoutSymlinks(projectRoot, sourcePath)) as unknown;
 }
 
 function validateGeneratedOutput(outputDirectory: string, skillNames: readonly string[], hasMcp: boolean): void {
