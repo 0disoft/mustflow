@@ -560,12 +560,12 @@ function findCycles(edges: readonly DependencyGraphEdge[]): readonly (readonly s
 	}
 
 	const cycles = new Map<string, readonly string[]>();
-	const visit = (node: string, stack: string[], seen: Set<string>): void => {
+	const visit = (node: string, stack: string[], positions: Map<string, number>, seen: Set<string>): void => {
 		if (cycles.size >= MAX_CYCLES) {
 			return;
 		}
-		const existingIndex = stack.indexOf(node);
-		if (existingIndex >= 0) {
+		const existingIndex = positions.get(node);
+		if (existingIndex !== undefined) {
 			const cycle = [...stack.slice(existingIndex), node];
 			const body = cycle.slice(0, -1);
 			const sorted = [...body].sort((left, right) => left.localeCompare(right));
@@ -576,13 +576,18 @@ function findCycles(edges: readonly DependencyGraphEdge[]): readonly (readonly s
 			return;
 		}
 		seen.add(node);
+		// Reuse the active path; copying and searching every prefix grows cubically on chains.
+		positions.set(node, stack.length);
+		stack.push(node);
 		for (const next of adjacency.get(node) ?? []) {
-			visit(next, [...stack, node], seen);
+			visit(next, stack, positions, seen);
 		}
+		stack.pop();
+		positions.delete(node);
 	};
 
 	for (const node of [...adjacency.keys()].sort((left, right) => left.localeCompare(right))) {
-		visit(node, [], new Set<string>());
+		visit(node, [], new Map<string, number>(), new Set<string>());
 	}
 
 	return [...cycles.values()];

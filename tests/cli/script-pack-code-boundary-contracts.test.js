@@ -268,6 +268,38 @@ test('dependency-graph skips repeated cycle searches for a long acyclic chain', 
 	}
 });
 
+test('dependency-graph avoids active-path scans in a long chain beside a disconnected cycle', async (t) => {
+	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
+	const projectPath = createTempProject();
+	const originalIndexOf = Array.prototype.indexOf;
+	try {
+		for (let index = 0; index < 299; index++) {
+			writeFileSync(path.join(projectPath, `chain-${index}.ts`), index < 298
+				? `import './chain-${index + 1}.ts';\n` : 'export {};\n');
+		}
+		writeFileSync(path.join(projectPath, 'loop.ts'), "import './loop.ts';\n");
+		let searches = 0;
+		let pathElementsSearched = 0;
+		Array.prototype.indexOf = function (value, ...args) {
+			if (typeof value === 'string' && value.startsWith('chain-') && value.endsWith('.ts')) {
+				searches++;
+				pathElementsSearched += this.length;
+			}
+			return originalIndexOf.call(this, value, ...args);
+		};
+		const report = inspectDependencyGraph(projectPath, { paths: [projectPath] });
+		t.diagnostic(JSON.stringify({ nodes: report.nodes.length, edges: report.edges.length, searches, pathElementsSearched }));
+		assert.equal(report.nodes.length, 300);
+		assert.equal(report.edges.length, 299);
+		assert.equal(report.status, 'passed');
+		assert.deepEqual(report.cycles, [['loop.ts', 'loop.ts']]);
+		assert.equal(searches, 0);
+	} finally {
+		Array.prototype.indexOf = originalIndexOf;
+		removeTempProject(projectPath);
+	}
+});
+
 test('dependency-graph preserves cycle paths with parallel edges, self imports and disconnected components', async () => {
 	const { inspectDependencyGraph } = await import('../../dist/core/dependency-graph.js');
 	const projectPath = createTempProject();
