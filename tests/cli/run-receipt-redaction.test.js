@@ -98,6 +98,37 @@ test('shared redaction removes complete quoted secrets from every receipt field'
 	assert.equal(exposedFields, 0);
 });
 
+test('shared redaction removes whole unquoted punctuation and Unicode secrets from receipts', (t) => {
+	const values = ['FAKE!private-value', 'FAKE$private-value', 'FAKE_private!remaining', '가짜비밀번호입니다',
+		'FAKE\\private-value', 'FAKE%private=value', 'FAKE@private#value', 'FAKE[private]{value}'];
+	const expected = `DATABASE_PASSWORD=${REDACTED_SECRET_MARKER} next=ordinary`;
+	let exposedFields = 0;
+	for (const secret of values) {
+		const input = `DATABASE_PASSWORD=${secret} next=ordinary`;
+		const receipt = receiptFor(['tool', input], { stdout: input, stderr: input, error: input });
+		const shellReceipt = receiptFor(undefined, { mode: 'shell', cmd: input });
+		const fields = [receipt.argv[1], receipt.stdout.tail, receipt.stderr.tail, receipt.error, shellReceipt.cmd];
+		exposedFields += fields.filter(value => value !== expected).length;
+	}
+	t.diagnostic(JSON.stringify({ unquotedValues: values.length, receiptFields: 5, exposedFields }));
+	assert.equal(exposedFields, 0);
+	for (const secret of values) {
+		const input = `DATABASE_PASSWORD=${secret} next=ordinary`;
+		assert.equal(textContainsSecretLike(input), true);
+		assert.equal(redactSecretLikeText(input).text, expected);
+		assert.equal(redactSecretLikeText(expected).redacted, false);
+	}
+});
+
+test('shared redaction preserves the bare-value threshold and existing redaction markers', () => {
+	for (const value of ['', 'short!', '1234567', REDACTED_SECRET_MARKER]) {
+		const input = `password=${value}`;
+		assert.equal(textContainsSecretLike(input), false);
+		assert.equal(redactSecretLikeText(input).text, input);
+		assert.equal(redactSecretLikeText(input).redacted, false);
+	}
+});
+
 test('shared redaction handles escaped single quotes and preserves empty or already masked values', () => {
 	for (const value of ['FAKEprefix!remaining', '가짜 비밀번호!', 'x!', "FAKE_escaped_\\'quote_remaining"]) {
 		const input = `DATABASE_PASSWORD='${value}' next=ordinary`;
