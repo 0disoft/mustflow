@@ -49,6 +49,7 @@ interface CommandPreconditionDeclaration {
 
 interface CommandPreconditionEvaluationContext {
 	projectFiles: readonly string[] | null;
+	readonly sourcePatterns: readonly string[];
 }
 
 const IGNORED_WALK_DIRECTORIES = new Set([
@@ -179,23 +180,43 @@ function shouldSkipDirectory(relativePath: string): boolean {
 		|| normalized.startsWith('.mustflow/cache/');
 }
 
-function listProjectFiles(projectRoot: string): readonly string[] {
+function listProjectFiles(projectRoot: string, patterns: readonly string[]): readonly string[] {
 	const files: string[] = [];
+	// A fixed directory prefix and slash depth can rule out subtrees without
+	// changing the glob matcher. Double stars may consume arbitrary depth.
+	const scopes = patterns.filter((pattern) => !relativePathIsUnsafe(pattern)).map((pattern) => {
+		const wildcardIndex = pattern.search(/[*?]/u);
+		const literalPrefix = wildcardIndex < 0 ? pattern : pattern.slice(0, wildcardIndex);
+		return {
+			prefix: literalPrefix.slice(0, literalPrefix.lastIndexOf('/') + 1),
+			maxDepth: pattern.includes('**') ? Infinity : pattern.split('/').length - 1,
+		};
+	});
+
+	function mayContainSource(relativePath: string): boolean {
+		// Normalize with a trailing slash so directory-name spaces remain internal,
+		// just as they do when normalizing the paths of files inside that directory.
+		const prefix = `${normalizeRelativePath(`${relativePath}/`)}/`;
+		const depth = prefix.split('/').length - 1;
+		return scopes.some((scope) => depth <= scope.maxDepth && (
+			prefix.startsWith(scope.prefix) || scope.prefix.startsWith(prefix)
+		));
+	}
 
 	function walk(directory: string): void {
 		for (const entry of readdirSync(directory, { withFileTypes: true })) {
 			const absolute = path.join(directory, entry.name);
-			const relative = normalizeRelativePath(path.relative(projectRoot, absolute));
+			const relative = path.relative(projectRoot, absolute);
 
 			if (entry.isDirectory()) {
-				if (!shouldSkipDirectory(relative)) {
+				if (!shouldSkipDirectory(relative) && mayContainSource(relative)) {
 					walk(absolute);
 				}
 				continue;
 			}
 
 			if (entry.isFile()) {
-				files.push(relative);
+				files.push(normalizeRelativePath(relative));
 			}
 		}
 	}
@@ -216,7 +237,7 @@ function matchingSourceFiles(
 		return [];
 	}
 
-	context.projectFiles ??= listProjectFiles(projectRoot);
+	context.projectFiles ??= listProjectFiles(projectRoot, context.sourcePatterns);
 	return context.projectFiles.filter((filePath) => matchers.some((matcher) => matcher.test(filePath)));
 }
 
@@ -407,9 +428,14 @@ export function evaluateCommandPreconditions(
 		return [];
 	}
 
-	const context: CommandPreconditionEvaluationContext = { projectFiles: null };
+	const declarations = readPreconditionDeclarations(intent);
+	const context: CommandPreconditionEvaluationContext = {
+		projectFiles: null,
+		sourcePatterns: declarations.filter((declaration) => declaration.kind === 'artifact_freshness')
+			.flatMap((declaration) => declaration.sources),
+	};
 
-	return readPreconditionDeclarations(intent).map((declaration) => {
+	return declarations.map((declaration) => {
 		const satisfyIntent = createSatisfyIntentSummary(projectRoot, contract, declaration.satisfyIntent);
 
 		if (declaration.kind === 'path_exists') {
