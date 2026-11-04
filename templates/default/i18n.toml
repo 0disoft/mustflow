@@ -183,7 +183,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 349
+revision = 350
 translations = {}
 
 [documents."skill.delivery-verification-budget"]

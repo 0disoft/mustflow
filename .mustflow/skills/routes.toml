@@ -3262,7 +3262,7 @@ selection_axis = "task"
 applies_to_reasons = ["unknown_change", "ui_change", "code_change", "docs_change", "copy_change", "test_change", "data_change", "product_change", "web_asset_change", "performance_change", "privacy_change", "security_change", "release_risk"]
 
 [routes."seo-ai-discovery-review".contexts]
-positive_terms = ["seo","aeo","llmo","llmeo","generative engine optimization","answer engine optimization","ai search visibility","crawler access","citation accuracy","canonical urls","hreflang","sitemap","llms.txt","discovery to conversion"]
+positive_terms = ["seo","aeo","llmo","llmeo","generative engine optimization","answer engine optimization","ai search visibility","crawler access","citation accuracy","canonical urls","hreflang","sitemap","llms txt","discovery to conversion"]
 concept_aliases = ["검색 엔진 최적화","검색 노출","AI 검색","AI 인용","봇 수집","검색에서 전환","生成式搜索","搜索引擎优化"]
 negative_terms = ["geospatial","geofencing","coordinate transforms","internal search index","vector retrieval"]
 exclusion_terms = ["geospatial only","internal search only","vector retrieval only"]
