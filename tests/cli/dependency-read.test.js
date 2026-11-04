@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { getEventListeners } from 'node:events';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { httpFailure, readBoundedResponseText, readHttp } from '../../dist/core/dependency-read.js';
+import { httpFailure, readBoundedResponseText, readHttp, withDependencyDeadline } from '../../dist/core/dependency-read.js';
 import { checkNpmLatestVersion, checkNpmPackageExists } from '../../dist/cli/lib/npm-version-check.js';
 import { createExternalSkillImportReport } from '../../dist/cli/lib/external-skill-import.js';
 import { runUpgrade } from '../../dist/cli/commands/upgrade.js';
@@ -10,6 +11,121 @@ async function text(response, signal) {
 	if (!response.ok) throw httpFailure(response, `HTTP ${response.status}`);
 	return readBoundedResponseText(response, 128, signal);
 }
+
+function createDeadlineRuntime() {
+	let now = 0;
+	let timeout;
+	const scheduled = [];
+	return {
+		runtime: {
+			now: () => now,
+			scheduleTimeout(callback, milliseconds) {
+				scheduled.push(milliseconds);
+				timeout = callback;
+				return () => { timeout = undefined; };
+			},
+		},
+		elapse(milliseconds) { now += milliseconds; },
+		fireTimeout() { timeout?.(); },
+		get pending() { return timeout !== undefined; },
+		scheduled,
+	};
+}
+
+for (const elapsed of [9, 10, 11]) {
+	test(`deadline checks elapsed ${elapsed}ms against a 10ms budget before returning success`, async () => {
+		const clock = createDeadlineRuntime();
+		const result = withDependencyDeadline({ timeoutMs: 10, runtime: clock.runtime }, async () => {
+			// Simulate a blocked event loop: elapsed time advances without delivering the timer.
+			clock.elapse(elapsed);
+			return 'finished';
+		});
+		if (elapsed < 10) assert.equal(await result, 'finished');
+		else await assert.rejects(result, error => error.code === 'ETIMEDOUT');
+		assert.deepEqual(clock.scheduled, [10]);
+		assert.equal(clock.pending, false);
+	});
+
+	test(`deadline preserves an exception only while elapsed ${elapsed}ms is within budget`, async () => {
+		const clock = createDeadlineRuntime();
+		const failure = new Error('dependency failed');
+		await assert.rejects(withDependencyDeadline({ timeoutMs: 10, runtime: clock.runtime }, () => {
+			clock.elapse(elapsed);
+			throw failure;
+		}), error => elapsed < 10 ? error === failure : error.code === 'ETIMEDOUT');
+		assert.equal(clock.pending, false);
+	});
+}
+
+test('deadline accepts timer bounds and rejects invalid budgets before starting work', async () => {
+	for (const timeoutMs of [1, 2_147_483_646, 2_147_483_647]) {
+		const clock = createDeadlineRuntime();
+		assert.equal(await withDependencyDeadline({ timeoutMs, runtime: clock.runtime }, async () => 'ok'), 'ok');
+		assert.deepEqual(clock.scheduled, [timeoutMs]);
+		assert.equal(clock.pending, false);
+	}
+	for (const timeoutMs of [-1, 0, 1.5, NaN, Infinity, 2_147_483_648]) {
+		const clock = createDeadlineRuntime();
+		await assert.rejects(withDependencyDeadline({ timeoutMs, runtime: clock.runtime }, async () => {
+			assert.fail('invalid budget must not start external work');
+		}), RangeError);
+		assert.deepEqual(clock.scheduled, []);
+	}
+});
+
+test('an already aborted deadline never schedules a timer or starts external work', async () => {
+	const clock = createDeadlineRuntime();
+	const controller = new AbortController();
+	const reason = new Error('cancelled before start');
+	controller.abort(reason);
+	await assert.rejects(withDependencyDeadline({ signal: controller.signal, runtime: clock.runtime }, async () => {
+		assert.fail('cancelled operation must not start');
+	}), error => error.code === 'EINTERRUPTED' && error.cause === reason);
+	assert.deepEqual(clock.scheduled, []);
+	assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
+});
+
+for (const trigger of ['cancel', 'timeout']) {
+	test(`deadline ${trigger} interrupts pending I/O and releases timer and signal listeners`, async () => {
+		const clock = createDeadlineRuntime();
+		const controller = new AbortController();
+		const reason = new Error('cancel pending I/O');
+		let workSignal;
+		const result = withDependencyDeadline({ timeoutMs: 10, signal: controller.signal, runtime: clock.runtime }, signal => {
+			workSignal = signal;
+			return new Promise(() => {});
+		});
+		if (trigger === 'cancel') controller.abort(reason);
+		else { clock.elapse(10); clock.fireTimeout(); }
+		await assert.rejects(result, error => trigger === 'cancel'
+			? error.code === 'EINTERRUPTED' && error.cause === reason
+			: error.code === 'ETIMEDOUT');
+		assert.equal(workSignal.aborted, true);
+		assert.equal(clock.pending, false);
+		assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
+		assert.equal(getEventListeners(workSignal, 'abort').length, 0);
+	});
+}
+
+test('deadline scheduler failures remove the parent abort listener before propagating', async () => {
+	const controller = new AbortController();
+	const failure = new Error('scheduler unavailable');
+	await assert.rejects(withDependencyDeadline({ signal: controller.signal, runtime: {
+		now: () => 0,
+		scheduleTimeout() { throw failure; },
+	} }, async () => { assert.fail('failed scheduling must not start work'); }), error => error === failure);
+	assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
+});
+
+test('deadline timer cleanup failures still remove the parent abort listener', async () => {
+	const controller = new AbortController();
+	const failure = new Error('timer cleanup failed');
+	await assert.rejects(withDependencyDeadline({ signal: controller.signal, runtime: {
+		now: () => 0,
+		scheduleTimeout: () => () => { throw failure; },
+	} }, async () => 'finished'), error => error === failure);
+	assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
+});
 
 test('GET retries transient failures and releases failed response bodies', async () => {
 	let calls = 0;

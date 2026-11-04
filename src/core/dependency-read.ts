@@ -1,11 +1,20 @@
+import { performance } from 'node:perf_hooks';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { interruptionError } from './cancellation.js';
+
+export interface DependencyDeadlineRuntime {
+	/** Monotonic elapsed-time clock, independent of wall-clock adjustments. */
+	readonly now: () => number;
+	/** Schedule a timeout and return its cancellation function. */
+	readonly scheduleTimeout: (callback: () => void, milliseconds: number) => () => void;
+}
 
 export interface DependencyReadOptions {
 	readonly signal?: AbortSignal;
 	readonly timeoutMs?: number;
 	readonly maxRetries?: 0 | 1 | 2;
 	readonly fetch?: typeof fetch;
+	readonly runtime?: Partial<DependencyDeadlineRuntime>;
 }
 
 export class DependencyHttpError extends Error {
@@ -22,24 +31,49 @@ function validateTimeout(timeoutMs: number): void {
 }
 
 export async function withDependencyDeadline<T>(
-	options: Pick<DependencyReadOptions, 'signal' | 'timeoutMs'>,
+	options: Pick<DependencyReadOptions, 'signal' | 'timeoutMs' | 'runtime'>,
 	work: (signal: AbortSignal) => Promise<T>,
 ): Promise<T> {
 	const timeoutMs = options.timeoutMs ?? 3_000;
 	validateTimeout(timeoutMs);
+	const now = options.runtime?.now ?? (() => performance.now());
+	const scheduleTimeout: DependencyDeadlineRuntime['scheduleTimeout'] = options.runtime?.scheduleTimeout ?? ((callback, milliseconds) => {
+		const timer = setTimeout(callback, milliseconds);
+		return () => clearTimeout(timer);
+	});
+	const startedAt = now();
 	const controller = new AbortController();
+	const expire = (): void => controller.abort(Object.assign(
+		new Error(`Dependency operation timed out after ${timeoutMs}ms`), { name: 'TimeoutError', code: 'ETIMEDOUT' },
+	));
+	const checkDeadline = (): void => {
+		controller.signal.throwIfAborted();
+		// A blocked event loop can settle promises before delivering an already-due timer.
+		if (now() - startedAt >= timeoutMs) {
+			expire();
+			controller.signal.throwIfAborted();
+		}
+	};
 	const onAbort = (): void => controller.abort(interruptionError(options.signal?.reason));
 	options.signal?.addEventListener('abort', onAbort, { once: true });
 	if (options.signal?.aborted) onAbort();
-	const timer = setTimeout(() => controller.abort(Object.assign(
-		new Error(`Dependency operation timed out after ${timeoutMs}ms`), { name: 'TimeoutError', code: 'ETIMEDOUT' },
-	)), timeoutMs);
+	let cancelTimeout: (() => void) | undefined;
 	try {
+		checkDeadline();
+		cancelTimeout = scheduleTimeout(expire, timeoutMs);
 		controller.signal.throwIfAborted();
-		return await waitForDependency(work(controller.signal), controller.signal);
+		const result = await waitForDependency(work(controller.signal), controller.signal);
+		checkDeadline();
+		return result;
+	} catch (error) {
+		checkDeadline();
+		throw error;
 	} finally {
-		clearTimeout(timer);
-		options.signal?.removeEventListener('abort', onAbort);
+		try {
+			cancelTimeout?.();
+		} finally {
+			options.signal?.removeEventListener('abort', onAbort);
+		}
 	}
 }
 
