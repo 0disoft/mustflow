@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { performance } from 'node:perf_hooks';
 import { interruptionError } from '../../../core/cancellation.js';
 import { commandTimersAreSafe, TERMINATION_CONFIRMATION_FALLBACK_MS } from '../../../core/command-time-limits.js';
 
@@ -28,7 +29,29 @@ const TERMINATION_CONFIRMATION_POLL_MS = 25;
 
 export interface CommandExecutionOptions {
 	readonly signal?: AbortSignal;
+	readonly runtime?: Partial<CommandExecutionRuntime>;
 }
+
+export interface CommandExecutionRuntime {
+	/** Monotonic milliseconds used to enforce the execution deadline. */
+	readonly now: () => number;
+	readonly timestamp: () => string;
+	readonly spawn: typeof spawn;
+	/** Schedule asynchronously and return an idempotent cancellation function. */
+	readonly scheduleTimeout: (callback: () => void, milliseconds: number) => () => void;
+	readonly createProcessTreeBackend: typeof createProcessTreeBackend;
+}
+
+const DEFAULT_RUNTIME: CommandExecutionRuntime = {
+	now: () => performance.now(),
+	timestamp: () => new Date().toISOString(),
+	spawn,
+	scheduleTimeout(callback, milliseconds) {
+		const timer = setTimeout(callback, milliseconds);
+		return () => clearTimeout(timer);
+	},
+	createProcessTreeBackend,
+};
 
 export interface CommandResult {
 	readonly status: number | null;
@@ -104,7 +127,7 @@ function runSpawnedCommandStreaming(
 	options: CommandExecutionOptions = {},
 ): Promise<CommandResult> {
 	if (options.signal?.aborted) {
-		return Promise.resolve({ status: null, signal: null, error: interruptionError(),
+		return Promise.resolve({ status: null, signal: null, error: interruptionError(options.signal.reason),
 			stdout: createEmptyOutputSnapshot(stdoutTailBytes), stderr: createEmptyOutputSnapshot(stderrTailBytes), termination: null });
 	}
 	if (!commandTimersAreSafe(timeoutSeconds, killAfterSeconds)) {
@@ -123,6 +146,8 @@ function runSpawnedCommandStreaming(
 		});
 	}
 
+	const runtime = { ...DEFAULT_RUNTIME, ...options.runtime };
+	const timeoutMs = timeoutSeconds * 1000;
 	return new Promise((resolve) => {
 		const stdout = new BoundedOutputBuffer(stdoutTailBytes);
 		const stderr = new BoundedOutputBuffer(stderrTailBytes);
@@ -135,15 +160,16 @@ function runSpawnedCommandStreaming(
 		};
 		let stdoutBytes = 0;
 		let stderrBytes = 0;
-		let timeout: NodeJS.Timeout | undefined;
-		let forceKillTimeout: NodeJS.Timeout | undefined;
-		let terminationFallbackTimeout: NodeJS.Timeout | undefined;
-		let terminationPollTimeout: NodeJS.Timeout | undefined;
+		let timeout: (() => void) | undefined;
+		let forceKillTimeout: (() => void) | undefined;
+		let terminationFallbackTimeout: (() => void) | undefined;
+		let terminationPollTimeout: (() => void) | undefined;
 		let outputLimitMarkerWritten = false;
 		let supervisor: ProcessSupervisor | null = null;
 
 		const spawnCommand = normalizeSpawnedCommandInput(command);
-		const child = spawn(spawnCommand.executable, spawnCommand.args, {
+		const startedAt = runtime.now();
+		const child = runtime.spawn(spawnCommand.executable, spawnCommand.args, {
 			cwd,
 			env,
 			shell: spawnCommand.shell,
@@ -166,16 +192,16 @@ function runSpawnedCommandStreaming(
 			if (!updateState({ type: 'settle' })) return;
 
 			if (timeout) {
-				clearTimeout(timeout);
+				timeout();
 			}
 			if (forceKillTimeout) {
-				clearTimeout(forceKillTimeout);
+				forceKillTimeout();
 			}
 			if (terminationFallbackTimeout) {
-				clearTimeout(terminationFallbackTimeout);
+				terminationFallbackTimeout();
 			}
 			if (terminationPollTimeout) {
-				clearTimeout(terminationPollTimeout);
+				terminationPollTimeout();
 			}
 			clearParentSignalHandlers();
 			options.signal?.removeEventListener('abort', onAbort);
@@ -198,7 +224,7 @@ function runSpawnedCommandStreaming(
 				finish(state.closeStatus, state.closeSignal);
 				return;
 			}
-			terminationPollTimeout = setTimeout(pollForTermination, TERMINATION_CONFIRMATION_POLL_MS);
+			terminationPollTimeout = runtime.scheduleTimeout(pollForTermination, TERMINATION_CONFIRMATION_POLL_MS);
 		};
 
 		const beginTermination = (reason: ProcessTerminationReason): void => {
@@ -206,16 +232,17 @@ function runSpawnedCommandStreaming(
 			child.stdout?.destroy();
 			child.stderr?.destroy();
 			if (childPid) {
-				supervisor = new ProcessSupervisor(childPid, createProcessTreeBackend());
+				supervisor = new ProcessSupervisor(childPid, runtime.createProcessTreeBackend(), runtime.timestamp);
 				supervisor.requestGracefulTermination(reason);
+				if (state.childClosed) supervisor.markDirectChildClosed();
 			}
 
 			const forceAfterMs = killAfterSeconds * 1000;
-			forceKillTimeout = setTimeout(() => {
+			forceKillTimeout = runtime.scheduleTimeout(() => {
 				supervisor?.requestForceTermination(reason);
 			}, forceAfterMs);
 
-			terminationFallbackTimeout = setTimeout(() => {
+			terminationFallbackTimeout = runtime.scheduleTimeout(() => {
 				supervisor?.refreshProcessTreeState();
 				child.unref();
 				finish(state.closeStatus, state.closeSignal);
@@ -223,17 +250,28 @@ function runSpawnedCommandStreaming(
 			pollForTermination();
 		};
 
+		const expire = (): void => {
+			if (!updateState({ type: 'timeout' })) return;
+			timeout?.();
+			timeout = undefined;
+			beginTermination('timeout');
+		};
+		const checkDeadline = (): void => {
+			// I/O and close events can arrive before an already-due timeout callback.
+			if (!state.terminationStarted && runtime.now() - startedAt >= timeoutMs) expire();
+		};
+
 		const stopForOutputLimit = (stream: 'stdout' | 'stderr'): void => {
 			if (!updateState({ type: 'output_limit', error: createOutputLimitError(stream, maxOutputBytes) })) return;
 			if (timeout) {
-				clearTimeout(timeout);
+				timeout();
 				timeout = undefined;
 			}
 			beginTermination('output_limit');
 		};
 
 		const onAbort = (): void => {
-			if (!updateState({ type: 'abort', error: interruptionError() })) return;
+			if (!updateState({ type: 'abort', error: interruptionError(options.signal?.reason) })) return;
 			beginTermination('parent_signal');
 		};
 		options.signal?.addEventListener('abort', onAbort, { once: true });
@@ -249,6 +287,8 @@ function runSpawnedCommandStreaming(
 		};
 
 		const handleOutputChunk = (stream: 'stdout' | 'stderr', buffer: BoundedOutputBuffer, chunk: Buffer): void => {
+			checkDeadline();
+			if (state.settled || state.terminationStarted) return;
 			const previousBytes = stream === 'stdout' ? stdoutBytes : stderrBytes;
 			const nextBytes = previousBytes + chunk.byteLength;
 			const exceedsLimit = enforceOutputLimit && nextBytes > maxOutputBytes;
@@ -288,7 +328,8 @@ function runSpawnedCommandStreaming(
 		child.once('close', (status, signal) => {
 			updateState({ type: 'child_close', status, signal });
 			if (!state.terminationStarted) {
-				finish(status, signal);
+				checkDeadline();
+				if (!state.terminationStarted) finish(status, signal);
 				return;
 			}
 			supervisor?.markDirectChildClosed();
@@ -306,10 +347,10 @@ function runSpawnedCommandStreaming(
 			process.once(signal, handler);
 		}
 
-		timeout = setTimeout(() => {
-			if (!updateState({ type: 'timeout' })) return;
-			beginTermination('timeout');
-		}, timeoutSeconds * 1000);
+		checkDeadline();
+		if (!state.terminationStarted && !state.settled) {
+			timeout = runtime.scheduleTimeout(expire, Math.max(1, Math.ceil(timeoutMs - (runtime.now() - startedAt))));
+		}
 	});
 }
 
