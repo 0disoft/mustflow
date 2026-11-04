@@ -8,6 +8,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 
+import { throwIfInterrupted, waitWithSignal } from '../../../core/cancellation.js';
 import {
 	processStartTokensProveMismatch,
 	readCurrentProcessStartToken,
@@ -46,10 +47,41 @@ export interface LocalIndexBuildLeaseHandle {
 	release(): void;
 }
 
-function delay(milliseconds: number): Promise<void> {
-	return new Promise((resolve) => {
-		setTimeout(resolve, milliseconds);
-	});
+export interface LocalIndexBuildLeaseRuntime {
+	readonly now: () => number;
+	readonly randomUUID: () => string;
+	readonly delay: typeof waitWithSignal;
+	readonly isProcessLive: typeof isProcessLive;
+	readonly readProcessStartToken: typeof readProcessStartToken;
+	readonly readCurrentProcessStartToken: typeof readCurrentProcessStartToken;
+	readonly readOwner: typeof readLeaseOwner;
+	readonly rename: (source: string, target: string) => void;
+	readonly remove: (target: string) => void;
+}
+
+export interface LocalIndexBuildLeaseOptions {
+	readonly signal?: AbortSignal;
+	readonly runtime?: Partial<LocalIndexBuildLeaseRuntime>;
+}
+
+const DEFAULT_RUNTIME: LocalIndexBuildLeaseRuntime = {
+	now: Date.now,
+	randomUUID,
+	delay: waitWithSignal,
+	isProcessLive,
+	readProcessStartToken,
+	readCurrentProcessStartToken,
+	readOwner: readLeaseOwner,
+	rename: renameSync,
+	remove: (target) => rmSync(target, { recursive: true, force: true }),
+};
+
+function createOwnerToken(runtime: LocalIndexBuildLeaseRuntime): string {
+	const token = runtime.randomUUID();
+	if (!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu.test(token)) {
+		throw new Error('local_index_builder_lease_token_invalid');
+	}
+	return token;
 }
 
 function errorCode(error: unknown): string {
@@ -69,15 +101,15 @@ function isProcessLive(pid: number): boolean {
 	}
 }
 
-function createLeaseOwner(requestKey: string): LocalIndexBuildLeaseOwner {
+function createLeaseOwner(requestKey: string, runtime: LocalIndexBuildLeaseRuntime): LocalIndexBuildLeaseOwner {
 	return {
 		schema_version: LOCAL_INDEX_BUILD_LEASE_SCHEMA_VERSION,
 		kind: LOCAL_INDEX_BUILD_LEASE_KIND,
-		owner_token: randomUUID(),
+		owner_token: createOwnerToken(runtime),
 		request_key: requestKey,
 		pid: process.pid,
-		process_start_token: readCurrentProcessStartToken(),
-		started_at: new Date().toISOString(),
+		process_start_token: runtime.readCurrentProcessStartToken(),
+		started_at: new Date(runtime.now()).toISOString(),
 	};
 }
 
@@ -132,14 +164,15 @@ function readLeaseOwner(projectRoot: string, leasePath: string): LocalIndexBuild
 function leaseOwnerIsStale(
 	owner: LocalIndexBuildLeaseOwner,
 	verifyStartToken: boolean,
+	runtime: LocalIndexBuildLeaseRuntime,
 ): boolean {
-	if (!isProcessLive(owner.pid)) {
+	if (!runtime.isProcessLive(owner.pid)) {
 		return true;
 	}
 
 	return verifyStartToken && processStartTokensProveMismatch(
 		owner.process_start_token,
-		readProcessStartToken(owner.pid),
+		runtime.readProcessStartToken(owner.pid),
 	);
 }
 
@@ -165,6 +198,7 @@ function createLeaseDirectoryAtomically(
 	projectRoot: string,
 	leasePath: string,
 	owner: LocalIndexBuildLeaseOwner,
+	runtime: LocalIndexBuildLeaseRuntime,
 ): boolean {
 	const candidatePath = `${leasePath}.candidate-${process.pid}-${owner.owner_token}`;
 	mkdirSync(candidatePath);
@@ -172,7 +206,7 @@ function createLeaseDirectoryAtomically(
 	try {
 		writeJsonFileInsideWithoutSymlinks(projectRoot, leaseOwnerPath(candidatePath), owner);
 		try {
-			renameSync(candidatePath, leasePath);
+			runtime.rename(candidatePath, leasePath);
 			return true;
 		} catch (error) {
 			if (existsSync(leasePath)) {
@@ -181,7 +215,7 @@ function createLeaseDirectoryAtomically(
 			throw error;
 		}
 	} finally {
-		rmSync(candidatePath, { recursive: true, force: true });
+		runtime.remove(candidatePath);
 	}
 }
 
@@ -189,7 +223,7 @@ function recoveryLeasePath(leasePath: string): string {
 	return `${leasePath}.recovery`;
 }
 
-function beginLeaseRecovery(leasePath: string): (() => void) | null {
+function beginLeaseRecovery(leasePath: string, runtime: LocalIndexBuildLeaseRuntime): (() => void) | null {
 	const recoveryPath = recoveryLeasePath(leasePath);
 
 	try {
@@ -200,8 +234,8 @@ function beginLeaseRecovery(leasePath: string): (() => void) | null {
 		}
 
 		try {
-			if (Date.now() - lstatSync(recoveryPath).mtimeMs >= LOCAL_INDEX_RECOVERY_LEASE_STALE_MS) {
-				rmSync(recoveryPath, { recursive: true, force: true });
+			if (runtime.now() - lstatSync(recoveryPath).mtimeMs >= LOCAL_INDEX_RECOVERY_LEASE_STALE_MS) {
+				runtime.remove(recoveryPath);
 			}
 		} catch {
 			// A concurrent recovery may have already completed.
@@ -215,7 +249,7 @@ function beginLeaseRecovery(leasePath: string): (() => void) | null {
 			return;
 		}
 		active = false;
-		rmSync(recoveryPath, { recursive: true, force: true });
+		runtime.remove(recoveryPath);
 	};
 }
 
@@ -223,28 +257,38 @@ function recoverStaleLease(
 	projectRoot: string,
 	leasePath: string,
 	staleOwner: LocalIndexBuildLeaseOwner,
+	runtime: LocalIndexBuildLeaseRuntime,
+	signal?: AbortSignal,
 ): boolean {
-	const releaseRecovery = beginLeaseRecovery(leasePath);
+	throwIfInterrupted(signal);
+	ensureInsideWithoutSymlinks(projectRoot, leasePath, { allowMissingLeaf: true });
+	const releaseRecovery = beginLeaseRecovery(leasePath, runtime);
 	if (!releaseRecovery) {
 		return false;
 	}
 
 	try {
 		if (
-			!sameLeaseOwner(staleOwner, readLeaseOwner(projectRoot, leasePath)) ||
-			!leaseOwnerIsStale(staleOwner, true)
+			!sameLeaseOwner(staleOwner, runtime.readOwner(projectRoot, leasePath)) ||
+			!leaseOwnerIsStale(staleOwner, true, runtime)
 		) {
 			return false;
 		}
 
-		const stalePath = `${leasePath}.stale-${staleOwner.owner_token}`;
-		rmSync(stalePath, { recursive: true, force: true });
+		// Owner metadata is untrusted; it must never name a recursive deletion target.
+		const stalePath = `${leasePath}.stale-${createOwnerToken(runtime)}`;
+		throwIfInterrupted(signal);
+		ensureInsideWithoutSymlinks(projectRoot, stalePath, { allowMissingLeaf: true });
 		try {
-			renameSync(leasePath, stalePath);
+			runtime.rename(leasePath, stalePath);
 		} catch (error) {
-			return errorCode(error) === 'ENOENT';
+			if (errorCode(error) === 'ENOENT') {
+				return true;
+			}
+			throw error;
 		}
-		rmSync(stalePath, { recursive: true, force: true });
+		ensureInsideWithoutSymlinks(projectRoot, stalePath);
+		runtime.remove(stalePath);
 		return true;
 	} finally {
 		releaseRecovery();
@@ -261,53 +305,68 @@ function recoverStaleLease(
 export async function acquireLocalIndexBuildLease(
 	projectRoot: string,
 	requestKey: string,
+	options: LocalIndexBuildLeaseOptions = {},
 ): Promise<LocalIndexBuildLeaseHandle> {
+	throwIfInterrupted(options.signal);
+	const runtime = { ...DEFAULT_RUNTIME, ...options.runtime };
 	ensureLeaseParent(projectRoot);
 	const leasePath = getLocalIndexBuildLeasePath(projectRoot);
-	const deadline = Date.now() + LOCAL_INDEX_BUILD_LEASE_WAIT_MS;
+	const deadline = runtime.now() + LOCAL_INDEX_BUILD_LEASE_WAIT_MS;
+	let unavailableReason: string | null = null;
 	let waitedForEquivalentBuild = false;
 	let observedOwnerToken: string | null = null;
 	let ownerStartTokenCheckedAt = 0;
 
 	while (true) {
-		const owner = createLeaseOwner(requestKey);
-		if (createLeaseDirectoryAtomically(projectRoot, leasePath, owner)) {
-			return {
+		throwIfInterrupted(options.signal);
+		if (unavailableReason !== null && runtime.now() >= deadline) {
+			throw new Error(unavailableReason);
+		}
+		const owner = createLeaseOwner(requestKey, runtime);
+		if (createLeaseDirectoryAtomically(projectRoot, leasePath, owner, runtime)) {
+			const handle: LocalIndexBuildLeaseHandle = {
 				waitedForEquivalentBuild,
 				release() {
-					if (!sameLeaseOwner(owner, readLeaseOwner(projectRoot, leasePath))) {
+					if (!sameLeaseOwner(owner, runtime.readOwner(projectRoot, leasePath))) {
 						return;
 					}
 
 					const releasePath = `${leasePath}.release-${process.pid}-${owner.owner_token}`;
 					try {
-						renameSync(leasePath, releasePath);
+						runtime.rename(leasePath, releasePath);
 					} catch (error) {
 						if (errorCode(error) === 'ENOENT') {
 							return;
 						}
 						throw error;
 					}
-					rmSync(releasePath, { recursive: true, force: true });
+					runtime.remove(releasePath);
 				},
 			};
+			if (options.signal?.aborted) {
+				handle.release();
+				throwIfInterrupted(options.signal);
+			}
+			return handle;
 		}
 
-		const activeOwner = readLeaseOwner(projectRoot, leasePath);
+		const activeOwner = runtime.readOwner(projectRoot, leasePath);
+		unavailableReason = activeOwner ? 'local_index_builder_lease_timeout' : 'local_index_builder_lease_unreadable';
 		if (!activeOwner) {
-			if (Date.now() >= deadline) {
-				throw new Error('local_index_builder_lease_unreadable');
+			const remaining = deadline - runtime.now();
+			if (remaining <= 0) {
+				throw new Error(unavailableReason);
 			}
-			await delay(Math.min(LOCAL_INDEX_BUILD_LEASE_POLL_MS, deadline - Date.now()));
+			await runtime.delay(Math.min(LOCAL_INDEX_BUILD_LEASE_POLL_MS, remaining), options.signal);
 			continue;
 		}
 
-		const now = Date.now();
+		const now = runtime.now();
 		const verifyStartToken = (
 			activeOwner.owner_token !== observedOwnerToken ||
 			now - ownerStartTokenCheckedAt >= LOCAL_INDEX_OWNER_START_TOKEN_RECHECK_MS
 		);
-		const activeOwnerStale = leaseOwnerIsStale(activeOwner, verifyStartToken);
+		const activeOwnerStale = leaseOwnerIsStale(activeOwner, verifyStartToken, runtime);
 
 		if (verifyStartToken && !activeOwnerStale) {
 			observedOwnerToken = activeOwner.owner_token;
@@ -318,14 +377,15 @@ export async function acquireLocalIndexBuildLease(
 			waitedForEquivalentBuild = true;
 		}
 
-		if (activeOwnerStale && recoverStaleLease(projectRoot, leasePath, activeOwner)) {
+		if (activeOwnerStale && recoverStaleLease(projectRoot, leasePath, activeOwner, runtime, options.signal)) {
 			continue;
 		}
 
-		if (Date.now() >= deadline) {
-			throw new Error('local_index_builder_lease_timeout');
+		const remaining = deadline - runtime.now();
+		if (remaining <= 0) {
+			throw new Error(unavailableReason);
 		}
 
-		await delay(Math.min(LOCAL_INDEX_BUILD_LEASE_POLL_MS, deadline - Date.now()));
+		await runtime.delay(Math.min(LOCAL_INDEX_BUILD_LEASE_POLL_MS, remaining), options.signal);
 	}
 }
