@@ -2,7 +2,7 @@
 mustflow_doc: skill.duckdb-code-change
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: duckdb-code-change
@@ -102,9 +102,12 @@ remove the need for deterministic SQL, import contracts, memory budgets, and mea
   evidence, not command authority.
 - Refresh version-sensitive DuckDB feature claims from official DuckDB docs, release notes, or
   repository-pinned evidence when the change depends on current support. Keep current, LTS, beta,
-  extension, and binding-specific tracks separate. As of 2026-07-05, the official install page
-  identifies DuckDB 1.5.4 as current and 1.4.5 as LTS; do not reuse that fact later without a fresh
-  check.
+  extension, and binding-specific tracks separate. The [official release calendar](https://duckdb.org/release_calendar),
+  checked on 2026-11-04, lists DuckDB 2.0.0 LTS (released 2026-10-21), 1.5.6, and 1.4.5 LTS.
+  The 1.4 LTS support window ends on 2026-11-17, while 1.5 support extends to March 2027 and
+  2.0 LTS support to October 2027. Do not recommend 1.4 as an indefinitely supported baseline
+  or force a 2.0 major upgrade without checking repository policy, bindings, extensions, and
+  migration compatibility. Recheck release and support status before reuse.
 - If DuckDB stores product truth, personal data, tenant data, billing facts, deletion state, or
   security-sensitive events, also use `database-change-safety` and the relevant security or privacy
   skill.

@@ -2,7 +2,7 @@
 mustflow_doc: skill.ubuntu-server-operations-review.ubuntu-lts-operations-checklist
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: reference
 ---
@@ -28,11 +28,12 @@ performance, systemd, package, security, container-host, incident, backup, and r
 ## 1. Release Freshness and Upgrade Tracks
 
 - Keep image version, installed release, package pocket, booted kernel, and support entitlement
-  separate. A 24.04.4 installer image does not imply every installed Noble machine has the same
+  separate. A 24.04.5 installer image does not imply every installed Noble machine has the same
   packages or kernel.
-- The snapshot verified on 2026-08-02 classified Ubuntu 24.04.4 as the current 24.04 point image.
-  Ubuntu 26.04 LTS was released on 2026-04-23, while its first point release was scheduled for
-  2026-08-27. Refresh all three facts before repeating them.
+- The [official release list](https://ubuntu.com/project/docs/release-team/list-of-releases/),
+  checked on 2026-11-04, lists Ubuntu 24.04.5 LTS released on 2026-09-10, Ubuntu 26.04 LTS
+  on 2026-04-23, and 26.04.1 on 2026-08-27. Ubuntu 26.10 is an interim release, not the LTS
+  successor. Refresh image, support, and upgrade availability before repeating these facts.
 - Ubuntu only supports sequential release upgrades. A normal LTS-to-next-LTS offer appears after
   the destination's first point release. Before that boundary, do not turn `do-release-upgrade -d`
   or `--devel-release` into standard production advice.
@@ -193,9 +194,9 @@ performance, systemd, package, security, container-host, incident, backup, and r
 - Ubuntu 26.04 is a separate LTS with its own release notes, Linux kernel track, systemd and cgroup
   requirements, toolchains, service migrations, and known issues. Do not reuse Noble-specific
   commands or defaults merely because both are LTS.
-- As of 2026-08-02, production migration from 24.04 to 26.04 should respect the normal first-point
-  release gate and current known issues. Recheck whether 26.04.1 has actually shipped and whether
-  the upgrade offer is enabled before writing or running a migration plan.
+- The 26.04.1 release has passed the normal first-point release gate as of 2026-11-04. Production
+  migration from 24.04 still requires current known-issue review and proof that the upgrade offer
+  is enabled for the source host; a released image alone does not prove that offer is enabled.
 
 ## 9. Verification Matrix
 
@@ -215,12 +216,12 @@ Reject production-ready claims when the relevant row has no configured or operat
 
 ## 10. Primary Anchors
 
-- [Ubuntu release list](https://documentation.ubuntu.com/project/release-team/list-of-releases/) and
+- [Ubuntu release list](https://ubuntu.com/project/docs/release-team/list-of-releases/) and
   [Ubuntu release notes](https://documentation.ubuntu.com/release-notes/) for current tracks.
-- [Ubuntu 24.04.4 changes](https://documentation.ubuntu.com/release-notes/24.04/4/) and
+- [Ubuntu 24.04.5 changes](https://documentation.ubuntu.com/release-notes/24.04/5/) and
   [Ubuntu 24.04 LTS release notes](https://documentation.ubuntu.com/release-notes/24.04/).
 - [Ubuntu 26.04 LTS release notes](https://documentation.ubuntu.com/release-notes/26.04/) and its
-  [release schedule](https://documentation.ubuntu.com/release-notes/26.04/schedule/).
+  [26.04.1 changes](https://documentation.ubuntu.com/release-notes/26.04/1/).
 - [Ubuntu Server release upgrade guidance](https://documentation.ubuntu.com/server/how-to/software/upgrade-your-release/),
   [package management](https://documentation.ubuntu.com/server/how-to/software/package-management/),
   [phased updates](https://documentation.ubuntu.com/server/explanation/software/about-apt-upgrade-and-phased-updates/),

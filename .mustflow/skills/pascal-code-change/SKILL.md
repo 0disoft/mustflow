@@ -2,7 +2,7 @@
 mustflow_doc: skill.pascal-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: pascal-code-change
@@ -74,9 +74,11 @@ Lazarus behavior separate unless current evidence proves a portable shared contr
   framework code, tests, and deployment evidence before changing language or runtime assumptions.
 - Refresh official Embarcadero, Free Pascal, Lazarus, platform, and library sources before preserving
   exact version, default, feature, ABI, deprecation, or support claims.
-- Treat version research as dated evidence. The source snapshot reviewed on 2026-07-11 identified
-  Delphi or RAD Studio 13.1, Lazarus 4.8, and Free Pascal 3.2.2 as separate stable baselines while
-  later Delphi beta and FPC development tracks were prerelease; recheck each track before reuse.
+- Treat version research as dated evidence. The [official RAD Studio 13.2 announcement](https://www.embarcadero.com/press-releases/rad-studio-13-2-released),
+  checked on 2026-11-04, confirms Delphi or RAD Studio 13.2 stable, released 2026-09-17.
+  The [Lazarus](https://www.lazarus-ide.org/) and [Free Pascal](https://www.freepascal.org/)
+  sites still list Lazarus 4.8 and Free Pascal 3.2.2 as stable; Lazarus 5.0 RC and FPC 3.3.x
+  development builds are separate prerelease tracks. Recheck each toolchain before reuse.
 - Identify which compiler and RTL owns every changed behavior. Similar syntax does not establish
   equivalent threading, memory-manager, exception, ABI, package, or managed-type semantics.
 

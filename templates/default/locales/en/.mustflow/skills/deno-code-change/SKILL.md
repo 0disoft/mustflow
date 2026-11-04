@@ -2,7 +2,7 @@
 mustflow_doc: skill.deno-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: deno-code-change
@@ -79,7 +79,7 @@ deployment behavior everywhere.
 - Read repository-pinned Deno and deployment evidence before using recent APIs, flags, task fields,
   permission behavior, Node compatibility, desktop features, or Deploy behavior.
 - Refresh official Deno, JSR, and Deploy sources before preserving exact latest-version, runtime,
-  region, support, deprecation, migration, or shutdown claims. Treat the 2026-07-11 source material
+  region, support, deprecation, migration, or shutdown claims. Treat dated source material
   as a snapshot, not a permanent current-state contract.
 - Separate stable runtime status from feature status. Desktop packaging, Worker permission options,
   permission brokers, flags, and deployment behavior can have different stability and availability.
@@ -104,9 +104,10 @@ deployment behavior everywhere.
 1. **Classify runtime, feature, and deployment tracks.**
    - Record the repository-pinned Deno version, proposed target, feature stability, CI version,
      compile target, and deployment builder/runtime separately.
-   - Recheck every dated status before use. In the 2026-07-11 snapshot, Deno 2.9 behavior and the
-     announced 2026-07-20 Deploy Classic shutdown were current source facts; neither is an
-     undated future guarantee.
+   - Recheck every dated status before use. The [official Deploy migration guide](https://docs.deno.com/deploy/migration_guide/),
+     checked on 2026-11-04, gives 2026-07-20 as the shutdown date for Deploy Classic and
+     subhosting v1. That announced date has passed; treat Classic guidance as migration-only
+     rather than a future platform choice. Keep the Deno runtime release track separate.
    - Treat a Node compatibility version as a compatibility target, not proof that Deno is running
      a Node binary or implements every Node detail.
 2. **Separate execution from type checking and output.**
@@ -220,6 +221,9 @@ deployment behavior everywhere.
    - Identify Classic versus the current Deploy platform before applying any guidance. Do not
      assume projects, KV data, environment variables, domains, tokens, preview URLs, or rollback
      state migrate automatically.
+   - Target the current platform at `console.deno.com`. The migration guide marks `deployctl`
+     as sunsetting in favor of `deno deploy`; refresh CLI availability and flags for the installed
+     Deno track instead of copying Classic deployment recipes into new automation.
    - Separate builder, development, preview, production, and runtime contexts. Verify exact runtime
      and command availability instead of assuming local or moving CI versions match Deploy.
    - Treat local filesystem and module memory as instance-local and replaceable. Keep durable

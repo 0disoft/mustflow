@@ -1309,7 +1309,9 @@ test('Pascal code change separates Delphi and FPC tracks, managed lifetimes, thr
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /Delphi or RAD Studio 13\.1, Lazarus 4\.8, and Free Pascal 3\.2\.2/u);
+	assert.match(localSkill, /Delphi or RAD Studio 13\.2 stable/u);
+	assert.match(localSkill, /Lazarus 4\.8 and Free Pascal 3\.2\.2 as stable/u);
+	assert.match(localSkill, /Lazarus 5\.0 RC and FPC 3\.3\.x/u);
 	assert.match(localSkill, /Similar syntax does not establish\s+equivalent threading, memory-manager, exception, ABI/u);
 	assert.match(localSkill, /Distinguish aliases from new ordinal types/u);
 	assert.match(localSkill, /Never persist `Ord`, raw set bytes/u);
@@ -1489,7 +1491,10 @@ test('Deno code change skill keeps runtime, permission, package, Worker, and Dep
 	assert.equal(localSkill, templateSkill);
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
-	assert.match(localSkill, /2026-07-11 source material\s+as a snapshot/u);
+	assert.match(localSkill, /dated source material\s+as a snapshot/u);
+	assert.match(localSkill, /2026-07-20 as the shutdown date for Deploy Classic/u);
+	assert.match(localSkill, /That announced date has passed/u);
+	assert.match(localSkill, /`deployctl`\s+as sunsetting in favor of `deno deploy`/u);
 	assert.match(localSkill, /Deno can execute TypeScript without proving the full type contract/u);
 	assert.match(localSkill, /Permission denial alone does not prove the initial module graph/u);
 	assert.match(localSkill, /permissions are not per-package isolation/u);
@@ -1544,7 +1549,8 @@ test('PHP code change skill keeps request lifetime, ORM, security, FPM, and work
 	assert.match(localSkill, /Treat SameSite as defense in depth/u);
 	assert.match(localSkill, /Bound FPM concurrency by the smallest/u);
 	assert.match(localSkill, /For long-lived runtimes, reset application state/u);
-	assert.match(localSkill, /identified PHP 8\.5\.8 as stable and PHP 8\.6\.0 Alpha 1 as prerelease/u);
+	assert.match(localSkill, /PHP 8\.5 as a stable branch and PHP 8\.6 as release-candidate\s+testing, not GA/u);
+	assert.match(localSkill, /Refresh patch releases, RC status/u);
 	assert.match(localSkill, /Do not assume a dependency's `repositories` configuration propagates/u);
 	assert.match(localSkill, /Avoid repeated `array_merge\(\)` accumulation/u);
 	assert.match(localSkill, /Release a file-backed session lock/u);

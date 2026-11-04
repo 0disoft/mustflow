@@ -2,7 +2,7 @@
 mustflow_doc: skill.php-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: php-code-change
@@ -76,9 +76,10 @@ RoadRunner, Swoole, Messenger, queue workers, persistent connections, or other l
   using current APIs or migration guidance.
 - Refresh official PHP, Composer, Laravel, Symfony, Doctrine, web-server, database, and platform
   sources before preserving exact version, default, deprecation, security, or support claims.
-- Treat version research as a dated snapshot. The official-source snapshot reviewed on 2026-07-11
-  identified PHP 8.5.8 as stable and PHP 8.6.0 Alpha 1 as prerelease; recheck the current stable,
-  supported branches, migration guides, and each feature's actual release status before reuse.
+- Treat version research as a dated snapshot. The [official PHP news archive](https://www.php.net/archive/2026.php),
+  checked on 2026-11-04, identifies PHP 8.5 as a stable branch and PHP 8.6 as release-candidate
+  testing, not GA. Refresh patch releases, RC status, supported branches, migration guides, and
+  each feature's actual release status before reuse; do not retain an old Alpha 1 baseline.
 - Identify whether process state ends after one request. Treat every service as potentially reused
   until the selected runtime proves request-scoped destruction.
 - Apply narrower auth, upload, transaction, cache, queue, logging, performance, or deployment skills

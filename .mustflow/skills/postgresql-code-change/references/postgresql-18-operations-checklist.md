@@ -2,7 +2,7 @@
 mustflow_doc: skill.postgresql-code-change.postgresql-18-operations-checklist
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: reference
 ---
@@ -27,7 +27,8 @@ Use this reference when code, schema, infrastructure, runbooks, monitoring, auth
 ## 1. Freshness and Classification
 
 - Treat the major release notes, current 18.x minor release notes, and current manuals as separate evidence. Major notes define feature and migration changes; minor notes define later correctness and security fixes.
-- Refresh the latest supported 18.x minor before making a production recommendation. The snapshot verified on 2026-08-02 was PostgreSQL 18.4, released 2026-05-14. Do not preserve `18.4` as an undated permanent latest-version claim.
+- Refresh the latest supported 18.x minor before making a production recommendation. The [official version policy](https://www.postgresql.org/support/versioning/), checked on 2026-11-04, lists PostgreSQL 18.6 as the supported 18.x minor. Its [release notes](https://www.postgresql.org/docs/release/18.6/) date it to 2026-08-13 and state that 18.5 was never released because of a regression. Do not recommend that skipped version or preserve `18.6` as an undated permanent latest-version claim.
+- Read the 18.6 configuration, data-cleanup, and extension reindex requirements before upgrading affected installations. A minor upgrade's lack of a dump/restore requirement does not waive those repairs.
 - Prefer the newest supported minor for production and reproduce a reported issue on that minor before attributing it to the 18.0 design.
 - Distinguish features introduced in 18 from older PostgreSQL capabilities that only interact differently with 18. Do not market every useful PostgreSQL technique as an 18 feature.
 - Record server version, client-tool versions, provider version, build options, extension versions, driver, ORM, pooler mode, operating system, filesystem, storage class, and rollback boundary.
@@ -151,7 +152,7 @@ Reject a production-ready claim when the relevant row has no configured verifica
 - [PostgreSQL versioning policy](https://www.postgresql.org/support/versioning/) for supported majors, minor releases, and update expectations.
 - [PostgreSQL 18 release notes](https://www.postgresql.org/docs/18/release-18.html) for major features and migration hazards.
 - [PostgreSQL 18 minor release archive](https://www.postgresql.org/docs/18/release.html) for current correctness and security fixes.
-- [PostgreSQL 18.4 release notes](https://www.postgresql.org/docs/release/18.4/) for the dated 2026-08-02 snapshot and later-18 fixes known at that point.
+- [PostgreSQL 18.6 release notes](https://www.postgresql.org/docs/release/18.6/) for the snapshot checked on 2026-11-04, including security fixes and post-update repair requirements.
 - [Resource consumption and AIO settings](https://www.postgresql.org/docs/18/runtime-config-resource.html), [`pg_aios`](https://www.postgresql.org/docs/18/view-pg-aios.html), and [monitoring statistics](https://www.postgresql.org/docs/18/monitoring-stats.html).
 - [Multicolumn indexes](https://www.postgresql.org/docs/18/indexes-multicolumn.html) and [Using EXPLAIN](https://www.postgresql.org/docs/18/using-explain.html) for skip scan and `Index Searches`.
 - [UUID functions](https://www.postgresql.org/docs/18/functions-uuid.html), [generated columns](https://www.postgresql.org/docs/18/ddl-generated-columns.html), and [DML RETURNING](https://www.postgresql.org/docs/18/dml-returning.html).

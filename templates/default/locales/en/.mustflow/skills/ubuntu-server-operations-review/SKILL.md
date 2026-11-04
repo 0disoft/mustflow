@@ -2,7 +2,7 @@
 mustflow_doc: skill.ubuntu-server-operations-review
 locale: en
 canonical: true
-revision: 1
+revision: 2
 lifecycle: mustflow-owned
 authority: procedure
 name: ubuntu-server-operations-review
@@ -97,9 +97,11 @@ recovery can all disagree while the server still appears healthy.
 1. Classify the exact release track. Separate ISO or image point release, installed package state,
    booted kernel, HWE or GA kernel track, cloud image build, and support entitlement. Do not infer
    the running state from an image filename.
-2. Refresh version claims. As of the dated 2026-08-02 snapshot, Ubuntu 24.04.4 was the current
-   Noble point image and Ubuntu 26.04 LTS had been released, but 26.04.1 was still scheduled for
-   later in August. Never preserve those facts as an undated permanent latest claim.
+2. Refresh version claims. The [official release list](https://ubuntu.com/project/docs/release-team/list-of-releases/),
+   checked on 2026-11-04, lists Ubuntu 24.04.5 LTS (2026-09-10), Ubuntu 26.04 LTS
+   (2026-04-23), and its 26.04.1 point image (2026-08-27) as released. A newer interim release
+   does not replace the project's LTS policy. Do not treat an available image as proof of installed
+   package, kernel, or upgrade-offer state; refresh these facts before future reuse.
 3. Build the package-owner ledger before changing anything. Distinguish APT, Snap, PPA or vendor
    repositories, direct archives, language package managers, `/usr/local`, and containers. Name
    which owner installs, updates, starts, removes, and rolls back each executable.

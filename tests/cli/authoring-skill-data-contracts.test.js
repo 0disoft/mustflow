@@ -324,8 +324,10 @@ test('postgresql code change carries the PostgreSQL 18 operations contract', () 
 	assert.equal(routes, templateRoutes);
 	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /PostgreSQL 18 Operations Checklist/u);
-	assert.match(localReference, /snapshot verified on 2026-08-02 was PostgreSQL 18\.4/u);
-	assert.match(localReference, /Do not preserve `18\.4` as an undated permanent latest-version claim/u);
+	assert.match(localReference, /lists PostgreSQL 18\.6 as the supported 18\.x minor/u);
+	assert.match(localReference, /18\.5 was never released because of a regression/u);
+	assert.match(localReference, /does not waive those repairs/u);
+	assert.match(localReference, /preserve `18\.6` as an undated permanent latest-version claim/u);
 	for (const token of [
 		'io_method',
 		'io_workers',
@@ -405,7 +407,7 @@ test('ubuntu server operations review keeps host state owners and LTS gates expl
 	assertDocumentRevision(localSkill);
 	assert.match(localSkill, /Ubuntu LTS Operations Checklist/u);
 	for (const token of [
-		'Ubuntu 24.04.4',
+		'Ubuntu 24.04.5 LTS',
 		'Ubuntu 26.04 LTS',
 		'26.04.1',
 		'package-owner ledger',
@@ -622,6 +624,9 @@ test('duckdb code change catches embedded OLAP, file-format, and profiling traps
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /DuckDB is embedded OLAP/u);
+	assert.match(localSkill, /DuckDB 2\.0\.0 LTS/u);
+	assert.match(localSkill, /1\.4 LTS support window ends on 2026-11-17/u);
+	assert.match(localSkill, /force a 2\.0 major upgrade without checking repository policy/u);
 	assert.match(localSkill, /not SQLite-like OLTP/u);
 	assert.match(localSkill, /single read-write process/u);
 	assert.match(localSkill, /Multi-process writes/u);
