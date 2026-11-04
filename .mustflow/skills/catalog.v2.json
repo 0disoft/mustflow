@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "kind": "skill_route_catalog",
-  "source_fingerprint": "sha256:b39d0984bcc3d1d1a7d3150db6197726147ca3fe778e89a79e5afb7d3a0bdb78",
+  "source_fingerprint": "sha256:e961e81e0c0d98255b0c745fd6f6b499148a50d5db28a36d35aeb8a20d480e65",
   "entries": [
     {
       "skill": "abstraction-boundary-review",
@@ -11808,6 +11808,83 @@
         "test_audit",
         "docs_validate_fast",
         "test_release",
+        "mustflow_check"
+      ]
+    },
+    {
+      "skill": "seo-ai-discovery-review",
+      "skill_path": ".mustflow/skills/seo-ai-discovery-review/SKILL.md",
+      "category": "docs_release",
+      "route_type": "primary",
+      "selection_axis": "task",
+      "priority": 86,
+      "applies_to_reasons": [
+        "unknown_change",
+        "ui_change",
+        "code_change",
+        "docs_change",
+        "copy_change",
+        "test_change",
+        "data_change",
+        "product_change",
+        "web_asset_change",
+        "performance_change",
+        "privacy_change",
+        "security_change",
+        "release_risk"
+      ],
+      "mutually_exclusive_with": [],
+      "positive_signals": [
+        "aeo",
+        "ai search visibility",
+        "ai 검색",
+        "ai 인용",
+        "answer engine optimization",
+        "canonical urls",
+        "citation accuracy",
+        "crawler access",
+        "discovery to conversion",
+        "generative engine optimization",
+        "hreflang",
+        "llmeo",
+        "llmo",
+        "llms txt",
+        "seo",
+        "sitemap",
+        "搜索引擎优化",
+        "生成式搜索",
+        "검색 노출",
+        "검색 엔진 최적화",
+        "검색에서 전환",
+        "봇 수집"
+      ],
+      "negative_signals": [
+        "coordinate transforms",
+        "geofencing",
+        "geospatial",
+        "internal search index",
+        "vector retrieval"
+      ],
+      "exclusion_signals": [
+        "geospatial only",
+        "internal search only",
+        "vector retrieval only"
+      ],
+      "dependencies": {
+        "requires_skills": [],
+        "suggests_adjuncts": [],
+        "conflicts_with": [],
+        "unlocks_on": []
+      },
+      "trigger": "Apply this skill when public website SEO, AEO, GEO or generative engine optimization, LLMO or LLMEO, AI search visibility, crawler access, citation accuracy, canonical URLs, hreflang, sitemaps, llms.txt, public tool landing pages, or discovery-to-conversion measurement are designed, implemented, audited, or failing. Review discovery, understanding, citation, execution, and conversion as one pipeline; distinguish this from internal search indexes and geospatial GEO work.",
+      "command_intents": [
+        "changes_status",
+        "changes_diff_summary",
+        "lint",
+        "build",
+        "test_related",
+        "test",
+        "docs_validate_fast",
         "mustflow_check"
       ]
     },

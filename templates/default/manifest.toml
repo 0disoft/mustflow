@@ -387,6 +387,7 @@ creates = [
   ".mustflow/config/commands.toml",
   ".mustflow/config/preferences.toml",
   ".mustflow/config/technology.toml",
+  ".mustflow/skills/seo-ai-discovery-review/SKILL.md",
 ]
 
 runtime_requirements = []
@@ -989,6 +990,7 @@ oss = [
   "test-suite-performance-review",
   "test-suite-value-pruning-review",
   "vertical-slice-tdd",
+  "seo-ai-discovery-review",
 ]
 team = [
   "sui-move-resource-review",
@@ -1273,6 +1275,7 @@ team = [
   "test-suite-performance-review",
   "test-suite-value-pruning-review",
   "vertical-slice-tdd",
+  "seo-ai-discovery-review",
 ]
 product = [
   "sui-move-resource-review",
@@ -1571,6 +1574,7 @@ product = [
   "ai-game-asset-production",
   "svg-vector-asset-production",
   "web-asset-optimization",
+  "seo-ai-discovery-review",
 ]
 library = [
   "sui-move-resource-review",
@@ -1855,6 +1859,7 @@ library = [
   "test-suite-performance-review",
   "test-suite-value-pruning-review",
   "vertical-slice-tdd",
+  "seo-ai-discovery-review",
 ]
 
 [locales]

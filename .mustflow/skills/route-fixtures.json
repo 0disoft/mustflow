@@ -2816,7 +2816,9 @@
       "id": "workflow-batch-failure-triage-en",
       "mode": "invariant",
       "task": "The configured command intent test_related failed; analyze its exit code and first actionable error.",
-      "paths": [".mustflow/state/runs/current.json"],
+      "paths": [
+        ".mustflow/state/runs/current.json"
+      ],
       "reasons": [
         "command_failure"
       ],
@@ -2829,7 +2831,9 @@
       "id": "workflow-batch-failure-triage-ko",
       "mode": "invariant",
       "task": "설정된 명령 test_related가 실패했어. 종료 코드와 첫 오류를 분석해줘.",
-      "paths": [".mustflow/state/runs/current.json"],
+      "paths": [
+        ".mustflow/state/runs/current.json"
+      ],
       "reasons": [
         "command_failure"
       ],
@@ -7200,6 +7204,147 @@
       ],
       "forbidden_candidates": [
         "delivery-verification-budget"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-english-rendering",
+      "mode": "invariant",
+      "task": "Review SEO and AI search visibility for an Astro public product landing page; verify the first HTML response and canonical URLs",
+      "paths": [
+        "src/pages/index.astro"
+      ],
+      "reasons": [
+        "ui_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "seo-ai-discovery-review",
+      "required_candidates": [
+        "astro-code-change"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-korean-pipeline",
+      "mode": "invariant",
+      "task": "검색 노출과 AI 인용부터 도구 실행 전환까지 점검해",
+      "paths": [
+        "src/routes/+page.svelte"
+      ],
+      "reasons": [
+        "ui_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_main": "seo-ai-discovery-review",
+      "required_candidates": [
+        "svelte-code-change"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-catalog-locales",
+      "mode": "invariant",
+      "task": "Fix SEO hreflang and sitemap consistency so translated pricing pages and JSON-LD use the same product facts",
+      "paths": [
+        "src/pages/pricing.astro",
+        "src/lib/catalog.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "docs_change",
+        "data_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-bot-delivery",
+      "mode": "invariant",
+      "task": "Review crawler access for OAI-SearchBot and Claude-SearchBot through robots.txt and CDN challenges without exposing private result pages",
+      "paths": [
+        "public/robots.txt"
+      ],
+      "reasons": [
+        "code_change",
+        "privacy_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-attribution",
+      "mode": "invariant",
+      "task": "Audit AI search visibility and SEO conversion attribution; distinguish crawl fetch, citations, visits, tool success and paid outcomes",
+      "paths": [
+        "src/lib/analytics.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "docs_change"
+      ],
+      "max_candidates": 10,
+      "required_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-geospatial-boundary",
+      "task": "Review GEO coordinate transforms and geofencing for the map",
+      "paths": [
+        "src/geo/coordinates.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "mode": "invariant",
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-internal-search-boundary",
+      "task": "Fix internal search index refresh visibility in OpenSearch",
+      "paths": [
+        "src/search/indexer.ts"
+      ],
+      "reasons": [
+        "code_change",
+        "data_change"
+      ],
+      "mode": "invariant",
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-generic-boundary",
+      "task": "Review the page and its data",
+      "paths": [
+        "src/page.ts"
+      ],
+      "reasons": [
+        "code_change"
+      ],
+      "mode": "invariant",
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "seo-ai-discovery-review"
+      ]
+    },
+    {
+      "id": "seo-ai-discovery-review-empty-boundary",
+      "task": null,
+      "paths": [],
+      "reasons": [],
+      "mode": "invariant",
+      "max_candidates": 10,
+      "forbidden_candidates": [
+        "seo-ai-discovery-review"
       ]
     }
   ]

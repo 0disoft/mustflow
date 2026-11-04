@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { parse as parseToml } from 'smol-toml';
+import { resolveSkillRoutes } from '../../dist/core/skill-route-resolution.js';
 
 import {
 	assertI18nSkillDocument,
@@ -9,6 +12,53 @@ import {
 	readText,
 	routeReasons,
 } from './helpers/skill-contracts.js';
+
+test('SEO and AI discovery review installs a bounded public-web pipeline with privacy and measurement gates', () => {
+	const name = 'seo-ai-discovery-review';
+	const skillPath = `.mustflow/skills/${name}/SKILL.md`;
+	const skill = readText(skillPath);
+	const template = readText(`templates/default/locales/en/${skillPath}`);
+	const manifest = parseToml(readText('templates/default/manifest.toml'));
+	const fixtures = JSON.parse(readText('.mustflow/skills/route-fixtures.json')).cases;
+
+	assert.equal(skill, template);
+	assert.match(skill, /discover -> understand -> cite -> execute -> convert/u);
+	assert.match(skill, /robots\.txt and a separate subdomain are not\s+authorization or guaranteed deindexing/u);
+	assert.match(skill, /For a public URL excluded by noindex, allow the intended crawler to fetch that directive/u);
+	assert.match(skill, /forward-confirmed reverse DNS/u);
+	assert.match(skill, /Keep dates stable for an\s+unchanged deployment/u);
+	assert.match(skill, /Missing\/suppressed data is unknown, not zero/u);
+	assert.match(skill, /These were future dates at this checkpoint/u);
+	assert.match(skill, /without putting them into canonical identities/u);
+	assert.ok(manifest.creates.includes(skillPath));
+	for (const profile of ['oss', 'team', 'product', 'library']) {
+		assert.ok(manifest.skill_profiles[profile].includes(name), `missing ${profile} installation`);
+	}
+	for (const profile of ['minimal', 'patterns']) {
+		assert.ok(!manifest.skill_profiles[profile].includes(name), `unrelated ${profile} installation`);
+	}
+	for (const boundary of ['geospatial', 'internal-search', 'generic', 'empty']) {
+		const fixture = fixtures.find(item => item.id === `${name}-${boundary}-boundary`);
+		assert.ok(fixture?.forbidden_candidates.includes(name), `missing ${boundary} routing boundary`);
+	}
+	assertI18nSkillDocument(readText('templates/default/i18n.toml'), name);
+});
+
+test('SEO discovery selection retains the framework language axis for English and Korean requests', () => {
+	const root = fileURLToPath(new URL('../../', import.meta.url));
+	const fixtures = JSON.parse(readText('.mustflow/skills/route-fixtures.json')).cases;
+	for (const [suffix, framework] of [
+		['english-rendering', 'astro-code-change'],
+		['korean-pipeline', 'svelte-code-change'],
+	]) {
+		const fixture = fixtures.find(item => item.id === `seo-ai-discovery-review-${suffix}`);
+		const result = resolveSkillRoutes(root, {
+			taskText: fixture.task, paths: fixture.paths, reasons: fixture.reasons, maxCandidates: 10,
+		});
+		assert.equal(result.selected.main?.skill, 'seo-ai-discovery-review');
+		assert.ok(result.selected.axes.language.some(item => item.skill === framework), framework);
+	}
+});
 
 test('Astro code change skill gates islands, rendering, content, and runtime risk', () => {
 	const localSkill = readText('.mustflow/skills/astro-code-change/SKILL.md');

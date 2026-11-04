@@ -183,7 +183,7 @@ translations = {}
 [documents."skills.index"]
 source = "locales/en/.mustflow/skills/INDEX.md"
 source_locale = "en"
-revision = 348
+revision = 349
 translations = {}
 
 [documents."skill.delivery-verification-budget"]
@@ -1986,6 +1986,12 @@ translations = {}
 
 [documents."skill.ai-game-asset-production"]
 source = "locales/en/.mustflow/skills/ai-game-asset-production/SKILL.md"
+source_locale = "en"
+revision = 1
+translations = {}
+
+[documents."skill.seo-ai-discovery-review"]
+source = "locales/en/.mustflow/skills/seo-ai-discovery-review/SKILL.md"
 source_locale = "en"
 revision = 1
 translations = {}
