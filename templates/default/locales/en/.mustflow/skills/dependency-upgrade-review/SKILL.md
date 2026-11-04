@@ -2,7 +2,7 @@
 mustflow_doc: skill.dependency-upgrade-review
 locale: en
 canonical: true
-revision: 8
+revision: 9
 lifecycle: mustflow-owned
 authority: procedure
 name: dependency-upgrade-review
@@ -103,12 +103,16 @@ Review dependency upgrades as runtime, build, security, package, and generated-o
 12. For Python runtime upgrades, treat `requires-python`, CI matrices, base images, dependency markers, wheels, packaging output, standard-library API availability, and security-default changes as one compatibility contract. Review version-gated standard-library usage and changed defaults before assuming the upgrade is only a dependency resolution change.
 13. For Python upgrades that adopt newer standard-library behavior, call out affected paths such as archive extraction, subprocess handling, async lifecycle, import/resource loading, typing surfaces, data-class shapes, and diagnostic flags. Keep fallbacks or compatibility wording when the repository still supports older interpreters.
 14. For TypeScript upgrades, refresh official release and registry evidence before classifying the
-    compiler track. In the snapshot checked on 2026-07-11, TS7 stable used `typescript` and
+    compiler track. In the snapshot checked on 2026-11-04, TS7 stable used `typescript` and
     `tsc`, TS6 JavaScript API compatibility used `@typescript/typescript6` and `tsc6`,
     development builds used `typescript@next`, native preview used
     `@typescript/native-preview` and `tsgo`, and `typescript@rc` was historical prerelease
     evidence. Reclassify those tags when current registry metadata changes; never treat development
     or preview packages as stable replacements merely because they are newer.
+    The [official TypeScript 7.1 Beta announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/),
+    checked on 2026-11-04, adds the `typescript@beta` evaluation track with a new API and executable
+    content mappers. Require consumer compatibility, native-handle cleanup, and mapper trust review;
+    beta availability does not authorize replacing an adopted stable compiler or TS6 API consumer.
 15. For TypeScript 6, review deprecations as TypeScript 7 removal risks. For TS7 stable, review compiler parity, declaration emit, watch/incremental, generated-output, and framework wrapper risks. Use `typescript@next` or `tsgo` only as optional comparison paths. Keep compiler API, transformer, ESLint, language-service plugin, and framework wrapper consumers on the TS6 API compatibility track until their owners explicitly support the TS7 API surface.
 16. For new dependencies introduced by the upgrade, invoke the `dependency-reality-check` decision path: license, maintainer risk, provenance, lifecycle scripts, binary downloads, package age, transitive size, supply-chain risk, and replacement path.
 17. For Docker base images and CI actions, review them as dependencies. Check image/action source, version pinning policy, digest use when required, runtime version changes, security patch reason, cache impact, and deployment smoke coverage. Pin third-party GitHub Actions to the verified full commit SHA, retain the reviewed release or channel as a comment, and record tag-to-commit evidence; a mutable rolling tag or branch is not an immutable dependency merely because the owner is trusted.

@@ -303,7 +303,7 @@ translations = {}
 [documents."skill.ada-code-change"]
 source = "locales/en/.mustflow/skills/ada-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.adapter-boundary"]
@@ -1010,13 +1010,13 @@ translations = {}
 [documents."skill.dependency-upgrade-review"]
 source = "locales/en/.mustflow/skills/dependency-upgrade-review/SKILL.md"
 source_locale = "en"
-revision = 8
+revision = 9
 translations = {}
 
 [documents."skill.version-freshness-check"]
 source = "locales/en/.mustflow/skills/version-freshness-check/SKILL.md"
 source_locale = "en"
-revision = 11
+revision = 12
 translations = {}
 
 [documents."skill.line-ending-hygiene"]
@@ -1070,7 +1070,7 @@ translations = {}
 [documents."skill.astro-code-change"]
 source = "locales/en/.mustflow/skills/astro-code-change/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.axum-code-change"]
@@ -1334,7 +1334,7 @@ translations = {}
 [documents."skill.typescript-code-change"]
 source = "locales/en/.mustflow/skills/typescript-code-change/SKILL.md"
 source_locale = "en"
-revision = 9
+revision = 10
 translations = {}
 
 [documents."skill.type-contract-change"]

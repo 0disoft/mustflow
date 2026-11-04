@@ -41,6 +41,10 @@ test('Astro code change skill gates islands, rendering, content, and runtime ris
 	assert.match(localSkill, /Cache providers, CDN cache providers, invalidation tags/u);
 	assert.match(localSkill, /Markdown, Markdoc, Shiki, And Compiler Policy/u);
 	assert.match(localSkill, /unified pipeline/u);
+	assert.match(localSkill, /Astro 7 uses Sätteri for Markdown and MDX by default/u);
+	assert.match(localSkill, /`markdown: \{ processor: unified\(\) \}`/u);
+	assert.match(localSkill, /Astro 7 defaults `compressHTML` to `'jsx'`/u);
+	assert.match(localSkill, /move stable `logger` configuration to its top-level field/u);
 	assert.match(localSkill, /MDX optimizer changes/u);
 	assert.match(localSkill, /Markdoc `allowHTML`/u);
 	assert.match(localSkill, /Do not create Shiki highlighters in hot loops/u);

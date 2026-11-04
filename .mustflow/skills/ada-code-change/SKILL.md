@@ -2,7 +2,7 @@
 mustflow_doc: skill.ada-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: ada-code-change
@@ -76,9 +76,12 @@ runtime checks, GNAT implementation features, and SPARK flow analysis or proof a
   runtime, and deployment evidence before changing a language, proof, or runtime contract.
 - Refresh official Ada Reference Manual, Ada Issue, GNAT, SPARK, Alire, and target-runtime sources
   before preserving exact feature, default, restriction, support, or tool-option claims.
-- Treat version research as dated evidence. The official-source snapshot reviewed on 2026-07-11
-  identified Ada 2022, published as ISO/IEC 8652:2023, as the latest issued standard and Amendment 1
-  as draft work; recheck before reuse. A GNAT Ada 2022 mode and GNAT extension mode are not equivalent.
+- Treat version research as dated evidence. The [ISO committee record for Amendment 1](https://committee.iso.org/standard/93803.html?browse=tc),
+  checked on 2026-11-04, lists ISO/IEC 8652:2023/DAmd 1 as Under development, with DIS registered
+  (stage 40.00) on 2026-09-17. Keep Ada 2022, published as ISO/IEC 8652:2023, separate from this
+  draft amendment. A WG9 ballot or an internal final-draft label does not prove ISO publication;
+  verify the publication stage before treating amendment text as an issued standard.
+  A GNAT Ada 2022 mode and GNAT extension mode are not equivalent.
 - Do not infer absence of runtime errors from Ada compilation alone. Dynamic overflow, range,
   index, length, division, discriminant, null, predicate, and contract failures remain runtime
   checks unless the selected SPARK proof or other evidence discharges them.

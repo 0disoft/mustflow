@@ -2,7 +2,7 @@
 mustflow_doc: skill.version-freshness-check
 locale: en
 canonical: true
-revision: 11
+revision: 12
 lifecycle: mustflow-owned
 authority: procedure
 name: version-freshness-check
@@ -99,12 +99,16 @@ Prevent agents from writing stale external version references from memory, while
 14. For Python examples that use newer standard-library APIs, either keep the example behind an explicit runtime floor or provide a supported fallback. Do not call a Python 3.14-only API a general Python best practice when the repository declares lower support.
 15. For Python 3.15+ claims, keep beta, release-candidate, and stable tracks separate. Refresh official docs before using explicit lazy imports, built-in `frozendict`, built-in `sentinel`, unpacking comprehensions, typed `TypedDict` extra items, startup configuration files, or changed encoding behavior in durable examples.
 16. For TypeScript 6 and 7 claims, refresh official TypeScript and registry sources before writing
-    durable wording. The snapshot checked on 2026-07-11 mapped TS7 stable to `typescript` and
+    durable wording. The snapshot checked on 2026-11-04 mapped TS7 stable to `typescript` and
     `tsc`, TS6 JavaScript API compatibility to `@typescript/typescript6` and `tsc6`,
     development builds to `typescript@next`, native preview to `@typescript/native-preview`
     and `tsgo`, and historical prerelease evidence to `typescript@rc`. Reclassify every tag
     from current evidence; do not call development, preview, or RC output "latest stable
     TypeScript" merely because it is newer or separately installable.
+    The [official TypeScript 7.1 Beta announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-1-beta/)
+    adds `typescript@beta` as a prerelease evaluation track, including a new API and content mappers.
+    Verify release status, consumer support, disposal obligations, and external-code permissions
+    separately; a beta feature is not established by stable TS7 compiler support.
 17. For TypeScript examples, make the selected track explicit: TS7 stable compiler adoption, TS6 API compatibility, `typescript@next` development comparison, native-preview comparison, historical prerelease reproduction, editor preview, or framework-owned verification. If the project has compiler API consumers, transformers, framework wrappers, or declaration snapshots, classify the reference as migration-sensitive and keep API consumers on the TS6 API compatibility track until support is explicit. Check exact support before relying on `rootDir` defaults, ambient `types` defaults, import attributes, subpath imports, `import defer`, `using`, or `await using`.
 18. For Go release, toolchain, standard-library, runtime, or experiment claims, refresh official Go release notes or package documentation before writing durable wording. Check the repository's `go` directive, `toolchain` directive, CI/runtime matrix, and container target before using or recommending version-gated features such as expression operands to `new`, range-over-function iterators, generic type aliases, reflect iterator methods, `errors.AsType`, `sync.WaitGroup.Go`, `testing/synctest`, `testing.B.Loop`, `T.ArtifactDir`, `B.ArtifactDir`, `F.ArtifactDir`, `testing/cryptotest.SetGlobalRandom`, `os.Root`, `os.OpenInRoot`, `omitzero`, `go.mod` `tool`, `ReverseProxy.Rewrite`, container-aware `GOMAXPROCS`, goroutine leak profiles, `encoding/json/v2`, or `GOEXPERIMENT` APIs.
 19. For Go framework and dependency release claims, refresh the source that owns the artifact before writing durable wording. For Gin, prefer official Gin release notes, pkg.go.dev module metadata, and the upstream repository release or source files for claims about latest stable version, minimum Go version, HTTP/3 support, BSON support, binding behavior, router options, logger options, trusted proxy behavior, or `Context` APIs. Keep framework upgrade advice separate from repository adoption, because a framework minor can still require a Go toolchain, CI image, Docker base, middleware, route, or binding migration.

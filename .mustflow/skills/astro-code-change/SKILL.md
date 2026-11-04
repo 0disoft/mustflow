@@ -2,7 +2,7 @@
 mustflow_doc: skill.astro-code-change
 locale: en
 canonical: true
-revision: 6
+revision: 7
 lifecycle: mustflow-owned
 authority: procedure
 name: astro-code-change
@@ -171,7 +171,7 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 
 ## Markdown, Markdoc, Shiki, And Compiler Policy
 
-- When an Astro major migration changes Markdown processing, choose explicitly between the current processor and the new default processor. Keep the unified pipeline when remark, rehype, recma, MDX, or custom Markdown plugin compatibility is unproven.
+- Astro 7 uses Sätteri for Markdown and MDX by default; `@astrojs/markdown-remark` is no longer installed automatically. Preserve the unified pipeline with an explicit `@astrojs/markdown-remark` dependency and `markdown: { processor: unified() }` when remark, rehype, recma, or custom plugin compatibility is unproven.
 - Check heading ids, code blocks, syntax highlighting, link rewriting, frontmatter rendering, custom component mappings, and Markdown or MDX snapshots when the processor changes.
 - Treat MDX as executable component-capable content. Keep ordinary docs elements static, isolate demos, and avoid hydrating framework runtimes from content files without a specific demo or interaction contract.
 - Treat MDX optimizer changes as rendered-output changes. Check escaped HTML, custom component mappings, and `ignoreElementNames` before accepting faster builds.
@@ -179,20 +179,20 @@ The default is no-hydration. Add browser JavaScript only after proving that nati
 - Do not create Shiki highlighters in hot loops, request handlers, or per-entry render paths. Reuse long-lived highlighters and load only the needed themes and languages.
 - Check image handling in Markdown, MDX, and loaders. Raw `<img>` and SVG are not the same as `astro:assets`; remote image sources need an allowlist and dimensions or another CLS strategy.
 - Treat stricter compiler output, invalid HTML nesting, non-void tag closure, CSS serialization, and whitespace between inline elements as user-visible migration risks.
-- When `compressHTML` changes or defaults differ, verify important rendered text does not lose intended spaces between inline elements.
+- Astro 7 defaults `compressHTML` to `'jsx'`, which can join adjacent inline text. Preserve intended spaces explicitly, such as with `{" "}`, and verify important rendered copy after migration.
 
 ## Astro Major Migration Deltas
 
 - For v5 to v6 migrations, check removed or changed surfaces before editing call sites: `Astro.glob()` replacement with `import.meta.glob()` or content collections, `.cjs` and `.cts` config removal, `astro:ssr-manifest`, `RouteData.generate()`, old adapter hooks, old `NodeApp` paths, Zod 4 schema effects, and numeric dynamic route params.
-- For v6 to v7 migrations, classify each crossed surface by its official migration status before
-  editing. The following status map is an official-source snapshot checked on 2026-07-11 and must
-  be refreshed before later durable use:
+- For v6 to v7 migrations, classify each crossed surface using the [official migration guide](https://docs.astro.build/en/guides/upgrade-to/v7/),
+  checked on 2026-11-04. Refresh this status map before later durable use:
   - remove obsolete `advancedRouting`, `queuedRendering`, and `rustCompiler` experimental flags because their behavior became the default;
   - move stable `cache` and `routeRules` configuration out of the experimental block instead of deleting it;
+  - move stable `logger` configuration to its top-level field instead of retaining `experimental.logger`;
   - treat `src/fetch.*` as a reserved advanced-routing entrypoint and use `fetchFile` only to relocate or disable that entrypoint intentionally;
   - migrate deprecated `getContainerRenderer()` imports from integration package roots to the documented container-renderer entrypoint;
   - remove unsupported `@astrojs/db` integration usage and exposed transition internals;
-  - separately verify direct request handler composition, `logger`, `markdown.processor`, and `compressHTML` behavior against the official v7 guide for the installed target.
+  - separately verify direct request handler composition, Markdown plugin compatibility, and rendered whitespace against the installed target.
 - For v6 to v7 migrations with custom Vite config, Rollup hooks, or Astro integrations that call Vite APIs, also use `dependency-upgrade-review` when available.
 - Keep each migration delta scoped to the crossed major version. Do not copy old delta checks into ordinary Astro UI, content, or route edits.
 

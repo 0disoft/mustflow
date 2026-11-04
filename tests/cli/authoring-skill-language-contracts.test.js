@@ -1267,6 +1267,9 @@ test('Ada code change separates language checks, runtime checks, SPARK proof, an
 	assert.equal(skillIndex, templateSkillIndex);
 	assert.equal(routes, templateRoutes);
 	assert.match(localSkill, /ISO\/IEC 8652:2023/u);
+	assert.match(localSkill, /ISO\/IEC 8652:2023\/DAmd 1 as Under development, with DIS registered/u);
+	assert.match(localSkill, /stage 40\.00\) on 2026-09-17/u);
+	assert.match(localSkill, /does not prove ISO publication/u);
 	assert.match(localSkill, /GNAT Ada 2022 mode and GNAT extension mode are not equivalent/u);
 	assert.match(localSkill, /Do not infer absence of runtime errors from Ada compilation alone/u);
 	assert.match(localSkill, /Use a new `type` when values have different meaning/u);

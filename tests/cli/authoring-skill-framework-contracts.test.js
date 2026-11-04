@@ -10,7 +10,7 @@ import {
 	routeReasons,
 } from './helpers/skill-contracts.js';
 
-test('TypeScript and dependency freshness skills distinguish stable compiler, API compatibility, development, and preview tracks', () => {
+test('TypeScript and dependency freshness skills distinguish stable compiler, beta API, API compatibility, development, and preview tracks', () => {
 	const tsSkill = readText('.mustflow/skills/typescript-code-change/SKILL.md');
 	const templateTsSkill = readText('templates/default/locales/en/.mustflow/skills/typescript-code-change/SKILL.md');
 	const dependencySkill = readText('.mustflow/skills/dependency-upgrade-review/SKILL.md');
@@ -39,6 +39,13 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 	assert.match(tsSkill, /`@typescript\/typescript6`/u);
 	assert.match(tsSkill, /`typescript@rc`/u);
 	assert.match(tsSkill, /`typescript@next`/u);
+	assert.match(tsSkill, /TS7\.1 beta track: `typescript@beta`/u);
+	assert.match(tsSkill, /`typescript\/sync`, `typescript\/async`/u);
+	assert.match(tsSkill, /dispose API, Program, and Snapshot handles/u);
+	assert.match(tsSkill, /JavaScript GC alone leaves compiler-side allocations alive/u);
+	assert.match(tsSkill, /CLI execution requires `--runExternalCode`/u);
+	assert.match(tsSkill, /workspace trust and mapper permissions/u);
+	assert.match(tsSkill, /do not assume it is newer than stable TypeScript or provides the 7\.1 API/u);
 	assert.match(tsSkill, /`@typescript\/native-preview`/u);
 	assert.match(tsSkill, /`tsgo`/u);
 	assert.match(tsSkill, /prefer `\.ts` source plus package `"type": "module"`/u);
@@ -70,7 +77,9 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 	assert.match(tsSkill, /Attack the built JavaScript/u);
 
 	assert.match(dependencySkill, /TypeScript compiler tracks/u);
-	assert.match(dependencySkill, /snapshot checked on 2026-07-11/u);
+	assert.match(dependencySkill, /snapshot checked on 2026-11-04/u);
+	assert.match(dependencySkill, /`typescript@beta` evaluation track/u);
+	assert.match(dependencySkill, /consumer compatibility, native-handle cleanup, and mapper trust review/u);
 	assert.match(dependencySkill, /TS7 stable used `typescript` and\s+`tsc`/u);
 	assert.match(dependencySkill, /TS6 JavaScript API compatibility used `@typescript\/typescript6` and `tsc6`/u);
 	assert.match(dependencySkill, /development builds used `typescript@next`/u);
@@ -81,6 +90,8 @@ test('TypeScript and dependency freshness skills distinguish stable compiler, AP
 	assert.match(dependencySkill, /old vulnerable version is absent from the resolved graph/u);
 
 	assert.match(freshnessSkill, /TypeScript compiler-track references/u);
+	assert.match(freshnessSkill, /`typescript@beta` as a prerelease evaluation track/u);
+	assert.match(freshnessSkill, /disposal obligations, and external-code permissions/u);
 	assert.match(freshnessSkill, /do not call development, preview, or RC output "latest stable\s+TypeScript"/u);
 	assert.match(freshnessSkill, /TS7 stable compiler adoption, TS6 API compatibility/u);
 	assert.match(freshnessSkill, /TypeScript 7 stable compiler, TypeScript 6 JavaScript API compatibility/u);
