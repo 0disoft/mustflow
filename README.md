@@ -291,6 +291,14 @@ npx mf update --apply
 
 After updating the mustflow package, `mf upgrade` combines the package freshness check with the safe project-file update step. It does not install packages by itself; refresh mustflow with the package manager you used first. When a newer release exists, `mf version --check` and `mf upgrade` print update commands for npm, Bun, pnpm, Yarn, and Deno.
 
+In simple mode, `mf upgrade` (and `mf update --apply`) also installs bundled skills and references
+selected by the recorded profile and locale, and refreshes files that still match their lock baseline.
+Local skill edits and deletions are preserved; files without a trusted baseline are preserved unless
+they exactly match the current bundle. New route entries are added to customized routing files without
+replacing existing entries, and the generated catalog includes workspace skills and routing overrides.
+Use `mf upgrade --dry-run` to preview changes and preserved local files. Simple initialization and
+ordinary development still do not require skills or expanded workflow documents.
+
 ```sh
 bun add -g mustflow@latest
 mf upgrade --dry-run

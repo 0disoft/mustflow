@@ -34,6 +34,7 @@ import { getDefaultTemplate, getTemplateFiles, skillNameForTemplatePath, type Te
 import { readMustflowTomlFile, stringifyToml } from '../lib/toml.js';
 import { createUpdateDiffPreview, shouldPreviewUpdateDiff, type UpdateDiffPreview } from '../lib/update-diff-preview.js';
 import { UpdateRecovery } from '../lib/update-recovery.js';
+import { planSimpleSkillFile, projectedSkillCatalog, PRESERVED_SKILL_REASON, SKILL_ROUTE_CATALOG_PATH, SKILL_UPDATE_PREFIX, type SkillUpdateDecision } from '../lib/skill-update.js';
 
 const UPDATE_SCHEMA_VERSION = '2';
 const CUSTOMIZED_LOCK_ACTION = 'customized';
@@ -110,6 +111,8 @@ interface InternalUpdatePlanItem extends Omit<UpdatePlanItem, 'diff_preview'> {
 	readonly source?: TemplateFileSource;
 	readonly baselineHash?: string | null;
 	readonly plannedContent?: string | Buffer;
+	readonly trackBaseline?: boolean;
+	readonly customized?: boolean;
 }
 
 interface PlannedTemplateIdentity {
@@ -180,12 +183,18 @@ function lockedTemplateSkillNames(files: readonly LockedFile[]): readonly string
 }
 
 function getInstalledTemplateFiles(projectRoot: string, template: ReturnType<typeof getDefaultTemplate>, lock: { readonly templateLocale?: string; readonly templateProfile?: string; readonly files: readonly LockedFile[] }): TemplateFileSource[] {
-	return getTemplateFiles(
+	const options = { extraSkillNames: lockedTemplateSkillNames(lock.files), workflow: resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode };
+	const files = getTemplateFiles(
 		template,
 		lock.templateLocale ?? template.manifest.defaultLocale,
 		lock.templateProfile ?? template.manifest.defaultProfile,
-		{ extraSkillNames: lockedTemplateSkillNames(lock.files), workflow: resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode },
+		options,
 	);
+	if (options.workflow !== 'simple') return files;
+	return [...files, ...getTemplateFiles(template,
+		lock.templateLocale ?? template.manifest.defaultLocale,
+		lock.templateProfile ?? template.manifest.defaultProfile,
+		{ extraSkillNames: options.extraSkillNames }).filter(source => source.relativePath.startsWith(SKILL_UPDATE_PREFIX))];
 }
 
 function templateTargetSafetyIssue(projectRoot: string, targetPath: string, allowMissingLeaf: boolean): string | undefined {
@@ -269,6 +278,8 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 	const templateFiles = getInstalledTemplateFiles(projectRoot, template, lockResult.lock);
 	const lockedFiles = byRelativePath(lockResult.lock.files);
 	const items: InternalUpdatePlanItem[] = [];
+	const simple = resolveWorkflowPolicy(readMustflowConfigIfExists(projectRoot)).mode === 'simple';
+	const skillDecisions = new Map<string, SkillUpdateDecision>();
 
 	for (const source of templateFiles) {
 		const targetPath = path.join(projectRoot, source.relativePath);
@@ -280,6 +291,15 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 
 		if (unsafeTargetReason) {
 			items.push(createPlanItem(source, 'blocked-local-change', unsafeTargetReason));
+			continue;
+		}
+
+		if (simple && source.relativePath.startsWith(SKILL_UPDATE_PREFIX)) {
+			// Catalog content is derived from the planned files and preserved local skills.
+			if (source.relativePath === SKILL_ROUTE_CATALOG_PATH) continue;
+			const decision = planSimpleSkillFile(projectRoot, template.templateRoot, source, lockedFile);
+			skillDecisions.set(source.relativePath, decision);
+			items.push({ ...createPlanItem(source, decision.action, decision.reason), ...decision });
 			continue;
 		}
 
@@ -324,6 +344,18 @@ function createUpdatePlan(projectRoot: string): { readonly items: readonly Inter
 		}
 
 		items.push(createPlanItem(source, 'unchanged', 'current file matches the bundled template'));
+	}
+
+	const catalogSource = simple && templateFiles.find(source => source.relativePath === SKILL_ROUTE_CATALOG_PATH);
+	if (catalogSource && !items.some(item => item.action === 'blocked-local-change')) {
+		const content = projectedSkillCatalog(projectRoot, templateFiles, skillDecisions);
+		if (content !== undefined) {
+			const baselineHash = currentContentHash(projectRoot, SKILL_ROUTE_CATALOG_PATH);
+			const action = baselineHash === sha256Content(content) ? 'unchanged' : baselineHash ? 'update' : 'create';
+			items.push({ ...createPlanItem(catalogSource, action,
+				'Rebuild generated catalog from installed skills and routing overrides', baselineHash, content),
+				...(action === 'unchanged' && !lockedFiles.has(SKILL_ROUTE_CATALOG_PATH) ? { trackBaseline: true } : {}) });
+		}
 	}
 
 	const currentTemplatePaths = new Set(templateFiles.map((source) => source.relativePath));
@@ -422,7 +454,7 @@ function fileActionToLockAction(action: UpdateAction): 'created' | 'updated' {
 }
 
 function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePlanItem[], reporter: Reporter, lang: CliLang, manifestHash: string | undefined): string | undefined {
-	if (!items.some((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')) {
+	if (!items.some((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove' || item.trackBaseline)) {
 		return;
 	}
 
@@ -436,7 +468,7 @@ function backupUpdateFiles(projectRoot: string, items: readonly InternalUpdatePl
 
 	const backupPaths = [...new Set([...updateItems.map((item) => item.relativePath), MANIFEST_LOCK_RELATIVE_PATH])];
 	const backupRoot = createBackupDirectory(projectRoot);
-	const baselines = new Map(items.filter((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove')
+	const baselines = new Map(items.filter((item) => item.baselineHash !== undefined)
 		.map((item) => [item.relativePath, item.baselineHash] as const));
 	baselines.set(MANIFEST_LOCK_RELATIVE_PATH, manifestHash);
 	for (const [relativePath, baseline] of baselines) {
@@ -510,7 +542,7 @@ function updateManifestLockAfterApply(projectRoot: string, appliedItems: readonl
 					: item.sourceKind === 'locale'
 						? 'template_locale'
 						: 'template_common',
-			last_action: fileActionToLockAction(item.action),
+			last_action: item.customized ? CUSTOMIZED_LOCK_ACTION : fileActionToLockAction(item.action),
 			content_hash: sha256Content(item.plannedContent),
 		};
 	}
@@ -536,6 +568,10 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 
 	try {
 		for (const item of items) {
+			if (item.trackBaseline) {
+				appliedItems.push(item);
+				continue;
+			}
 			if (item.action !== 'create' && item.action !== 'update') {
 				continue;
 			}
@@ -572,6 +608,11 @@ function applyUpdate(projectRoot: string, items: readonly InternalUpdatePlanItem
 			reporter.stdout(t(lang, 'update.action.removed', { path: item.relativePath }));
 		}
 
+		for (const item of items) {
+			if (item.action === 'unchanged' && item.baselineHash !== undefined && currentContentHash(projectRoot, item.relativePath) !== item.baselineHash) {
+				throw new Error(`File changed after update planning: ${item.relativePath}`);
+			}
+		}
 		updateManifestLockAfterApply(projectRoot, appliedItems, recovery, templateIdentity);
 
 		if (appliedItems.length > 0) {
@@ -643,6 +684,7 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	const updates = output.items.filter((item) => item.action === 'update');
 	const creates = output.items.filter((item) => item.action === 'create');
 	const removals = output.items.filter((item) => item.action === 'remove');
+	const preserved = output.items.filter(item => item.reason.startsWith(PRESERVED_SKILL_REASON));
 
 	reporter.stdout(t(lang, 'update.plan.title'));
 	printPolicy(reporter, lang);
@@ -651,6 +693,7 @@ function printPlan(output: UpdatePlanOutput, reporter: Reporter, lang: CliLang):
 	printItems(t(lang, 'update.plan.wouldUpdate'), updates, reporter);
 	printItems(t(lang, 'update.plan.wouldCreate'), creates, reporter);
 	printItems(t(lang, 'update.plan.wouldRemove'), removals, reporter);
+	if (preserved.length > 0) printItems(PRESERVED_SKILL_REASON, preserved, reporter);
 
 	if (blocked.length === 0 && manualReview.length === 0 && updates.length === 0 && creates.length === 0 && removals.length === 0) {
 		reporter.stdout(t(lang, 'update.plan.noUpdates'));
@@ -797,8 +840,7 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		if (wantsJson) {
-			const applicableItems = plan.items.filter((item) => item.action === 'create' || item.action === 'update' || item.action === 'remove');
-			const applyResult = applyUpdate(projectRoot, applicableItems, {
+			const applyResult = applyUpdate(projectRoot, plan.items, {
 				stdout: () => undefined,
 				stderr: (message) => reporter.stderr(message),
 			}, lang, plan.manifestHash, plan.templateIdentity);
@@ -807,6 +849,8 @@ export function runUpdate(args: string[], reporter: Reporter, lang: CliLang = 'e
 		}
 
 		const applyResult = applyUpdate(projectRoot, plan.items, reporter, lang, plan.manifestHash, plan.templateIdentity);
+		const preserved = plan.items.filter(item => item.reason.startsWith(PRESERVED_SKILL_REASON));
+		if (preserved.length > 0) printItems(PRESERVED_SKILL_REASON, preserved, reporter);
 
 		if (!applyResult.wroteFiles) {
 			reporter.stdout(t(lang, 'update.plan.noUpdates'));

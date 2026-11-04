@@ -5,6 +5,7 @@ import { normalizeSkillRouteText as normalizeRouteText, unquotedSkillRouteText }
 import { isSkillRoutePathHints, LEGACY_SKILL_ROUTE_PATH_HINTS, matchesSkillRoutePathHints, type SkillRoutePathHints } from './skill-route-path-hints.js';
 
 import { isRecord, readMustflowOwnedTomlFile, type TomlTable } from './config-loading.js';
+import { parseTomlText } from './toml.js';
 import { readUtf8FileInsideWithoutSymlinks, writeUtf8FileInsideWithoutSymlinks } from './safe-filesystem.js';
 import { type SkillIndexRoute, type SkillRouteCategory } from './skill-route-alignment.js';
 
@@ -424,11 +425,13 @@ function readSkillFrontmatterSummary(content: string): SkillFrontmatterSummary {
 	};
 }
 
-function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMetadata> {
+function readSkillRouteMetadata(projectRoot: string, content?: string): Map<string, SkillRouteMetadata> {
 	const metadata = new Map<string, SkillRouteMetadata>();
 
 	try {
-		const parsed = readMustflowOwnedTomlFile(projectRoot, SKILL_ROUTES_METADATA_PATH);
+		const parsed = content === undefined
+			? readMustflowOwnedTomlFile(projectRoot, SKILL_ROUTES_METADATA_PATH)
+			: parseTomlText(content);
 		if (!isRecord(parsed) || !isRecord(parsed.routes)) {
 			return metadata;
 		}
@@ -460,26 +463,25 @@ function readSkillRouteMetadata(projectRoot: string): Map<string, SkillRouteMeta
 	return metadata;
 }
 
-function readSkillFrontmatterRoutes(projectRoot: string): SkillIndexRoute[] {
+function readSkillFrontmatterRoutes(projectRoot: string, overrides: ReadonlyMap<string, string> = new Map()): SkillIndexRoute[] {
 	const skillRoot = path.join(projectRoot, '.mustflow', 'skills');
-	if (!existsSync(skillRoot)) {
-		return [];
+	const routes: SkillIndexRoute[] = [];
+	const skillDirectories = new Set((existsSync(skillRoot) ? readdirSync(skillRoot, { withFileTypes: true }) : [])
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name));
+	for (const relativePath of overrides.keys()) {
+		const match = BUILT_IN_SKILL_PATH_PATTERN.exec(relativePath);
+		if (match) skillDirectories.add(match[1]);
 	}
 
-	const routes: SkillIndexRoute[] = [];
-	const skillDirectories = readdirSync(skillRoot, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.map((entry) => entry.name)
-		.sort(compareStrings);
-
-	for (const skillDirectory of skillDirectories) {
+	for (const skillDirectory of [...skillDirectories].sort(compareStrings)) {
 		const skillPath = `.mustflow/skills/${skillDirectory}/SKILL.md`;
 		const absoluteSkillPath = path.join(projectRoot, ...skillPath.split('/'));
-		if (!existsSync(absoluteSkillPath)) {
+		if (!overrides.has(skillPath) && !existsSync(absoluteSkillPath)) {
 			continue;
 		}
 
-		const content = readUtf8FileInsideWithoutSymlinks(projectRoot, absoluteSkillPath, {
+		const content = overrides.get(skillPath) ?? readUtf8FileInsideWithoutSymlinks(projectRoot, absoluteSkillPath, {
 			maxBytes: MUSTFLOW_TEXT_MAX_BYTES,
 		});
 		const summary = readSkillFrontmatterSummary(content);
@@ -541,8 +543,9 @@ function createSkillRouteCatalog(
 	};
 }
 
-export function buildSkillRouteCatalog(projectRoot: string): SkillRouteCatalog {
-	return createSkillRouteCatalog(readSkillFrontmatterRoutes(projectRoot), readSkillRouteMetadata(projectRoot));
+export function buildSkillRouteCatalog(projectRoot: string, overrides: ReadonlyMap<string, string> = new Map()): SkillRouteCatalog {
+	return createSkillRouteCatalog(readSkillFrontmatterRoutes(projectRoot, overrides),
+		readSkillRouteMetadata(projectRoot, overrides.get(SKILL_ROUTES_METADATA_PATH)));
 }
 
 export function serializeSkillRouteCatalog(catalog: SkillRouteCatalog): string {

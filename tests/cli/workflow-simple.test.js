@@ -32,7 +32,8 @@ test('new installs default to simple and work through check, doctor, context, ru
 		for (const args of [['check', '--json'], ['check', '--strict', '--json'], ['doctor', '--json'], ['doctor', '--strict', '--json'], ['run', 'check', '--json'], ['update', '--dry-run', '--json']]) {
 			result = await runCliInProcess(root, args);
 			assert.equal(result.status, 0, `${args.join(' ')}: ${result.stderr}\n${result.stdout}`);
-			assert.doesNotMatch(result.stdout, /skills\/router|docs\/agent-workflow/);
+			assert.doesNotMatch(result.stdout, /docs\/agent-workflow/);
+			if (args[0] !== 'update') assert.doesNotMatch(result.stdout, /skills\/router/);
 		}
 		result = await runCliInProcess(root, ['context', '--json']);
 		const context = JSON.parse(result.stdout);
