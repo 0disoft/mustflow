@@ -110,6 +110,7 @@ interface RawLink {
 
 const DEFAULT_MAX_FILES = 200;
 const DEFAULT_MAX_FILE_BYTES = 512 * 1024;
+const MAX_CACHED_ANCHOR_DOCUMENTS = 32;
 const MAX_ISSUES = 50;
 const DEFAULT_PATHS = ['README.md', 'schemas/README.md', 'docs-site/src/content/docs'] as const;
 const PATH_FILTERS = ['*.md', '*.mdx'] as const;
@@ -382,7 +383,40 @@ function readDocumentText(projectRoot: string, absolutePath: string, maxBytes: n
 	return readFileInsideWithoutSymlinks(projectRoot, absolutePath, { maxBytes }).toString('utf8');
 }
 
-function validateLink(projectRoot: string, source: DocumentCandidate, link: RawLink, maxBytes: number): LinkIntegrityLink {
+function createDocumentAnchorReader(projectRoot: string, maxBytes: number): (absolutePath: string) => ReadonlySet<string> {
+	const cache = new Map<string, { readonly identity: string; readonly anchors: ReadonlySet<string> }>();
+	return (absolutePath) => {
+		// Cached anchors must not bypass path safety or hide a changed target within this inspection.
+		ensureInsideWithoutSymlinks(projectRoot, absolutePath);
+		const stats = lstatSync(absolutePath, { bigint: true });
+		if (!stats.isFile()) {
+			throw new Error(`Path must be a regular file: ${absolutePath}`);
+		}
+		if (stats.size > maxBytes) {
+			throw new Error(`File exceeds maximum size ${maxBytes} bytes: ${absolutePath}`);
+		}
+		const identity = [stats.dev, stats.ino, stats.size, stats.mtimeNs, stats.ctimeNs].join(':');
+		const existing = cache.get(absolutePath);
+		cache.delete(absolutePath);
+		if (existing?.identity === identity) {
+			cache.set(absolutePath, existing);
+			return existing.anchors;
+		}
+		const anchors = collectAnchors(readDocumentText(projectRoot, absolutePath, maxBytes));
+		if (cache.size >= MAX_CACHED_ANCHOR_DOCUMENTS) {
+			cache.delete(cache.keys().next().value!);
+		}
+		cache.set(absolutePath, { identity, anchors });
+		return anchors;
+	};
+}
+
+function validateLink(
+	projectRoot: string,
+	source: DocumentCandidate,
+	link: RawLink,
+	readAnchors: (absolutePath: string) => ReadonlySet<string>,
+): LinkIntegrityLink {
 	if (/^https?:\/\//iu.test(link.target)) {
 		return {
 			...link,
@@ -479,9 +513,8 @@ function validateLink(projectRoot: string, source: DocumentCandidate, link: RawL
 		};
 	}
 
-	const targetText = readDocumentText(projectRoot, targetAbsolutePath, maxBytes);
 	const normalizedAnchor = normalizeAnchorTarget(anchor);
-	const anchors = collectAnchors(targetText);
+	const anchors = readAnchors(targetAbsolutePath);
 	return anchors.has(normalizedAnchor)
 		? {
 				...link,
@@ -572,6 +605,7 @@ export function checkLinkIntegrity(projectRoot: string, options: CheckLinkIntegr
 	const fileEntries: LinkIntegrityFile[] = [];
 	const links: LinkIntegrityLink[] = [];
 	const candidates = collectDocumentCandidates(root, options.paths, policy, findings, issues);
+	const readAnchors = createDocumentAnchorReader(root, policy.max_file_bytes);
 
 	for (const candidate of candidates) {
 		let buffer: Buffer | null = null;
@@ -590,7 +624,7 @@ export function checkLinkIntegrity(projectRoot: string, options: CheckLinkIntegr
 		const rawLinks = buffer ? extractRawLinks(candidate.relativePath, text) : [];
 		for (const rawLink of rawLinks) {
 			try {
-				const validatedLink = validateLink(root, candidate, rawLink, policy.max_file_bytes);
+				const validatedLink = validateLink(root, candidate, rawLink, readAnchors);
 				links.push(validatedLink);
 				const finding = findingForLink(validatedLink);
 				if (finding) {
