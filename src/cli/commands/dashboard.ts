@@ -90,6 +90,11 @@ interface DashboardOptions {
 	readonly exportFormat?: DashboardExportFormat;
 }
 
+export interface DashboardServerOptions {
+	readonly signal?: AbortSignal;
+	readonly createServer?: typeof http.createServer;
+}
+
 const DEFAULT_DASHBOARD_HOST = '127.0.0.1';
 const DEFAULT_DASHBOARD_PORT = 0;
 const LOCAL_DASHBOARD_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
@@ -887,7 +892,9 @@ function toDashboardUrl(host: string, port: number): string {
 	return `http://${formattedHost}:${port}/`;
 }
 
-export async function runDashboard(args: string[], reporter: Reporter, lang: CliLang = 'en'): Promise<number> {
+export async function runDashboard(
+	args: string[], reporter: Reporter, lang: CliLang = 'en', serverOptions: DashboardServerOptions = {},
+): Promise<number> {
 	if (hasCliOptionToken(args, '--help', ['-h'])) {
 		reporter.stdout(getDashboardHelp(lang));
 		return 0;
@@ -927,9 +934,10 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 		}
 	}
 
+	if (serverOptions.signal?.aborted) return 0;
 	const token = randomBytes(DASHBOARD_HTTP_POLICY.tokenBytes).toString('base64url');
 	const initialSnapshot = readDashboardPreferences(projectRoot);
-	const server = http.createServer(createDashboardRequestHandler({
+	const server = (serverOptions.createServer ?? http.createServer)(createDashboardRequestHandler({
 		token,
 		reporter,
 		renderHome: async () => renderDashboardHtml(
@@ -944,65 +952,92 @@ export async function runDashboard(args: string[], reporter: Reporter, lang: Cli
 		markDocReview: (body) => markDashboardDocReviewFromPayload(projectRoot, body),
 		openMustflow: () => openDashboardMustflowFolder(projectRoot),
 	}));
-	server.headersTimeout = DASHBOARD_HTTP_POLICY.headersTimeoutMs;
-	server.requestTimeout = DASHBOARD_HTTP_POLICY.requestTimeoutMs;
-	server.keepAliveTimeout = DASHBOARD_HTTP_POLICY.keepAliveTimeoutMs;
+	const sockets = new Set<Socket>();
+	const listenController = new AbortController();
+	let stopping = false;
+	let detachListeners = (): void => {};
 
-	return new Promise((resolve) => {
-		let resolved = false;
-		const sockets = new Set<Socket>();
-		const close = () => {
-			if (resolved) {
-				return;
-			}
-
-			resolved = true;
-			server.close(() => resolve(0));
-			for (const socket of sockets) {
-				socket.destroy();
-			}
-		};
-
-		server.on('connection', (socket) => {
-			sockets.add(socket);
-			socket.on('close', () => {
-				sockets.delete(socket);
+	try {
+		try {
+			server.headersTimeout = DASHBOARD_HTTP_POLICY.headersTimeoutMs;
+			server.requestTimeout = DASHBOARD_HTTP_POLICY.requestTimeoutMs;
+			server.keepAliveTimeout = DASHBOARD_HTTP_POLICY.keepAliveTimeoutMs;
+			return await new Promise<number>((resolve, reject) => {
+				const stop = (): void => {
+					if (stopping) return;
+					stopping = true;
+					resolve(0);
+				};
+				const fail = (error: unknown): void => {
+					if (stopping) return;
+					stopping = true;
+					reject(error);
+				};
+				const onConnection = (socket: Socket): void => {
+					if (stopping) {
+						socket.destroy();
+						return;
+					}
+					sockets.add(socket);
+					socket.once('close', () => sockets.delete(socket));
+				};
+				const onListening = (): void => {
+					if (stopping) return;
+					try {
+						const address = server.address() as AddressInfo;
+						const url = toDashboardUrl(options.host, address.port);
+						if (options.json) {
+							reporter.stdout(JSON.stringify({
+								schema_version: '1', command: 'dashboard', status: 'listening', url,
+								project_root: projectRoot, preferences_path: initialSnapshot.preferencesPath,
+							}));
+						} else {
+							reporter.stdout(t(lang, 'dashboard.listening', { url }));
+						}
+						if (options.openBrowser && !stopping) openUrlInBrowser(url);
+					} catch (error) {
+						fail(error);
+					}
+				};
+				detachListeners = () => {
+					process.off('SIGINT', stop);
+					process.off('SIGTERM', stop);
+					serverOptions.signal?.removeEventListener('abort', stop);
+					server.off('connection', onConnection);
+					server.off('listening', onListening);
+					server.off('close', stop);
+					server.off('error', fail);
+				};
+				server.on('connection', onConnection);
+				server.on('error', fail);
+				server.once('close', stop);
+				process.once('SIGINT', stop);
+				process.once('SIGTERM', stop);
+				serverOptions.signal?.addEventListener('abort', stop, { once: true });
+				if (serverOptions.signal?.aborted) stop();
+				else server.listen({ port: options.port, host: options.host, signal: listenController.signal }, onListening);
 			});
-		});
-
-		server.on('error', (error) => {
-			if (!resolved) {
-				resolved = true;
-				reporter.stderr(error instanceof Error ? error.message : String(error));
-				resolve(1);
+		} finally {
+			stopping = true;
+			try {
+				// Cancel pending listen setup as well as an already-bound listener.
+				listenController.abort();
+				await new Promise<void>((resolve, reject) => {
+					try {
+						server.close((error?: NodeJS.ErrnoException) => {
+							if (error && error.code !== 'ERR_SERVER_NOT_RUNNING') reject(error);
+							else resolve();
+						});
+					} finally {
+						for (const socket of sockets) socket.destroy();
+					}
+				});
+			} finally {
+				detachListeners();
 			}
-		});
-
-		server.listen(options.port, options.host, () => {
-			const address = server.address() as AddressInfo;
-			const url = toDashboardUrl(options.host, address.port);
-
-			if (options.json) {
-				reporter.stdout(
-					JSON.stringify({
-						schema_version: '1',
-						command: 'dashboard',
-						status: 'listening',
-						url,
-						project_root: projectRoot,
-						preferences_path: initialSnapshot.preferencesPath,
-					}),
-				);
-			} else {
-				reporter.stdout(t(lang, 'dashboard.listening', { url }));
-			}
-
-			if (options.openBrowser) {
-				openUrlInBrowser(url);
-			}
-		});
-
-		process.once('SIGINT', close);
-		process.once('SIGTERM', close);
-	});
+		}
+	} catch (error) {
+		reporter.stderr(error instanceof Error ? error.message : String(error));
+		return 1;
+	}
 }
