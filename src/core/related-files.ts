@@ -112,6 +112,11 @@ interface ImportReference {
 	readonly resolvedPath: string | null;
 }
 
+interface ImporterReference {
+	readonly sourcePath: string;
+	readonly line: number;
+}
+
 interface ImportSpecifierMatch {
 	readonly specifier: string;
 	readonly index: number;
@@ -356,6 +361,34 @@ function readImportsForFile(
 			resolvedPath: resolveRelativeImport(projectRoot, candidate.absolutePath, entry.specifier, RESOLVE_EXTENSIONS),
 		};
 	});
+}
+
+function indexImporters(
+	imports: ReadonlyMap<string, readonly ImportReference[]>,
+	targetPaths: ReadonlySet<string>,
+	maxCandidates: number,
+): ReadonlyMap<string, readonly ImporterReference[]> {
+	const importers = new Map<string, ImporterReference[]>();
+	if (targetPaths.size === 0) return importers;
+	// One extra distinct candidate preserves the existing overflow finding.
+	const maxEntries = Number.isFinite(maxCandidates) ? Math.max(1, Math.ceil(maxCandidates) + 1) : Infinity;
+	for (const [sourcePath, references] of imports) {
+		for (const reference of references) {
+			const resolvedPath = reference.resolvedPath;
+			if (resolvedPath === null || sourcePath === resolvedPath || !targetPaths.has(resolvedPath)) continue;
+			const entries = importers.get(resolvedPath);
+			if (entries) {
+				if (entries.length >= maxEntries) continue;
+				// References are ordered by line within each source; these share a candidate key.
+				const previous = entries[entries.length - 1];
+				if (previous?.sourcePath === sourcePath && previous.line === reference.line) continue;
+				entries.push({ sourcePath, line: reference.line });
+			} else {
+				importers.set(resolvedPath, [{ sourcePath, line: reference.line }]);
+			}
+		}
+	}
+	return importers;
 }
 
 function candidateKey(candidate: RelatedFileCandidate): string {
@@ -623,6 +656,11 @@ export function inspectRelatedFiles(projectRoot: string, options: InspectRelated
 	for (const file of sourceFiles) {
 		importMap.set(file.relativePath, readImportsForFile(root, file, policy, findings, issues));
 	}
+	const importersByTarget = indexImporters(
+		importMap,
+		new Set(targets.filter(target => target.kind === 'file').map(target => target.path)),
+		policy.max_candidates,
+	);
 
 	for (const target of targets) {
 		if (target.kind !== 'file') {
@@ -652,28 +690,22 @@ export function inspectRelatedFiles(projectRoot: string, options: InspectRelated
 			);
 		}
 
-		for (const [sourcePath, references] of importMap.entries()) {
-			for (const reference of references) {
-				if (reference.resolvedPath !== target.path || sourcePath === target.path) {
-					continue;
-				}
-
-				addCandidate(
-					candidateMap,
-					{
-						path: sourcePath,
-						relationship: 'importer',
-						confidence: 0.9,
-						reason: `${sourcePath} imports ${target.path}.`,
-						source_path: sourcePath,
-						target_path: target.path,
-						line: reference.line,
-					},
-					policy,
-					findings,
-					issues,
-				);
-			}
+		for (const { sourcePath, line } of importersByTarget.get(target.path) ?? []) {
+			addCandidate(
+				candidateMap,
+				{
+					path: sourcePath,
+					relationship: 'importer',
+					confidence: 0.9,
+					reason: `${sourcePath} imports ${target.path}.`,
+					source_path: sourcePath,
+					target_path: target.path,
+					line,
+				},
+				policy,
+				findings,
+				issues,
+			);
 		}
 
 		addSiblingCandidates(target, relatedFiles, candidateMap, policy, findings, issues);
