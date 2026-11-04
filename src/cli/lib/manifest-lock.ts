@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -171,7 +171,7 @@ function parseCasOwner(value: unknown): ManifestLockCasOwner | null {
 		: null;
 }
 
-function acquireManifestLockCas(projectRoot: string): () => void {
+export function acquireManifestLockCas(projectRoot: string): () => void {
 	const cacheDirectory = path.join(projectRoot, '.mustflow', 'cache');
 	ensureInside(projectRoot, cacheDirectory);
 	mkdirSync(cacheDirectory, { recursive: true });
@@ -190,6 +190,20 @@ function acquireManifestLockCas(projectRoot: string): () => void {
 			const descriptor = openSync(ownerPath, 'wx');
 			try {
 				writeFileSync(descriptor, `${JSON.stringify(owner)}\n`, 'utf8');
+			} catch (error) {
+				try {
+					// A partial JSON write has no usable token: prove file identity instead.
+					const created = fstatSync(descriptor, { bigint: true });
+					const current = lstatSync(ownerPath, { bigint: true });
+					if (!current.isSymbolicLink() && current.dev === created.dev && current.ino === created.ino) {
+						rmSync(ownerPath, { force: true });
+					}
+				} catch (cleanupError) {
+					if (!(isRecord(cleanupError) && cleanupError.code === 'ENOENT')) {
+						throw new AggregateError([error, cleanupError], 'Failed to publish and clean up manifest lock CAS owner');
+					}
+				}
+				throw error;
 			} finally {
 				closeSync(descriptor);
 			}

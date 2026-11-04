@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { acquireManifestLockCas } from './manifest-lock.js';
 import { mapExternalSkillFiles, withExternalSkillReadSlot } from './external-skill-downloads.js';
 import { httpFailure, readBoundedResponseText, readHttp, withDependencyDeadline, type DependencyReadOptions } from '../../core/dependency-read.js';
 
@@ -1158,7 +1159,7 @@ function updateCommandIncludeText(content: string, includeEntry: string): string
 	return lines.join('\n');
 }
 
-function writeTrustedScriptCommandContract(
+export function writeTrustedScriptCommandContract(
 	projectRoot: string,
 	target: ExternalSkillImportTarget,
 	source: ExternalSkillImportSource,
@@ -1171,25 +1172,34 @@ function writeTrustedScriptCommandContract(
 	const fragmentContent = renderTrustedScriptCommandFragment(target, source, scriptTrust);
 	const fragmentPath = path.join(projectRoot, ...scriptTrust.fragment_path.split('/'));
 	const commandsPath = path.join(projectRoot, ...COMMANDS_CONFIG_PATH.split('/'));
-	const commandsContent = readUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, { maxBytes: 256 * 1024 });
-	const updatedCommands = updateCommandIncludeText(commandsContent, scriptTrust.include_entry);
-	const previousFragment = existsSync(fragmentPath)
-		? readUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, { maxBytes: 256 * 1024 })
-		: null;
-	let fragmentWritten = false;
+	// Share the persistent CAS owner with baseline acceptance, across processes.
+	const release = acquireManifestLockCas(projectRoot);
 	try {
-		writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, fragmentContent);
-		fragmentWritten = true;
-		writeUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, updatedCommands);
-	} catch (error) {
-		if (fragmentWritten) {
-			if (previousFragment === null) {
-				rmSync(fragmentPath, { force: true });
-			} else {
-				writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, previousFragment);
+		const commandsContent = readUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, { maxBytes: 256 * 1024 });
+		const updatedCommands = updateCommandIncludeText(commandsContent, scriptTrust.include_entry);
+		const previousFragment = existsSync(fragmentPath)
+			? readUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, { maxBytes: 256 * 1024 })
+			: null;
+		let fragmentWritten = false;
+		try {
+			writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, fragmentContent);
+			fragmentWritten = true;
+			if (readUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, { maxBytes: 256 * 1024 }) !== commandsContent) {
+				throw new Error('External skill command contract CAS conflict: commands.toml changed during publication');
 			}
+			writeUtf8FileInsideWithoutSymlinks(projectRoot, commandsPath, updatedCommands);
+		} catch (error) {
+			if (fragmentWritten) {
+				if (previousFragment === null) {
+					rmSync(fragmentPath, { force: true });
+				} else {
+					writeUtf8FileInsideWithoutSymlinks(projectRoot, fragmentPath, previousFragment);
+				}
+			}
+			throw error;
 		}
-		throw error;
+	} finally {
+		release();
 	}
 }
 
