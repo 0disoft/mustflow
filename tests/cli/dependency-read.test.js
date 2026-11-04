@@ -165,6 +165,73 @@ for (const [random, expected] of [[0, [100, 200]], [1 - Number.EPSILON, [199, 29
 	});
 }
 
+for (const elapsed of [499, 500, 501]) {
+	test(`GET retry stops at elapsed ${elapsed}ms against a 500ms budget even before the timer runs`, async () => {
+		const clock = createDeadlineRuntime();
+		const cause = Object.assign(new Error('connection reset'), { code: 'ECONNRESET' });
+		const waits = [];
+		let calls = 0;
+		let workSignal;
+		let failure;
+		await assert.rejects(readHttp('https://example.test', text, {
+			timeoutMs: 500, maxRetries: 2,
+			fetch: async (_url, { signal }) => {
+				workSignal = signal;
+				if (++calls === 1) clock.elapse(elapsed);
+				throw cause;
+			},
+			runtime: { ...clock.runtime, random: () => 0, sleep: async (milliseconds) => {
+				waits.push(milliseconds);
+				clock.elapse(milliseconds);
+			} },
+		}), error => { failure = error; return error.code === 'ETIMEDOUT'; });
+		assert.equal(calls, 1);
+		assert.equal(failure.cause, cause);
+		assert.deepEqual(waits, elapsed < 500 ? [100] : []);
+		assert.equal(workSignal.aborted, true);
+		assert.equal(clock.pending, false);
+		assert.equal(getEventListeners(workSignal, 'abort').length, 0);
+	});
+}
+
+test('a deadline during backoff preserves the most recent dependency failure', async () => {
+	const clock = createDeadlineRuntime();
+	const first = Object.assign(new Error('DNS lookup failed'), { code: 'EAI_AGAIN' });
+	const last = Object.assign(new Error('connection reset'), { code: 'ECONNRESET' });
+	let calls = 0;
+	const waits = [];
+	await assert.rejects(readHttp('https://example.test', text, {
+		timeoutMs: 500, maxRetries: 2,
+		fetch: async () => { throw ++calls === 1 ? first : last; },
+		runtime: { ...clock.runtime, random: () => 0, sleep: async (milliseconds, signal) => {
+			waits.push(milliseconds);
+			clock.elapse(waits.length === 1 ? milliseconds : 400);
+			if (waits.length === 2) clock.fireTimeout();
+			signal.throwIfAborted();
+		} },
+	}), error => error.code === 'ETIMEDOUT' && error.cause === last);
+	assert.equal(calls, 2);
+	assert.deepEqual(waits, [100, 200]);
+	assert.equal(clock.pending, false);
+});
+
+test('a fetch settling at the deadline never invokes response consumption', async () => {
+	const clock = createDeadlineRuntime();
+	let consumed = false;
+	let discarded = false;
+	await assert.rejects(readHttp('https://example.test', async () => { consumed = true; return 'late'; }, {
+		timeoutMs: 500,
+		fetch: async () => {
+			clock.elapse(500);
+			return new Response(new ReadableStream({ cancel() { discarded = true; } }));
+		},
+		runtime: clock.runtime,
+	}), error => error.code === 'ETIMEDOUT');
+	assert.equal(consumed, false);
+	assert.equal(discarded, true);
+	assert.equal(clock.pending, false);
+});
+
 test('overflowing Retry-After exhausts the deadline without making a second request', async () => {
 	const clock = createDeadlineRuntime();
 	const waits = [];

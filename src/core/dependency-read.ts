@@ -37,7 +37,7 @@ function validateTimeout(timeoutMs: number): void {
 
 export async function withDependencyDeadline<T>(
 	options: Pick<DependencyReadOptions, 'signal' | 'timeoutMs' | 'runtime'>,
-	work: (signal: AbortSignal) => Promise<T>,
+	work: (signal: AbortSignal, checkDeadline: (failure?: unknown) => void) => Promise<T>,
 ): Promise<T> {
 	const timeoutMs = options.timeoutMs ?? 3_000;
 	validateTimeout(timeoutMs);
@@ -48,11 +48,14 @@ export async function withDependencyDeadline<T>(
 	});
 	const startedAt = now();
 	const controller = new AbortController();
+	let lastFailure: unknown;
 	const expire = (): void => controller.abort(Object.assign(
-		new Error(`Dependency operation timed out after ${timeoutMs}ms`), { name: 'TimeoutError', code: 'ETIMEDOUT' },
+		new Error(`Dependency operation timed out after ${timeoutMs}ms`, { cause: lastFailure }), { name: 'TimeoutError', code: 'ETIMEDOUT' },
 	));
-	const checkDeadline = (): void => {
+	const checkDeadline = (failure?: unknown): void => {
 		controller.signal.throwIfAborted();
+		// Keep the last observed dependency failure when a retry consumes the remaining budget.
+		if (failure !== undefined) lastFailure = failure;
 		// A blocked event loop can settle promises before delivering an already-due timer.
 		if (now() - startedAt >= timeoutMs) {
 			expire();
@@ -67,11 +70,11 @@ export async function withDependencyDeadline<T>(
 		checkDeadline();
 		cancelTimeout = scheduleTimeout(expire, timeoutMs);
 		controller.signal.throwIfAborted();
-		const result = await waitForDependency(work(controller.signal), controller.signal);
+		const result = await waitForDependency(work(controller.signal, checkDeadline), controller.signal);
 		checkDeadline();
 		return result;
 	} catch (error) {
-		checkDeadline();
+		checkDeadline(error);
 		throw error;
 	} finally {
 		try {
@@ -116,16 +119,16 @@ export async function readHttp<T>(
 	if (![0, 1, 2].includes(maxRetries)) throw new RangeError('Dependency reads allow at most two retries.');
 	const random = options.runtime?.random ?? Math.random;
 	const wait: DependencyReadRuntime['sleep'] = options.runtime?.sleep ?? ((milliseconds, signal) => sleep(milliseconds, undefined, { signal }));
-	return withDependencyDeadline(options, async (signal) => {
+	return withDependencyDeadline(options, async (signal, checkDeadline) => {
 		for (let attempt = 0; ; attempt += 1) {
 			let response: Response | undefined;
 			try {
-				signal.throwIfAborted();
+				checkDeadline();
 				response = await (options.fetch ?? globalThis.fetch)(url, { method: 'GET', headers: options.headers, signal });
-				signal.throwIfAborted();
+				checkDeadline();
 				return await consume(response, signal);
 			} catch (error) {
-				signal.throwIfAborted();
+				checkDeadline(error);
 				if (attempt >= maxRetries || !retryable(error)) {
 					if (error instanceof DependencyHttpError) throw error;
 					throw new Error(`Dependency read failed: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
