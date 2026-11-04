@@ -9,12 +9,17 @@ export interface DependencyDeadlineRuntime {
 	readonly scheduleTimeout: (callback: () => void, milliseconds: number) => () => void;
 }
 
+export interface DependencyReadRuntime extends DependencyDeadlineRuntime {
+	readonly random: () => number;
+	readonly sleep: (milliseconds: number, signal: AbortSignal) => Promise<void>;
+}
+
 export interface DependencyReadOptions {
 	readonly signal?: AbortSignal;
 	readonly timeoutMs?: number;
 	readonly maxRetries?: 0 | 1 | 2;
 	readonly fetch?: typeof fetch;
-	readonly runtime?: Partial<DependencyDeadlineRuntime>;
+	readonly runtime?: Partial<DependencyReadRuntime>;
 }
 
 export class DependencyHttpError extends Error {
@@ -109,6 +114,8 @@ export async function readHttp<T>(
 ): Promise<T> {
 	const maxRetries = options.maxRetries ?? 1;
 	if (![0, 1, 2].includes(maxRetries)) throw new RangeError('Dependency reads allow at most two retries.');
+	const random = options.runtime?.random ?? Math.random;
+	const wait: DependencyReadRuntime['sleep'] = options.runtime?.sleep ?? ((milliseconds, signal) => sleep(milliseconds, undefined, { signal }));
 	return withDependencyDeadline(options, async (signal) => {
 		for (let attempt = 0; ; attempt += 1) {
 			let response: Response | undefined;
@@ -127,7 +134,7 @@ export async function readHttp<T>(
 				discardBody(response);
 				response = undefined;
 				const retryAfter = error instanceof DependencyHttpError ? error.retryAfterMs : 0;
-				await sleep(Math.max(retryAfter, 100 * 2 ** attempt + Math.floor(Math.random() * 100)), undefined, { signal });
+				await wait(Math.max(retryAfter, 100 * 2 ** attempt + Math.floor(random() * 100)), signal);
 			} finally {
 				discardBody(response);
 			}
@@ -135,11 +142,12 @@ export async function readHttp<T>(
 	});
 }
 
-export function httpFailure(response: Response, message: string): DependencyHttpError {
+export function httpFailure(response: Response, message: string, now: () => number = Date.now): DependencyHttpError {
 	const header = response.headers?.get('retry-after');
 	const seconds = header === null || header === undefined ? NaN : Number(header);
-	const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(header ?? '') - Date.now();
-	return new DependencyHttpError(response.status, message, Math.max(0, Math.min(2_147_483_647, Number.isFinite(delay) ? delay : 0)));
+	const delay = Number.isNaN(seconds) ? Date.parse(header ?? '') - now() : seconds * 1000;
+	// Numeric overflow is a long delay, not an absent delay; never turn it into an immediate retry.
+	return new DependencyHttpError(response.status, message, Math.max(0, Math.min(2_147_483_647, Number.isNaN(delay) ? 0 : delay)));
 }
 
 export async function readBoundedResponseText(response: Response, maxBytes: number, signal: AbortSignal): Promise<string> {

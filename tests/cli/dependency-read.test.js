@@ -127,6 +127,85 @@ test('deadline timer cleanup failures still remove the parent abort listener', a
 	assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
 });
 
+test('Retry-After saturates large values instead of wrapping back to immediate retry', () => {
+	for (const [header, expected] of [
+		['0', 0], ['1', 1000], ['2147483', 2_147_483_000], ['2147484', 2_147_483_647],
+		['9'.repeat(306), 2_147_483_647], ['9'.repeat(309), 2_147_483_647], ['invalid', 0],
+	]) {
+		const failure = httpFailure(new Response(null, { status: 429, headers: { 'retry-after': header } }), 'busy');
+		assert.equal(failure.retryAfterMs, expected, `Retry-After with ${header.length} characters`);
+	}
+});
+
+test('Retry-After dates use an injected clock at the past/present/future boundary', () => {
+	const expiresAt = Date.UTC(2026, 10, 4, 0, 0, 0);
+	const response = new Response(null, { status: 503, headers: { 'retry-after': new Date(expiresAt).toUTCString() } });
+	for (const [offset, expected] of [[-1, 1], [0, 0], [1, 0]]) {
+		assert.equal(httpFailure(response, 'busy', () => expiresAt + offset).retryAfterMs, expected);
+	}
+});
+
+for (const [random, expected] of [[0, [100, 200]], [1 - Number.EPSILON, [199, 299]]]) {
+	test(`GET backoff is deterministic with injected jitter ${random}`, async () => {
+		const clock = createDeadlineRuntime();
+		const waits = [];
+		let calls = 0;
+		assert.equal(await readHttp('https://example.test', text, {
+			maxRetries: 2,
+			fetch: async () => ++calls < 3 ? new Response('', { status: 503 }) : new Response('ok'),
+			runtime: { ...clock.runtime, random: () => random, sleep: async (milliseconds, signal) => {
+				signal.throwIfAborted();
+				waits.push(milliseconds);
+				clock.elapse(milliseconds);
+			} },
+		}), 'ok');
+		assert.equal(calls, 3);
+		assert.deepEqual(waits, expected);
+		assert.equal(clock.pending, false);
+	});
+}
+
+test('overflowing Retry-After exhausts the deadline without making a second request', async () => {
+	const clock = createDeadlineRuntime();
+	const waits = [];
+	let calls = 0;
+	await assert.rejects(readHttp('https://example.test', text, {
+		timeoutMs: 500,
+		fetch: async () => ++calls === 1
+			? new Response('', { status: 429, headers: { 'retry-after': '9'.repeat(309) } })
+			: new Response('retried too early'),
+		runtime: { ...clock.runtime, random: () => 0, sleep: async (milliseconds, signal) => {
+			waits.push(milliseconds);
+			clock.elapse(500);
+			clock.fireTimeout();
+			signal.throwIfAborted();
+		} },
+	}), error => error.code === 'ETIMEDOUT');
+	assert.equal(calls, 1);
+	assert.deepEqual(waits, [2_147_483_647]);
+	assert.equal(clock.pending, false);
+});
+
+for (const cancelled of [false, true]) {
+	test(`failed retry waiting stops further I/O with cancellation ${cancelled}`, async () => {
+		const clock = createDeadlineRuntime();
+		const controller = new AbortController();
+		const failure = new Error('waiting interrupted');
+		let calls = 0;
+		await assert.rejects(readHttp('https://example.test', text, {
+			signal: controller.signal,
+			fetch: async () => { calls++; return new Response('', { status: 503 }); },
+			runtime: { ...clock.runtime, random: () => 0, sleep: async (_milliseconds, signal) => {
+				if (cancelled) { controller.abort(failure); signal.throwIfAborted(); }
+				throw failure;
+			} },
+		}), error => cancelled ? error.code === 'EINTERRUPTED' && error.cause === failure : error === failure);
+		assert.equal(calls, 1);
+		assert.equal(clock.pending, false);
+		assert.equal(getEventListeners(controller.signal, 'abort').length, 0);
+	});
+}
+
 test('GET retries transient failures and releases failed response bodies', async () => {
 	let calls = 0;
 	let cancelled = 0;
