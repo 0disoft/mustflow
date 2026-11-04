@@ -2,7 +2,7 @@
 mustflow_doc: skill.svelte-code-change
 locale: en
 canonical: true
-revision: 5
+revision: 6
 lifecycle: mustflow-owned
 authority: procedure
 name: svelte-code-change
@@ -78,8 +78,9 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
 
 1. Read route segment files, parent layouts, route matchers, stores/runes/context, hooks, app types, Svelte/Vite/TypeScript config, adapter config, package metadata, and tests.
 2. Identify Svelte and SvelteKit version tracks and whether the code uses runes, legacy reactivity, or mixed migration mode.
+   - For SvelteKit 3, follow the [official migration guide](https://svelte.dev/docs/kit/migrating-to-sveltekit-3), checked on 2026-11-04: configure the `sveltekit` Vite plugin in `vite.config.*`; `svelte.config.js` is no longer supported. Replace `$lib` with package `imports` for `#lib` and `#lib/*`, `$app/environment` with `$app/env`, and deprecated `$env/*` imports with `$app/env/private` or `$app/env/public`. The removed `$service-worker` API needs the documented `$app/env`, `$app/manifest`, and `$app/paths` replacements. Keep older-track configuration only when that track remains supported.
 3. Before choosing a file, classify every data access with: origin, secrecy, request scope, mutation, browser dependency, serialization, dependency tracking, invalidation trigger, and adapter support.
-4. Keep DB, filesystem, private env, cookies, auth headers, `event.locals`, server SDKs, and request-local identity in server-only code: `+page.server`, `+layout.server`, `+server`, `hooks.server`, `$lib/server`, or `*.server.*`.
+4. Keep DB, filesystem, private env, cookies, auth headers, `event.locals`, server SDKs, and request-local identity in server-only code: `+page.server`, `+layout.server`, `+server`, `hooks.server`, `#lib/server` (SvelteKit 3), `$lib/server` (older tracks), or `*.server.*`.
 5. Treat `+page.ts` and `+layout.ts` as universal. They may run during SSR and later in the browser; do not import browser-only packages, private env, DB clients, or server modules there.
 6. If `+page.server` and universal `+page` or `+layout` coexist, check that server-load data is intentionally passed through the universal `load` return value when the page component needs it.
 7. Keep `load` side-effect-free. Do not increment counters, mark reads, mutate stores, write analytics, or change module state from `load`; preload and navigation can run it before the user commits.
@@ -104,15 +105,16 @@ Preserve Svelte component reactivity, SvelteKit SSR/server/client execution mode
     - Do not silently return from required imperative initialization when the DOM node is unexpectedly absent. Distinguish an expected conditional absence from a broken ownership or binding contract, expose the failure during development, and provide a bounded reinitialization path when the node can appear later.
 23. In Svelte 5, treat DOM event handlers as props. When spreading rest props through wrappers, intentionally compose external handlers with internal policy instead of relying on spread order.
 24. Treat snippets as typed render callbacks. Require optional snippet guards, pass row or slot-like data as parameters, and avoid hidden parent-state capture in reusable library components.
-25. In the official-source snapshot checked on 2026-07-11, SvelteKit remote functions were
-    experimental. Refresh the installed track's current official status before every adoption; if
+25. In the [official SvelteKit 3 announcement](https://svelte.dev/blog/sveltekit-3-is-here),
+    checked on 2026-11-04, SvelteKit 3 is stable while remote functions remain experimental
+    and depend on Async Svelte's experimental compiler flag. Refresh the installed track's current official status before every adoption; if
     it remains experimental, do not replace stable `load`, form action, or endpoint contracts
     merely because remote functions appear in the docs. When a project opts in, verify every opt-in
     documented for the installed Svelte and SvelteKit tracks, including any separate compiler
     opt-in required by the syntax actually used, plus `.remote.*` placement, server-only
     execution, generated endpoint behavior, prerender constraints, cache and invalidation
     semantics, and rollback to stable primitives.
-26. Check SvelteKit, Vite, TypeScript, adapter, and package output as one toolchain boundary. Do not edit generated `.svelte-kit/tsconfig.json`; fix `svelte.config`, `kit.alias`, package exports, `types`, `svelte` conditions, `files`, and CSS side effects at their source.
+26. Check SvelteKit, Vite, TypeScript, adapter, and package output as one toolchain boundary. Do not edit generated `.svelte-kit/tsconfig.json`; fix the installed track's source config (`vite.config.*` plugin options for SvelteKit 3), aliases, package `imports` and exports, `types`, `svelte` conditions, `files`, and CSS side effects at their source.
 
 <!-- mustflow-section: data-boundary-policy -->
 ## Data Boundary Policy

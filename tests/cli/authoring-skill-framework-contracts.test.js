@@ -174,8 +174,9 @@ test('React code change skill keeps modern React contribution boundaries explici
 	assert.match(localSkill, /Partial Pre-rendering/u);
 	assert.match(localSkill, /do not assume Web Streams are faster than Node\s+streams/u);
 	assert.match(localSkill, /Metadata, stylesheets with `precedence`, async scripts, `preinit`/u);
-	assert.match(localSkill, /official React docs describe React 19\.2 as the current\s+feature line/u);
-	assert.match(localSkill, /`v19\.2\.7` released on\s+2026-06-01/u);
+	assert.match(localSkill, /official React 19\.3 announcement/u);
+	assert.match(localSkill, /View Transitions and Fragment Refs\s+are stable in React 19\.3/u);
+	assert.match(localSkill, /Refresh patch and security status separately/u);
 
 	assert.match(skillIndex, /Use `react-code-change` as a primary route/u);
 	assert.match(skillIndex, /\.mustflow\/skills\/react-code-change\/SKILL\.md/u);
@@ -425,7 +426,10 @@ test('Svelte code change skill catches SvelteKit execution modes and runes traps
 	assert.match(localSkill, /Do not silently return from required imperative initialization/u);
 	assert.match(localSkill, /Treat snippets as typed render callbacks/u);
 	assert.match(localSkill, /Presence in current official docs does not by itself prove stable support/u);
-	assert.match(localSkill, /snapshot checked on 2026-07-11, SvelteKit remote functions were\s+experimental/u);
+	assert.match(localSkill, /SvelteKit 3 is stable while remote functions remain experimental/u);
+	assert.match(localSkill, /Async Svelte's experimental compiler flag/u);
+	assert.match(localSkill, /`svelte\.config\.js` is no longer supported/u);
+	assert.match(localSkill, /package `imports` for `#lib` and `#lib\/\*`/u);
 	assert.match(localSkill, /Refresh the installed track's current official status/u);
 	assert.match(localSkill, /verify every opt-in\s+documented for the installed Svelte and SvelteKit tracks/u);
 	assert.match(localSkill, /separate compiler\s+opt-in required by the syntax actually used/u);

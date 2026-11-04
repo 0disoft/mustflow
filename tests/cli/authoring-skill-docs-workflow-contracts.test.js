@@ -483,8 +483,10 @@ test('Python skills gate standard-library APIs and runtime upgrade defaults by s
 	assert.match(pythonSkill, /`functools\.cache`, `lru_cache`, `cached_property`, `partial`, and Python 3\.14\+ `Placeholder`/u);
 	assert.match(pythonSkill, /Python 3\.14\+ template string literals/u);
 	assert.match(pythonSkill, /Python 3\.14\+ `annotationlib`/u);
-	assert.match(pythonSkill, /built-in sentinel facility was Python 3\.15\+ prerelease-only/u);
-	assert.match(pythonSkill, /official snapshot checked on 2026-07-11/u);
+	assert.match(pythonSkill, /built-in `sentinel` is stable in Python 3\.15/u);
+	assert.match(pythonSkill, /checked on 2026-11-04, confirm a stable release on 2026-10-09/u);
+	assert.match(pythonSkill, /typed extra items are stable in Python 3\.15/u);
+	assert.match(pythonSkill, /require the declared runtime floor rather than a prerelease opt-in/u);
 	assert.match(pythonSkill, /Python 3\.15\+ explicit lazy imports/u);
 	assert.match(pythonSkill, /keep them out of stable-target code and examples/u);
 	assert.match(pythonSkill, /avoid list membership inside large loops/u);

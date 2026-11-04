@@ -1214,7 +1214,7 @@ translations = {}
 [documents."skill.react-code-change"]
 source = "locales/en/.mustflow/skills/react-code-change/SKILL.md"
 source_locale = "en"
-revision = 2
+revision = 3
 translations = {}
 
 [documents."skill.vue-code-change"]
@@ -1232,7 +1232,7 @@ translations = {}
 [documents."skill.python-code-change"]
 source = "locales/en/.mustflow/skills/python-code-change/SKILL.md"
 source_locale = "en"
-revision = 6
+revision = 7
 translations = {}
 
 [documents."skill.php-code-change"]
@@ -1298,7 +1298,7 @@ translations = {}
 [documents."skill.svelte-code-change"]
 source = "locales/en/.mustflow/skills/svelte-code-change/SKILL.md"
 source_locale = "en"
-revision = 5
+revision = 6
 translations = {}
 
 [documents."skill.tailwind-code-change"]

@@ -2,7 +2,7 @@
 mustflow_doc: skill.react-code-change
 locale: en
 canonical: true
-revision: 2
+revision: 3
 lifecycle: mustflow-owned
 authority: procedure
 name: react-code-change
@@ -125,9 +125,10 @@ expect current React guidance and small, compatible changes.
      Pre-rendering, or Web Streams SSR APIs.
    - Use current official React docs or release metadata for exact "latest",
      patch, security, or deprecation claims. As a snapshot checked on
-     2026-06-26, official React docs describe React 19.2 as the current
-     feature line, and GitHub release metadata showed `v19.2.7` released on
-     2026-06-01; re-check before relying on those values in future work.
+     2026-11-04, the [official React 19.3 announcement](https://react.dev/blog/2026/09/09/react-19-3)
+     confirms its stable release on 2026-09-09. View Transitions and Fragment Refs
+     are stable in React 19.3; require that feature floor and check browser support
+     and fallback behavior before adoption. Refresh patch and security status separately.
    - For RSC packages, check patched `react-server-dom-webpack`,
      `react-server-dom-parcel`, and `react-server-dom-turbopack` versions when
      security advisories or framework updates are part of the task.
