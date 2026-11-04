@@ -44,7 +44,7 @@ import {
 	evaluateCommandPreconditions,
 	type CommandPreconditionPlan,
 } from '../../core/command-preconditions.js';
-import { isWindowsCommandScriptPath } from '../commands/run/windows-command-script.js';
+import { createWindowsCommandScriptLine, isWindowsCommandScriptPath } from '../commands/run/windows-command-script.js';
 import { t, type CliLang } from './i18n.js';
 
 export interface ResolvedArgvCommand {
@@ -581,6 +581,16 @@ export function createRunPlan(
 		);
 	}
 
+	const argvCommand = commandArgv ? resolveArgvCommand(projectRoot, contract, rawIntent, commandArgv) : undefined;
+	if (argvCommand?.windowsCommandScript) {
+		try {
+			createWindowsCommandScriptLine(argvCommand.executable, argvCommand.args);
+		} catch (error) {
+			if (!(error instanceof Error && 'code' in error && error.code === 'EINVAL')) throw error;
+			return createBlockedRunPlan(contract, intentName, rawIntent, eligibility, 'invalid_command_input', error.message, preconditions);
+		}
+	}
+
 	return {
 		intentName,
 		intent: rawIntent,
@@ -602,7 +612,7 @@ export function createRunPlan(
 		commandArgv,
 		shellCommand: metadata.shellCommand,
 		mode: metadata.mode,
-		argvCommand: commandArgv ? resolveArgvCommand(projectRoot, contract, rawIntent, commandArgv) : undefined,
+		argvCommand,
 		writes: metadata.writes,
 		effects: metadata.effects,
 		network: metadata.network,

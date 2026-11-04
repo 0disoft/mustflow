@@ -14,6 +14,11 @@ export function quoteWindowsCommandScriptToken(value: string): string {
 		throw Object.assign(new Error('Windows command script arguments must not contain NUL or line breaks'), { code: 'EINVAL' });
 	}
 
+	// cmd.exe expands percent expressions even inside quoted argv tokens, and CALL reparses them.
+	if (value.includes('%')) {
+		throw Object.assign(new Error('Windows command script paths and arguments must not contain percent signs; use a direct executable for literal percent values'), { code: 'EINVAL' });
+	}
+
 	if (/^[A-Za-z0-9_./:\\@+=,-]+$/u.test(value)) {
 		return value;
 	}
@@ -32,7 +37,7 @@ export function createWindowsCommandScriptSpawn(
 ): WindowsCommandScriptSpawn {
 	return {
 		executable: comspec && comspec.trim().length > 0 ? comspec : 'cmd.exe',
-		args: ['/d', '/s', '/c', createWindowsCommandScriptLine(executablePath, args)],
+		args: ['/d', '/v:off', '/s', '/c', createWindowsCommandScriptLine(executablePath, args)],
 		shell: false,
 		windowsVerbatimArguments: true,
 	};

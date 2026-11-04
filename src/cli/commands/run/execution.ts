@@ -142,6 +142,9 @@ function reportRunPlanFailure(plan: BlockedRunPlan, reporter: Reporter, lang: Cl
 				detail: getRunPlanDetail(plan, lang, 'run.error.invalidTestTargetDetail'),
 			});
 			break;
+		case 'invalid_command_input':
+			message = plan.detail ?? 'Invalid command input.';
+			break;
 		case 'max_output_bytes_exceeds_limit':
 			message = t(lang, 'run.error.maxOutputBytes', {
 				intent: plan.intentName,

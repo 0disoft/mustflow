@@ -92,6 +92,13 @@ explicit safety rules.
 `argv` mode is preferred for configured commands. It executes an explicit  
 program and argument list.
 
+On Windows, `.cmd` and `.bat` programs require `cmd.exe`. Their executable paths
+and arguments must not contain percent signs, because quoted percent expressions
+can still expand into command syntax. Both previews and execution reject these
+tokens before spawning a child. Delayed expansion is disabled for the wrapper.
+Use a direct executable, such as `node` with a JavaScript entrypoint, when literal
+percent signs must be passed as arguments.
+
 `shell` mode may be supported when explicitly declared by the project, but it carries higher risk and must still satisfy lifecycle, policy, timeout, and root boundary checks.
 
 ## Typed Intent Inputs
