@@ -1,19 +1,23 @@
 {
   "affectedArea": "Lock file maintenance",
+  "approvalSnapshot": {
+    "contentSha256": "6e7d4dd321423973e361d3d7bb213a443935499aedb99efa9d61921f9510ea1f",
+    "recordedAt": "2026-11-27T19:56:00.335Z"
+  },
   "claimEvidenceLinks": [
     {
       "evidenceRefIndexes": [
         0
       ],
       "field": "evidenceSummary",
-      "text": "Drafted maintenance recognition for Lock file maintenance from pull_request PR-44."
+      "text": "PR #44 refreshed the documentation site dependency lockfile (docs-site/bun.lock)."
     },
     {
       "evidenceRefIndexes": [
         0
       ],
       "field": "publicRecognitionText",
-      "text": "Reduced maintenance work around Lock file maintenance."
+      "text": "Refreshed the documentation site dependency lockfile in PR #44."
     }
   ],
   "confidence": 0.64,
@@ -53,10 +57,10 @@
       "title": "Merge commit 1e4133cc37d5"
     }
   ],
-  "evidenceSummary": "Drafted maintenance recognition for Lock file maintenance from pull_request PR-44.",
+  "evidenceSummary": "PR #44 refreshed the documentation site dependency lockfile (docs-site/bun.lock).",
   "impactLevel": "medium",
-  "maintainerApprovalStatus": "draft",
-  "publicRecognitionText": "Reduced maintenance work around Lock file maintenance.",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Refreshed the documentation site dependency lockfile in PR #44.",
   "schemaVersion": "clarissimi.assessment/v1",
   "source": {
     "event": "merged_pull_request",
