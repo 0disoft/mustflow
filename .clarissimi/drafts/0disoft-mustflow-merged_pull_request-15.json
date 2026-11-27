@@ -1,0 +1,97 @@
+{
+  "affectedArea": "Run-state publication",
+  "approvalSnapshot": {
+    "contentSha256": "9cc036d17d8456870da9a3a62f0f7cd5e1a9a69001343a3c2cb4b7101d27d75b",
+    "recordedAt": "2026-11-27T20:39:53.356Z"
+  },
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Separated immutable receipt and performance sample writes from aggregate compaction. Run completion skips compaction when another process holds its lock."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Kept run completion moving when aggregation is busy by saving receipts and performance samples before compaction."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "performance",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-15",
+      "kind": "pull_request",
+      "title": "⚡ Make run-state writes immutable and move aggregation off the hot path",
+      "url": "https://github.com/0disoft/mustflow/pull/15"
+    },
+    {
+      "id": "src/core/run-performance-history.ts",
+      "kind": "file",
+      "title": "src/core/run-performance-history.ts"
+    },
+    {
+      "id": "src/core/run-receipt-publication.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt-publication.ts"
+    },
+    {
+      "id": "src/core/run-receipt-state.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt-state.ts"
+    },
+    {
+      "id": "src/core/run-receipt.ts",
+      "kind": "file",
+      "title": "src/core/run-receipt.ts"
+    },
+    {
+      "id": "src/core/run-state-mutex.ts",
+      "kind": "file",
+      "title": "src/core/run-state-mutex.ts"
+    },
+    {
+      "id": "tests/cli/run-state-publication.test.js",
+      "kind": "test",
+      "title": "tests/cli/run-state-publication.test.js"
+    },
+    {
+      "id": "tests/cli/run.test.js",
+      "kind": "test",
+      "title": "tests/cli/run.test.js"
+    },
+    {
+      "id": "2a36c3c40581a935660b7fc696348e820c6cbe81",
+      "kind": "commit",
+      "title": "Merge commit 2a36c3c40581"
+    },
+    {
+      "id": "PR-14",
+      "kind": "pull_request",
+      "title": "Preceding run state mutex change",
+      "url": "https://github.com/0disoft/mustflow/pull/14"
+    }
+  ],
+  "evidenceSummary": "Separated immutable receipt and performance sample writes from aggregate compaction. Run completion skips compaction when another process holds its lock.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Kept run completion moving when aggregation is busy by saving receipts and performance samples before compaction.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:39:45.000Z",
+    "pullRequestNumber": 15,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Performance Optimizer"
+}

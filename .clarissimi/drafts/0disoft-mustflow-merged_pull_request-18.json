@@ -1,0 +1,71 @@
+{
+  "affectedArea": "Repository snapshot hashing",
+  "approvalSnapshot": {
+    "contentSha256": "ad1a72fae6e09c3f51892acb7ac6a067c8740416fb261e2f7eb222ef19074de3",
+    "recordedAt": "2026-11-27T20:39:54.060Z"
+  },
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Replaced two Git subprocesses per snapshot with one and reused SHA-256 digests when file identity and metadata were unchanged."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Cut write-drift detection from four Git subprocesses to two per before-and-after pair and reused hashes for unchanged files."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "performance",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-18",
+      "kind": "pull_request",
+      "title": "perf(snapshot): reuse file hashes across write-drift snapshots",
+      "url": "https://github.com/0disoft/mustflow/pull/18"
+    },
+    {
+      "id": "src/core/repository-snapshot.ts",
+      "kind": "file",
+      "title": "src/core/repository-snapshot.ts"
+    },
+    {
+      "id": "src/core/run-write-drift.ts",
+      "kind": "file",
+      "title": "src/core/run-write-drift.ts"
+    },
+    {
+      "id": "tests/cli/repository-snapshot.test.js",
+      "kind": "test",
+      "title": "tests/cli/repository-snapshot.test.js"
+    },
+    {
+      "id": "b47529bf41af2bcaede9e6149b84d7de93ec6270",
+      "kind": "commit",
+      "title": "Merge commit b47529bf41af"
+    }
+  ],
+  "evidenceSummary": "Replaced two Git subprocesses per snapshot with one and reused SHA-256 digests when file identity and metadata were unchanged.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Cut write-drift detection from four Git subprocesses to two per before-and-after pair and reused hashes for unchanged files.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T06:39:33.000Z",
+    "pullRequestNumber": 18,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Performance Optimizer"
+}

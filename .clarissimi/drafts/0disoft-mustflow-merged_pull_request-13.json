@@ -1,0 +1,96 @@
+{
+  "affectedArea": "Active run lock scopes",
+  "approvalSnapshot": {
+    "contentSha256": "1620e4ad9c13172dbde2e58feb96de6736e7c515b421b0e47a3bb6d8e3f5a047",
+    "recordedAt": "2026-11-27T20:39:53.035Z"
+  },
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Added worktree, repository, and host lock scopes to the command contract, with checkout-local locking as the default."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Added command lock scopes so linked worktrees can coordinate repository writes and separate repositories can serialize access to explicitly named host resources."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "api_design",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-13",
+      "kind": "pull_request",
+      "title": "feat(locking): coordinate active runs across worktrees and host resources",
+      "url": "https://github.com/0disoft/mustflow/pull/13"
+    },
+    {
+      "id": "docs/spec/README.md",
+      "kind": "file",
+      "title": "docs/spec/README.md"
+    },
+    {
+      "id": "docs/spec/active-run-lock-scopes-v1.md",
+      "kind": "file",
+      "title": "docs/spec/active-run-lock-scopes-v1.md"
+    },
+    {
+      "id": "schemas/commands.schema.json",
+      "kind": "file",
+      "title": "schemas/commands.schema.json"
+    },
+    {
+      "id": "schemas/locks.schema.json",
+      "kind": "file",
+      "title": "schemas/locks.schema.json"
+    },
+    {
+      "id": "src/core/active-run-lock-scopes.ts",
+      "kind": "file",
+      "title": "src/core/active-run-lock-scopes.ts"
+    },
+    {
+      "id": "src/core/active-run-locks.ts",
+      "kind": "file",
+      "title": "src/core/active-run-locks.ts"
+    },
+    {
+      "id": "src/core/command-effects.ts",
+      "kind": "file",
+      "title": "src/core/command-effects.ts"
+    },
+    {
+      "id": "tests/cli/active-run-lock-scopes.test.js",
+      "kind": "test",
+      "title": "tests/cli/active-run-lock-scopes.test.js"
+    },
+    {
+      "id": "33eb135b27156e2bd8ea18442d44720784766b04",
+      "kind": "commit",
+      "title": "Merge commit 33eb135b2715"
+    }
+  ],
+  "evidenceSummary": "Added worktree, repository, and host lock scopes to the command contract, with checkout-local locking as the default.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Added command lock scopes so linked worktrees can coordinate repository writes and separate repositories can serialize access to explicitly named host resources.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:10:36.000Z",
+    "pullRequestNumber": 13,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "API Designer"
+}

@@ -4,7 +4,17 @@
 
 ## Contributor gallery
 
-<a href="https://github.com/apps/renovate"><img src="https://avatars.githubusercontent.com/u/29139614?s=64&v=4" width="64" height="64" alt="@renovate[bot] on GitHub"></a>
+<a href="https://github.com/0disoft"><img src="https://avatars.githubusercontent.com/u/100320863?s=64&v=4" width="64" height="64" alt="@0disoft on GitHub"></a> <a href="https://github.com/apps/renovate"><img src="https://avatars.githubusercontent.com/u/29139614?s=64&v=4" width="64" height="64" alt="@renovate[bot] on GitHub"></a>
+
+## 0disoft
+
+**5 recognized contributions** · api\_design 1 · maintenance 1 · performance 3
+
+- Added command lock scopes so linked worktrees can coordinate repository writes and separate repositories can serialize access to explicitly named host resources\. _API Designer_ in Active run lock scopes. [feat\(locking\): coordinate active runs across worktrees and host resources](https://github.com/0disoft/mustflow/pull/13)
+- Kept run completion moving when aggregation is busy by saving receipts and performance samples before compaction\. _Performance Optimizer_ in Run\-state publication. [⚡ Make run\-state writes immutable and move aggregation off the hot path](https://github.com/0disoft/mustflow/pull/15) [Preceding run state mutex change](https://github.com/0disoft/mustflow/pull/14)
+- Made concurrent verification sessions share CPU, memory, and write\-related disk limits across linked worktrees\. _Performance Optimizer_ in Verification resource budgeting. [⚡️ Bound verification resources across concurrent sessions](https://github.com/0disoft/mustflow/pull/17) [Shared verification resource budget issue](https://github.com/0disoft/mustflow/issues/16)
+- Cut write\-drift detection from four Git subprocesses to two per before\-and\-after pair and reused hashes for unchanged files\. _Performance Optimizer_ in Repository snapshot hashing. [perf\(snapshot\): reuse file hashes across write\-drift snapshots](https://github.com/0disoft/mustflow/pull/18)
+- Kept the previous SQLite index readable during rebuilds and allowed equivalent requests to reuse the completed build\. _Maintenance Steward_ in Local index publication. [perf\(index\): publish immutable local\-index generations](https://github.com/0disoft/mustflow/pull/19)
 
 ## renovate\[bot\] · Bot
 
