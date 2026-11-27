@@ -1,0 +1,86 @@
+{
+  "affectedArea": "Local index publication",
+  "approvalSnapshot": {
+    "contentSha256": "2c5ae3b6bcd99cc0a76d6265cab780ace92e701bf9598de3e7ea0e4b94dc6890",
+    "recordedAt": "2026-11-27T20:39:54.364Z"
+  },
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Built SQLite indexes in private staging files and published completed generations behind a pointer. A builder lease lets equivalent requests reuse a completed generation."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Kept the previous SQLite index readable during rebuilds and allowed equivalent requests to reuse the completed build."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "maintenance",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-19",
+      "kind": "pull_request",
+      "title": "perf(index): publish immutable local-index generations",
+      "url": "https://github.com/0disoft/mustflow/pull/19"
+    },
+    {
+      "id": "src/cli/lib/local-index.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/builder-lease.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/builder-lease.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/database-path.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/database-path.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/generation-store.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/generation-store.ts"
+    },
+    {
+      "id": "src/cli/lib/local-index/index.ts",
+      "kind": "file",
+      "title": "src/cli/lib/local-index/index.ts"
+    },
+    {
+      "id": "tests/cli/index-generation-store.test.js",
+      "kind": "test",
+      "title": "tests/cli/index-generation-store.test.js"
+    },
+    {
+      "id": "e76e69fcfe4902663c17a84d390ac660d1a5cebc",
+      "kind": "commit",
+      "title": "Merge commit e76e69fcfe49"
+    }
+  ],
+  "evidenceSummary": "Built SQLite indexes in private staging files and published completed generations behind a pointer. A builder lease lets equivalent requests reuse a completed generation.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Kept the previous SQLite index readable during rebuilds and allowed equivalent requests to reuse the completed build.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:38:05.000Z",
+    "pullRequestNumber": 19,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Maintenance Steward"
+}

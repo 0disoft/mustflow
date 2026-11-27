@@ -1,0 +1,87 @@
+{
+  "affectedArea": "Verification resource budgeting",
+  "approvalSnapshot": {
+    "contentSha256": "bfec238e8cb271631c453f1a1a90a490303b89ab59c14c98ce2b78322ece56ed",
+    "recordedAt": "2026-11-27T20:39:53.723Z"
+  },
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Added shared host and repository CPU and memory slots for verification jobs, with disk slots for commands that declare writes."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Made concurrent verification sessions share CPU, memory, and write-related disk limits across linked worktrees."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "performance",
+  "contributor": {
+    "id": "100320863",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-17",
+      "kind": "pull_request",
+      "title": "⚡️ Bound verification resources across concurrent sessions",
+      "url": "https://github.com/0disoft/mustflow/pull/17"
+    },
+    {
+      "id": "docs-site/src/content/docs/en/commands/verify.md",
+      "kind": "file",
+      "title": "docs-site/src/content/docs/en/commands/verify.md"
+    },
+    {
+      "id": "src/cli/commands/run/execution.ts",
+      "kind": "file",
+      "title": "src/cli/commands/run/execution.ts"
+    },
+    {
+      "id": "src/cli/commands/verify/args.ts",
+      "kind": "file",
+      "title": "src/cli/commands/verify/args.ts"
+    },
+    {
+      "id": "src/core/verification-resource-budget.ts",
+      "kind": "file",
+      "title": "src/core/verification-resource-budget.ts"
+    },
+    {
+      "id": "tests/cli/verification-resource-budget.test.js",
+      "kind": "test",
+      "title": "tests/cli/verification-resource-budget.test.js"
+    },
+    {
+      "id": "b400095869b0ba56c583ff8dbfc43ad797f31ded",
+      "kind": "commit",
+      "title": "Merge commit b400095869b0"
+    },
+    {
+      "id": "#16",
+      "kind": "issue",
+      "title": "Shared verification resource budget issue",
+      "url": "https://github.com/0disoft/mustflow/issues/16"
+    }
+  ],
+  "evidenceSummary": "Added shared host and repository CPU and memory slots for verification jobs, with disk slots for commands that declare writes.",
+  "impactLevel": "high",
+  "maintainerApprovalStatus": "approved",
+  "publicRecognitionText": "Made concurrent verification sessions share CPU, memory, and write-related disk limits across linked worktrees.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-08-20T05:08:18.000Z",
+    "pullRequestNumber": 17,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Performance Optimizer"
+}
