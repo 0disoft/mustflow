@@ -15,14 +15,21 @@ test('bounded output owns its retained bytes when the caller reuses an input buf
 test('bounded output does not retain a large input backing store for a small tail', () => {
 	const moduleUrl = new URL('../../dist/core/bounded-output.js', import.meta.url).href;
 	const source = `
+import { setImmediate } from 'node:timers/promises';
 import { BoundedOutputBuffer } from ${JSON.stringify(moduleUrl)};
 const output = new BoundedOutputBuffer(65536);
 global.gc();
 const baseline = process.memoryUsage().arrayBuffers;
 function appendLargeChunk() { output.append(Buffer.alloc(32 * 1024 * 1024, 97)); }
 appendLargeChunk();
-global.gc();
-const retained = process.memoryUsage().arrayBuffers - baseline;
+// V8 can finish freeing a backing store after the first collection.
+let retained;
+for (let attempt = 0; attempt < 10; attempt += 1) {
+	await setImmediate();
+	global.gc();
+	retained = process.memoryUsage().arrayBuffers - baseline;
+	if (retained <= 2 * 65536) break;
+}
 const snapshot = output.toSnapshot();
 console.log(JSON.stringify({ retained, bytes: snapshot.bytes, tailBytes: Buffer.byteLength(snapshot.tail) }));
 `;
