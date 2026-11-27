@@ -1,14 +1,9 @@
 name: Clarissimi contributor recognition
 
 on:
-  pull_request_target:
+  push:
     branches:
       - main
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - closed
   workflow_dispatch:
     inputs:
       draft-path:
@@ -19,30 +14,39 @@ on:
 permissions: {}
 
 jobs:
-  review-decision:
-    name: Clarissimi review decision
-    if: >
-      github.event_name == 'pull_request_target' &&
-      github.event.action != 'closed'
+  merged-pull-requests:
+    name: Find pull requests merged into main
+    if: github.event_name == 'push' && !github.event.created && !github.event.deleted
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: read
-      issues: read
+    outputs:
+      numbers: ${{ steps.find.outputs.numbers }}
     steps:
-      - name: Check contributor recognition decision
-        uses: 0disoft/clarissimi@aeb23a8e5efed45c145d4dffa91498db7304ff76 # v1.1.0
+      - name: Check out pushed main commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          mode: gate
-          gate-mode: ${{ vars.CLARISSIMI_GATE_MODE || 'advisory' }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve merged pull request numbers
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: node scripts/clarissimi-merged-prs.mjs
 
   stage-draft:
     name: Stage merged pull request draft
-    if: >
-      github.event_name == 'pull_request_target' &&
-      github.event.pull_request.merged == true &&
-      !startsWith(github.event.pull_request.head.ref, 'clarissimi/')
+    needs: merged-pull-requests
+    if: needs.merged-pull-requests.outputs.numbers != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        pr-number: ${{ fromJSON(needs.merged-pull-requests.outputs.numbers) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -53,19 +57,34 @@ jobs:
       - name: Checkout trusted base branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
+          ref: main
           fetch-depth: 0
           persist-credentials: true # Clarissimi publishes a review branch with this scoped token.
+
+      - name: Prepare Clarissimi input from the GitHub API
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ matrix.pr-number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" |
+            jq -e --arg repo "$GITHUB_REPOSITORY" '
+              select(.merged == true and .base.ref == "main" and .base.repo.full_name == $repo)
+              | select(.head.ref | startswith("clarissimi/") | not)
+              | {repository: {full_name: $repo}, pull_request: .}
+            ' > "$RUNNER_TEMP/clarissimi-event.json"
 
       - name: Stage contributor recognition draft
         uses: 0disoft/clarissimi@aeb23a8e5efed45c145d4dffa91498db7304ff76 # v1.1.0
         with:
           mode: stage-draft
+          event-path: ${{ runner.temp }}/clarissimi-event.json
           base-branch: main
           comment-mode: upsert
 
   promote-draft:
     name: Propose approved contributor recognition
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -76,6 +95,7 @@ jobs:
       - name: Checkout trusted base branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
+          ref: main
           fetch-depth: 0
           persist-credentials: true # Clarissimi publishes a review branch with this scoped token.
 

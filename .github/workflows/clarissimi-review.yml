@@ -1,0 +1,28 @@
+name: Clarissimi review
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions: {}
+
+jobs:
+  review-decision:
+    name: Clarissimi review decision
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - name: Check contributor recognition decision
+        uses: 0disoft/clarissimi@aeb23a8e5efed45c145d4dffa91498db7304ff76 # v1.1.0
+        with:
+          mode: gate
+          gate-mode: ${{ vars.CLARISSIMI_GATE_MODE || 'advisory' }}
