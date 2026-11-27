@@ -1,0 +1,58 @@
+{
+  "affectedArea": "docs: document automatic Clarissimi review PRs",
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Drafted maintenance recognition for docs: document automatic Clarissimi review PRs from pull_request PR-47."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Reduced maintenance work around docs: document automatic Clarissimi review PRs."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "maintenance",
+  "contributor": {
+    "id": "100320863",
+    "kind": "human",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-47",
+      "kind": "pull_request",
+      "title": "docs: document automatic Clarissimi review PRs",
+      "url": "https://github.com/0disoft/mustflow/pull/47"
+    },
+    {
+      "id": "CONTRIBUTING.md",
+      "kind": "file",
+      "title": "CONTRIBUTING.md"
+    },
+    {
+      "id": "97909205276cb5cb792caa61397524e8c588a620",
+      "kind": "commit",
+      "title": "Merge commit 97909205276c"
+    }
+  ],
+  "evidenceSummary": "Drafted maintenance recognition for docs: document automatic Clarissimi review PRs from pull_request PR-47.",
+  "impactLevel": "medium",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Reduced maintenance work around docs: document automatic Clarissimi review PRs.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-11-27T17:59:22.000Z",
+    "pullRequestNumber": 47,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Maintenance Steward"
+}
