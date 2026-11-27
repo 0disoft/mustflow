@@ -96,6 +96,12 @@ Pull request descriptions should include:
 
 Repository CI runs the CLI package check and the documentation site check on pull requests and pushes to `main`. Keep pull requests small enough that a failing check points to a single likely cause.
 
+## Contributor Recognition
+
+Clarissimi runs a read-only recognition check on pull requests to `main`. After a pull request is merged, including one from a fork, a separate workflow stages a recognition draft for maintainer review.
+
+Maintainers can run the contributor recognition workflow manually with the path to an approved draft.
+
 ## Release Notes
 
 When a change affects CLI behavior, installed templates, package metadata, schemas, or user-visible documentation, check `.mustflow/config/preferences.toml` `[release.versioning]` and keep the repository's version sources synchronized as configured.
