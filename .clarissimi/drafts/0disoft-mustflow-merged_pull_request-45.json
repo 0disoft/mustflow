@@ -1,0 +1,58 @@
+{
+  "affectedArea": "docs: explain Clarissimi contributor recognition",
+  "claimEvidenceLinks": [
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "evidenceSummary",
+      "text": "Drafted maintenance recognition for docs: explain Clarissimi contributor recognition from pull_request PR-45."
+    },
+    {
+      "evidenceRefIndexes": [
+        0
+      ],
+      "field": "publicRecognitionText",
+      "text": "Reduced maintenance work around docs: explain Clarissimi contributor recognition."
+    }
+  ],
+  "confidence": 0.64,
+  "contributionType": "maintenance",
+  "contributor": {
+    "id": "100320863",
+    "kind": "human",
+    "login": "0disoft",
+    "platform": "github",
+    "profileUrl": "https://github.com/0disoft"
+  },
+  "evidenceRefs": [
+    {
+      "id": "PR-45",
+      "kind": "pull_request",
+      "title": "docs: explain Clarissimi contributor recognition",
+      "url": "https://github.com/0disoft/mustflow/pull/45"
+    },
+    {
+      "id": "CONTRIBUTING.md",
+      "kind": "file",
+      "title": "CONTRIBUTING.md"
+    },
+    {
+      "id": "f1380e674a0216cffbaf2bdec9de094e93817c3b",
+      "kind": "commit",
+      "title": "Merge commit f1380e674a02"
+    }
+  ],
+  "evidenceSummary": "Drafted maintenance recognition for docs: explain Clarissimi contributor recognition from pull_request PR-45.",
+  "impactLevel": "medium",
+  "maintainerApprovalStatus": "draft",
+  "publicRecognitionText": "Reduced maintenance work around docs: explain Clarissimi contributor recognition.",
+  "schemaVersion": "clarissimi.assessment/v1",
+  "source": {
+    "event": "merged_pull_request",
+    "mergedAt": "2026-11-27T17:45:20.000Z",
+    "pullRequestNumber": 45,
+    "repository": "0disoft/mustflow"
+  },
+  "suggestedBadge": "Maintenance Steward"
+}
