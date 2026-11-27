@@ -35,6 +35,10 @@ witnesses = ["tests/cli/skill-route.test.js", "tests/cli/test-selection-runner-c
 kind = "executable"
 witnesses = ["tests/cli/package-release-workflow-contracts.test.js"]
 
+[verification_targets."scripts/clarissimi-merged-prs.mjs"]
+kind = "executable"
+witnesses = ["tests/cli/pages-workflow.test.js"]
+
 [verification_targets."scripts/cleanup-pinned-intents.mjs"]
 kind = "executable"
 witnesses = ["tests/cli/check-command-contracts.test.js"]
