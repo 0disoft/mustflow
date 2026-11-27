@@ -98,7 +98,7 @@ Repository CI runs the CLI package check and the documentation site check on pul
 
 ## Contributor Recognition
 
-Clarissimi runs a read-only recognition check on pull requests to `main`. After a pull request is merged, including one from a fork, a separate workflow stages a recognition draft for maintainer review.
+Clarissimi runs a read-only recognition check on pull requests to `main`. After a pull request is merged, including one from a fork, a separate workflow stages a recognition draft and opens a pull request for maintainer review. The repository setting **Allow GitHub Actions to create and approve pull requests** enables the workflow to open that pull request.
 
 Maintainers can run the contributor recognition workflow manually with the path to an approved draft.
 
